@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inspect {{ equipment.name }}</title>
+</head>
+<body>
+    <h1>Inspect {{ equipment.name }}</h1>
+    <p><strong>Location:</strong> {{ equipment.location }}</p>
+    <p><strong>Model:</strong> {{ equipment.model }}</p>
+    <p><strong>Age:</strong> {{ equipment.age }}</p>
+    <p><strong>Last Inspection:</strong> {{ equipment.last_inspection }}</p>
+
+    <form method="POST">
+        <label>PIN: <input type="password" name="pin" required></label><br><br>
+
+        <label>Is the equipment clean?</label>
+        <select name="clean">
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+        </select><br>
+
+        <label>Any visible damage?</label>
+        <select name="damage">
+            <option value="No">No</option>
+            <option value="Yes">Yes</option>
+        </select><br>
+
+        <label>Is the equipment functional?</label>
+        <select name="functional">
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+        </select><br>
+
+        <label>Notes:</label><br>
+        <textarea name="notes" rows="4" cols="40"></textarea><br><br>
+
+        <button type="submit">Submit Inspection</button>
+    </form>
+</body>
+</html>
