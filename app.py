@@ -73,19 +73,27 @@ def inspect(equipment_id):
         return 'Equipment not found.', 404
 
     if request.method == 'POST':
-        log_data = {
-            'timestamp': datetime.now().isoformat(),
-            'equipment_id': equipment_id,
-            'inspector_pin': request.form['pin'],
-            'clean': request.form['clean'],
-            'damage': request.form['damage'],
-            'functional': request.form['functional'],
-            'notes': request.form['notes']
-        }
-        save_inspection_log(log_data)
-        return f"Inspection for {equipment['name']} saved successfully."
+        entered_pin = request.form['pin']
+        stored_pin = equipment['pin']
+
+        if entered_pin == stored_pin:
+            # Save inspection data
+            log_data = {
+                'timestamp': datetime.now().isoformat(),
+                'equipment_id': equipment_id,
+                'inspector_pin': entered_pin,
+                'clean': request.form['clean'],
+                'damage': request.form['damage'],
+                'functional': request.form['functional'],
+                'notes': request.form['notes']
+            }
+            save_inspection_log(log_data)
+            return render_template('inspection_success.html', equipment=equipment)
+        else:
+            return render_template('inspect.html', equipment=equipment, error='Invalid PIN')
 
     return render_template('inspect.html', equipment=equipment)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
