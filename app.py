@@ -61,7 +61,6 @@ def generate():
         qr_url = url_for('inspect', equipment_id=eq_id, _external=True)
         img = qrcode.make(qr_url)
         img.save(f'{QR_FOLDER}/{eq_id}.png')
-
         return redirect(url_for('index'))
 
     return render_template('generate.html')
