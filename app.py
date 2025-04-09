@@ -49,12 +49,13 @@ def generate():
         model = request.form['model']
         age = request.form['age']
         last_inspection = request.form['last_inspection']
+        pin = request.form['pin']
 
         # Save equipment
         with open(EQUIPMENT_CSV, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
             if os.stat(EQUIPMENT_CSV).st_size == 0:
-                writer.writerow(['id', 'name', 'location', 'model', 'age', 'last_inspection'])
+                writer.writerow(['id', 'name', 'location', 'model', 'age', 'last_inspection, pin'])
             writer.writerow([eq_id, name, location, model, age, last_inspection])
 
         # Generate QR Code
