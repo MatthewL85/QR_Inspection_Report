@@ -14,8 +14,8 @@ os.makedirs(QR_FOLDER, exist_ok=True)
 
 def load_equipment():
     equipment = []
-    if os.path.exists(EQUIPMENT_CSV):
-        with open(EQUIPMENT_CSV, newline='') as csvfile:
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 equipment.append(row)
