@@ -6,7 +6,7 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-EQUIPMENT_CSV = 'equipment.csv'
+DATA_FILE = 'equipment.csv'
 LOG_CSV = 'inspection_logs.csv'
 QR_FOLDER = 'static/qrcodes'
 
