@@ -59,6 +59,9 @@ def generate():
                 writer.writerow(['id', 'name', 'location', 'model', 'age', 'last_inspection', 'pin'])
             writer.writerow([eq_id, name, location, model, age, last_inspection, pin])
 
+            print("Saved to CSV:", eq_id, name, pin)
+            print("CSV Path:", os.path.abspath(DATA_FILE))
+
         # Generate QR Code
         qr_url = url_for('inspect', equipment_id=eq_id, _external=True)
         img = qrcode.make(qr_url)
