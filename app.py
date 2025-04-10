@@ -51,10 +51,11 @@ def generate():
         last_inspection = request.form['last_inspection']
         pin = request.form['pin']
 
-        # Save equipment
-        with open(EQUIPMENT_CSV, 'a', newline='') as csvfile:
-            writer = csv.writer(csvfile)
-            if os.stat(EQUIPMENT_CSV).st_size == 0:
+        file_exists = os.path.isfile(DATA_FILE)
+
+        with open(DATA_FILE, 'a', newline='') as file:
+            writer = csv.writer(file)
+            if not file_exists:
                 writer.writerow(['id', 'name', 'location', 'model', 'age', 'last_inspection', 'pin'])
             writer.writerow([eq_id, name, location, model, age, last_inspection, pin])
 
