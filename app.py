@@ -55,8 +55,8 @@ def generate():
         with open(EQUIPMENT_CSV, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
             if os.stat(EQUIPMENT_CSV).st_size == 0:
-                writer.writerow(['id', 'name', 'location', 'model', 'age', 'last_inspection, pin'])
-            writer.writerow([eq_id, name, location, model, age, last_inspection])
+                writer.writerow(['id', 'name', 'location', 'model', 'age', 'last_inspection', 'pin'])
+            writer.writerow([eq_id, name, location, model, age, last_inspection, pin])
 
         # Generate QR Code
         qr_url = url_for('inspect', equipment_id=eq_id, _external=True)
@@ -74,7 +74,7 @@ def inspect(equipment_id):
 
     if request.method == 'POST':
         entered_pin = request.form['pin']
-        stored_pin = equipment['pin']
+        stored_pin = equipment['pin', '']
 
         if entered_pin == stored_pin:
             # Save inspection data
