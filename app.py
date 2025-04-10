@@ -78,7 +78,7 @@ def inspect(equipment_id):
 
     if request.method == 'POST':
         entered_pin = request.form['pin']
-        stored_pin = equipment['pin']
+        stored_pin = equipment.get('pin', '').strip()
 
         if entered_pin == stored_pin:
             # Save inspection data
