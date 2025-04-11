@@ -36,6 +36,9 @@ def save_inspection_log(data):
             writer.writeheader()
         writer.writerow(data)
 
+    print("Inspection saved for ID:", data['equipment_id'])
+    print("Log saved to:", os.path.abspath(LOG_CSV))
+
 @app.route('/')
 def index():
     return render_template('index.html', equipment=load_equipment())
@@ -97,6 +100,16 @@ def inspect(equipment_id):
             return render_template('inspect.html', equipment=equipment, error='Invalid PIN')
 
     return render_template('inspect.html', equipment=equipment)
+
+@app.route('/logs')
+def view_logs():
+    logs = []
+    if os.path.exists(LOG_CSV):
+        with open(LOG_CSV, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                logs.append(row)
+    return render_template('logs.html', logs=logs)
 
 
 if __name__ == '__main__':
