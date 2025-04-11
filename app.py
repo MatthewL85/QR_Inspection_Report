@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, send_file
 import csv
 import os
 import qrcode
@@ -111,6 +111,9 @@ def view_logs():
                 logs.append(row)
     return render_template('logs.html', logs=logs)
 
+@app.route('/download-logs')
+def download_logs():
+    return send_file(LOG_CSV, as_attachment=True)
 
 if __name__ == '__main__':
     app.run(debug=True)
