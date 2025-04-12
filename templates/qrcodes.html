@@ -29,6 +29,7 @@
         <tr>
             <th>QR Code</th>
             <th>ID</th>
+            <th>Company</th>
             <th>Name</th>
             <th>Location</th>
             <th>Actions</th>
@@ -37,6 +38,7 @@
         <tr>
             <td><img src="{{ url_for('static', filename='qrcodes/' + item['id'] + '.png') }}" alt="QR for {{ item['id'] }}"></td>
             <td>{{ item['id'] }}</td>
+            <td>{{ item['company']}}</td>
             <td>{{ item['name'] }}</td>
             <td>{{ item['location'] }}</td>
             <td class="buttons">

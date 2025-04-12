@@ -30,7 +30,7 @@ def get_equipment_by_id(equipment_id):
 def save_inspection_log(data):
     file_exists = os.path.exists(LOG_CSV)
     with open(LOG_CSV, 'a', newline='') as csvfile:
-        fieldnames = ['timestamp', 'equipment_id', 'inspector_pin', 'clean', 'damage', 'functional', 'notes']
+        fieldnames = ['timestamp', 'equipment_id', 'name', 'company', 'inspector_pin', 'clean', 'damage', 'functional', 'notes']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         if not file_exists:
             writer.writeheader()
@@ -47,6 +47,7 @@ def index():
 def generate():
     if request.method == 'POST':
         eq_id = request.form['id']
+        company = request.form['company']
         name = request.form['name']
         location = request.form['location']
         model = request.form['model']
@@ -59,8 +60,8 @@ def generate():
         with open(DATA_FILE, 'a', newline='') as file:
             writer = csv.writer(file)
             if not file_exists:
-                writer.writerow(['id', 'name', 'location', 'model', 'age', 'last_inspection', 'pin'])
-            writer.writerow([eq_id, name, location, model, age, last_inspection, pin])
+                writer.writerow(['id', 'company', 'name', 'location', 'model', 'age', 'last_inspection', 'pin'])
+            writer.writerow([eq_id, company, name, location, model, age, last_inspection, pin])
 
             print("Saved to CSV:", eq_id, name, pin)
             print("CSV Path:", os.path.abspath(DATA_FILE))
@@ -88,6 +89,8 @@ def inspect(equipment_id):
             log_data = {
                 'timestamp': datetime.now().isoformat(),
                 'equipment_id': equipment_id,
+                'name': equipment.get('name, ')
+                'company': equipment.get('company', '')
                 'inspector_pin': entered_pin,
                 'clean': request.form['clean'],
                 'damage': request.form['damage'],
