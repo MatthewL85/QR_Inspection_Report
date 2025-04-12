@@ -89,8 +89,8 @@ def inspect(equipment_id):
             log_data = {
                 'timestamp': datetime.now().isoformat(),
                 'equipment_id': equipment_id,
-                'name': equipment.get('name', '')
-                'company': equipment.get('company', '')
+                'name': equipment.get('name', ''),
+                'company': equipment.get('company', ''),
                 'inspector_pin': entered_pin,
                 'clean': request.form['clean'],
                 'damage': request.form['damage'],
