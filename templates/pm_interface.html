@@ -10,17 +10,23 @@
     <p><strong>Company:</strong> {{ equipment.company }}</p>
     <p><strong>Location:</strong> {{ equipment.location }}</p>
 
-    <form method="POST" enctype="multipart/form-data" action="#">
-        <label for="notes">Inspection Notes:</label><br>
+    <form action="{{ url_for('property_manager_interface', equipment_id=equipment.id, pm_name=pm_name) }}" method="POST" enctype="multipart/form-data">
+        <label>Clean:</label><br>
+        <input type="text" name="clean" required><br><br>
+    
+        <label>Damage:</label><br>
+        <input type="text" name="damage" required><br><br>
+    
+        <label>Functional:</label><br>
+        <input type="text" name="functional" required><br><br>
+    
+        <label>Notes:</label><br>
         <textarea name="notes" rows="4" cols="50"></textarea><br><br>
-
-        <label for="photo">Upload Photo:</label>
-        <input type="file" name="photo"><br><br>
-
-        <label for="video">Upload Video:</label>
-        <input type="file" name="video"><br><br>
-
-        <button type="submit">✅ Submit</button>
-    </form>
+    
+        <label>Upload Photo or Video:</label><br>
+        <input type="file" name="media" accept="image/*,video/*"><br><br>
+    
+        <button type="submit">Submit Inspection</button>
+    </form>    
 </body>
 </html>
