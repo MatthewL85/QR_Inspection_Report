@@ -221,6 +221,16 @@ def contractor_interface(equipment_id):
         if allow_edit:
             save_next_maintenance_date(equipment_id, next_maintenance)
 
+        # Handle media upload
+        media = request.files.get('media')
+        media_filename = ''
+        if media and media.filename:
+            media_folder = os.path.join('static', 'uploads')
+            os.makedirs(media_folder, exist_ok=True)
+            media_filename = f"{equipment_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{media.filename}"
+            media.save(os.path.join(media_folder, media_filename))
+            notes += f"\nMedia: {media_filename}"
+
         log_data = {
             'timestamp': datetime.now().isoformat(),
             'equipment_id': equipment_id,
@@ -234,7 +244,7 @@ def contractor_interface(equipment_id):
         }
         save_inspection_log(log_data)
 
-        return render_template('inspection_success.html', equipment=equipment)
+        return render_template('inspection_success.html', equipment=equipment, media_filename=media_filename)
 
     return render_template('contractor_interface.html', equipment=equipment, company=company, next_maintenance=current_next_date, allow_edit=allow_edit)
 
