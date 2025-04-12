@@ -98,7 +98,7 @@ def inspect(equipment_id):
                 'notes': request.form['notes']
             }
             save_inspection_log(log_data)
-            return render_template('inspection_success.html', equipment=equipment, media_filename=media_filename)
+            return render_template('inspection_success.html', equipment=equipment)
         else:
             return render_template('inspect.html', equipment=equipment, error='Invalid PIN')
 
@@ -144,7 +144,6 @@ def enter_pin(equipment_id):
 
     return render_template('enter_pin.html', equipment_id=equipment_id)
 
-
 def get_user_by_pin(pin):
     if os.path.exists('users.csv'):
         with open('users.csv', newline='') as csvfile:
@@ -153,7 +152,6 @@ def get_user_by_pin(pin):
                 if row['pin'] == pin:
                     return {'role': row['role'], 'name_or_company': row['name_or_company']}
     return None
-
 
 @app.route('/property-manager/<equipment_id>', methods=['GET', 'POST'])
 def property_manager_interface(equipment_id):
@@ -164,13 +162,11 @@ def property_manager_interface(equipment_id):
         return 'Equipment not found.', 404
 
     if request.method == 'POST':
-        # Collect inspection form data
         clean = request.form['clean']
         damage = request.form['damage']
         functional = request.form['functional']
         notes = request.form['notes']
 
-        # Handle media upload
         media = request.files.get('media')
         media_filename = ''
         if media and media.filename:
@@ -179,7 +175,6 @@ def property_manager_interface(equipment_id):
             media_filename = f"{equipment_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{media.filename}"
             media.save(os.path.join(media_folder, media_filename))
 
-        # Save to inspection log
         log_data = {
             'timestamp': datetime.now().isoformat(),
             'equipment_id': equipment_id,
@@ -197,10 +192,68 @@ def property_manager_interface(equipment_id):
 
     return render_template('pm_interface.html', equipment=equipment, pm_name=pm_name)
 
-@app.route('/contractor/<equipment_id>')
+@@app.route('/contractor/<equipment_id>', methods=['GET', 'POST'])
 def contractor_interface(equipment_id):
     company = request.args.get('company')
-    return render_template('contractor_interface.html', equipment=get_equipment_by_id(equipment_id), company=company)
+    equipment = get_equipment_by_id(equipment_id)
+
+    if not equipment:
+        return 'Equipment not found.', 404
+
+    current_next_date = get_next_maintenance_date(equipment_id)
+
+    allow_edit = True
+    if current_next_date:
+        try:
+            next_dt = datetime.strptime(current_next_date, '%Y-%m-%d')
+            today = datetime.today()
+            delta = (next_dt - today).days
+            allow_edit = delta <= 7  # Editable only if within a week
+        except ValueError:
+            pass  # Invalid format fallback: allow edit
+
+    if request.method == 'POST':
+        visit_date = request.form['visit_date']
+        visit_type = request.form['visit_type']
+        next_maintenance = request.form['next_maintenance']
+
+        # Save new next maintenance date if allowed
+        if allow_edit:
+            save_next_maintenance_date(equipment_id, next_maintenance)
+
+        log_data = {
+            'timestamp': datetime.now().isoformat(),
+            'equipment_id': equipment_id,
+            'name': equipment.get('name', ''),
+            'company': company,
+            'inspector_pin': f"Contractor: {company}",
+            'clean': f"Visit Type: {visit_type}",
+            'damage': f"Visit Date: {visit_date}",
+            'functional': f"Next Maintenance: {next_maintenance}",
+            'notes': ""
+        }
+        save_inspection_log(log_data)
+
+        return render_template('inspection_success.html', equipment=equipment)
+
+    return render_template('contractor_interface.html', equipment=equipment, company=company, next_maintenance=current_next_date, allow_edit=allow_edit)
+
+@app.route('/upload/<equipment_id>', methods=['POST'])
+def upload_media(equipment_id):
+    uploads = []
+    for field in ['photo', 'video']:
+        file = request.files.get(field)
+        if file and file.filename:
+            filename = f"{equipment_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}"
+            file_path = os.path.join('static', 'uploads', filename)
+            file.save(file_path)
+            uploads.append(file_path)
+
+    if not uploads:
+        return "No files uploaded", 400
+
+    print(f"Uploaded files: {uploads}")
+    return redirect(url_for('property_manager_interface', equipment_id=equipment_id, pm_name=request.args.get('pm_name')))
 
 if __name__ == '__main__':
     app.run(debug=True)

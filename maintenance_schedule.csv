@@ -1,0 +1,32 @@
+MAINTENANCE_CSV = 'maintenance_schedule.csv'
+
+def get_next_maintenance_date(equipment_id):
+    if os.path.exists(MAINTENANCE_CSV):
+        with open(MAINTENANCE_CSV, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row['equipment_id'] == equipment_id:
+                    return row['next_maintenance']
+    return None
+
+def save_next_maintenance_date(equipment_id, next_date):
+    updated = False
+    rows = []
+
+    if os.path.exists(MAINTENANCE_CSV):
+        with open(MAINTENANCE_CSV, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row['equipment_id'] == equipment_id:
+                    row['next_maintenance'] = next_date
+                    updated = True
+                rows.append(row)
+
+    if not updated:
+        rows.append({'equipment_id': equipment_id, 'next_maintenance': next_date})
+
+    with open(MAINTENANCE_CSV, 'w', newline='') as csvfile:
+        fieldnames = ['equipment_id', 'next_maintenance']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
