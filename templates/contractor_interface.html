@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Contractor Inspection</title>
+</head>
+<body>
+    <h1>🔧 Contractor: {{ company }}</h1>
+    <h2>Equipment ID: {{ equipment.id }}</h2>
+    <p><strong>Name:</strong> {{ equipment.name }}</p>
+    <p><strong>Location:</strong> {{ equipment.location }}</p>
+
+    <form method="POST">
+        <label>Company:</label><br>
+        <input type="text" name="company" value="{{ company }}" readonly><br><br>
+
+        <label>Inspection/Visit Date:</label><br>
+        <input type="date" name="visit_date" required><br><br>
+
+        <label>Type of Visit:</label><br>
+        <select name="visit_type" required>
+            <option value="">Select</option>
+            <option value="Scheduled">Scheduled</option>
+            <option value="Callout">Callout</option>
+        </select><br><br>
+
+        <label>Next Planned Maintenance Date:</label><br>
+        <input type="date" name="next_maintenance" required><br><br>
+
+        <button type="submit">Submit Inspection</button>
+    </form>
+</body>
+</html>
