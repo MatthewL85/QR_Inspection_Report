@@ -192,7 +192,7 @@ def property_manager_interface(equipment_id):
 
     return render_template('pm_interface.html', equipment=equipment, pm_name=pm_name)
 
-@@app.route('/contractor/<equipment_id>', methods=['GET', 'POST'])
+@app.route('/contractor/<equipment_id>', methods=['GET', 'POST'])
 def contractor_interface(equipment_id):
     company = request.args.get('company')
     equipment = get_equipment_by_id(equipment_id)
