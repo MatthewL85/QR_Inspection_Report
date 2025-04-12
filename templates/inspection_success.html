@@ -6,6 +6,20 @@
 <body>
     <h1>✅ Inspection Submitted!</h1>
     <p>Thank you for completing the inspection for <strong>{{ equipment.name }}</strong>.</p>
+
+    {% if media_filename %}
+        <h2>Uploaded File:</h2>
+        {% if media_filename.endswith('.mp4') %}
+            <video width="320" height="240" controls>
+                <source src="{{ url_for('static', filename='uploads/' + media_filename) }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        {% else %}
+            <img src="{{ url_for('static', filename='uploads/' + media_filename) }}" width="320" alt="Uploaded media">
+        {% endif %}
+    {% endif %}
+
     <p><a href="/">Back to Home</a></p>
 </body>
 </html>
+

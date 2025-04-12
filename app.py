@@ -193,7 +193,7 @@ def property_manager_interface(equipment_id):
         }
         save_inspection_log(log_data)
 
-        return render_template('inspection_success.html', equipment=equipment)
+        return render_template('inspection_success.html', equipment=equipment, media_filename=media_filename)
 
     return render_template('pm_interface.html', equipment=equipment, pm_name=pm_name)
 
