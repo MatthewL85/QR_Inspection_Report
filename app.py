@@ -115,5 +115,10 @@ def view_logs():
 def download_logs():
     return send_file(LOG_CSV, as_attachment=True)
 
+@app.route('/qrcodes')
+def view_qrcodes():
+    equipment = load_equipment()
+    return render_template('qrcodes.html', equipment=equipment)
+
 if __name__ == '__main__':
     app.run(debug=True)

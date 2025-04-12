@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>All QR Codes</title>
+    <style>
+        img {
+            max-width: 150px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+        .buttons a {
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>📦 QR Codes for Equipment</h1>
+    <table>
+        <tr>
+            <th>QR Code</th>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Location</th>
+            <th>Actions</th>
+        </tr>
+        {% for item in equipment %}
+        <tr>
+            <td><img src="{{ url_for('static', filename='qrcodes/' + item['id'] + '.png') }}" alt="QR for {{ item['id'] }}"></td>
+            <td>{{ item['id'] }}</td>
+            <td>{{ item['name'] }}</td>
+            <td>{{ item['location'] }}</td>
+            <td class="buttons">
+                <a href="{{ url_for('static', filename='qrcodes/' + item['id'] + '.png') }}" download>⬇️ Download</a>
+                <a href="{{ url_for('static', filename='qrcodes/' + item['id'] + '.png') }}" target="_blank" onclick="window.print()">🖨 Print</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
