@@ -8,6 +8,13 @@
     <p>Thank you for completing the inspection for <strong>{{ equipment.name }}</strong>.</p>
 
     {% if media_filename %}
+    <p>📎 Uploaded Media: 
+        <a href="{{ url_for('static', filename='uploads/' + media_filename) }}" target="_blank">{{ media_filename }}</a>
+    </p>
+{% endif %}
+
+
+    {% if media_filename %}
         <h2>Uploaded File:</h2>
         {% if media_filename.endswith('.mp4') %}
             <video width="320" height="240" controls>

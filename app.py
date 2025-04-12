@@ -98,7 +98,7 @@ def inspect(equipment_id):
                 'notes': request.form['notes']
             }
             save_inspection_log(log_data)
-            return render_template('inspection_success.html', equipment=equipment)
+            return render_template('inspection_success.html', equipment=equipment, media_filename=media_filename)
         else:
             return render_template('inspect.html', equipment=equipment, error='Invalid PIN')
 
