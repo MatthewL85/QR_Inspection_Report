@@ -43,7 +43,7 @@
             <td>{{ item['location'] }}</td>
             <td class="buttons">
                 <a href="{{ url_for('static', filename='qrcodes/' + item['id'] + '.png') }}" download>⬇️ Download</a>
-                <a href="{{ url_for('static', filename='qrcodes/' + item['id'] + '.png') }}" target="_blank" onclick="window.print()">🖨 Print</a>
+                <a href="{{ url_for('static', filename='qrcodes/' + item['id'] + '.png') }}" target="_blank">🖨 Print</a>
             </td>
         </tr>
         {% endfor %}
