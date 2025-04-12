@@ -238,6 +238,37 @@ def contractor_interface(equipment_id):
 
     return render_template('contractor_interface.html', equipment=equipment, company=company, next_maintenance=current_next_date, allow_edit=allow_edit)
 
+def get_next_maintenance_date(equipment_id):
+    log_entries = []
+    if os.path.exists(LOG_CSV):
+        with open(LOG_CSV, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row['equipment_id'] == equipment_id and row['functional'].startswith("Next Maintenance:"):
+                    log_entries.append(row)
+
+    # Return the latest next maintenance date (if available)
+    if log_entries:
+        latest_entry = max(log_entries, key=lambda x: x['timestamp'])
+        return latest_entry['functional'].replace("Next Maintenance:", "").strip()
+
+    return None
+
+def save_next_maintenance_date(equipment_id, next_date):
+    # This function logs the new date in a structured way so it can be retrieved later
+    log_data = {
+        'timestamp': datetime.now().isoformat(),
+        'equipment_id': equipment_id,
+        'name': '',  # optional if you want to leave blank
+        'company': '',
+        'inspector_pin': 'System Auto-Update',
+        'clean': '',
+        'damage': '',
+        'functional': f"Next Maintenance: {next_date}",
+        'notes': '[Auto-update from Contractor Interface]'
+    }
+    save_inspection_log(log_data)
+
 @app.route('/upload/<equipment_id>', methods=['POST'])
 def upload_media(equipment_id):
     uploads = []
