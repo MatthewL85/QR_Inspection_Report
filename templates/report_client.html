@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Company Inspection Report - {{ company_name }}</title>
+    <title>Company Inspection Report - {{ client }}</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
         h1 { color: #2c3e50; }
@@ -12,7 +12,7 @@
     </style>
 </head>
 <body>
-    <h1>🧾 Inspection Summary for {{ company_name }}</h1>
+    <h1>🧾 Inspection Summary for {{ client }}</h1>
     <p>Total Inspections: {{ logs|length }}</p>
 
     <table>
