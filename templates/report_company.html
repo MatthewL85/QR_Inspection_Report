@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Company Inspection Report - {{ company_name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f0f0f0; }
+        .media-link { font-size: 0.9em; color: #3498db; }
+    </style>
+</head>
+<body>
+    <h1>🧾 Inspection Summary for {{ company_name }}</h1>
+    <p>Total Inspections: {{ logs|length }}</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Equipment ID</th>
+                <th>Name</th>
+                <th>Location</th>
+                <th>Visit Type</th>
+                <th>Notes</th>
+                <th>Next Maintenance</th>
+                <th>Media</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.timestamp[:10] }}</td>
+                <td>{{ log.equipment_id }}</td>
+                <td>{{ log.name }}</td>
+                <td>{{ log.location }}</td>
+                <td>{{ log.clean }}</td>
+                <td>{{ log.notes.replace('\\n', '<br>')|safe }}</td>
+                <td>{{ log.functional }}</td>
+                <td>
+                    {% if 'Media:' in log.notes %}
+                        <a class="media-link" href="{{ url_for('static', filename='uploads/' + log.notes.split('Media:')[-1].strip()) }}" target="_blank">View</a>
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p><a href="/">← Back to Home</a></p>
+</body>
+</html>

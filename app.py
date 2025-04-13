@@ -296,5 +296,33 @@ def upload_media(equipment_id):
     print(f"Uploaded files: {uploads}")
     return redirect(url_for('property_manager_interface', equipment_id=equipment_id, pm_name=request.args.get('pm_name')))
 
+@app.route('/report/company/<company_name>')
+def report_by_company(company_name):
+    logs = []
+    if os.path.exists(LOG_CSV):
+        with open(LOG_CSV, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row['company'].strip().lower() == company_name.strip().lower():
+                    logs.append(row)
+
+    equipment_ids = set(row['equipment_id'] for row in logs)
+    equipment_list = [get_equipment_by_id(eid) for eid in equipment_ids if get_equipment_by_id(eid)]
+
+    return render_template('report_company.html', company=company_name, logs=logs, equipment=equipment_list)
+
+@app.route('/report/equipment/<equipment_id>')
+def report_by_equipment(equipment_id):
+    logs = []
+    if os.path.exists(LOG_CSV):
+        with open(LOG_CSV, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row['equipment_id'] == equipment_id:
+                    logs.append(row)
+
+    equipment = get_equipment_by_id(equipment_id)
+    return render_template('report_equipment.html', equipment=equipment, logs=logs)
+
 if __name__ == '__main__':
     app.run(debug=True)
