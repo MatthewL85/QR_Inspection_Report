@@ -11,11 +11,14 @@ LOG_CSV = 'inspection_logs.csv'
 QR_FOLDER = 'static/qrcodes'
 
 os.makedirs(QR_FOLDER, exist_ok=True)
-    if not os.path.exists(LOG_CSV):
+
+
+if not os.path.exists(LOG_CSV):
     with open(LOG_CSV, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(['timestamp', 'equipment_id', 'name', 'client', 'inspector_pin', 'clean', 'damage', 'functional', 'notes'])
     print("Created empty inspection_logs.csv with headers.")
+
 
 def load_equipment():
     equipment = []
