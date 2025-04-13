@@ -136,7 +136,7 @@ def enter_pin(equipment_id):
             if role == 'Property Manager':
                 return redirect(url_for('property_manager_interface', equipment_id=equipment_id, pm_name=name_or_company))
             elif role == 'Contractor':
-                return redirect(url_for('contractor_interface', equipment_id=equipment_id, client=client_name))
+                return redirect(url_for('contractor_interface', equipment_id=equipment_id, client=name_or_company))
             else:
                 return "Unknown role in users.csv", 400
         else:
