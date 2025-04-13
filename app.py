@@ -49,7 +49,11 @@ def save_inspection_log(data):
 
 @app.route('/')
 def index():
-    return render_template('index.html', equipment=load_equipment())
+    return redirect(url_for('dashboard'))
+
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
 
 @app.route('/generate', methods=['GET', 'POST'])
 def generate():
@@ -319,7 +323,7 @@ def report_by_client(client_name):
     equipment_list = [get_equipment_by_id(eid) for eid in equipment_ids if get_equipment_by_id(eid)]
 
     return render_template('report_client.html', client=client_name, logs=logs, equipment=equipment_list)
-    
+
 @app.route('/report/equipment/<equipment_id>')
 def report_by_equipment(equipment_id):
     logs = []
@@ -332,6 +336,11 @@ def report_by_equipment(equipment_id):
 
     equipment = get_equipment_by_id(equipment_id)
     return render_template('report_equipment.html', equipment=equipment, logs=logs)
+
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True)

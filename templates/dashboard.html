@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="dashboard-container">
+    <h1>Welcome to the Inspection Platform</h1>
+    <div class="dashboard-grid">
+
+        <a href="{{ url_for('generate') }}" class="dashboard-tile">
+            <h3>➕ Add New Equipment + QR Code</h3>
+            <p>Create a new equipment entry and generate its QR code.</p>
+        </a>
+
+        <a href="{{ url_for('index') }}" class="dashboard-tile">
+            <h3>📋 Equipment List</h3>
+            <p>View all equipment records.</p>
+        </a>
+
+        <a href="{{ url_for('view_qrcodes') }}" class="dashboard-tile">
+            <h3>🔗 View QR Codes</h3>
+            <p>Browse all QR codes generated for equipment.</p>
+        </a>
+
+        <a href="{{ url_for('view_logs') }}" class="dashboard-tile">
+            <h3>🧾 Inspection Logs</h3>
+            <p>Access all inspection logs submitted so far.</p>
+        </a>
+
+        <a href="#" class="dashboard-tile disabled">
+            <h3>📊 Client Reports</h3>
+            <p>Generate reports for specific clients. (Coming Soon)</p>
+        </a>
+
+        <a href="#" class="dashboard-tile disabled">
+            <h3>📑 Equipment Reports</h3>
+            <p>Search inspection history by equipment. (Coming Soon)</p>
+        </a>
+
+    </div>
+</div>
+{% endblock %}
