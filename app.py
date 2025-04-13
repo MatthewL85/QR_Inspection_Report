@@ -318,7 +318,12 @@ def report_by_client(client_name):
     equipment_ids = set(row['equipment_id'] for row in logs)
     equipment_list = [get_equipment_by_id(eid) for eid in equipment_ids if get_equipment_by_id(eid)]
 
-    return render_template('report_client.html', client=client_name, logs=logs, equipment=equipment_list)
+    for log in log:
+        matching_eq = get_equipment_by_id(log['equipment_id'])
+        if matching_eq:
+            log['location'] = matching_eq.get('location', '')
+            
+    return render_template('report_client.html', client=client_name, logs=logs)
 
 @app.route('/report/equipment/<equipment_id>')
 def report_by_equipment(equipment_id):
