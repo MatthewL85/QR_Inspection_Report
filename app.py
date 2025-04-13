@@ -216,6 +216,7 @@ def contractor_interface(equipment_id):
         visit_date = request.form['visit_date']
         visit_type = request.form['visit_type']
         next_maintenance = request.form['next_maintenance']
+        notes = request.form['notes']
 
         # Save new next maintenance date if allowed
         if allow_edit:
