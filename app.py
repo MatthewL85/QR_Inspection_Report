@@ -49,10 +49,10 @@ def save_inspection_log(data):
 
 @app.route('/')
 def index():
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('show_dashboard'))
 
 @app.route('/dashboard')
-def dashboard():
+def show_dashboard():
     return render_template('dashboard.html')
 
 @app.route('/generate', methods=['GET', 'POST'])
