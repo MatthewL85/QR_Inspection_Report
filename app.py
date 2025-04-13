@@ -30,7 +30,7 @@ def get_equipment_by_id(equipment_id):
 def save_inspection_log(data):
     file_exists = os.path.exists(LOG_CSV)
     with open(LOG_CSV, 'a', newline='') as csvfile:
-        fieldnames = ['timestamp', 'equipment_id', 'name', 'company', 'inspector_pin', 'clean', 'damage', 'functional', 'notes']
+        fieldnames = ['timestamp', 'equipment_id', 'name', 'client', 'inspector_pin', 'clean', 'damage', 'functional', 'notes']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         if not file_exists:
             writer.writeheader()
@@ -47,7 +47,7 @@ def index():
 def generate():
     if request.method == 'POST':
         eq_id = request.form['id']
-        company = request.form['company']
+        client = request.form['client']
         name = request.form['name']
         location = request.form['location']
         model = request.form['model']
@@ -60,8 +60,8 @@ def generate():
         with open(DATA_FILE, 'a', newline='') as file:
             writer = csv.writer(file)
             if not file_exists:
-                writer.writerow(['id', 'company', 'name', 'location', 'model', 'age', 'last_inspection', 'pin'])
-            writer.writerow([eq_id, company, name, location, model, age, last_inspection, pin])
+                writer.writerow(['id', 'client', 'name', 'location', 'model', 'age', 'last_inspection', 'pin'])
+            writer.writerow([eq_id, client, name, location, model, age, last_inspection, pin])
 
             print("Saved to CSV:", eq_id, name, pin)
             print("CSV Path:", os.path.abspath(DATA_FILE))
@@ -90,7 +90,7 @@ def inspect(equipment_id):
                 'timestamp': datetime.now().isoformat(),
                 'equipment_id': equipment_id,
                 'name': equipment.get('name', ''),
-                'company': equipment.get('company', ''),
+                'client': equipment.get('client', ''),
                 'inspector_pin': entered_pin,
                 'clean': request.form['clean'],
                 'damage': request.form['damage'],
@@ -136,7 +136,7 @@ def enter_pin(equipment_id):
             if role == 'Property Manager':
                 return redirect(url_for('property_manager_interface', equipment_id=equipment_id, pm_name=name_or_company))
             elif role == 'Contractor':
-                return redirect(url_for('contractor_interface', equipment_id=equipment_id, company=name_or_company))
+                return redirect(url_for('contractor_interface', equipment_id=equipment_id, client=client_name))
             else:
                 return "Unknown role in users.csv", 400
         else:
@@ -179,7 +179,7 @@ def property_manager_interface(equipment_id):
             'timestamp': datetime.now().isoformat(),
             'equipment_id': equipment_id,
             'name': equipment.get('name', ''),
-            'company': equipment.get('company', ''),
+            'client': equipment.get('client', ''),
             'inspector_pin': f"Property Manager: {pm_name}",
             'clean': clean,
             'damage': damage,
@@ -194,7 +194,7 @@ def property_manager_interface(equipment_id):
 
 @app.route('/contractor/<equipment_id>', methods=['GET', 'POST'])
 def contractor_interface(equipment_id):
-    company = request.args.get('company')
+    client = request.args.get('client')
     equipment = get_equipment_by_id(equipment_id)
 
     if not equipment:
@@ -236,7 +236,7 @@ def contractor_interface(equipment_id):
             'timestamp': datetime.now().isoformat(),
             'equipment_id': equipment_id,
             'name': equipment.get('name', ''),
-            'company': company,
+            'client': client,
             'inspector_pin': f"Contractor: {company}",
             'clean': f"Visit Type: {visit_type}",
             'damage': f"Visit Date: {visit_date}",
@@ -247,7 +247,7 @@ def contractor_interface(equipment_id):
 
         return render_template('inspection_success.html', equipment=equipment, media_filename=media_filename)
 
-    return render_template('contractor_interface.html', equipment=equipment, company=company, next_maintenance=current_next_date, allow_edit=allow_edit)
+    return render_template('contractor_interface.html', equipment=equipment, company=client_name, next_maintenance=current_next_date, allow_edit=allow_edit)
 
 def get_next_maintenance_date(equipment_id):
     log_entries = []
@@ -271,7 +271,7 @@ def save_next_maintenance_date(equipment_id, next_date):
         'timestamp': datetime.now().isoformat(),
         'equipment_id': equipment_id,
         'name': '',  # optional if you want to leave blank
-        'company': '',
+        'client': '',
         'inspector_pin': 'System Auto-Update',
         'clean': '',
         'damage': '',
@@ -297,14 +297,14 @@ def upload_media(equipment_id):
     print(f"Uploaded files: {uploads}")
     return redirect(url_for('property_manager_interface', equipment_id=equipment_id, pm_name=request.args.get('pm_name')))
 
-@app.route('/report/company/<company_name>')
-def report_by_company(company_name):
+@app.route('/report/client/<client_name>')
+def report_by_client(client_name):
     logs = []
     if os.path.exists(LOG_CSV):
         with open(LOG_CSV, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                if row['company'].strip().lower() == company_name.strip().lower():
+                if row['client'].strip().lower() == company_name.strip().lower():
                     logs.append(row)
 
     equipment_ids = set(row['equipment_id'] for row in logs)

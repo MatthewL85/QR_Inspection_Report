@@ -7,7 +7,7 @@
     <h1>👷‍♂️ Property Manager: {{ pm_name }}</h1>
     <h2>Equipment ID: {{ equipment.id }}</h2>
     <p><strong>Name:</strong> {{ equipment.name }}</p>
-    <p><strong>Company:</strong> {{ equipment.company }}</p>
+    <p><strong>Client:</strong> {{ equipment.client }}</p>
     <p><strong>Location:</strong> {{ equipment.location }}</p>
 
     <form action="{{ url_for('property_manager_interface', equipment_id=equipment.id, pm_name=pm_name) }}" method="POST" enctype="multipart/form-data">
