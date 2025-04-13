@@ -237,17 +237,17 @@ def contractor_interface(equipment_id):
             'equipment_id': equipment_id,
             'name': equipment.get('name', ''),
             'client': client,
-            'inspector_pin': f"Contractor: {company}",
+            'inspector_pin': f"Contractor: {client}",
             'clean': f"Visit Type: {visit_type}",
             'damage': f"Visit Date: {visit_date}",
             'functional': f"Next Maintenance: {next_maintenance}",
-            'notes': ""
+            'notes': notes
         }
         save_inspection_log(log_data)
 
         return render_template('inspection_success.html', equipment=equipment, media_filename=media_filename)
 
-    return render_template('contractor_interface.html', equipment=equipment, company=client_name, next_maintenance=current_next_date, allow_edit=allow_edit)
+    return render_template('contractor_interface.html', equipment=equipment, company=client, next_maintenance=current_next_date, allow_edit=allow_edit)
 
 def get_next_maintenance_date(equipment_id):
     log_entries = []
@@ -304,13 +304,13 @@ def report_by_client(client_name):
         with open(LOG_CSV, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                if row['client'].strip().lower() == company_name.strip().lower():
+                if row['client'].strip().lower() == client_name.strip().lower():
                     logs.append(row)
 
     equipment_ids = set(row['equipment_id'] for row in logs)
     equipment_list = [get_equipment_by_id(eid) for eid in equipment_ids if get_equipment_by_id(eid)]
 
-    return render_template('report_company.html', company=company_name, logs=logs, equipment=equipment_list)
+    return render_template('report_client.html', client=client_name, logs=logs, equipment=equipment_list)
 
 @app.route('/report/equipment/<equipment_id>')
 def report_by_equipment(equipment_id):
