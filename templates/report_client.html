@@ -1,55 +1,101 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Company Inspection Report - {{ client }}</title>
+    <meta charset="UTF-8">
+    <title>Inspection Summary - {{ client }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        h1 { color: #2c3e50; }
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        th { background-color: #f0f0f0; }
-        .media-link { font-size: 0.9em; color: #3498db; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            background-color: #f9f9f9;
+        }
+        header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2em;
+        }
+        header img {
+            height: 60px;
+            margin-right: 1em;
+        }
+        h1 {
+            margin: 0;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1em;
+            background-color: white;
+        }
+        th, td {
+            padding: 0.8em;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f1f1;
+        }
+        .media-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .media-link a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
-    <h1>🧾 Inspection Summary for {{ client }}</h1>
-    <p>Total Inspections: {{ logs|length }}</p>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Equipment ID</th>
-                <th>Name</th>
-                <th>Location</th>
-                <th>Visit Type</th>
-                <th>Notes</th>
-                <th>Next Maintenance</th>
-                <th>Media</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for log in logs %}
-            <tr>
-                <td>{{ log.timestamp[:10] }}</td>
-                <td>{{ log.equipment_id }}</td>
-                <td>{{ log.name }}</td>
-                <td>{{ log.location }}</td>
-                <td>{{ log.clean }}</td>
-                <td>{{ log.notes.replace('\\n', '<br>')|safe }}</td>
-                <td>{{ log.functional }}</td>
-                <td>
-                    {% if 'Media:' in log.notes %}
-                        <a class="media-link" href="{{ url_for('static', filename='uploads/' + log.notes.split('Media:')[-1].strip()) }}" target="_blank">View</a>
-                    {% else %}
-                        —
+<header>
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Client Logo">
+    <h1>Inspection Summary for {{ client }}</h1>
+</header>
+
+<p>Total Inspections: {{ logs|length }}</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Equipment ID</th>
+            <th>Name</th>
+            <th>Location</th>
+            <th>Visit Type</th>
+            <th>Notes</th>
+            <th>Next Maintenance</th>
+            <th>Media</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for log in logs %}
+        <tr>
+            <td>{{ log.timestamp[:10] }}</td>
+            <td>{{ log.equipment_id }}</td>
+            <td>{{ log.name }}</td>
+            <td>
+                {% for eq in equipment %}
+                    {% if eq.id == log.equipment_id %}
+                        {{ eq.location }}
                     {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                {% endfor %}
+            </td>
+            <td>{{ log.clean }}</td>
+            <td>{{ log.notes }}</td>
+            <td>{{ log.functional }}</td>
+            <td class="media-link">
+                {% if "Media:" in log.notes %}
+                    {% set parts = log.notes.split("Media:") %}
+                    <a href="{{ url_for('static', filename='uploads/' ~ parts[1].strip()) }}" target="_blank">View</a>
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
 
-    <p><a href="/">← Back to Home</a></p>
 </body>
 </html>
