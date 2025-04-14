@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inspection Logs</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+        video, img {
+            max-width: 200px;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>📋 Inspection Logs</h1>
+    <table>
+        <tr>
+            <th>Timestamp</th>
+            <th>Equipment ID</th>
+            <th>Name</th>
+            <th>Company</th>
+            <th>Inspector</th>
+            <th>Clean</th>
+            <th>Damage</th>
+            <th>Functional</th>
+            <th>Notes</th>
+            <th>Media</th>
+        </tr>
+        {% for row in logs %}
+        <tr>
+            <td>{{ row.timestamp }}</td>
+            <td>{{ row.equipment_id }}</td>
+            <td>{{ row.name }}</td>
+            <td>{{ row.company }}</td>
+            <td>{{ row.inspector_pin }}</td>
+            <td>{{ row.clean }}</td>
+            <td>{{ row.damage }}</td>
+            <td>{{ row.functional }}</td>
+            <td>{{ row.notes.split('Media:')[0] }}</td>
+            <td>
+                {% if 'Media:' in row.notes %}
+                    {% set media_file = row.notes.split('Media:')[-1].strip() %}
+                    {% if media_file.endswith('.mp4') %}
+                        <video width="200" controls>
+                            <source src="{{ url_for('static', filename='uploads/' + media_file) }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    {% else %}
+                        <img src="{{ url_for('static', filename='uploads/' + media_file) }}" alt="Uploaded media">
+                    {% endif %}
+                    <br>
+                    <a href="{{ url_for('static', filename='uploads/' + media_file) }}" download>⬇ Download</a>
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
