@@ -1,5 +1,9 @@
 {% extends 'base.html' %}
 {% block content %}
+{% if session.get('user') %}
+  <p>Welcome, {{ session['user']['username'] }} ({{ session['user']['company'] }})</p>
+  <a href="{{ url_for('logout') }}">Logout</a>
+
 <div class="dashboard-container">
     <h1>Welcome to the Inspection Platform</h1>
     <div class="dashboard-grid">
@@ -36,4 +40,7 @@
 
     </div>
 </div>
+{% else %}
+  <p>Please <a href="{{ url_for('login') }}">log in</a> to access the dashboard.</p>
+{% endif %}
 {% endblock %}

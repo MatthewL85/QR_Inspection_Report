@@ -55,6 +55,9 @@ def index():
 
 @app.route('/dashboard')
 def show_dashboard():
+    if 'user' not in session:
+        flash("Please log in to access the dashboard.", "warning")
+        return redirect(url_for('login'))
     return render_template('dashboard.html')
 
 @app.route('/generate', methods=['GET', 'POST'])
