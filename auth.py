@@ -24,3 +24,13 @@ def authenticate_user(username, password):
             if row['username'] == username and check_password_hash(row['password'], password):
                 return {'username': username, 'role': row['role'], 'company': row['company']}
     return None
+
+def user_exists(username):
+    if not os.path.exists(USERS_FILE):
+        return False
+    with open(USERS_FILE, newline='') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row['username'] == username:
+                return True
+    return False
