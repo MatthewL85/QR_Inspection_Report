@@ -351,7 +351,7 @@ def login():
         if user:
             session['user'] = user  # store user data in session
             flash('Login successful!', 'success')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('show_dashboard'))
         else:
             flash('Invalid email or password.', 'danger')
     return render_template('login.html')
