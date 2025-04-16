@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5" style="max-width: 500px;">
+    <h2 class="mb-4 text-center">📝 Register</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <div class="mb-3">
+            <label for="email" class="form-label">Email address</label>
+            <input type="email" class="form-control" name="email" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" name="password" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="confirm_password" class="form-label">Confirm Password</label>
+            <input type="password" class="form-control" name="confirm_password" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="role" class="form-label">Role</label>
+            <select class="form-control" name="role" required>
+                <option value="Property Manager">Property Manager</option>
+                <option value="Contractor">Contractor</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="name_or_company" class="form-label">Your Name or Company Name</label>
+            <input type="text" class="form-control" name="name_or_company" required>
+        </div>
+
+        <button type="submit" class="btn btn-success w-100">Register</button>
+    </form>
+</div>
+{% endblock %}
