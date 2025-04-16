@@ -1,10 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, send_file
+from auth import create_user, authenticate_user, user_exists
+from flask import Flask, render_template, request, redirect, url_for, send_file, session, flash
 import csv
 import os
 import qrcode
 from datetime import datetime
 
 app = Flask(__name__)
+app.secret_key = 'your_secret_key_here'  # Replace with a secure key
 
 DATA_FILE = 'equipment.csv'
 LOG_CSV = 'inspection_logs.csv'
@@ -337,9 +339,48 @@ def report_by_equipment(equipment_id):
     equipment = get_equipment_by_id(equipment_id)
     return render_template('report_equipment.html', equipment=equipment, logs=logs)
 
-@app.route('/dashboard')
-def dashboard():
-    return render_template('dashboard.html')
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        user = authenticate_user(email, password)
+        if user:
+            session['user'] = user  # store user data in session
+            flash('Login successful!', 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Invalid email or password.', 'danger')
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    flash('Logged out successfully.', 'info')
+    return redirect(url_for('login'))
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
+        role = request.form['role']
+        name_or_company = request.form['name_or_company']
+
+        if password != confirm_password:
+            flash('Passwords do not match.', 'danger')
+            return render_template('register.html')
+
+        if user_exists(email):
+            flash('An account with that email already exists.', 'warning')
+            return render_template('register.html')
+
+        create_user(email=email, password=password, role=role, name_or_company=name_or_company)
+        flash('Registration successful! Please log in.', 'success')
+        return redirect(url_for('login'))
+
+    return render_template('register.html')
 
 
 if __name__ == '__main__':
