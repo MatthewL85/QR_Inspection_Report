@@ -379,7 +379,7 @@ def register():
             flash('An account with that email already exists.', 'warning')
             return render_template('register.html')
 
-        create_user(email=email, password=password, role=role, name_or_company=name_or_company)
+        create_user(username=email, password=password, role=role, company=name_or_company)
         flash('Registration successful! Please log in.', 'success')
         return redirect(url_for('login'))
 
