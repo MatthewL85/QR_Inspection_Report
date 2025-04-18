@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5" style="max-width: 500px;">
+  <h2 class="mb-4 text-center">Welcome to ScanLogix</h2>
+  <p class="text-center">To begin, please choose your company type:</p>
+
+  <div class="d-grid gap-3">
+    <a href="{{ url_for('register_company', company_type='Management') }}" class="btn btn-primary btn-lg">🏢 Property / Facilities Management</a>
+    <a href="{{ url_for('register_company', company_type='Contractor') }}" class="btn btn-success btn-lg">🔧 Contractor Company</a>
+  </div>
+</div>
+{% endblock %}

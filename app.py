@@ -555,5 +555,32 @@ def property_manager_maintenance_planner():
     maintenance = get_upcoming_maintenance_for_pm(username)
     return render_template('pm_maintenance_planner.html', maintenance=maintenance)
 
+@app.route('/onboard')
+def onboard():
+    return render_template('onboard.html')
+    
+@app.route('/register-company/<company_type>', methods=['GET', 'POST'])
+def register_company(company_type):
+    if request.method == 'POST':
+        company_name = request.form['company_name']
+        admin_email = request.form['admin_email']
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
+
+        if password != confirm_password:
+            flash("Passwords do not match.", "danger")
+            return render_template('register_company.html', company_type=company_type)
+
+        if user_exists(admin_email):
+            flash("An account with that email already exists.", "warning")
+            return render_template('register_company.html', company_type=company_type)
+
+        # Create the initial admin user
+        create_user(username=admin_email, password=password, role='Admin', company=company_name)
+        flash(f"{company_type} registered successfully! You can now log in.", "success")
+        return redirect(url_for('login'))
+
+    return render_template('register_company.html', company_type=company_type)
+
 if __name__ == '__main__':
     app.run(debug=True)
