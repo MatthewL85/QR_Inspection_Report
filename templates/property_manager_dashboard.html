@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="dashboard-container">
+    <h2>🏢 Property Manager Dashboard</h2>
+    <p>Welcome, {{ session['user']['username'] }} ({{ session['user']['company'] }})</p>
+
+    <div class="dashboard-section">
+      <h4>Your Equipment</h4>
+      {% if equipment %}
+        <ul>
+          {% for eq in equipment %}
+            <li><strong>{{ eq['name'] }}</strong> ({{ eq['id'] }}) — {{ eq['location'] }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>You haven't added any equipment yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="dashboard-section">
+      <h4>🧾 Inspection Logs (for your clients)</h4>
+      <p>Coming soon: Logs, missed alerts, and maintenance planner.</p>
+    </div>
+  </div>
+{% endblock %}

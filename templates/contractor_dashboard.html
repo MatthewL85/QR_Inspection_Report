@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="dashboard-container">
+    <h2>🔧 Contractor Dashboard</h2>
+    <p>Welcome, {{ company }}</p>
+
+    <div class="dashboard-section">
+      <h4>Your Submitted Logs</h4>
+      {% if logs %}
+        <ul>
+          {% for log in logs %}
+            <li>
+              <strong>{{ log['timestamp'] }}</strong> — {{ log['equipment_id'] }} — {{ log['notes'] }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No logs submitted yet.</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

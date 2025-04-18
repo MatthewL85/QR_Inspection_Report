@@ -1,36 +1,51 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="admin-dashboard-container">
-    <h2>👤 Admin Dashboard</h2>
-    <p>Welcome, {{ session['user']['username'] }} ({{ session['user']['company'] }})</p>
+<div class="dashboard-container">
+  <h1>Welcome, Admin {{ session['user']['username'] }}</h1>
+  <a href="{{ url_for('logout') }}">Logout</a>
 
-    <div class="dashboard-grid">
+  <div class="dashboard-grid">
 
-        <a href="{{ url_for('manage_users') }}" class="dashboard-tile">
-            <h3>👥 Manage Users</h3>
-            <p>Create, edit, or remove user accounts, assign roles.</p>
-        </a>
+    <a href="{{ url_for('generate') }}" class="dashboard-tile">
+      <h3>➕ Add New Equipment + QR Code</h3>
+      <p>Create a new equipment entry and assign it to a client.</p>
+    </a>
 
-        <a href="{{ url_for('manage_clients') }}" class="dashboard-tile">
-            <h3>🏢 Manage Clients</h3>
-            <p>View clients and assign them to different managers.</p>
-        </a>
+    <a href="{{ url_for('index') }}" class="dashboard-tile">
+      <h3>📋 All Equipment</h3>
+      <p>Browse all equipment across clients.</p>
+    </a>
 
-        <a href="{{ url_for('admin_reports') }}" class="dashboard-tile">
-            <h3>📄 New Reports</h3>
-            <p>View recently generated inspection reports from all users.</p>
-        </a>
+    <a href="{{ url_for('view_qrcodes') }}" class="dashboard-tile">
+      <h3>🔗 All QR Codes</h3>
+      <p>View/download all QR codes across clients.</p>
+    </a>
 
-        <a href="{{ url_for('admin_alerts') }}" class="dashboard-tile">
-            <h3>🚨 Missed Inspection Alerts</h3>
-            <p>Highlight overdue inspections as per the PPM schedule.</p>
-        </a>
+    <a href="{{ url_for('view_logs') }}" class="dashboard-tile">
+      <h3>🧾 All Inspection Logs</h3>
+      <p>Access all inspections submitted by Property Managers and Contractors.</p>
+    </a>
 
-        <a href="{{ url_for('admin_maintenance_planner') }}" class="dashboard-tile">
-            <h3>🛠 Maintenance Planner</h3>
-            <p>Generate or view upcoming maintenance tasks by contractor schedule.</p>
-        </a>
+    <a href="#" class="dashboard-tile disabled">
+      <h3>⚠️ Missed Inspections</h3>
+      <p>Alerts for missed PPMs. (Coming Soon)</p>
+    </a>
 
-    </div>
+    <a href="#" class="dashboard-tile disabled">
+      <h3>🛠️ Maintenance Planner</h3>
+      <p>Auto-generate schedules based on PPM dates. (Coming Soon)</p>
+    </a>
+
+    <a href="#" class="dashboard-tile disabled">
+      <h3>👥 Manage Users</h3>
+      <p>Create/remove Property Managers, assign roles. (Coming Soon)</p>
+    </a>
+
+    <a href="#" class="dashboard-tile disabled">
+      <h3>📂 Manage Clients</h3>
+      <p>Add/edit clients and reassign equipment. (Coming Soon)</p>
+    </a>
+
+  </div>
 </div>
 {% endblock %}

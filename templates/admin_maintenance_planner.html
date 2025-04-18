@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>🛠 Upcoming Maintenance Planner</h2>
+
+{% if maintenance %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Equipment ID</th>
+      <th>Name</th>
+      <th>Client</th>
+      <th>Next Maintenance Date</th>
+      <th>Last Updated By</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in maintenance %}
+    <tr>
+      <td>{{ item.equipment_id }}</td>
+      <td>{{ item.name }}</td>
+      <td>{{ item.client }}</td>
+      <td>{{ item.next_date }}</td>
+      <td>{{ item.inspector }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  <p>No upcoming maintenance tasks currently scheduled.</p>
+{% endif %}
+{% endblock %}

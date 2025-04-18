@@ -61,19 +61,17 @@ def show_dashboard():
         flash("Please log in to access the dashboard.", "warning")
         return redirect(url_for('login'))
 
-    user = session['user']
-    role = user.get('role')
-    username = user.get('username')
-    company = user.get('company')
+    role = session['user'].get('role')
 
-    equipment = load_equipment()
-
-    if role == 'Property Manager':
-        # Show only equipment associated with this Property Manager
-        filtered_equipment = [eq for eq in equipment if eq.get('created_by') == username]
+    if role == 'Admin':
+        return redirect(url_for('admin_dashboard'))
+    elif role == 'Property Manager':
+        return redirect(url_for('property_manager_dashboard'))
+    elif role == 'Contractor':
+        return redirect(url_for('contractor_dashboard'))
     else:
-        # Show all equipment for Contractors/Admins
-        filtered_equipment = equipment
+        flash("Unknown role. Please contact your administrator.", "danger")
+        return redirect(url_for('login'))
 
     return render_template('dashboard.html', equipment=filtered_equipment, user=user)
 
@@ -369,7 +367,18 @@ def login():
         if user:
             session['user'] = user  # store user data in session
             flash('Login successful!', 'success')
-            return redirect(url_for('show_dashboard'))
+
+            role = user.get('role', '').lower()
+
+            if role == 'admin':
+                return redirect(url_for('admin_dashboard'))
+            elif role == 'property manager':
+                return redirect(url_for('property_manager_dashboard'))
+            elif role == 'contractor':
+                return redirect(url_for('contractor_dashboard'))
+            else:
+                # fallback in case of an unexpected role
+                return redirect(url_for('show_dashboard'))
         else:
             flash('Invalid email or password.', 'danger')
     return render_template('login.html')
@@ -406,9 +415,10 @@ def register():
 @app.route('/admin-dashboard')
 def admin_dashboard():
     if 'user' not in session or session['user']['role'] != 'Admin':
-        flash("Access restricted to Admins only.", "danger")
+        flash("Unauthorized access", "danger")
         return redirect(url_for('login'))
     return render_template('admin_dashboard.html')
+
 
 @app.route('/admin/users')
 def manage_users():
@@ -416,11 +426,13 @@ def manage_users():
         return abort(403)
     return render_template('manage_users.html')
 
+
 @app.route('/admin/clients')
 def manage_clients():
     if 'user' not in session or session['user']['role'] != 'Admin':
         return abort(403)
     return render_template('manage_clients.html')
+
 
 @app.route('/admin/reports')
 def admin_reports():
@@ -428,11 +440,120 @@ def admin_reports():
         return abort(403)
     return render_template('admin_reports.html')
 
+
 @app.route('/admin/alerts')
 def admin_alerts():
     if 'user' not in session or session['user']['role'] != 'Admin':
         return abort(403)
-    return render_template('admin_alerts.html')
+    
+    missed_alerts = get_missed_inspections()
+    return render_template('admin_alerts.html', missed_alerts=missed_alerts)
+
+
+@app.route('/property-manager-dashboard')
+def property_manager_dashboard():
+    if session['user']['role'] != 'Property Manager':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    username = session['user']['username']
+    assigned_clients = get_clients_for_manager(username)
+    equipment = [eq for eq in load_equipment() if eq.get('client') in assigned_clients]
+
+    return render_template('property_manager_dashboard.html', equipment=equipment)
+
+@app.route('/contractor-dashboard')
+def contractor_dashboard():
+    if 'user' not in session or session['user']['role'] != 'Contractor':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    contractor_name = session['user']['company']
+    logs = []
+
+    if os.path.exists(LOG_CSV):
+        with open(LOG_CSV, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if f"Contractor: {contractor_name}" in row['inspector_pin']:
+                    logs.append(row)
+
+    return render_template('contractor_dashboard.html', company=contractor_name, logs=logs) 
+
+def get_clients_for_manager(manager_email):
+    clients = []
+    if os.path.exists('assignments.csv'):
+        with open('assignments.csv', newline='') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row['manager_email'].strip().lower() == manager_email.strip().lower():
+                    clients.append(row['client_name'].strip())
+    return clients
+
+def get_missed_inspections():
+    missed_alerts = []
+    today = datetime.today().date()
+
+    if os.path.exists(LOG_CSV):
+        with open(LOG_CSV, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row['functional'].startswith("Next Maintenance:"):
+                    try:
+                        next_date = datetime.strptime(row['functional'].replace("Next Maintenance:", "").strip(), '%Y-%m-%d').date()
+                        if next_date < today:
+                            missed_alerts.append(row)
+                    except ValueError:
+                        continue  # Skip badly formatted dates
+    return missed_alerts
+
+def get_upcoming_maintenance_for_pm(pm_username):
+    upcoming = []
+    today = datetime.today().date()
+    seen_equipment = set()
+
+    if os.path.exists(LOG_CSV):
+        with open(LOG_CSV, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                eq_id = row['equipment_id']
+                created_by = get_equipment_by_id(eq_id).get('created_by', '')
+                
+                if row['functional'].startswith("Next Maintenance:") and eq_id not in seen_equipment:
+                    if created_by == pm_username:
+                        try:
+                            next_date = datetime.strptime(
+                                row['functional'].replace("Next Maintenance:", "").strip(), '%Y-%m-%d'
+                            ).date()
+                            if next_date >= today:
+                                upcoming.append({
+                                    'equipment_id': eq_id,
+                                    'client': row['client'],
+                                    'name': row['name'],
+                                    'next_date': next_date,
+                                    'inspector': row['inspector_pin'],
+                                })
+                                seen_equipment.add(eq_id)
+                        except ValueError:
+                            continue
+    return sorted(upcoming, key=lambda x: x['next_date'])
+
+@app.route('/admin/maintenance-planner')
+def admin_maintenance_planner():
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        return abort(403)
+    
+    upcoming_maintenance = get_upcoming_maintenance()
+    return render_template('admin_maintenance_planner.html', maintenance=upcoming_maintenance)
+
+@app.route('/pm/maintenance-planner')
+def property_manager_maintenance_planner():
+    if 'user' not in session or session['user']['role'] != 'Property Manager':
+        return abort(403)
+
+    username = session['user']['username']
+    maintenance = get_upcoming_maintenance_for_pm(username)
+    return render_template('pm_maintenance_planner.html', maintenance=maintenance)
 
 if __name__ == '__main__':
     app.run(debug=True)
