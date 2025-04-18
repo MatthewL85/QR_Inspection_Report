@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="admin-dashboard-container">
+    <h2>👤 Admin Dashboard</h2>
+    <p>Welcome, {{ session['user']['username'] }} ({{ session['user']['company'] }})</p>
+
+    <div class="dashboard-grid">
+
+        <a href="{{ url_for('manage_users') }}" class="dashboard-tile">
+            <h3>👥 Manage Users</h3>
+            <p>Create, edit, or remove user accounts, assign roles.</p>
+        </a>
+
+        <a href="{{ url_for('manage_clients') }}" class="dashboard-tile">
+            <h3>🏢 Manage Clients</h3>
+            <p>View clients and assign them to different managers.</p>
+        </a>
+
+        <a href="{{ url_for('admin_reports') }}" class="dashboard-tile">
+            <h3>📄 New Reports</h3>
+            <p>View recently generated inspection reports from all users.</p>
+        </a>
+
+        <a href="{{ url_for('admin_alerts') }}" class="dashboard-tile">
+            <h3>🚨 Missed Inspection Alerts</h3>
+            <p>Highlight overdue inspections as per the PPM schedule.</p>
+        </a>
+
+        <a href="{{ url_for('admin_maintenance_planner') }}" class="dashboard-tile">
+            <h3>🛠 Maintenance Planner</h3>
+            <p>Generate or view upcoming maintenance tasks by contractor schedule.</p>
+        </a>
+
+    </div>
+</div>
+{% endblock %}

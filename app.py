@@ -1,5 +1,5 @@
 from auth import create_user, authenticate_user, user_exists
-from flask import Flask, render_template, request, redirect, url_for, send_file, session, flash
+from flask import Flask, render_template, request, redirect, url_for, send_file, session, flash, abort
 import csv
 import os
 import qrcode
@@ -34,6 +34,8 @@ def load_equipment():
 def get_equipment_by_id(equipment_id):
     for eq in load_equipment():
         if eq['id'] == equipment_id:
+            if 'created_by' not in eq:
+                eq['created_by'] = 'Unknown'
             return eq
     return None
 
@@ -58,7 +60,22 @@ def show_dashboard():
     if 'user' not in session:
         flash("Please log in to access the dashboard.", "warning")
         return redirect(url_for('login'))
-    return render_template('dashboard.html')
+
+    user = session['user']
+    role = user.get('role')
+    username = user.get('username')
+    company = user.get('company')
+
+    equipment = load_equipment()
+
+    if role == 'Property Manager':
+        # Show only equipment associated with this Property Manager
+        filtered_equipment = [eq for eq in equipment if eq.get('created_by') == username]
+    else:
+        # Show all equipment for Contractors/Admins
+        filtered_equipment = equipment
+
+    return render_template('dashboard.html', equipment=filtered_equipment, user=user)
 
 @app.route('/generate', methods=['GET', 'POST'])
 def generate():
@@ -77,8 +94,9 @@ def generate():
         with open(DATA_FILE, 'a', newline='') as file:
             writer = csv.writer(file)
             if not file_exists:
-                writer.writerow(['id', 'client', 'name', 'location', 'model', 'age', 'last_inspection', 'pin'])
-            writer.writerow([eq_id, client, name, location, model, age, last_inspection, pin])
+               writer.writerow(['id', 'client', 'name', 'location', 'model', 'age', 'last_inspection', 'pin', 'created_by'])
+                created_by = session['user']['username'] if 'user' in session else 'Unknown'
+                writer.writerow([eq_id, client, name, location, model, age, last_inspection, pin, created_by])
 
             print("Saved to CSV:", eq_id, name, pin)
             print("CSV Path:", os.path.abspath(DATA_FILE))
@@ -385,6 +403,36 @@ def register():
 
     return render_template('register.html')
 
+@app.route('/admin-dashboard')
+def admin_dashboard():
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        flash("Access restricted to Admins only.", "danger")
+        return redirect(url_for('login'))
+    return render_template('admin_dashboard.html')
+
+@app.route('/admin/users')
+def manage_users():
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        return abort(403)
+    return render_template('manage_users.html')
+
+@app.route('/admin/clients')
+def manage_clients():
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        return abort(403)
+    return render_template('manage_clients.html')
+
+@app.route('/admin/reports')
+def admin_reports():
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        return abort(403)
+    return render_template('admin_reports.html')
+
+@app.route('/admin/alerts')
+def admin_alerts():
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        return abort(403)
+    return render_template('admin_alerts.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
