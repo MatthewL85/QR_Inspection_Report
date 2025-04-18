@@ -95,8 +95,8 @@ def generate():
             writer = csv.writer(file)
             if not file_exists:
                writer.writerow(['id', 'client', 'name', 'location', 'model', 'age', 'last_inspection', 'pin', 'created_by'])
-                created_by = session['user']['username'] if 'user' in session else 'Unknown'
-                writer.writerow([eq_id, client, name, location, model, age, last_inspection, pin, created_by])
+            created_by = session['user']['username'] if 'user' in session else 'Unknown'
+            writer.writerow([eq_id, client, name, location, model, age, last_inspection, pin, created_by])
 
             print("Saved to CSV:", eq_id, name, pin)
             print("CSV Path:", os.path.abspath(DATA_FILE))
