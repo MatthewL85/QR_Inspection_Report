@@ -366,15 +366,17 @@ def login():
         user = authenticate_user(email, password)
 
         if user:
-            # Normalize and store user session
-            user['role'] = user.get('role', '').strip().title()  # Ensures consistent formatting
+            # Normalize role formatting and store session
+            user['role'] = user.get('role', '').strip().title()
             session['user'] = user
             flash('Login successful!', 'success')
 
             role = user['role']
 
             if role == 'Admin':
-                return redirect(url_for('admin_dashboard'))
+                return redirect(url_for('admin_management_dashboard'))
+            elif role == 'Admin Contractor':
+                return redirect(url_for('admin_contractor_dashboard'))
             elif role == 'Property Manager':
                 return redirect(url_for('property_manager_dashboard'))
             elif role == 'Contractor':
@@ -568,9 +570,15 @@ def register_company(company_type):
             flash("An account with that email already exists.", "warning")
             return render_template('register_company.html', company_type=company_type)
 
-        # 🔥 Remove manual hashing — let create_user handle it
-        create_user(username=admin_email, password=password, role='Admin', company=company_name)
+        hashed = generate_password_hash(password)
 
+        # 👇 Assign a different admin role based on company_type
+        if company_type.lower() == 'contractor':
+            role = 'Admin Contractor'
+        else:
+            role = 'Admin'
+
+        create_user(username=admin_email, password=hashed, role=role, company=company_name)
         flash(f"{company_type} registered successfully! You can now log in.", "success")
         return redirect(url_for('login'))
 
