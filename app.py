@@ -432,12 +432,6 @@ def admin_contractor_dashboard():
         return redirect(url_for('login'))
     return render_template('admin_contractor_dashboard.html')
 
-@app.route('/admin/users')
-def manage_users():
-    if 'user' not in session or session['user']['role'] != 'Admin':
-        return abort(403)
-    return render_template('manage_users.html')
-
 
 @app.route('/admin/clients')
 def manage_clients():
@@ -603,6 +597,104 @@ def register_company(company_type):
         return redirect(url_for('login'))
 
     return render_template('register_company.html', company_type=company_type)
+
+@app.route('/admin/users')
+def manage_users():
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    company = session['user']['company']
+    users = []
+
+    if os.path.exists(USER_CSV):
+        with open(USER_CSV, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row['company'].strip().lower() == company.strip().lower():
+                    users.append(row)
+
+    return render_template('manage_users.html', users=users)
+
+def load_all_users():
+    users = []
+    if os.path.exists('users.csv'):
+        with open('users.csv', newline='') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                users.append(row)
+    return users
+
+@app.route('/admin/delete-user/<username>', methods=['GET'])
+def delete_user(username):
+    if 'user' not in session or session['user']['role'] not in ['Admin', 'Admin Contractor']:
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    users = []
+    user_deleted = False
+    current_company = session['user']['company'].strip().lower()
+
+    if os.path.exists('users.csv'):
+        with open('users.csv', newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row['username'] != username:
+                    users.append(row)
+                elif row['username'] == username and row['company'].strip().lower() == current_company:
+                    user_deleted = True
+
+        if user_deleted:
+            with open('users.csv', 'w', newline='') as csvfile:
+                fieldnames = ['username', 'password', 'role', 'company', 'pin', 'name_or_company']
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(users)
+
+            flash(f"User '{username}' deleted successfully.", "success")
+        else:
+            flash("You do not have permission to delete this user.", "danger")
+
+    return redirect(url_for('manage_users'))
+
+
+@app.route('/admin/edit-user/<email>', methods=['GET', 'POST'])
+def edit_user(email):
+    if 'user' not in session or session['user']['role'] not in ['Admin', 'Admin Contractor']:
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    users = load_all_users()
+    user_to_edit = None
+    for u in users:
+        if u['username'] == email:
+            user_to_edit = u
+            break
+
+    if not user_to_edit:
+        flash("User not found.", "danger")
+        return redirect(url_for('manage_users'))
+
+    if request.method == 'POST':
+        new_role = request.form['role']
+        new_company = request.form['company']
+
+        for u in users:
+            if u['username'] == email:
+                u['role'] = new_role
+                u['company'] = new_company
+                break
+
+        with open('users.csv', 'w', newline='') as csvfile:
+            fieldnames = ['username', 'password', 'role', 'company', 'pin', 'name_or_company']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(users)
+
+        flash("User updated successfully.", "success")
+        return redirect(url_for('manage_users'))
+
+    return render_template('edit_user.html', user=user_to_edit)
 
 if __name__ == '__main__':
     app.run(debug=True)
