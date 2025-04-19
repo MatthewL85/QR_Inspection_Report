@@ -12,6 +12,8 @@ app.secret_key = 'your_secret_key_here'  # Replace with a secure key
 DATA_FILE = 'equipment.csv'
 LOG_CSV = 'inspection_logs.csv'
 QR_FOLDER = 'static/qrcodes'
+USER_CSV = 'users.csv'
+
 
 os.makedirs(QR_FOLDER, exist_ok=True)
 
@@ -695,6 +697,35 @@ def edit_user(email):
         return redirect(url_for('manage_users'))
 
     return render_template('edit_user.html', user=user_to_edit)
+
+@app.route('/admin/add-user', methods=['GET', 'POST'])
+def add_user():
+    if 'user' not in session or session['user']['role'] not in ['Admin', 'Admin Contractor']:
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
+        role = request.form.get('role', '').strip()
+        pin = request.form.get('pin', '').strip()
+        name_or_company = request.form.get('name_or_company', '').strip()
+        company = session['user']['company']
+
+        if password != confirm_password:
+            flash("Passwords do not match.", "danger")
+            return render_template('add_user.html')
+
+        if user_exists(username):
+            flash("User already exists.", "warning")
+            return render_template('add_user.html')
+
+        create_user(username=username, password=password, role=role, pin=pin, company=company, name_or_company=name_or_company)
+        flash("User added successfully!", "success")
+        return redirect(url_for('manage_users'))
+
+    return render_template('add_user.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
