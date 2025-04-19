@@ -4,7 +4,7 @@
   <h1>Admin Contractor Dashboard</h1>
   <p>Welcome, {{ session['user']['username'] }} ({{ session['user']['company'] }})</p>
   <div style="text-align: right; margin-bottom: 10px;">
-    <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
   </div>
 
   <div class="dashboard-grid">
