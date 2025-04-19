@@ -579,6 +579,8 @@ def register_company(company_type):
         password = request.form['password']
         confirm_password = request.form['confirm_password']
 
+        print("Submitted:", company_name, admin_email, password, confirm_password)
+
         if password != confirm_password:
             flash("Passwords do not match.", "danger")
             return render_template('register_company.html', company_type=company_type)
