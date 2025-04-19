@@ -367,17 +367,18 @@ def login():
         user = authenticate_user(email, password)
 
         if user:
-            # Normalize role formatting and store session
+            # Normalize role casing
             user['role'] = user.get('role', '').strip().title()
             session['user'] = user
             flash('Login successful!', 'success')
 
             role = user['role']
 
-            if role == 'Admin':
-                return redirect(url_for('admin_management_dashboard'))
-            elif role == 'Admin Contractor':
+            # Direct to specific dashboards
+            if role == 'Admin Contractor':
                 return redirect(url_for('admin_contractor_dashboard'))
+            elif role == 'Admin':
+                return redirect(url_for('admin_management_dashboard'))
             elif role == 'Property Manager':
                 return redirect(url_for('property_manager_dashboard'))
             elif role == 'Contractor':
@@ -415,6 +416,21 @@ def admin_dashboard():
         return render_template('admin_contractor_dashboard.html')
     else:
         return render_template('admin_management_dashboard.html')
+
+@app.route('/admin-management-dashboard')
+def admin_management_dashboard():
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+    return render_template('admin_management_dashboard.html')
+
+
+@app.route('/admin-contractor-dashboard')
+def admin_contractor_dashboard():
+    if 'user' not in session or session['user']['role'] != 'Admin Contractor':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+    return render_template('admin_contractor_dashboard.html')
 
 @app.route('/admin/users')
 def manage_users():
