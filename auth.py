@@ -2,35 +2,45 @@ import csv
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
 
-USERS_FILE = 'users_secure.csv'
+USER_CSV = 'users.csv'
 
-def create_user(username, password, role, company):
-    if not os.path.exists(USERS_FILE):
-        with open(USERS_FILE, 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(['username', 'password', 'role', 'company'])
+def user_exists(email):
+    if not os.path.exists(USER_CSV):
+        return False
+    with open(USER_CSV, newline='') as f:
+        reader = csv.DictReader(f)
+        return any(row['username'].lower() == email.lower() for row in reader)
 
-    hashed_pw = generate_password_hash(password)
-    with open(USERS_FILE, 'a', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow([username, hashed_pw, role, company])
+def create_user(username, password, role, company, pin='', name_or_company=''):
+    hashed_password = generate_password_hash(password)
+    file_exists = os.path.isfile(USER_CSV)
+    with open(USER_CSV, 'a', newline='') as csvfile:
+        fieldnames = ['username', 'password', 'role', 'company', 'pin', 'name_or_company']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow({
+            'username': username,
+            'password': hashed_password,
+            'role': role,
+            'company': company,
+            'pin': pin,
+            'name_or_company': name_or_company or company
+        })
 
-def authenticate_user(username, password):
-    if not os.path.exists(USERS_FILE):
+def authenticate_user(email, password):
+    if not os.path.exists(USER_CSV):
         return None
-    with open(USERS_FILE, newline='') as f:
+    with open(USER_CSV, newline='') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            if row['username'] == username and check_password_hash(row['password'], password):
-                return {'username': username, 'role': row['role'], 'company': row['company']}
+            if row['username'].lower() == email.lower() and check_password_hash(row['password'], password):
+                return {
+                    'username': row['username'],
+                    'role': row['role'],
+                    'company': row['company'],
+                    'pin': row.get('pin', ''),
+                    'name_or_company': row.get('name_or_company', row['company'])
+                }
     return None
 
-def user_exists(username):
-    if not os.path.exists(USERS_FILE):
-        return False
-    with open(USERS_FILE, newline='') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            if row['username'] == username:
-                return True
-    return False

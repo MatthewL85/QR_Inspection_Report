@@ -1,0 +1,4 @@
+username,password,role,company,pin,name_or_company
+admin@example.com,admin123,Admin,Alpha Management,1234,Alpha Management
+pm1@example.com,pm123,Property Manager,Alpha Management,5678,John Doe
+contractor@example.com,contractor123,Contractor,FireTech Ltd,9012,FireTech Ltd

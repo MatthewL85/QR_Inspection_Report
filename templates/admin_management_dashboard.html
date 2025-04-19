@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="dashboard-container">
+  <h1>Admin Dashboard (Management)</h1>
+  <p>Welcome, {{ session['user']['username'] }} from {{ session['user']['company'] }}</p>
+  <a href="{{ url_for('logout') }}">Logout</a>
+
+  <div class="dashboard-grid">
+    <a href="{{ url_for('generate') }}" class="dashboard-tile">
+      <h3>➕ Add Equipment</h3>
+      <p>Create QR codes and assign equipment to clients.</p>
+    </a>
+    <a href="{{ url_for('view_qrcodes') }}" class="dashboard-tile">
+      <h3>📦 View QR Codes</h3>
+      <p>Access all QR codes for your company’s clients.</p>
+    </a>
+    <a href="{{ url_for('view_logs') }}" class="dashboard-tile">
+      <h3>🧾 All Logs</h3>
+      <p>See inspection logs across all your managed clients.</p>
+    </a>
+    <a href="{{ url_for('admin_alerts') }}" class="dashboard-tile">
+      <h3>⚠️ Missed Inspections</h3>
+      <p>View overdue inspections based on PPM.</p>
+    </a>
+    <a href="{{ url_for('admin_maintenance_planner') }}" class="dashboard-tile">
+      <h3>🛠️ Maintenance Planner</h3>
+      <p>Plan and schedule upcoming inspections.</p>
+    </a>
+    <a href="{{ url_for('manage_users') }}" class="dashboard-tile">
+      <h3>👥 Manage Users</h3>
+      <p>Add Property Managers or edit access levels.</p>
+    </a>
+    <a href="{{ url_for('manage_clients') }}" class="dashboard-tile">
+      <h3>🏢 Manage Clients</h3>
+      <p>Assign or transfer clients across managers.</p>
+    </a>
+  </div>
+</div>
+{% endblock %}

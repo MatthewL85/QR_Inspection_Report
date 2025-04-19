@@ -361,26 +361,31 @@ def report_by_equipment(equipment_id):
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
+        email = request.form['email'].strip()
         password = request.form['password']
         user = authenticate_user(email, password)
+
         if user:
-            session['user'] = user  # store user data in session
+            # Normalize and store user session
+            user['role'] = user.get('role', '').strip().title()  # Ensures consistent formatting
+            session['user'] = user
             flash('Login successful!', 'success')
 
-            role = user.get('role', '').lower()
+            role = user['role']
 
-            if role == 'admin':
+            if role == 'Admin':
                 return redirect(url_for('admin_dashboard'))
-            elif role == 'property manager':
+            elif role == 'Property Manager':
                 return redirect(url_for('property_manager_dashboard'))
-            elif role == 'contractor':
+            elif role == 'Contractor':
                 return redirect(url_for('contractor_dashboard'))
             else:
-                # fallback in case of an unexpected role
-                return redirect(url_for('show_dashboard'))
+                flash("Unknown role. Please contact your administrator.", "danger")
+                return redirect(url_for('login'))
+
         else:
             flash('Invalid email or password.', 'danger')
+
     return render_template('login.html')
 
 @app.route('/logout')
@@ -389,36 +394,23 @@ def logout():
     flash('Logged out successfully.', 'info')
     return redirect(url_for('login'))
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        confirm_password = request.form['confirm_password']
-        role = request.form['role']
-        name_or_company = request.form['name_or_company']
-
-        if password != confirm_password:
-            flash('Passwords do not match.', 'danger')
-            return render_template('register.html')
-
-        if user_exists(email):
-            flash('An account with that email already exists.', 'warning')
-            return render_template('register.html')
-
-        create_user(username=email, password=password, role=role, company=name_or_company)
-        flash('Registration successful! Please log in.', 'success')
-        return redirect(url_for('login'))
-
-    return render_template('register.html')
+@app.route('/register')
+def legacy_register_redirect():
+    flash("Please begin by selecting your company type.", "info")
+    return redirect(url_for('onboard'))
 
 @app.route('/admin-dashboard')
 def admin_dashboard():
     if 'user' not in session or session['user']['role'] != 'Admin':
         flash("Unauthorized access", "danger")
         return redirect(url_for('login'))
-    return render_template('admin_dashboard.html')
 
+    company_type = session['user'].get('company_type', 'Management')  # default fallback
+
+    if company_type == 'Contractor':
+        return render_template('admin_contractor_dashboard.html')
+    else:
+        return render_template('admin_management_dashboard.html')
 
 @app.route('/admin/users')
 def manage_users():
@@ -478,7 +470,7 @@ def contractor_dashboard():
                 if f"Contractor: {contractor_name}" in row['inspector_pin']:
                     logs.append(row)
 
-    return render_template('contractor_dashboard.html', company=contractor_name, logs=logs) 
+    return render_template('contractor_dashboard.html', company=contractor_name, logs=logs)
 
 def get_clients_for_manager(manager_email):
     clients = []
@@ -575,8 +567,9 @@ def register_company(company_type):
             flash("An account with that email already exists.", "warning")
             return render_template('register_company.html', company_type=company_type)
 
-        # Create the initial admin user
+        # 🔥 Remove manual hashing — let create_user handle it
         create_user(username=admin_email, password=password, role='Admin', company=company_name)
+
         flash(f"{company_type} registered successfully! You can now log in.", "success")
         return redirect(url_for('login'))
 
