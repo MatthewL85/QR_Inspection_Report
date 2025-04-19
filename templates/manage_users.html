@@ -3,6 +3,10 @@
 <div class="container mt-5">
   <h2 class="mb-4">👥 Manage Users</h2>
 
+  <div class="mb-3 text-end">
+    <a href="{{ url_for('add_user') }}" class="btn btn-success">➕ Add New User</a>
+  </div>
+
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for category, message in messages %}
