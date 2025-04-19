@@ -602,18 +602,24 @@ def register_company(company_type):
 
 @app.route('/admin/users')
 def manage_users():
-    if 'user' not in session or session['user']['role'] != 'Admin':
+    if 'user' not in session or session['user']['role'] not in ['Admin', 'Admin Contractor']:
         flash("Unauthorized access", "danger")
         return redirect(url_for('login'))
 
-    company = session['user']['company']
+    company = session['user']['company'].strip().lower()
+    role = session['user']['role']
     users = []
 
     if os.path.exists(USER_CSV):
         with open(USER_CSV, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                if row['company'].strip().lower() == company.strip().lower():
+                same_company = row['company'].strip().lower() == company
+                is_contractor_only = row['role'].strip() == 'Contractor'
+
+                if role == 'Admin' and same_company:
+                    users.append(row)
+                elif role == 'Admin Contractor' and same_company and is_contractor_only:
                     users.append(row)
 
     return render_template('manage_users.html', users=users)
@@ -636,18 +642,21 @@ def delete_user(username):
     users = []
     user_deleted = False
     current_company = session['user']['company'].strip().lower()
+    current_role = session['user']['role']
 
-    if os.path.exists('users.csv'):
-        with open('users.csv', newline='') as csvfile:
+    if os.path.exists(USER_CSV):
+        with open(USER_CSV, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                if row['username'] != username:
-                    users.append(row)
-                elif row['username'] == username and row['company'].strip().lower() == current_company:
-                    user_deleted = True
+                if row['username'] == username:
+                    if row['company'].strip().lower() == current_company:
+                        if current_role == 'Admin' or (current_role == 'Admin Contractor' and row['role'] == 'Contractor'):
+                            user_deleted = True
+                            continue  # Skip this user (delete)
+                users.append(row)
 
         if user_deleted:
-            with open('users.csv', 'w', newline='') as csvfile:
+            with open(USER_CSV, 'w', newline='') as csvfile:
                 fieldnames = ['username', 'password', 'role', 'company', 'pin', 'name_or_company']
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
@@ -659,8 +668,7 @@ def delete_user(username):
 
     return redirect(url_for('manage_users'))
 
-
-@app.route('/admin/edit-user/<email>', methods=['GET', 'POST'])
+@app.route('/admin/users/edit/<email>', methods=['GET', 'POST'])
 def edit_user(email):
     if 'user' not in session or session['user']['role'] not in ['Admin', 'Admin Contractor']:
         flash("Unauthorized access", "danger")
@@ -677,9 +685,20 @@ def edit_user(email):
         flash("User not found.", "danger")
         return redirect(url_for('manage_users'))
 
+    # Restrict Contractor Admin from editing non-contractor users
+    if session['user']['role'] == 'Admin Contractor':
+        if user_to_edit['role'] != 'Contractor' or user_to_edit['company'].lower() != session['user']['company'].lower():
+            flash("You are not allowed to edit this user.", "danger")
+            return redirect(url_for('manage_users'))
+
     if request.method == 'POST':
         new_role = request.form['role']
         new_company = request.form['company']
+
+        # Restrict Contractor Admin from changing role to non-contractor
+        if session['user']['role'] == 'Admin Contractor' and new_role != 'Contractor':
+            flash("You can only assign Contractor role.", "danger")
+            return redirect(url_for('manage_users'))
 
         for u in users:
             if u['username'] == email:
@@ -687,7 +706,7 @@ def edit_user(email):
                 u['company'] = new_company
                 break
 
-        with open('users.csv', 'w', newline='') as csvfile:
+        with open(USER_CSV, 'w', newline='') as csvfile:
             fieldnames = ['username', 'password', 'role', 'company', 'pin', 'name_or_company']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
@@ -705,13 +724,18 @@ def add_user():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        password = request.form.get('password', '').strip()
-        confirm_password = request.form.get('confirm_password', '').strip()
-        role = request.form.get('role', '').strip()
-        pin = request.form.get('pin', '').strip()
-        name_or_company = request.form.get('name_or_company', '').strip()
+        username = request.form['username'].strip()
+        password = request.form['password'].strip()
+        confirm_password = request.form['confirm_password'].strip()
+        role = request.form['role'].strip()
+        pin = request.form['pin'].strip()
+        name_or_company = request.form['name_or_company'].strip()
         company = session['user']['company']
+
+        # Restrict Admin Contractors to only creating Contractor users
+        if session['user']['role'] == 'Admin Contractor' and role != 'Contractor':
+            flash("You are only allowed to create Contractor users.", "danger")
+            return render_template('add_user.html')
 
         if password != confirm_password:
             flash("Passwords do not match.", "danger")
