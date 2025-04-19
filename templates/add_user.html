@@ -30,14 +30,10 @@
     <div class="mb-3">
       <label for="role" class="form-label">Role</label>
       <select class="form-select" name="role" required>
-        <option value="Property Manager">Property Manager</option>
-        <option value="Contractor">Contractor</option>
+        {% for role in allowed_roles %}
+          <option value="{{ role }}">{{ role }}</option>
+        {% endfor %}
       </select>
-    </div>
-
-    <div class="mb-3">
-      <label for="company" class="form-label">Company</label>
-      <input type="text" class="form-control" name="company" required>
     </div>
 
     <div class="mb-3">
