@@ -589,15 +589,16 @@ def register_company(company_type):
             flash("An account with that email already exists.", "warning")
             return render_template('register_company.html', company_type=company_type)
 
-        hashed = generate_password_hash(password)
-
         # 👇 Assign a different admin role based on company_type
         if company_type.lower() == 'contractor':
             role = 'Admin Contractor'
         else:
             role = 'Admin'
 
-        create_user(username=admin_email, password=hashed, role=role, company=company_name)
+        # ❌ Remove generate_password_hash here
+        # ✅ Let create_user handle the hashing
+        create_user(username=admin_email, password=password, role=role, company=company_name)
+
         flash(f"{company_type} registered successfully! You can now log in.", "success")
         return redirect(url_for('login'))
 
