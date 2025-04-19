@@ -405,9 +405,10 @@ def admin_dashboard():
         flash("Unauthorized access", "danger")
         return redirect(url_for('login'))
 
-    company_type = session['user'].get('company_type', 'Management')  # default fallback
+    company = session['user'].get('company', '').lower()
 
-    if company_type == 'Contractor':
+    # Simple keyword check to determine company type
+    if any(keyword in company for keyword in ['fire', 'tech', 'hvac', 'plumb', 'contractor', 'lighting']):
         return render_template('admin_contractor_dashboard.html')
     else:
         return render_template('admin_management_dashboard.html')
