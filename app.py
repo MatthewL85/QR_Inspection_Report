@@ -758,5 +758,17 @@ def add_user():
 
     return render_template('add_user.html', allowed_roles=allowed_roles)
 
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form['email'].strip()
+        if not user_exists(email):
+            flash("No account found with that email.", "danger")
+        else:
+            flash("If your email is registered, a password reset link will be sent. (Feature coming soon!)", "info")
+            # Later: generate and send email with reset token
+
+    return render_template('forgot_password.html')
+
 if __name__ == '__main__':
     app.run(debug=True)
