@@ -1,7 +1,10 @@
 from auth import create_user, authenticate_user, user_exists
 from flask import Flask, render_template, request, redirect, url_for, send_file, session, flash, abort
 from werkzeug.security import generate_password_hash
-import csv, os, qrcode, json
+import csv
+import os
+import qrcode
+import json
 from datetime import datetime
 
 app = Flask(__name__)
