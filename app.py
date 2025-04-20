@@ -770,5 +770,86 @@ def forgot_password():
 
     return render_template('forgot_password.html')
 
+def load_clients():
+    clients = []
+    with open('clients.csv', 'r', newline='', encoding='utf-8') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            client = {
+                'id': row['id'],
+                'name': row['name'],
+                'address': row['address'],
+                'contacts': []
+            }
+            # Dynamically load contact fields
+            i = 1
+            while f'contact{i}_name' in row and row[f'contact{i}_name']:
+                contact = {
+                    'name': row[f'contact{i}_name'],
+                    'email': row.get(f'contact{i}_email', ''),
+                    'phone': row.get(f'contact{i}_phone', '')
+                }
+                client['contacts'].append(contact)
+                i += 1
+            clients.append(client)
+    return clients
+
+@app.route('/report/<client_id>')
+def report_client(client_id):
+    clients = load_clients()
+    client = next((c for c in clients if c['id'] == client_id), None)
+    if not client:
+        return "Client not found", 404
+    return render_template('report_client.html', client=client)
+
+@app.route('/add-client', methods=['GET', 'POST'])
+def add_client():
+    if request.method == 'POST':
+        # Generate a new ID (can be improved later with UUID or auto-increment)
+        new_id = str(uuid.uuid4())  # import uuid at the top
+
+        name = request.form['name']
+        address = request.form['address']
+
+        contacts = []
+        for i in range(1, 4):
+            contact_name = request.form.get(f'contact{i}_name', '').strip()
+            contact_email = request.form.get(f'contact{i}_email', '').strip()
+            contact_phone = request.form.get(f'contact{i}_phone', '').strip()
+            if contact_name:  # Only include if there's a name
+                contacts.append({
+                    'name': contact_name,
+                    'email': contact_email,
+                    'phone': contact_phone
+                })
+
+        # Prepare row
+        row = {
+            'id': new_id,
+            'name': name,
+            'address': address
+        }
+        for idx, contact in enumerate(contacts, 1):
+            row[f'contact{idx}_name'] = contact['name']
+            row[f'contact{idx}_email'] = contact['email']
+            row[f'contact{idx}_phone'] = contact['phone']
+
+        # Get all fieldnames including dynamic contact fields
+        fieldnames = ['id', 'name', 'address']
+        for i in range(1, 4):
+            fieldnames += [f'contact{i}_name', f'contact{i}_email', f'contact{i}_phone']
+
+        # Save to clients.csv
+        file_exists = os.path.isfile('clients.csv')
+        with open('clients.csv', 'a', newline='', encoding='utf-8') as file:
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow(row)
+
+        return redirect(url_for('show_dashboard'))  # Adjust as needed
+
+    return render_template('add_client.html')
+
 if __name__ == '__main__':
     app.run(debug=True)

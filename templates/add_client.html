@@ -1,0 +1,35 @@
+<!-- templates/add_client.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Client</title>
+</head>
+<body>
+    <h1>Add New Client</h1>
+    <form method="POST" action="{{ url_for('add_client') }}">
+        <label>Client Name:</label><br>
+        <input type="text" name="name" required><br><br>
+
+        <label>Address:</label><br>
+        <input type="text" name="address" required><br><br>
+
+        <h3>Contacts</h3>
+
+        {% for i in range(1, 4) %}
+            <fieldset>
+                <legend>Contact {{ i }}</legend>
+                <label>Name:</label><br>
+                <input type="text" name="contact{{ i }}_name"><br>
+                <label>Email:</label><br>
+                <input type="email" name="contact{{ i }}_email"><br>
+                <label>Phone:</label><br>
+                <input type="text" name="contact{{ i }}_phone"><br>
+            </fieldset>
+            <br>
+        {% endfor %}
+
+        <button type="submit">Add Client</button>
+    </form>
+</body>
+</html>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Inspection Summary - {{ client }}</title>
+    <title>Inspection Summary - {{ client.name }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
         body {
@@ -50,9 +50,32 @@
 
 <header>
     <img src="{{ url_for('static', filename='logo.png') }}" alt="Client Logo">
-    <h1>Inspection Summary for {{ client }}</h1>
+    <h1>Inspection Summary for {{ client.name }}</h1>
 </header>
 
+<p><strong>Address:</strong> {{ client.address }}</p>
+
+<h3>Contacts:</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for contact in client.contacts %}
+        <tr>
+            <td>{{ contact.name }}</td>
+            <td>{{ contact.email }}</td>
+            <td>{{ contact.phone }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2 style="margin-top: 2em;">Inspection Logs</h2>
 <p>Total Inspections: {{ logs|length }}</p>
 
 <table>
