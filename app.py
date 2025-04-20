@@ -773,22 +773,18 @@ def load_clients():
     with open('clients.csv', 'r', newline='', encoding='utf-8') as file:
         reader = csv.DictReader(file)
         for row in reader:
+            try:
+                contacts = json.loads(row['contacts'].replace('""', '"'))
+            except json.JSONDecodeError:
+                contacts = []
+
             client = {
-                'id': row['id'],
-                'name': row['name'],
+                'name': row['client_name'],
                 'address': row['address'],
-                'contacts': []
+                'contacts': contacts,
+                'assigned_manager_email': row.get('assigned_manager_email', ''),
+                'company': row.get('company', '')
             }
-            # Dynamically load contact fields
-            i = 1
-            while f'contact{i}_name' in row and row[f'contact{i}_name']:
-                contact = {
-                    'name': row[f'contact{i}_name'],
-                    'email': row.get(f'contact{i}_email', ''),
-                    'phone': row.get(f'contact{i}_phone', '')
-                }
-                client['contacts'].append(contact)
-                i += 1
             clients.append(client)
     return clients
 
