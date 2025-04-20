@@ -723,6 +723,15 @@ def add_user():
         flash("Unauthorized access", "danger")
         return redirect(url_for('login'))
 
+    current_role = session['user']['role']
+    company = session['user']['company']
+
+    # Set allowed roles based on who is logged in
+    if current_role == 'Admin':
+        allowed_roles = ['Admin', 'Contractor', 'Property Manager']
+    else:
+        allowed_roles = ['Contractor']
+
     if request.method == 'POST':
         username = request.form['username'].strip()
         password = request.form['password'].strip()
@@ -730,26 +739,24 @@ def add_user():
         role = request.form['role'].strip()
         pin = request.form['pin'].strip()
         name_or_company = request.form['name_or_company'].strip()
-        company = session['user']['company']
 
-        # Restrict Admin Contractors to only creating Contractor users
-        if session['user']['role'] == 'Admin Contractor' and role != 'Contractor':
-            flash("You are only allowed to create Contractor users.", "danger")
-            return render_template('add_user.html')
+        if role not in allowed_roles:
+            flash("Invalid role selection.", "danger")
+            return render_template('add_user.html', allowed_roles=allowed_roles)
 
         if password != confirm_password:
             flash("Passwords do not match.", "danger")
-            return render_template('add_user.html')
+            return render_template('add_user.html', allowed_roles=allowed_roles)
 
         if user_exists(username):
             flash("User already exists.", "warning")
-            return render_template('add_user.html')
+            return render_template('add_user.html', allowed_roles=allowed_roles)
 
         create_user(username=username, password=password, role=role, pin=pin, company=company, name_or_company=name_or_company)
         flash("User added successfully!", "success")
         return redirect(url_for('manage_users'))
 
-    return render_template('add_user.html')
+    return render_template('add_user.html', allowed_roles=allowed_roles)
 
 if __name__ == '__main__':
     app.run(debug=True)

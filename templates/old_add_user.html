@@ -30,27 +30,23 @@
     <div class="mb-3">
       <label for="role" class="form-label">Role</label>
       <select class="form-select" name="role" required>
-        {% if session['user']['role'] == 'Admin' %}
-          <option value="Admin">Admin</option>
-          <option value="Contractor">Contractor</option>
-          <option value="Property Manager">Property Manager</option>
-        {% elif session['user']['role'] == 'Admin Contractor' %}
-          <option value="Contractor">Contractor</option>
-        {% endif %}
+        {% for role in allowed_roles %}
+          <option value="{{ role }}">{{ role }}</option>
+        {% endfor %}
       </select>
     </div>
 
     <div class="mb-3">
-      <label for="pin" class="form-label">PIN (For QR Inspection Access)</label>
-      <input type="text" class="form-control" id="pin" name="pin" maxlength="10">
+      <label for="pin" class="form-label">PIN (for QR inspections)</label>
+      <input type="text" class="form-control" name="pin">
     </div>
 
     <div class="mb-3">
-      <label for="name_or_company" class="form-label">Name or Company</label>
-      <input type="text" class="form-control" id="name_or_company" name="name_or_company" required>
+      <label for="name_or_company" class="form-label">Name / Company</label>
+      <input type="text" class="form-control" name="name_or_company">
     </div>
 
-    <button type="submit" class="btn btn-primary w-100">Add User</button>
+    <button type="submit" class="btn btn-success w-100">Add User</button>
   </form>
 </div>
 {% endblock %}
