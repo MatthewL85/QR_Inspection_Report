@@ -846,5 +846,10 @@ def add_client():
 
     return render_template('add_client.html')
 
+@app.route('/edit-client/<client_id>', methods=['GET', 'POST'])
+def edit_client(client_id):
+    clients = load_clients()
+    client = next((c for c in clients if c['name'] == client_id), None)
+
 if __name__ == '__main__':
     app.run(debug=True)
