@@ -851,5 +851,41 @@ def edit_client(client_id):
     clients = load_clients()
     client = next((c for c in clients if c['name'] == client_id), None)
 
+    if not client:
+        return "Client not found", 404
+
+    if request.method == 'POST':
+        client['name'] = request.form['name']
+        client['address'] = request.form['address']
+
+        contacts = []
+        for i in range(1, 4):
+            name = request.form.get(f'contact{i}_name', '').strip()
+            email = request.form.get(f'contact{i}_email', '').strip()
+            phone = request.form.get(f'contact{i}_phone', '').strip()
+            if name:
+                contacts.append({'name': name, 'email': email, 'phone': phone})
+
+        client['contacts'] = contacts
+
+        # Save back to CSV
+        with open('clients.csv', 'w', newline='', encoding='utf-8') as file:
+            fieldnames = ['client_name', 'address', 'contacts', 'assigned_manager_email', 'company']
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            writer.writeheader()
+            for c in clients:
+                row = {
+                    'client_name': c['name'],
+                    'address': c['address'],
+                    'contacts': json.dumps(c['contacts']),
+                    'assigned_manager_email': c.get('assigned_manager_email', ''),
+                    'company': c.get('company', '')
+                }
+                writer.writerow(row)
+
+        return redirect(url_for('manage_clients'))
+
+    return render_template('edit_client.html', client=client)
+
 if __name__ == '__main__':
     app.run(debug=True)

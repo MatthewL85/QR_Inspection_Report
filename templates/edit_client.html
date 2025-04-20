@@ -1,0 +1,40 @@
+<!-- templates/edit_client.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Client</title>
+</head>
+<body>
+    <h1>Edit Client: {{ client.name }}</h1>
+
+    <form method="POST">
+        <label>Client Name:</label><br>
+        <input type="text" name="name" value="{{ client.name }}" required><br><br>
+
+        <label>Address:</label><br>
+        <input type="text" name="address" value="{{ client.address }}" required><br><br>
+
+        <h3>Contacts</h3>
+        {% for i in range(3) %}
+        <fieldset>
+            <legend>Contact {{ i+1 }}</legend>
+            <label>Name:</label><br>
+            <input type="text" name="contact{{ i+1 }}_name" value="{{ client.contacts[i].name if client.contacts|length > i else '' }}"><br>
+
+            <label>Email:</label><br>
+            <input type="email" name="contact{{ i+1 }}_email" value="{{ client.contacts[i].email if client.contacts|length > i else '' }}"><br>
+
+            <label>Phone:</label><br>
+            <input type="text" name="contact{{ i+1 }}_phone" value="{{ client.contacts[i].phone if client.contacts|length > i else '' }}"><br>
+        </fieldset>
+        <br>
+        {% endfor %}
+
+        <button type="submit">Save Changes</button>
+    </form>
+
+    <br>
+    <a href="{{ url_for('manage_clients') }}">⬅ Back to Clients</a>
+</body>
+</html>
