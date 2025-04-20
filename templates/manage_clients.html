@@ -1,0 +1,84 @@
+<!-- templates/manage_clients.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Clients</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1em;
+            background-color: white;
+        }
+        th, td {
+            padding: 0.8em;
+            border: 1px solid #ccc;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background-color: #f1f1f1;
+        }
+        .actions a {
+            margin-right: 1em;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .actions a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Manage Clients</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Client Name</th>
+            <th>Address</th>
+            <th>Contacts</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for client in clients %}
+        <tr>
+            <td>{{ client.name }}</td>
+            <td>{{ client.address }}</td>
+            <td>
+                <ul>
+                    {% for contact in client.contacts %}
+                    <li>
+                        {{ contact.name }}<br>
+                        <a href="mailto:{{ contact.email }}">{{ contact.email }}</a><br>
+                        {{ contact.phone }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </td>
+            <td class="actions">
+                <a href="{{ url_for('edit_client', client_id=client.id) }}">Edit</a>
+                <!-- Delete coming later if needed -->
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<br>
+<a href="{{ url_for('show_admin_dashboard') }}">⬅ Back to Dashboard</a>
+
+</body>
+</html>

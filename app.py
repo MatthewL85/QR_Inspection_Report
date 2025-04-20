@@ -437,10 +437,8 @@ def admin_contractor_dashboard():
 
 @app.route('/admin/clients')
 def manage_clients():
-    if 'user' not in session or session['user']['role'] != 'Admin':
-        return abort(403)
-    return render_template('manage_clients.html')
-
+    clients = load_clients()
+    return render_template('manage_clients.html', clients=clients)
 
 @app.route('/admin/reports')
 def admin_reports():
