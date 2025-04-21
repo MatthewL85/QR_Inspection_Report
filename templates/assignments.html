@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Property Manager Assignments</title>
+</head>
+<body>
+    <h1>Manage Property Manager Assignments</h1>
+
+    <form method="POST">
+        <table border="1" cellpadding="6" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>Client</th>
+                    <th>Assigned Property Manager</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for client in clients %}
+                <tr>
+                    <td>{{ client.name }}</td>
+                    <td>
+                        <select name="pm_for_{{ client.name }}">
+                            <option value="">-- Unassigned --</option>
+                            {% for pm in managers %}
+                            <option value="{{ pm.username }}"
+                                {% if assignments.get(client.name) == pm.username %}selected{% endif %}>
+                                {{ pm.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <br>
+        <button type="submit">💾 Save Assignments</button>
+    </form>
+
+    <br>
+    <a href="{{ url_for('manage_clients') }}">⬅ Back to Clients</a>
+</body>
+</html>

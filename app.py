@@ -887,5 +887,45 @@ def edit_client(client_id):
 
     return render_template('edit_client.html', client=client)
 
+@app.route('/admin/assignments', methods=['GET', 'POST'])
+def admin_assignments():
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    clients = load_clients()
+    users = load_all_users()
+    pms = [u for u in users if u['role'] == 'Property Manager']
+
+    # Load current assignments
+    assignments = {}
+    if os.path.exists('assignments.csv'):
+        with open('assignments.csv', newline='') as f:
+            for row in csv.DictReader(f):
+                assignments[row['client_name']] = row['manager_email']
+
+    if request.method == 'POST':
+        updated_assignments = []
+        for client in clients:
+            field = f"pm_for_{client['name']}"
+            manager_email = request.form.get(field, '').strip()
+            if manager_email:
+                updated_assignments.append({
+                    'client_name': client['name'],
+                    'manager_email': manager_email
+                })
+
+        # Save updated assignments
+        with open('assignments.csv', 'w', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=['manager_email', 'client_name'])
+            writer.writeheader()
+            writer.writerows(updated_assignments)
+
+        flash("Assignments updated successfully!", "success")
+        return redirect(url_for('admin_assignments'))
+
+    return render_template('assignments.html', clients=clients, managers=pms, assignments=assignments)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
