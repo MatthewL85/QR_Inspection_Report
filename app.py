@@ -807,7 +807,7 @@ def add_client():
         address = request.form['address']
 
         contacts = []
-        for i in range(1, 4):
+        for i in range(1, 10):
             contact_name = request.form.get(f'contact{i}_name', '').strip()
             contact_email = request.form.get(f'contact{i}_email', '').strip()
             contact_phone = request.form.get(f'contact{i}_phone', '').strip()
@@ -831,7 +831,7 @@ def add_client():
 
         # Get all fieldnames including dynamic contact fields
         fieldnames = ['id', 'name', 'address']
-        for i in range(1, 4):
+        for i in range(1, 10):
             fieldnames += [f'contact{i}_name', f'contact{i}_email', f'contact{i}_phone']
 
         # Save to clients.csv
@@ -859,7 +859,7 @@ def edit_client(client_id):
         client['address'] = request.form['address']
 
         contacts = []
-        for i in range(1, 4):
+        for i in range(1, 10):
             name = request.form.get(f'contact{i}_name', '').strip()
             email = request.form.get(f'contact{i}_email', '').strip()
             phone = request.form.get(f'contact{i}_phone', '').strip()
