@@ -57,6 +57,7 @@
             <th>Client Name</th>
             <th>Address</th>
             <th>Contacts</th>
+            <th>Assigned PM</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -76,11 +77,12 @@
                     {% endfor %}
                 </ul>
             </td>
+            <td>{{ client.assigned_pm }}</td>
             <td class="actions">
                 <a href="{{ url_for('edit_client', client_id=client.name|urlencode) }}">Edit</a>
-                <!-- Delete coming later if needed -->
+                <a href="{{ url_for('assign_pm', client_name=client.name|urlencode) }}">Assign PM</a>
             </td>
-        </tr>
+        </tr>        
         {% endfor %}
     </tbody>
 </table>

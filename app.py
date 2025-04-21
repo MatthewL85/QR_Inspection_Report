@@ -439,6 +439,19 @@ def admin_contractor_dashboard():
 @app.route('/admin/clients')
 def manage_clients():
     clients = load_clients()
+
+    # Load assignments
+    assignments = {}
+    if os.path.exists('assignments.csv'):
+        with open('assignments.csv', newline='') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                assignments[row['client_name']] = row['manager_email']
+
+    # Attach PM email to each client
+    for client in clients:
+        client['assigned_pm'] = assignments.get(client['name'], '—')
+
     return render_template('manage_clients.html', clients=clients)
 
 @app.route('/admin/reports')
