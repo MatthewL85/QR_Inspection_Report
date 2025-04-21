@@ -4,32 +4,92 @@
 <head>
     <meta charset="UTF-8">
     <title>Add Client</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            background-color: #f9f9f9;
+        }
+        fieldset {
+            border: 1px solid #ccc;
+            padding: 1em;
+        }
+        legend {
+            font-weight: bold;
+        }
+        input {
+            width: 300px;
+            margin-bottom: 0.5em;
+        }
+    </style>
 </head>
 <body>
-    <h1>Add New Client</h1>
-    <form method="POST" action="{{ url_for('add_client') }}">
-        <label>Client Name:</label><br>
-        <input type="text" name="name" required><br><br>
 
-        <label>Address:</label><br>
-        <input type="text" name="address" required><br><br>
+<h1>Add New Client</h1>
 
-        <h3>Contacts</h3>
+<form method="POST" id="clientForm">
+    <label>Client Name:</label><br>
+    <input type="text" name="name" required><br><br>
 
-        {% for i in range(1, 4) %}
+    <label>Address:</label><br>
+    <input type="text" name="address" required><br><br>
+
+    <h3>Contacts</h3>
+    <div id="contactsContainer">
+        <!-- First contact block starts automatically -->
+        <div class="contact-block">
             <fieldset>
-                <legend>Contact {{ i }}</legend>
+                <legend>Contact 1</legend>
                 <label>Name:</label><br>
-                <input type="text" name="contact{{ i }}_name"><br>
-                <label>Email:</label><br>
-                <input type="email" name="contact{{ i }}_email"><br>
-                <label>Phone:</label><br>
-                <input type="text" name="contact{{ i }}_phone"><br>
-            </fieldset>
-            <br>
-        {% endfor %}
+                <input type="text" name="contact1_name"><br>
 
-        <button type="submit">Add Client</button>
-    </form>
+                <label>Email:</label><br>
+                <input type="email" name="contact1_email"><br>
+
+                <label>Phone:</label><br>
+                <input type="text" name="contact1_phone"><br>
+            </fieldset><br>
+        </div>
+    </div>
+
+    <button type="button" onclick="addContact()">➕ Add Contact</button><br><br>
+    <button type="submit">Add Client</button>
+</form>
+
+<br>
+<a href="{{ url_for('show_dashboard') }}">⬅ Back to Dashboard</a>
+
+<script>
+let contactCount = 1;
+const maxContacts = 9;
+
+function addContact() {
+    if (contactCount >= maxContacts) {
+        alert("You can only add up to 9 contacts.");
+        return;
+    }
+
+    contactCount++;
+    const container = document.getElementById("contactsContainer");
+
+    const div = document.createElement("div");
+    div.className = "contact-block";
+    div.innerHTML = `
+        <fieldset>
+            <legend>Contact ${contactCount}</legend>
+            <label>Name:</label><br>
+            <input type="text" name="contact${contactCount}_name"><br>
+
+            <label>Email:</label><br>
+            <input type="email" name="contact${contactCount}_email"><br>
+
+            <label>Phone:</label><br>
+            <input type="text" name="contact${contactCount}_phone"><br>
+        </fieldset><br>
+    `;
+    container.appendChild(div);
+}
+</script>
+
 </body>
 </html>
