@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Add Maintenance Task</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            background-color: #f9f9f9;
+        }
+
+        form {
+            max-width: 600px;
+            background-color: white;
+            padding: 2em;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            margin-bottom: 1em;
+            padding: 0.5em;
+            font-size: 1em;
+        }
+
+        button {
+            padding: 0.6em 1.5em;
+            background-color: #007bff;
+            border: none;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        a {
+            display: inline-block;
+            margin-top: 1em;
+            text-decoration: none;
+            color: #007bff;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Add Maintenance Task</h1>
+
+<form method="POST">
+    <label for="client">Client:</label>
+    <select name="client" required>
+        <option value="" disabled selected>Select a client</option>
+        {% for client in client_names %}
+        <option value="{{ client }}">{{ client }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="title">Task Title:</label>
+    <input type="text" name="title" required>
+
+    <label for="date">Scheduled Date:</label>
+    <input type="date" name="date" required>
+
+    <label for="frequency">Frequency:</label>
+    <select name="frequency">
+        <option value="One-time">One-time</option>
+        <option value="Daily">Daily</option>
+        <option value="Weekly">Weekly</option>
+        <option value="Fortnightly">Fortnightly</option>
+        <option value="Monthly">Monthly</option>
+        <option value="Bi-monthly">Bi-monthly</option>
+        <option value="Tri-monthly">Tri-monthly</option>
+        <option value="Quarterly">Quarterly</option>
+        <option value="Bi-annual">Bi-annual</option>
+        <option value="Annually">Annually</option>
+    </select>
+
+    <label for="notes">Notes (optional):</label>
+    <textarea name="notes" rows="4"></textarea>
+
+    <button type="submit">Add Task</button>
+</form>
+
+<a href="{{ url_for('property_manager_dashboard') }}">⬅ Back to Dashboard</a>
+
+</body>
+</html>
