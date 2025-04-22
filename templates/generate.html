@@ -6,18 +6,39 @@
 <body>
     <h1>Add New Equipment</h1>
     <form method="POST">
-        <label>ID: <input type="text" name="id" required></label><br>
-        <label>Client: <input type="text" name="client" required></label><br>
-        <label>Name: <input type="text" name="name" required></label><br>
-        <label>Location: <input type="text" name="location" required></label><br>
-        <label>Model: <input type="text" name="model"></label><br>
-        <label>Age: <input type="text" name="age"></label><br>
-        <label>Last Inspection Date: <input type="date" name="last_inspection"></label><br>
-        <label for="pin">Your PIN:</label>
-        <input type="text" name="pin" required>
+        <label>ID:</label><br>
+        <input type="text" name="id" required><br><br>
+
+        <label>Client:</label><br>
+        <select name="client" required>
+            <option value="" disabled selected>Select a client</option>
+            {% for client in client_names %}
+            <option value="{{ client }}">{{ client }}</option>
+            {% endfor %}
+        </select><br><br>
+
+        <label>Name:</label><br>
+        <input type="text" name="name" required><br><br>
+
+        <label>Location:</label><br>
+        <input type="text" name="location" required><br><br>
+
+        <label>Model:</label><br>
+        <input type="text" name="model"><br><br>
+
+        <label>Age:</label><br>
+        <input type="text" name="age"><br><br>
+
+        <label>Last Inspection Date:</label><br>
+        <input type="date" name="last_inspection"><br><br>
+
+        <label>Your PIN:</label><br>
+        <input type="text" name="pin" required><br><br>
+
         <button type="submit">Generate QR Code</button>
     </form>
+
     <br>
-    <a href="/">Back to Home</a>
+    <a href="/">⬅ Back to Home</a>
 </body>
 </html>
