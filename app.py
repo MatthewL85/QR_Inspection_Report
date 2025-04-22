@@ -939,6 +939,24 @@ def admin_assignments():
 
     return render_template('assignments.html', clients=clients, managers=pms, assignments=assignments)
 
+@app.route('/pm/inspections')
+def pm_inspections():
+    if 'user' not in session or session['user']['role'] != 'Property Manager':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    pm_email = session['user']['username']
+    assigned_clients = get_clients_for_manager(pm_email)
+
+    logs = []
+    if os.path.exists(LOG_CSV):
+        with open(LOG_CSV, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row['client'] in assigned_clients:
+                    logs.append(row)
+
+    return render_template('pm_inspections.html', logs=logs, clients=assigned_clients)
 
 if __name__ == '__main__':
     app.run(debug=True)
