@@ -61,35 +61,35 @@
     <a href="{{ url_for('manage_clients') }}">⬅ Back to Clients</a>
 
     <script>
-    let contactCount = {{ client.contacts|length }};
-    const maxContacts = 9;
-
-    function addContact() {
-        if (contactCount >= maxContacts) {
-            alert("You can only add up to 9 contacts.");
-            return;
+        let contactCount = {{ client.contacts|length }};
+        const maxContacts = 9;
+        
+        function addContact() {
+            if (contactCount >= maxContacts) {
+                alert("You can only add up to 9 contacts.");
+                return;
+            }
+        
+            contactCount++;
+            const container = document.getElementById("contactsContainer");
+        
+            const div = document.createElement("div");
+            div.className = "contact-block";
+            div.innerHTML = `
+                <fieldset>
+                    <legend>Contact ${contactCount}</legend>
+                    <label>Name:</label><br>
+                    <input type="text" name="contact${contactCount}_name"><br>
+        
+                    <label>Email:</label><br>
+                    <input type="email" name="contact${contactCount}_email"><br>
+        
+                    <label>Phone:</label><br>
+                    <input type="text" name="contact${contactCount}_phone"><br>
+                </fieldset><br>
+            `;
+            container.appendChild(div);
         }
-
-        contactCount++;
-        const container = document.getElementById("contactsContainer");
-
-        const div = document.createElement("div");
-        div.className = "contact-block";
-        div.innerHTML = `
-            <fieldset>
-                <legend>Contact ${contactCount}</legend>
-                <label>Name:</label><br>
-                <input type="text" name="contact${contactCount}_name"><br>
-
-                <label>Email:</label><br>
-                <input type="email" name="contact${contactCount}_email"><br>
-
-                <label>Phone:</label><br>
-                <input type="text" name="contact${contactCount}_phone"><br>
-            </fieldset><br>
-        `;
-        container.appendChild(div);
-    }
-    </script>
+        </script>        
 </body>
 </html>

@@ -527,6 +527,29 @@ def get_missed_inspections():
                         continue  # Skip badly formatted dates
     return missed_alerts
 
+def get_missed_inspections_for_pm(pm_email):
+    today = datetime.today().date()
+    missed_alerts = []
+
+    assigned_clients = get_clients_for_manager(pm_email)
+
+    if os.path.exists(LOG_CSV):
+        with open(LOG_CSV, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row['client'] not in assigned_clients:
+                    continue
+                if row['functional'].startswith("Next Maintenance:"):
+                    try:
+                        next_date = datetime.strptime(
+                            row['functional'].replace("Next Maintenance:", "").strip(), "%Y-%m-%d"
+                        ).date()
+                        if next_date < today:
+                            missed_alerts.append(row)
+                    except ValueError:
+                        continue  # skip bad formats
+    return missed_alerts
+
 def get_upcoming_maintenance_for_pm(pm_username):
     upcoming = []
     today = datetime.today().date()
@@ -557,6 +580,17 @@ def get_upcoming_maintenance_for_pm(pm_username):
                         except ValueError:
                             continue
     return sorted(upcoming, key=lambda x: x['next_date'])
+
+@app.route('/pm/alerts')
+def pm_alerts():
+    if 'user' not in session or session['user']['role'] != 'Property Manager':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    pm_email = session['user']['username']
+    missed_alerts = get_missed_inspections_for_pm(pm_email)
+
+    return render_template('pm_alerts.html', missed_alerts=missed_alerts)
 
 @app.route('/admin/maintenance-planner')
 def admin_maintenance_planner():

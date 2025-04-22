@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Missed Inspections</title>
+</head>
+<body>
+<h1>⚠️ Missed Inspections</h1>
+<p>Total: {{ missed_alerts|length }}</p>
+
+{% if missed_alerts %}
+<table border="1" cellpadding="6">
+    <thead>
+        <tr>
+            <th>Date Scheduled</th>
+            <th>Client</th>
+            <th>Equipment ID</th>
+            <th>Equipment Name</th>
+            <th>Inspector</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in missed_alerts %}
+        <tr>
+            <td>{{ row.functional.replace('Next Maintenance:', '').strip() }}</td>
+            <td>{{ row.client }}</td>
+            <td>{{ row.equipment_id }}</td>
+            <td>{{ row.name }}</td>
+            <td>{{ row.inspector_pin }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No missed inspections detected 🎉</p>
+{% endif %}
+
+<br>
+<a href="{{ url_for('property_manager_dashboard') }}">⬅ Back to Dashboard</a>
+</body>
+</html>
