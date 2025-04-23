@@ -631,6 +631,7 @@ def property_manager_maintenance_planner():
                             'title': row['title'],
                             'client': row['client'],
                             'date': datetime.strptime(row['date'], '%Y-%m-%d').date(),
+                            'frequency': row['frequency'],
                             'type': 'manual'
                         })
                     except ValueError:

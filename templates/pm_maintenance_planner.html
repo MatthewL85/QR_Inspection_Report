@@ -63,7 +63,7 @@
             // Manual tasks
             {% for task in manual_tasks %}
             {
-              title: '{{ task.title }} ({{ task.client }})',
+              title: '{{ "🌀 " if task.frequency != "One-time" else "" }}{{ task.title }} ({{ task.client }})',
               start: '{{ task.date.strftime("%Y-%m-%d") }}',
               allDay: true,
               color: '#28a745'
