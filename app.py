@@ -1048,58 +1048,59 @@ def add_maintenance_task():
         notes = request.form['notes']
         created_by = session['user']['username']
 
-    file_exists = os.path.exists('manual_tasks.csv')
-    with open('manual_tasks.csv', 'a', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=['client', 'title', 'date', 'notes', 'frequency', 'created_by'])
-        if not file_exists:
-            writer.writeheader()
+        file_exists = os.path.exists('manual_tasks.csv')
+        with open('manual_tasks.csv', 'a', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=['client', 'title', 'date', 'notes', 'frequency', 'created_by'])
+            if not file_exists:
+                writer.writeheader()
 
-        # Write original task
-        writer.writerow({
-            'client': client,
-            'title': title,
-            'date': date,
-            'notes': notes,
-            'frequency': frequency,
-            'created_by': created_by
-        })
-        print("✅ Saved original task")
+            # Write original task
+            writer.writerow({
+                'client': client,
+                'title': title,
+                'date': date,
+                'notes': notes,
+                'frequency': frequency,
+                'created_by': created_by
+            })
+            print("✅ Saved original task")
 
-        # Handle recurring logic
-        if request.form.get('repeat_tasks') == 'yes':
-            intervals = {
-                'Daily': relativedelta(days=1),
-                'Weekly': relativedelta(weeks=1),
-                'Fortnightly': relativedelta(weeks=2),
-                'Monthly': relativedelta(months=1),
-                'Bi-monthly': relativedelta(months=2),
-                'Tri-monthly': relativedelta(months=3),
-                'Quarterly': relativedelta(months=3),
-                'Bi-annual': relativedelta(months=6),
-                'Annually': relativedelta(years=1)
-            }
+            # Handle recurring logic
+            if request.form.get('repeat_tasks') == 'yes':
+                intervals = {
+                    'Daily': relativedelta(days=1),
+                    'Weekly': relativedelta(weeks=1),
+                    'Fortnightly': relativedelta(weeks=2),
+                    'Monthly': relativedelta(months=1),
+                    'Bi-monthly': relativedelta(months=2),
+                    'Tri-monthly': relativedelta(months=3),
+                    'Quarterly': relativedelta(months=3),
+                    'Bi-annual': relativedelta(months=6),
+                    'Annually': relativedelta(years=1)
+                }
 
-            interval = intervals.get(frequency)
-            if interval:
-                base_date = datetime.strptime(date, "%Y-%m-%d").date()
-                for i in range(1, 12):  # Generate 11 more tasks
-                    next_date = base_date + (interval * i)
-                    writer.writerow({
-                        'client': client,
-                        'title': title,
-                        'date': next_date.strftime("%Y-%m-%d"),
-                        'notes': notes,
-                        'frequency': frequency,
-                        'created_by': created_by
-                    })
-                print(f"✅ Generated 11 recurring tasks for frequency: {frequency}")
+                interval = intervals.get(frequency)
+                if interval:
+                    base_date = datetime.strptime(date, "%Y-%m-%d").date()
+                    for i in range(1, 12):  # Generate 11 more tasks
+                        next_date = base_date + (interval * i)
+                        writer.writerow({
+                            'client': client,
+                            'title': title,
+                            'date': next_date.strftime("%Y-%m-%d"),
+                            'notes': notes,
+                            'frequency': frequency,
+                            'created_by': created_by
+                        })
+                    print(f"✅ Generated 11 recurring tasks for frequency: {frequency}")
 
-    # Redirect
-    if session['user']['role'] == 'Property Manager':
-        return redirect(url_for('property_manager_maintenance_planner'))
-    else:
-        return redirect(url_for('admin_maintenance_planner'))
+        # Redirect
+        if session['user']['role'] == 'Property Manager':
+            return redirect(url_for('property_manager_maintenance_planner'))
+        else:
+            return redirect(url_for('admin_maintenance_planner'))
 
+    # GET request
     return render_template('add_maintenance_task.html', client_names=client_names)
 
 if __name__ == '__main__':
