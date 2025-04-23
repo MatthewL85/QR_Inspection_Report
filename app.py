@@ -617,7 +617,29 @@ def property_manager_maintenance_planner():
 
     username = session['user']['username']
     maintenance = get_upcoming_maintenance_for_pm(username)
-    return render_template('pm_maintenance_planner.html', maintenance=maintenance)
+
+    # Load manual tasks
+    manual_tasks = []
+    if os.path.exists('manual_tasks.csv'):
+        with open('manual_tasks.csv', newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row['created_by'] == username:
+                    try:
+                        manual_tasks.append({
+                            'title': row['title'],
+                            'client': row['client'],
+                            'date': datetime.strptime(row['date'], '%Y-%m-%d').date(),
+                            'type': 'manual'
+                        })
+                    except ValueError:
+                        continue
+
+    return render_template(
+        'pm_maintenance_planner.html',
+        maintenance=maintenance,
+        manual_tasks=manual_tasks
+    )
 
 @app.route('/onboard')
 def onboard():

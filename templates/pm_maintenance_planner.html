@@ -49,16 +49,25 @@ document.addEventListener('DOMContentLoaded', function () {
   var calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
     initialView: 'dayGridMonth',
     events: [
-      {% for m in maintenance %}
-      {
-        title: "{{ m.name }} ({{ m.client }})",
-        start: "{{ m.next_date.strftime('%Y-%m-%d') }}",
-        allDay: true
-      }{% if not loop.last %},{% endif %}
-      {% endfor %}
-    ]
-  });
-  calendar.render();
-});
+  // PPM tasks
+  {% for m in maintenance %}
+  {
+    title: '{{ m.name }} ({{ m.client }})',
+    start: '{{ m.next_date.strftime("%Y-%m-%d") }}',
+    allDay: true,
+    color: '#007bff'  // blue for PPM
+  }{% if not loop.last or manual_tasks %},{% endif %}
+  {% endfor %}
+
+  // Manual tasks
+  {% for task in manual_tasks %}
+  {
+    title: '{{ task.title }} ({{ task.client }})',
+    start: '{{ task.date.strftime("%Y-%m-%d") }}',
+    allDay: true,
+    color: '#28a745'  // green for manual
+  }{% if not loop.last %},{% endif %}
+  {% endfor %}
+]
 </script>
 {% endblock %}
