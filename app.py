@@ -81,6 +81,16 @@ def show_dashboard():
 
 @app.route('/generate', methods=['GET', 'POST'])
 def generate():
+    client_names = []
+
+    # Load client names from clients.csv
+    if os.path.exists('clients.csv'):
+        with open('clients.csv', newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row['name']:  # or row['client_name'] if your column is named that
+                    client_names.append(row['name'])
+
     if request.method == 'POST':
         eq_id = request.form['id']
         client = request.form['client']
@@ -991,6 +1001,47 @@ def pm_inspections():
                     logs.append(row)
 
     return render_template('pm_inspections.html', logs=logs, clients=assigned_clients)
+
+@app.route('/add-maintenance-task', methods=['GET', 'POST'])
+def add_maintenance_task():
+    if 'user' not in session or session['user']['role'] not in ['Admin', 'Property Manager']:
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    client_names = []
+    if os.path.exists('clients.csv'):
+        with open('clients.csv', newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row['name']:
+                    client_names.append(row['name'])
+
+    if request.method == 'POST':
+        client = request.form['client']
+        title = request.form['title']
+        date = request.form['date']
+        frequency = request.form.get('frequency', 'One-time')
+        notes = request.form['notes']
+        created_by = session['user']['username']
+
+        file_exists = os.path.exists('manual_tasks.csv')
+        with open('manual_tasks.csv', 'a', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=['client', 'title', 'date', 'notes', 'frequency', 'created_by'])
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow({
+                'client': client,
+                'title': title,
+                'date': date,
+                'notes': notes,
+                'frequency': frequency,
+                'created_by': created_by
+            })
+
+        flash("Maintenance task added successfully!", "success")
+        return redirect(url_for('property_manager_dashboard') if session['user']['role'] == 'Property Manager' else url_for('admin_dashboard'))
+
+    return render_template('add_maintenance_task.html', client_names=client_names)
 
 if __name__ == '__main__':
     app.run(debug=True)
