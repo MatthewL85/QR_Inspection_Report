@@ -1009,7 +1009,7 @@ def add_maintenance_task():
         return redirect(url_for('login'))
 
     client_names = []
-if os.path.exists('clients.csv'):
+    if os.path.exists('clients.csv'):
     with open('clients.csv', newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
