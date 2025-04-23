@@ -436,11 +436,13 @@ def admin_management_dashboard():
     if 'user' not in session or session['user']['role'] != 'Admin':
         flash("Unauthorized access", "danger")
         return redirect(url_for('login'))
-    return render_template('admin_management_dashboard.html')
 
-        missed_tasks = get_missed_tasks_for_admin()
-    
-    return render_template('admin_management_dashboard.html', ..., missed_tasks=missed_tasks)
+    missed_tasks = get_missed_tasks_for_admin()
+
+    return render_template(
+        'admin_management_dashboard.html',
+        missed_tasks=missed_tasks
+    )
 
 @app.route('/admin-contractor-dashboard')
 def admin_contractor_dashboard():
@@ -494,11 +496,13 @@ def property_manager_dashboard():
     assigned_clients = get_clients_for_manager(username)
     equipment = [eq for eq in load_equipment() if eq.get('client') in assigned_clients]
 
-    return render_template('property_manager_dashboard.html', equipment=equipment)
+    missed_tasks = get_missed_tasks_for_pm(username)
 
-    missed_tasks = get_missed_tasks_for_pm(session['user']['username'])
-
-    return render_template('property_manager_dashboard.html', ..., missed_tasks=missed_tasks)
+    return render_template(
+        'property_manager_dashboard.html',
+        equipment=equipment,
+        missed_tasks=missed_tasks
+    )
 
 @app.route('/contractor-dashboard')
 def contractor_dashboard():
