@@ -1100,6 +1100,7 @@ def add_maintenance_task():
     else:
         return redirect(url_for('admin_maintenance_planner'))
 
+return render_template('add_maintenance_task.html', client_names=client_names)
 
 if __name__ == '__main__':
     app.run(debug=True)
