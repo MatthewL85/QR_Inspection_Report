@@ -1025,22 +1025,37 @@ def add_maintenance_task():
         notes = request.form['notes']
         created_by = session['user']['username']
 
-        file_exists = os.path.exists('manual_tasks.csv')
-        with open('manual_tasks.csv', 'a', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=['client', 'title', 'date', 'notes', 'frequency', 'created_by'])
-            if not file_exists:
-                writer.writeheader()
-            writer.writerow({
-                'client': client,
-                'title': title,
-                'date': date,
-                'notes': notes,
-                'frequency': frequency,
-                'created_by': created_by
-            })
+        print("DEBUG: Received form data:")
+        print("Client:", client)
+        print("Title:", title)
+        print("Date:", date)
+        print("Frequency:", frequency)
+        print("Created by:", created_by)
 
-        flash("Maintenance task added successfully!", "success")
-        return redirect(url_for('property_manager_dashboard') if session['user']['role'] == 'Property Manager' else url_for('admin_dashboard'))
+        file_exists = os.path.exists('manual_tasks.csv')
+        print("DEBUG: File exists:", file_exists)
+        print("DEBUG: Writing to file:", os.path.abspath('manual_tasks.csv'))
+
+        try:
+            with open('manual_tasks.csv', 'a', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=['client', 'title', 'date', 'notes', 'frequency', 'created_by'])
+                if not file_exists:
+                    writer.writeheader()
+
+                print("DEBUG: Writing task to CSV")
+                writer.writerow({
+                    'client': client,
+                    'title': title,
+                    'date': date,
+                    'notes': notes,
+                    'frequency': frequency,
+                    'created_by': created_by
+                })
+        except Exception as e:
+            print("❌ ERROR WRITING TO CSV:", e)
+            return f"Error writing to CSV: {e}", 500
+
+        return "Task added successfully!"
 
     return render_template('add_maintenance_task.html', client_names=client_names)
 
