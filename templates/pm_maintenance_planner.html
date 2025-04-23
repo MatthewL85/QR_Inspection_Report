@@ -45,29 +45,38 @@
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  var calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
-    initialView: 'dayGridMonth',
-    events: [
-  // PPM tasks
-  {% for m in maintenance %}
-  {
-    title: '{{ m.name }} ({{ m.client }})',
-    start: '{{ m.next_date.strftime("%Y-%m-%d") }}',
-    allDay: true,
-    color: '#007bff'  // blue for PPM
-  }{% if not loop.last or manual_tasks %},{% endif %}
-  {% endfor %}
-
-  // Manual tasks
-  {% for task in manual_tasks %}
-  {
-    title: '{{ task.title }} ({{ task.client }})',
-    start: '{{ task.date.strftime("%Y-%m-%d") }}',
-    allDay: true,
-    color: '#28a745'  // green for manual
-  }{% if not loop.last %},{% endif %}
-  {% endfor %}
-]
-</script>
+    document.addEventListener('DOMContentLoaded', function () {
+      try {
+        var calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+          initialView: 'dayGridMonth',
+          events: [
+            // PPM tasks
+            {% for m in maintenance %}
+            {
+              title: '{{ m.name }} ({{ m.client }})',
+              start: '{{ m.next_date.strftime("%Y-%m-%d") }}',
+              allDay: true,
+              color: '#007bff'
+            }{% if not loop.last or manual_tasks %},{% endif %}
+            {% endfor %}
+    
+            // Manual tasks
+            {% for task in manual_tasks %}
+            {
+              title: '{{ task.title }} ({{ task.client }})',
+              start: '{{ task.date.strftime("%Y-%m-%d") }}',
+              allDay: true,
+              color: '#28a745'
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+          ]
+        });
+    
+        calendar.render();
+      } catch (e) {
+        console.error("Calendar failed to load:", e);
+      }
+    });
+    </script>
+    
 {% endblock %}
