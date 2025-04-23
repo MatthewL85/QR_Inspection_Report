@@ -2,6 +2,10 @@
 {% block content %}
 <h2>🗓️ Your Maintenance Calendar</h2>
 
+<a href="{{ url_for('add_maintenance_task') }}" class="btn btn-success" style="margin-bottom: 1em;">
+    ➕ Add Maintenance Task
+</a>
+
 <div id="calendar" style="margin-bottom: 3em;"></div>
 
 <h3>🛠 Your Upcoming Maintenance (Table View)</h3>
