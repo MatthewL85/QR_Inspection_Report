@@ -1041,12 +1041,12 @@ def add_maintenance_task():
                     client_names.append(client_name)
 
     if request.method == 'POST':
-    client = request.form['client']
-    title = request.form['title']
-    date = request.form['date']
-    frequency = request.form.get('frequency', 'One-time')
-    notes = request.form['notes']
-    created_by = session['user']['username']
+        client = request.form['client']
+        title = request.form['title']
+        date = request.form['date']
+        frequency = request.form.get('frequency', 'One-time')
+        notes = request.form['notes']
+        created_by = session['user']['username']
 
     file_exists = os.path.exists('manual_tasks.csv')
     with open('manual_tasks.csv', 'a', newline='', encoding='utf-8') as f:
