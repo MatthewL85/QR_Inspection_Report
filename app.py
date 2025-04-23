@@ -438,6 +438,9 @@ def admin_management_dashboard():
         return redirect(url_for('login'))
     return render_template('admin_management_dashboard.html')
 
+        missed_tasks = get_missed_tasks_for_admin()
+    
+    return render_template('admin_management_dashboard.html', ..., missed_tasks=missed_tasks)
 
 @app.route('/admin-contractor-dashboard')
 def admin_contractor_dashboard():
@@ -492,6 +495,10 @@ def property_manager_dashboard():
     equipment = [eq for eq in load_equipment() if eq.get('client') in assigned_clients]
 
     return render_template('property_manager_dashboard.html', equipment=equipment)
+
+    missed_tasks = get_missed_tasks_for_pm(session['user']['username'])
+
+    return render_template('property_manager_dashboard.html', ..., missed_tasks=missed_tasks)
 
 @app.route('/contractor-dashboard')
 def contractor_dashboard():
@@ -1103,6 +1110,55 @@ def add_maintenance_task():
 
     # GET request
     return render_template('add_maintenance_task.html', client_names=client_names)
+
+def get_missed_tasks_for_pm(username):
+    today = datetime.today().date()
+    missed = []
+
+    if os.path.exists('manual_tasks.csv'):
+        with open('manual_tasks.csv', newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                # Only tasks created by this PM
+                if row['created_by'] == username:
+                    try:
+                        task_date = datetime.strptime(row['date'], '%Y-%m-%d').date()
+                        if task_date < today:
+                            missed.append({
+                                'title': row['title'],
+                                'client': row['client'],
+                                'date': row['date'],
+                                'type': 'Manual',
+                                'frequency': row['frequency']
+                            })
+                    except ValueError:
+                        continue  # skip bad data
+
+    return missed
+
+def get_missed_tasks_for_admin():
+    today = datetime.today().date()
+    missed = []
+
+    if os.path.exists('manual_tasks.csv'):
+        with open('manual_tasks.csv', newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                try:
+                    task_date = datetime.strptime(row['date'], '%Y-%m-%d').date()
+                    if task_date < today:
+                        missed.append({
+                            'title': row['title'],
+                            'client': row['client'],
+                            'date': row['date'],
+                            'type': 'Manual',
+                            'frequency': row['frequency'],
+                            'created_by': row['created_by']
+                        })
+                except ValueError:
+                    continue
+
+    return missed
 
 if __name__ == '__main__':
     app.run(debug=True)

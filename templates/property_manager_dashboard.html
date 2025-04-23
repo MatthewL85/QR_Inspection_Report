@@ -30,6 +30,21 @@
   </div>
 
   <div class="dashboard-section">
+    <h4>⚠️ Missed Maintenance Tasks</h4>
+    {% if missed_tasks %}
+      <ul>
+        {% for task in missed_tasks %}
+        <li style="color: red;">
+          ⚠️ {{ task.title }} ({{ task.client }}) - Scheduled for {{ task.date }} [{{ task.type }}]
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No missed tasks — you're up to date! ✅</p>
+    {% endif %}
+  </div>
+
+  <div class="dashboard-section">
     <h4>📅 Maintenance Planner</h4>
     <a href="{{ url_for('property_manager_maintenance_planner') }}" class="btn btn-info">🗓️ View Maintenance Calendar</a>
   </div>
