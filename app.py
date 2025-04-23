@@ -1077,7 +1077,10 @@ def add_maintenance_task():
             print("❌ ERROR WRITING TO CSV:", e)
             return f"Error writing to CSV: {e}", 500
 
-        return "Task added successfully!"
+        if session['user']['role'] == 'Property Manager':
+            return redirect(url_for('property_manager_maintenance_planner'))
+        else:
+            return redirect(url_for('admin_maintenance_planner'))
 
     return render_template('add_maintenance_task.html', client_names=client_names)
 
