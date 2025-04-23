@@ -1009,12 +1009,13 @@ def add_maintenance_task():
         return redirect(url_for('login'))
 
     client_names = []
-    if os.path.exists('clients.csv'):
-        with open('clients.csv', newline='', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if row['name']:
-                    client_names.append(row['name'])
+if os.path.exists('clients.csv'):
+    with open('clients.csv', newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            client_name = row.get('client_name')
+            if client_name:
+                client_names.append(client_name)
 
     if request.method == 'POST':
         client = request.form['client']
