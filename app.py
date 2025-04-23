@@ -1,6 +1,7 @@
 from auth import create_user, authenticate_user, user_exists
 from flask import Flask, render_template, request, redirect, url_for, send_file, session, flash, abort
 from werkzeug.security import generate_password_hash
+from dateutil.relativedelta import relativedelta
 import csv
 import os
 import qrcode
@@ -1040,49 +1041,65 @@ def add_maintenance_task():
                     client_names.append(client_name)
 
     if request.method == 'POST':
-        client = request.form['client']
-        title = request.form['title']
-        date = request.form['date']
-        frequency = request.form.get('frequency', 'One-time')
-        notes = request.form['notes']
-        created_by = session['user']['username']
+    client = request.form['client']
+    title = request.form['title']
+    date = request.form['date']
+    frequency = request.form.get('frequency', 'One-time')
+    notes = request.form['notes']
+    created_by = session['user']['username']
 
-        print("DEBUG: Received form data:")
-        print("Client:", client)
-        print("Title:", title)
-        print("Date:", date)
-        print("Frequency:", frequency)
-        print("Created by:", created_by)
+    file_exists = os.path.exists('manual_tasks.csv')
+    with open('manual_tasks.csv', 'a', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=['client', 'title', 'date', 'notes', 'frequency', 'created_by'])
+        if not file_exists:
+            writer.writeheader()
 
-        file_exists = os.path.exists('manual_tasks.csv')
-        print("DEBUG: File exists:", file_exists)
-        print("DEBUG: Writing to file:", os.path.abspath('manual_tasks.csv'))
+        # Write original task
+        writer.writerow({
+            'client': client,
+            'title': title,
+            'date': date,
+            'notes': notes,
+            'frequency': frequency,
+            'created_by': created_by
+        })
+        print("✅ Saved original task")
 
-        try:
-            with open('manual_tasks.csv', 'a', newline='', encoding='utf-8') as f:
-                writer = csv.DictWriter(f, fieldnames=['client', 'title', 'date', 'notes', 'frequency', 'created_by'])
-                if not file_exists:
-                    writer.writeheader()
+        # Handle recurring logic
+        if request.form.get('repeat_tasks') == 'yes':
+            intervals = {
+                'Daily': relativedelta(days=1),
+                'Weekly': relativedelta(weeks=1),
+                'Fortnightly': relativedelta(weeks=2),
+                'Monthly': relativedelta(months=1),
+                'Bi-monthly': relativedelta(months=2),
+                'Tri-monthly': relativedelta(months=3),
+                'Quarterly': relativedelta(months=3),
+                'Bi-annual': relativedelta(months=6),
+                'Annually': relativedelta(years=1)
+            }
 
-                print("DEBUG: Writing task to CSV")
-                writer.writerow({
-                    'client': client,
-                    'title': title,
-                    'date': date,
-                    'notes': notes,
-                    'frequency': frequency,
-                    'created_by': created_by
-                })
-        except Exception as e:
-            print("❌ ERROR WRITING TO CSV:", e)
-            return f"Error writing to CSV: {e}", 500
+            interval = intervals.get(frequency)
+            if interval:
+                base_date = datetime.strptime(date, "%Y-%m-%d").date()
+                for i in range(1, 12):  # Generate 11 more tasks
+                    next_date = base_date + (interval * i)
+                    writer.writerow({
+                        'client': client,
+                        'title': title,
+                        'date': next_date.strftime("%Y-%m-%d"),
+                        'notes': notes,
+                        'frequency': frequency,
+                        'created_by': created_by
+                    })
+                print(f"✅ Generated 11 recurring tasks for frequency: {frequency}")
 
-        if session['user']['role'] == 'Property Manager':
-            return redirect(url_for('property_manager_maintenance_planner'))
-        else:
-            return redirect(url_for('admin_maintenance_planner'))
+    # Redirect
+    if session['user']['role'] == 'Property Manager':
+        return redirect(url_for('property_manager_maintenance_planner'))
+    else:
+        return redirect(url_for('admin_maintenance_planner'))
 
-    return render_template('add_maintenance_task.html', client_names=client_names)
 
 if __name__ == '__main__':
     app.run(debug=True)
