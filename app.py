@@ -1126,8 +1126,10 @@ def get_missed_tasks_for_pm(username):
         with open('manual_tasks.csv', newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                # Only tasks created by this PM
-                if row['created_by'] == username:
+                created_by = row.get('created_by', '')
+                completed = row.get('completed', 'no').lower()
+
+                if (created_by == username or created_by == session['user'].get('full_name')) and completed != 'yes':
                     try:
                         task_date = datetime.strptime(row['date'], '%Y-%m-%d').date()
                         if task_date < today:
@@ -1136,10 +1138,11 @@ def get_missed_tasks_for_pm(username):
                                 'client': row['client'],
                                 'date': row['date'],
                                 'type': 'Manual',
-                                'frequency': row['frequency']
+                                'frequency': row['frequency'],
+                                'completed': completed
                             })
                     except ValueError:
-                        continue  # skip bad data
+                        continue
 
     return missed
 
@@ -1151,19 +1154,23 @@ def get_missed_tasks_for_admin():
         with open('manual_tasks.csv', newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                try:
-                    task_date = datetime.strptime(row['date'], '%Y-%m-%d').date()
-                    if task_date < today:
-                        missed.append({
-                            'title': row['title'],
-                            'client': row['client'],
-                            'date': row['date'],
-                            'type': 'Manual',
-                            'frequency': row['frequency'],
-                            'created_by': row['created_by']
-                        })
-                except ValueError:
-                    continue
+                created_by = row.get('created_by', '')
+                completed = row.get('completed', 'no').lower()
+
+                if (created_by == username or created_by == session['user'].get('full_name')) and completed != 'yes':
+                    try:
+                        task_date = datetime.strptime(row['date'], '%Y-%m-%d').date()
+                        if task_date < today:
+                            missed.append({
+                                'title': row['title'],
+                                'client': row['client'],
+                                'date': row['date'],
+                                'type': 'Manual',
+                                'frequency': row['frequency'],
+                                'completed': completed
+                            })
+                    except ValueError:
+                        continue
 
     return missed
 
