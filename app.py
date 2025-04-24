@@ -1184,7 +1184,9 @@ def complete_task():
     client = request.form['client']
 
     updated_rows = []
+    fieldnames = ['client', 'title', 'date', 'notes', 'frequency', 'created_by', 'completed']
 
+    # Read and update rows
     with open('manual_tasks.csv', newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -1192,11 +1194,15 @@ def complete_task():
                 row['completed'] = 'yes'
             updated_rows.append(row)
 
+    # Ensure all rows include the expected fields
     with open('manual_tasks.csv', 'w', newline='', encoding='utf-8') as f:
-        fieldnames = ['client', 'title', 'date', 'notes', 'frequency', 'created_by', 'completed']
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerows(updated_rows)
+        for row in updated_rows:
+            for field in fieldnames:
+                if field not in row:
+                    row[field] = ''
+            writer.writerow(row)
 
     flash("Task marked as complete!", "success")
     if session['user']['role'] == 'Admin':
