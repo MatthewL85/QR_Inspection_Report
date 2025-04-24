@@ -1146,7 +1146,7 @@ def get_missed_tasks_for_pm(username):
 
     return missed
 
-def get_missed_tasks_for_admin():
+ddef get_missed_tasks_for_admin():
     today = datetime.today().date()
     missed = []
 
@@ -1157,7 +1157,7 @@ def get_missed_tasks_for_admin():
                 created_by = row.get('created_by', '')
                 completed = row.get('completed', 'no').lower()
 
-                if (created_by == username or created_by == session['user'].get('full_name')) and completed != 'yes':
+                if completed != 'yes':
                     try:
                         task_date = datetime.strptime(row['date'], '%Y-%m-%d').date()
                         if task_date < today:
@@ -1167,6 +1167,7 @@ def get_missed_tasks_for_admin():
                                 'date': row['date'],
                                 'type': 'Manual',
                                 'frequency': row['frequency'],
+                                'created_by': created_by,
                                 'completed': completed
                             })
                     except ValueError:
