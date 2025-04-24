@@ -1058,11 +1058,11 @@ def add_maintenance_task():
         date = request.form['date']
         frequency = request.form.get('frequency', 'One-time')
         notes = request.form['notes']
-        created_by = session['user']['username']
+        created_by = session['user']['full_name']
 
         file_exists = os.path.exists('manual_tasks.csv')
         with open('manual_tasks.csv', 'a', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=['client', 'title', 'date', 'notes', 'frequency', 'created_by'])
+            writer = csv.DictWriter(f, fieldnames=['client', 'title', 'date', 'notes', 'frequency', 'created_by', 'completed'])
             if not file_exists:
                 writer.writeheader()
 
@@ -1073,7 +1073,8 @@ def add_maintenance_task():
                 'date': date,
                 'notes': notes,
                 'frequency': frequency,
-                'created_by': created_by
+                'created_by': created_by,
+                'completed': 'no'
             })
             print("✅ Saved original task")
 
@@ -1102,8 +1103,9 @@ def add_maintenance_task():
                             'date': next_date.strftime("%Y-%m-%d"),
                             'notes': notes,
                             'frequency': frequency,
-                            'created_by': created_by
-                        })
+                            'created_by': created_by,
+                            'completed': 'no'
+                                    })
                     print(f"✅ Generated 11 recurring tasks for frequency: {frequency}")
 
         # Redirect
