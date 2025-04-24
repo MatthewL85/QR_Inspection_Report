@@ -1166,5 +1166,32 @@ def get_missed_tasks_for_admin():
 
     return missed
 
+@app.route('/complete-task', methods=['POST'])
+def complete_task():
+    title = request.form['title']
+    date = request.form['date']
+    client = request.form['client']
+
+    updated_rows = []
+
+    with open('manual_tasks.csv', newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row['title'] == title and row['date'] == date and row['client'] == client:
+                row['completed'] = 'yes'
+            updated_rows.append(row)
+
+    with open('manual_tasks.csv', 'w', newline='', encoding='utf-8') as f:
+        fieldnames = ['client', 'title', 'date', 'notes', 'frequency', 'created_by', 'completed']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(updated_rows)
+
+    flash("Task marked as complete!", "success")
+    if session['user']['role'] == 'Admin':
+        return redirect(url_for('admin_management_dashboard'))
+    else:
+        return redirect(url_for('property_manager_dashboard'))
+
 if __name__ == '__main__':
     app.run(debug=True)

@@ -35,8 +35,19 @@
       <ul>
         {% for task in missed_tasks %}
         <li style="color: red;">
-          ⚠️ {{ task.title }} ({{ task.client }}) - Scheduled for {{ task.date }} [{{ task.type }}]
-        </li>
+          ⚠️ {{ task.title }} ({{ task.client }}) - {{ task.date }} | Created by: {{ task.created_by }}
+        
+          {% if task.completed != 'yes' %}
+          <form action="{{ url_for('complete_task') }}" method="POST" style="display:inline;">
+            <input type="hidden" name="title" value="{{ task.title }}">
+            <input type="hidden" name="date" value="{{ task.date }}">
+            <input type="hidden" name="client" value="{{ task.client }}">
+            <button type="submit" style="margin-left: 10px;">✔ Mark as Done</button>
+          </form>
+          {% else %}
+          ✅ Completed
+          {% endif %}
+        </li>        
         {% endfor %}
       </ul>
     {% else %}
