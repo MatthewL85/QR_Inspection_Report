@@ -1122,6 +1122,8 @@ def get_missed_tasks_for_pm(username):
     today = datetime.today().date()
     missed = []
 
+    full_name = session['user'].get('full_name') or session['user'].get('name_or_company') or username
+
     if os.path.exists('manual_tasks.csv'):
         with open('manual_tasks.csv', newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f)
@@ -1129,7 +1131,7 @@ def get_missed_tasks_for_pm(username):
                 created_by = row.get('created_by', '')
                 completed = row.get('completed', 'no').lower()
 
-                if (created_by == username or created_by == session['user'].get('full_name')) and completed != 'yes':
+                if completed != 'yes' and (created_by == username or created_by == full_name):
                     try:
                         task_date = datetime.strptime(row['date'], '%Y-%m-%d').date()
                         if task_date < today:
