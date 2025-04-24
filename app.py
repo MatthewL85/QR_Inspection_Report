@@ -1058,7 +1058,7 @@ def add_maintenance_task():
         date = request.form['date']
         frequency = request.form.get('frequency', 'One-time')
         notes = request.form['notes']
-        created_by = session['user']['full_name']
+        created_by = session['user'].get('full_name') or session['user'].get('name_or_company', session['user']['username'])
 
         file_exists = os.path.exists('manual_tasks.csv')
         with open('manual_tasks.csv', 'a', newline='', encoding='utf-8') as f:
