@@ -636,7 +636,8 @@ def property_manager_maintenance_planner():
         with open('manual_tasks.csv', newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                if row['created_by'] == username:
+                user_name = session['user'].get('full_name') or session['user']['name_or_company'] or username
+                if row['created_by'] == user_name or row['created_by'] == username:
                     try:
                         manual_tasks.append({
                             'title': row['title'],
