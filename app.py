@@ -1146,7 +1146,7 @@ def get_missed_tasks_for_pm(username):
 
     return missed
 
-ddef get_missed_tasks_for_admin():
+def get_missed_tasks_for_admin():
     today = datetime.today().date()
     missed = []
 
