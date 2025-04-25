@@ -1194,15 +1194,13 @@ def complete_task():
                 row['completed'] = 'yes'
             updated_rows.append(row)
 
-    # Ensure all rows include the expected fields
+    # Safely write only expected fields
     with open('manual_tasks.csv', 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         for row in updated_rows:
-            for field in fieldnames:
-                if field not in row:
-                    row[field] = ''
-            writer.writerow(row)
+            clean_row = {field: row.get(field, '') for field in fieldnames}  # ✅ Strip unknown keys
+            writer.writerow(clean_row)
 
     flash("Task marked as complete!", "success")
     if session['user']['role'] == 'Admin':
