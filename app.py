@@ -1230,7 +1230,33 @@ def edit_task():
             flash("Task not found.", "danger")
             return redirect(url_for('property_manager_dashboard'))
 
-        return render_template('edit_task.html', task=task_to_edit)
+        # Load client list based on role
+        client_names = []
+        if os.path.exists('clients.csv'):
+            with open('clients.csv', newline='', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                if session['user']['role'] == 'Admin':
+                    for row in reader:
+                        if row.get('client_name'):
+                            client_names.append(row['client_name'])
+                else:
+                    assigned_clients = get_clients_for_manager(session['user']['username'])
+                    for row in reader:
+                        if row.get('client_name') and row['client_name'] in assigned_clients:
+                            client_names.append(row['client_name'])
+
+        # Standard frequency options
+        frequency_options = [
+            'One-time', 'Daily', 'Weekly', 'Fortnightly', 'Monthly',
+            'Bi-monthly', 'Tri-monthly', 'Quarterly', 'Bi-annual', 'Annually'
+        ]
+
+        return render_template(
+            'edit_task.html',
+            task=task_to_edit,
+            client_names=client_names,
+            frequency_options=frequency_options
+        )
 
     # POST: Save the edited task
     updated_rows = []
@@ -1241,7 +1267,6 @@ def edit_task():
                 if (row['title'] == request.form['original_title'] and
                     row['date'] == request.form['original_date'] and
                     row['client'] == request.form['original_client']):
-                    # Replace with updated data
                     updated_rows.append({
                         'client': request.form['client'],
                         'title': request.form['title'],

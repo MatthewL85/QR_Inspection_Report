@@ -9,7 +9,13 @@
     <input type="hidden" name="original_client" value="{{ task.client }}">
 
     <label>Client:</label><br>
-    <input type="text" name="client" value="{{ task.client }}" required><br><br>
+    <select name="client" required>
+      {% for client in client_names %}
+        <option value="{{ client }}" {% if client == task.client %}selected{% endif %}>
+          {{ client }}
+        </option>
+      {% endfor %}
+    </select><br><br>
 
     <label>Task Title:</label><br>
     <input type="text" name="title" value="{{ task.title }}" required><br><br>
@@ -18,7 +24,13 @@
     <input type="date" name="date" value="{{ task.date }}" required><br><br>
 
     <label>Frequency:</label><br>
-    <input type="text" name="frequency" value="{{ task.frequency }}"><br><br>
+    <select name="frequency" required>
+      {% for option in frequency_options %}
+        <option value="{{ option }}" {% if option == task.frequency %}selected{% endif %}>
+          {{ option }}
+        </option>
+      {% endfor %}
+    </select><br><br>
 
     <label>Notes:</label><br>
     <textarea name="notes" rows="4">{{ task.notes }}</textarea><br><br>
