@@ -1208,5 +1208,64 @@ def complete_task():
     else:
         return redirect(url_for('property_manager_dashboard'))
 
+@app.route('/edit-task', methods=['GET', 'POST'])
+def edit_task():
+    fieldnames = ['client', 'title', 'date', 'notes', 'frequency', 'created_by', 'completed']
+
+    if request.method == 'GET':
+        title = request.args.get('title')
+        date = request.args.get('date')
+        client = request.args.get('client')
+
+        task_to_edit = None
+        if os.path.exists('manual_tasks.csv'):
+            with open('manual_tasks.csv', newline='', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    if row['title'] == title and row['date'] == date and row['client'] == client:
+                        task_to_edit = row
+                        break
+
+        if not task_to_edit:
+            flash("Task not found.", "danger")
+            return redirect(url_for('property_manager_dashboard'))
+
+        return render_template('edit_task.html', task=task_to_edit)
+
+    # POST: Save the edited task
+    updated_rows = []
+    if os.path.exists('manual_tasks.csv'):
+        with open('manual_tasks.csv', newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if (row['title'] == request.form['original_title'] and
+                    row['date'] == request.form['original_date'] and
+                    row['client'] == request.form['original_client']):
+                    # Replace with updated data
+                    updated_rows.append({
+                        'client': request.form['client'],
+                        'title': request.form['title'],
+                        'date': request.form['date'],
+                        'notes': request.form['notes'],
+                        'frequency': request.form['frequency'],
+                        'created_by': row.get('created_by', ''),
+                        'completed': row.get('completed', 'no')
+                    })
+                else:
+                    updated_rows.append(row)
+
+    with open('manual_tasks.csv', 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in updated_rows:
+            clean_row = {field: row.get(field, '') for field in fieldnames}
+            writer.writerow(clean_row)
+
+    flash("Task updated successfully!", "success")
+    if session['user']['role'] == 'Admin':
+        return redirect(url_for('admin_management_dashboard'))
+    else:
+        return redirect(url_for('property_manager_dashboard'))
+
 if __name__ == '__main__':
     app.run(debug=True)
