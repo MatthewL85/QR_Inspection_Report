@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="dashboard-container">
+  <h1>📜 Task History Log</h1>
+  <p>View all edits and deletions performed by users.</p>
+
+  {% if history %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Action</th>
+        <th>Task Title</th>
+        <th>Client</th>
+        <th>Task Date</th>
+        <th>Performed By</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in history %}
+      <tr>
+        <td>{{ entry.timestamp }}</td>
+        <td>{{ entry.action.title() }}</td>
+        <td>{{ entry.title }}</td>
+        <td>{{ entry.client }}</td>
+        <td>{{ entry.date }}</td>
+        <td>{{ entry.performed_by }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p>No history records found.</p>
+  {% endif %}
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('admin_management_dashboard') }}" class="btn btn-secondary">⬅ Return to Dashboard</a>
+  </div>
+</div>
+{% endblock %}

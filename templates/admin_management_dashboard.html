@@ -26,6 +26,10 @@
       <h3>🛠️ Maintenance Planner</h3>
       <p>Plan and schedule upcoming inspections.</p>
     </a>
+    <a href="{{ url_for('task_history') }}" class="dashboard-tile">
+      <h3>📜 Task History</h3>
+      <p>View edits and deletions made by users.</p>
+    </a>   
     <a href="{{ url_for('manage_users') }}" class="dashboard-tile">
       <h3>👥 Manage Users</h3>
       <p>Add Property Managers or edit access levels.</p>
@@ -35,6 +39,7 @@
       <p>Assign or transfer clients across managers.</p>
     </a>
   </div>
+
   <div class="dashboard-section">
     <h4>⚠️ Missed Maintenance Tasks</h4>
     {% if missed_tasks %}
@@ -42,13 +47,20 @@
         {% for task in missed_tasks %}
         <li style="color: red;">
           ⚠️ {{ task.title }} ({{ task.client }}) - {{ task.date }} | Created by: {{ task.created_by }}
-        
+          
           {% if task.completed != 'yes' %}
           <form action="{{ url_for('complete_task') }}" method="POST" style="display:inline;">
             <input type="hidden" name="title" value="{{ task.title }}">
             <input type="hidden" name="date" value="{{ task.date }}">
             <input type="hidden" name="client" value="{{ task.client }}">
             <button type="submit" style="margin-left: 10px;">✔ Mark as Done</button>
+          </form>
+
+          <form action="{{ url_for('edit_task') }}" method="GET" style="display:inline;">
+            <input type="hidden" name="title" value="{{ task.title }}">
+            <input type="hidden" name="date" value="{{ task.date }}">
+            <input type="hidden" name="client" value="{{ task.client }}">
+            <button type="submit" style="margin-left: 5px;">✏ Edit</button>
           </form>
           {% else %}
           ✅ Completed

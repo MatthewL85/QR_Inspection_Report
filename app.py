@@ -1419,5 +1419,23 @@ def save_task_history(action, title, client, date, performed_by):
             'performed_by': performed_by
         })
 
+@app.route('/task-history')
+def task_history():
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    history = []
+    if os.path.exists('task_history.csv'):
+        with open('task_history.csv', newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                history.append(row)
+
+    # Sort newest first
+    history.sort(key=lambda x: x['timestamp'], reverse=True)
+
+    return render_template('task_history.html', history=history)
+
 if __name__ == '__main__':
     app.run(debug=True)
