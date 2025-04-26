@@ -619,8 +619,32 @@ def admin_maintenance_planner():
     if 'user' not in session or session['user']['role'] != 'Admin':
         return abort(403)
     
+    # Load PPM tasks
     upcoming_maintenance = get_upcoming_maintenance()
-    return render_template('admin_maintenance_planner.html', maintenance=upcoming_maintenance)
+
+    # Load manual tasks
+    manual_tasks = []
+    if os.path.exists('manual_tasks.csv'):
+        with open('manual_tasks.csv', newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                try:
+                    manual_tasks.append({
+                        'title': row['title'],
+                        'client': row['client'],
+                        'date': datetime.strptime(row['date'], '%Y-%m-%d').date(),
+                        'frequency': row['frequency'],
+                        'type': 'manual',
+                        'completed': row.get('completed', 'no')
+                    })
+                except ValueError:
+                    continue  # skip bad dates
+
+    return render_template(
+        'admin_maintenance_planner.html',
+        maintenance=upcoming_maintenance,
+        manual_tasks=manual_tasks
+    )
 
 @app.route('/pm/maintenance-planner')
 def property_manager_maintenance_planner():
@@ -645,6 +669,7 @@ def property_manager_maintenance_planner():
                             'date': datetime.strptime(row['date'], '%Y-%m-%d').date(),
                             'frequency': row['frequency'],
                             'type': 'manual'
+                            'completed': row.get('completed', 'no')
                         })
                     except ValueError:
                         continue
