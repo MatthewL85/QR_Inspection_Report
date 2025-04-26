@@ -1233,6 +1233,31 @@ def complete_task():
     else:
         return redirect(url_for('property_manager_dashboard'))
 
+from datetime import datetime
+
+# --- Helper function ---
+def save_task_history(action, title, client, date, performed_by):
+    """Save an edit or delete action to task_history.csv"""
+    history_file = 'task_history.csv'
+    file_exists = os.path.exists(history_file)
+
+    with open(history_file, 'a', newline='', encoding='utf-8') as f:
+        fieldnames = ['timestamp', 'action', 'title', 'client', 'date', 'performed_by']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+
+        if not file_exists:
+            writer.writeheader()
+
+        writer.writerow({
+            'timestamp': datetime.now().isoformat(),
+            'action': action,
+            'title': title,
+            'client': client,
+            'date': date,
+            'performed_by': performed_by
+        })
+
+# --- Edit Task Route ---
 @app.route('/edit-task', methods=['GET', 'POST'])
 def edit_task():
     fieldnames = ['client', 'title', 'date', 'notes', 'frequency', 'created_by', 'completed']
@@ -1270,7 +1295,6 @@ def edit_task():
                         if row.get('client_name') and row['client_name'] in assigned_clients:
                             client_names.append(row['client_name'])
 
-        # Standard frequency options
         frequency_options = [
             'One-time', 'Daily', 'Weekly', 'Fortnightly', 'Monthly',
             'Bi-monthly', 'Tri-monthly', 'Quarterly', 'Bi-annual', 'Annually'
@@ -1311,12 +1335,22 @@ def edit_task():
             clean_row = {field: row.get(field, '') for field in fieldnames}
             writer.writerow(clean_row)
 
+    # ✅ Save to Task History
+    save_task_history(
+        action='edit',
+        title=request.form['title'],
+        client=request.form['client'],
+        date=request.form['date'],
+        performed_by=session['user']['username']
+    )
+
     flash("Task updated successfully!", "success")
     if session['user']['role'] == 'Admin':
         return redirect(url_for('admin_management_dashboard'))
     else:
         return redirect(url_for('property_manager_dashboard'))
 
+# --- Delete Task Route ---
 @app.route('/delete-task', methods=['POST'])
 def delete_task():
     title = request.form['title']
@@ -1345,6 +1379,14 @@ def delete_task():
             writer.writerow(clean_row)
 
     if task_found:
+        # ✅ Save to Task History
+        save_task_history(
+            action='delete',
+            title=title,
+            client=client,
+            date=date,
+            performed_by=session['user']['username']
+        )
         flash("Task deleted successfully!", "success")
     else:
         flash("Task not found. No changes made.", "warning")
@@ -1353,6 +1395,29 @@ def delete_task():
         return redirect(url_for('admin_management_dashboard'))
     else:
         return redirect(url_for('property_manager_dashboard'))
+
+from datetime import datetime
+
+def save_task_history(action, title, client, date, performed_by):
+    """Save an edit or delete action to task_history.csv"""
+    history_file = 'task_history.csv'
+    file_exists = os.path.exists(history_file)
+
+    with open(history_file, 'a', newline='', encoding='utf-8') as f:
+        fieldnames = ['timestamp', 'action', 'title', 'client', 'date', 'performed_by']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+
+        if not file_exists:
+            writer.writeheader()
+
+        writer.writerow({
+            'timestamp': datetime.now().isoformat(),
+            'action': action,
+            'title': title,
+            'client': client,
+            'date': date,
+            'performed_by': performed_by
+        })
 
 if __name__ == '__main__':
     app.run(debug=True)
