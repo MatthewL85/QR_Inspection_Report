@@ -1292,5 +1292,42 @@ def edit_task():
     else:
         return redirect(url_for('property_manager_dashboard'))
 
+@app.route('/delete-task', methods=['POST'])
+def delete_task():
+    title = request.form['title']
+    date = request.form['date']
+    client = request.form['client']
+
+    fieldnames = ['client', 'title', 'date', 'notes', 'frequency', 'created_by', 'completed']
+
+    updated_rows = []
+    task_found = False
+
+    if os.path.exists('manual_tasks.csv'):
+        with open('manual_tasks.csv', newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row['title'] == title and row['date'] == date and row['client'] == client:
+                    task_found = True  # Skip this row (delete it)
+                    continue
+                updated_rows.append(row)
+
+    with open('manual_tasks.csv', 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in updated_rows:
+            clean_row = {field: row.get(field, '') for field in fieldnames}
+            writer.writerow(clean_row)
+
+    if task_found:
+        flash("Task deleted successfully!", "success")
+    else:
+        flash("Task not found. No changes made.", "warning")
+
+    if session['user']['role'] == 'Admin':
+        return redirect(url_for('admin_management_dashboard'))
+    else:
+        return redirect(url_for('property_manager_dashboard'))
+
 if __name__ == '__main__':
     app.run(debug=True)

@@ -48,6 +48,12 @@
           <input type="hidden" name="client" value="{{ task.client }}">
           <button type="submit" class="btn btn-sm btn-outline-primary">✏ Edit</button>
         </form>
+        <form action="{{ url_for('delete_task') }}" method="POST" style="display:inline;">
+          <input type="hidden" name="title" value="{{ task.title }}">
+          <input type="hidden" name="date" value="{{ task.date.strftime('%Y-%m-%d') }}">
+          <input type="hidden" name="client" value="{{ task.client }}">
+          <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this task?');">🗑 Delete</button>
+        </form>        
       </td>
     </tr>
     {% endfor %}
