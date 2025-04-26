@@ -1591,7 +1591,10 @@ def filtered_inspection_export():
     # dummy equipment for header
     equipment = {'name': 'Filtered Inspections', 'id': 'Multiple'}
 
-    rendered = render_template('inspection_log_pdf.html', logs=logs, equipment=equipment)
+    from datetime import datetime  # Make sure this is imported at the top if not already!
+
+    rendered = render_template('inspection_log_pdf.html', logs=logs, equipment=equipment, now=datetime.now())
+
     pdf = HTML(string=rendered).write_pdf()
 
     response = make_response(pdf)
