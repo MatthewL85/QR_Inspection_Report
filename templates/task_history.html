@@ -4,6 +4,36 @@
   <h1>📜 Task History Log</h1>
   <p>View all edits and deletions performed by users.</p>
 
+  <!-- 🔍 Filter Form -->
+  <form method="POST" style="margin-bottom: 1.5em;">
+    <div style="display: flex; gap: 1em; flex-wrap: wrap; align-items: center;">
+      <div>
+        <label for="performed_by">Filter by User:</label>
+        <select name="performed_by">
+          <option value="">All</option>
+          {% for user in users %}
+          <option value="{{ user }}">{{ user }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="action">Filter by Action:</label>
+        <select name="action">
+          <option value="">All</option>
+          {% for act in actions %}
+          <option value="{{ act }}">{{ act.title() }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 1.5em;">Apply Filters</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- 🗂 History Table -->
   {% if history %}
   <table class="table">
     <thead>

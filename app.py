@@ -1419,7 +1419,7 @@ def save_task_history(action, title, client, date, performed_by):
             'performed_by': performed_by
         })
 
-@app.route('/task-history')
+@app.route('/task-history', methods=['GET', 'POST'])
 def task_history():
     if 'user' not in session or session['user']['role'] != 'Admin':
         flash("Unauthorized access", "danger")
@@ -1435,7 +1435,24 @@ def task_history():
     # Sort newest first
     history.sort(key=lambda x: x['timestamp'], reverse=True)
 
-    return render_template('task_history.html', history=history)
+    filtered_history = history
+
+    # Apply filters if needed
+    if request.method == 'POST':
+        user_filter = request.form.get('performed_by')
+        action_filter = request.form.get('action')
+
+        if user_filter:
+            filtered_history = [h for h in filtered_history if h['performed_by'] == user_filter]
+
+        if action_filter:
+            filtered_history = [h for h in filtered_history if h['action'] == action_filter]
+
+    # Collect unique users and actions for dropdowns
+    users = sorted(set(h['performed_by'] for h in history))
+    actions = ['edit', 'delete']
+
+    return render_template('task_history.html', history=filtered_history, users=users, actions=actions)
 
 if __name__ == '__main__':
     app.run(debug=True)
