@@ -1550,7 +1550,7 @@ def download_inspection_log(equipment_id):
 
     return response
 
-@app.route('/export-inspections', methods=['GET', 'POST'])
+@@app.route('/export-inspections', methods=['GET', 'POST'])
 def filtered_inspection_export():
     if 'user' not in session or session['user']['role'] not in ['Admin', 'Property Manager']:
         flash("Unauthorized access", "danger")
@@ -1563,11 +1563,13 @@ def filtered_inspection_export():
             with open('clients.csv', newline='', encoding='utf-8') as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    client_list.append(row.get('client_name', ''))
+                    client_name = row.get('client_name', '')
+                    if client_name:
+                        client_list.append(client_name)
 
         return render_template('export_inspection_log.html', clients=client_list)
 
-    # POST - apply filters and generate PDF
+    # POST - Apply filters and generate PDF
     selected_client = request.form.get('client')
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
@@ -1588,12 +1590,27 @@ def filtered_inspection_export():
                 if match:
                     logs.append(row)
 
-    # dummy equipment for header
+    # Dummy equipment for header/title
     equipment = {'name': 'Filtered Inspections', 'id': 'Multiple'}
 
-    from datetime import datetime  # Make sure this is imported at the top if not already!
+    # 🖼 Company logo handling
+    company_name = session['user']['company']
+    logo_filename = f"{company_name}.png"
+    logo_path = os.path.join('static', 'logos', logo_filename)
 
-    rendered = render_template('inspection_log_pdf.html', logs=logs, equipment=equipment, now=datetime.now())
+    if os.path.exists(logo_path):
+        logo_url = '/' + logo_path
+    else:
+        logo_url = None  # fallback, no logo
+
+    # Render the PDF
+    rendered = render_template(
+        'inspection_log_pdf.html',
+        logs=logs,
+        equipment=equipment,
+        now=datetime.now(),
+        logo_url=logo_url
+    )
 
     pdf = HTML(string=rendered).write_pdf()
 

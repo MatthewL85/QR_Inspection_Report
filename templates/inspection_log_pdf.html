@@ -51,14 +51,13 @@
 </head>
 <body>
 
-    <header>
-        {% set company_logo = 'logos/' + session['user']['company'] + '.png' %}
-        <img src="{{ url_for('static', filename=company_logo) }}" alt="Company Logo" 
-             onerror="this.onerror=null;this.src='{{ url_for('static', filename='logos/default.png') }}';" 
-             style="height: 80px; margin-bottom: 1em;">
-        <h1>Inspection Report</h1>
-        <p class="subtitle">{{ equipment.name }} | Generated {{ now.strftime('%d-%m-%Y %H:%M') }}</p>
-      </header>    
+<header>
+    {% if logo_url %}
+        <img src="{{ logo_url }}" alt="Company Logo" style="max-height: 80px; margin-bottom: 1em;">
+    {% endif %}
+    <h1>Inspection Report</h1>
+    <p class="subtitle">{{ equipment.name }} | Generated {{ now.strftime('%d-%m-%Y %H:%M') }}</p>
+</header>
 
 <table>
     <thead>
