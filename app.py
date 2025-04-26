@@ -1464,5 +1464,53 @@ def task_history():
 
     return render_template('task_history.html', history=filtered_history, users=users, actions=actions)
 
+from flask import Response
+
+@app.route('/download-task-history', methods=['POST'])
+def download_task_history():
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    history = []
+    if os.path.exists('task_history.csv'):
+        with open('task_history.csv', newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                history.append(row)
+
+    # Apply same filters if provided
+    user_filter = request.form.get('performed_by')
+    action_filter = request.form.get('action')
+    title_search = request.form.get('title_search', '').lower()
+    start_date = request.form.get('start_date')
+    end_date = request.form.get('end_date')
+
+    if user_filter:
+        history = [h for h in history if h['performed_by'] == user_filter]
+
+    if action_filter:
+        history = [h for h in history if h['action'] == action_filter]
+
+    if title_search:
+        history = [h for h in history if title_search in h['title'].lower()]
+
+    if start_date:
+        history = [h for h in history if h['timestamp'] >= start_date]
+    if end_date:
+        history = [h for h in history if h['timestamp'] <= end_date + "T23:59:59"]
+
+    # Prepare CSV
+    output = "timestamp,action,title,client,date,performed_by\n"
+    for h in history:
+        output += f"{h['timestamp']},{h['action']},{h['title']},{h['client']},{h['date']},{h['performed_by']}\n"
+
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=task_history.csv"}
+    )
+
+
 if __name__ == '__main__':
     app.run(debug=True)

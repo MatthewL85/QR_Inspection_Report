@@ -30,6 +30,12 @@
       <div>
         <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 1.5em;">Apply Filters</button>
       </div>
+
+      <div style="align-self: flex-end;">
+        <button type="submit" formaction="{{ url_for('download_task_history') }}" class="btn btn-success btn-sm" style="margin-left: 1em;">
+          📥 Download CSV
+        </button>
+      </div>      
     </div>
   </form>
 
@@ -49,8 +55,16 @@
     <tbody>
       {% for entry in history %}
       <tr>
-        <td>{{ entry.timestamp }}</td>
-        <td>{{ entry.action.title() }}</td>
+        <td>{{ entry.timestamp | format_datetime }}</td> <!-- Clean DD-MM-YYYY HH:MM:SS -->
+        <td>
+          {% if entry.action == 'edit' %}
+            <span style="color: #007bff;">🖊️ {{ entry.action.title() }}</span>
+          {% elif entry.action == 'delete' %}
+            <span style="color: #dc3545;">🗑️ {{ entry.action.title() }}</span>
+          {% else %}
+            {{ entry.action.title() }}
+          {% endif %}
+        </td>
         <td>{{ entry.title }}</td>
         <td>{{ entry.client }}</td>
         <td>{{ entry.date }}</td>
