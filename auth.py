@@ -40,7 +40,7 @@ def authenticate_user(email, password):
                     'role': row['role'],
                     'company': row['company'],
                     'pin': row.get('pin', ''),
-                    'name_or_company': row.get('name_or_company', row['company'])
+                    'full_name': row.get ('name_or_company', row['company'])
                 }
     return None
 

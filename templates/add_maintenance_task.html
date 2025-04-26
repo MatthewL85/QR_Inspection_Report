@@ -99,7 +99,11 @@
     <button type="submit">Add Task</button>
 </form>
 
-<a href="{{ url_for('property_manager_dashboard') }}">⬅ Back to Dashboard</a>
+{% if session['user']['role'] == 'Admin' %}
+  <a href="{{ url_for('admin_management_dashboard') }}">⬅ Back to Dashboard</a>
+{% else %}
+  <a href="{{ url_for('property_manager_dashboard') }}">⬅ Back to Dashboard</a>
+{% endif %}
 
 </body>
 </html>

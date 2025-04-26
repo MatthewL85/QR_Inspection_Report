@@ -18,6 +18,10 @@
       <h3>🧾 All Logs</h3>
       <p>See inspection logs across all your managed clients.</p>
     </a>
+    <a href="{{ url_for('filtered_inspection_export') }}" class="dashboard-tile" style="background-color: #ffc107;">
+      <h3>📤 Export Inspections</h3>
+      <p>Generate PDF reports with custom filters (Client, Date Range).</p>
+    </a>    
     <a href="{{ url_for('admin_alerts') }}" class="dashboard-tile">
       <h3>⚠️ Missed Inspections</h3>
       <p>View overdue inspections based on PPM.</p>

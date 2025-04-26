@@ -5,7 +5,11 @@
         <img src="{{ url_for('static', filename='logo.png') }}" alt="Company Logo" class="report-logo">
         <h1>📋 Inspection Logs</h1>
     </div>
-
+    <div class="text-center mt-4">
+        <form method="GET" action="{{ url_for('download_inspection_log', equipment_id='all') }}">
+          <button type="submit" class="btn btn-primary">⬇ Download Full Inspection Log (PDF)</button>
+        </form>
+      </div>
     <div class="report-section">
         {% if logs %}
             <table class="report-table">

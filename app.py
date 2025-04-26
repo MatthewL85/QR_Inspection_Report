@@ -2,6 +2,8 @@ from auth import create_user, authenticate_user, user_exists
 from flask import Flask, render_template, request, redirect, url_for, send_file, session, flash, abort
 from werkzeug.security import generate_password_hash
 from dateutil.relativedelta import relativedelta
+from weasyprint import HTML
+from flask import make_response
 import csv
 import os
 import qrcode
@@ -1511,6 +1513,92 @@ def download_task_history():
         headers={"Content-Disposition": "attachment; filename=task_history.csv"}
     )
 
+@app.route('/download-inspection-log/<equipment_id>')
+def download_inspection_log(equipment_id):
+    if 'user' not in session or session['user']['role'] not in ['Admin', 'Property Manager']:
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    logs = []
+    if os.path.exists(LOG_CSV):
+        with open(LOG_CSV, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if equipment_id == 'all' or row['equipment_id'] == equipment_id:
+                    logs.append(row)
+
+    if not logs:
+        flash("No logs found.", "warning")
+        return redirect(url_for('property_manager_dashboard'))
+
+    if equipment_id == 'all':
+        equipment = {'id': 'All Equipment', 'name': 'All Equipment'}
+    else:
+        equipment = get_equipment_by_id(equipment_id)
+        if not equipment:
+            flash("Equipment not found.", "warning")
+            return redirect(url_for('property_manager_dashboard'))
+
+    rendered = render_template('inspection_log_pdf.html', logs=logs, equipment=equipment)
+
+    pdf = HTML(string=rendered).write_pdf()
+
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    filename = 'all_inspection_logs.pdf' if equipment_id == 'all' else f'inspection_log_{equipment_id}.pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+
+    return response
+
+@app.route('/export-inspections', methods=['GET', 'POST'])
+def filtered_inspection_export():
+    if 'user' not in session or session['user']['role'] not in ['Admin', 'Property Manager']:
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    if request.method == 'GET':
+        # Load client list
+        client_list = []
+        if os.path.exists('clients.csv'):
+            with open('clients.csv', newline='', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    client_list.append(row.get('client_name', ''))
+
+        return render_template('export_inspection_log.html', clients=client_list)
+
+    # POST - apply filters and generate PDF
+    selected_client = request.form.get('client')
+    start_date = request.form.get('start_date')
+    end_date = request.form.get('end_date')
+
+    logs = []
+    if os.path.exists(LOG_CSV):
+        with open(LOG_CSV, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                match = True
+                if selected_client and selected_client != row.get('client', ''):
+                    match = False
+                if start_date and row['timestamp'] < start_date:
+                    match = False
+                if end_date and row['timestamp'] > end_date + "T23:59:59":
+                    match = False
+
+                if match:
+                    logs.append(row)
+
+    # dummy equipment for header
+    equipment = {'name': 'Filtered Inspections', 'id': 'Multiple'}
+
+    rendered = render_template('inspection_log_pdf.html', logs=logs, equipment=equipment)
+    pdf = HTML(string=rendered).write_pdf()
+
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'attachment; filename=filtered_inspections.pdf'
+
+    return response
 
 if __name__ == '__main__':
     app.run(debug=True)
