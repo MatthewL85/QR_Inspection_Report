@@ -1550,7 +1550,7 @@ def download_inspection_log(equipment_id):
 
     return response
 
-@@app.route('/export-inspections', methods=['GET', 'POST'])
+@app.route('/export-inspections', methods=['GET', 'POST'])
 def filtered_inspection_export():
     if 'user' not in session or session['user']['role'] not in ['Admin', 'Property Manager']:
         flash("Unauthorized access", "danger")
