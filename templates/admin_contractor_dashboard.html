@@ -8,6 +8,11 @@
   </div>
 
   <div class="dashboard-grid">
+    <a href="{{ url_for('contractor_settings') }}" class="dashboard-tile">
+      <h3>⚙️ Settings</h3>
+      <p>Upload your company logo and settings.</p>
+    </a>
+    
     <a href="{{ url_for('view_logs') }}" class="dashboard-tile">
       <h3>📄 Contractor Inspection Logs</h3>
       <p>View all inspections submitted by your contractors.</p>

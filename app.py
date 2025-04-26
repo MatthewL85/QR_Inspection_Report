@@ -1603,5 +1603,63 @@ def filtered_inspection_export():
 
     return response
 
+@app.route('/admin/upload-logo', methods=['GET', 'POST'])
+def upload_logo():
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        file = request.files['logo']
+        if file:
+            filename = session['user']['company'] + '.png'
+            save_path = os.path.join('static', 'logos', filename)
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            file.save(save_path)
+            flash("Logo uploaded successfully!", "success")
+            return redirect(url_for('admin_management_dashboard'))
+        else:
+            flash("No file selected.", "warning")
+            return redirect(url_for('upload_logo'))
+
+    return render_template('upload_logo.html')
+
+@app.route('/admin/settings', methods=['GET', 'POST'])
+def admin_settings():
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        file = request.files['logo']
+        if file:
+            filename = session['user']['company'] + '.png'
+            save_path = os.path.join('static', 'logos', filename)
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            file.save(save_path)
+            flash("Logo uploaded successfully!", "success")
+            return redirect(url_for('admin_settings'))
+
+    return render_template('admin_settings.html')
+
+@app.route('/contractor/settings', methods=['GET', 'POST'])
+def contractor_settings():
+    if 'user' not in session or session['user']['role'] != 'Admin Contractor':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        file = request.files['logo']
+        if file:
+            filename = session['user']['company'] + '.png'
+            save_path = os.path.join('static', 'logos', filename)
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            file.save(save_path)
+            flash("Logo uploaded successfully!", "success")
+            return redirect(url_for('contractor_settings'))
+
+    return render_template('contractor_settings.html')
+
+
 if __name__ == '__main__':
     app.run(debug=True)

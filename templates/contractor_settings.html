@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="dashboard-container">
+  <h1>⚙️ Settings</h1>
+  <p>Upload your company logo here:</p>
+
+  <form method="POST" enctype="multipart/form-data">
+    <label>Select Logo (PNG):</label><br><br>
+    <input type="file" name="logo" accept="image/png" required><br><br>
+    <button type="submit" class="btn btn-primary">Upload Logo</button>
+  </form>
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('admin_management_dashboard') if session['user']['role'] == 'Admin' else url_for('admin_contractor_dashboard') }}" class="btn btn-secondary">⬅ Return to Dashboard</a>
+  </div>
+</div>
+{% endblock %}

@@ -6,6 +6,10 @@
   <a href="{{ url_for('logout') }}">Logout</a>
 
   <div class="dashboard-grid">
+    <a href="{{ url_for('admin_settings') }}" class="dashboard-tile">
+      <h3>⚙️ Settings</h3>
+      <p>Upload Logo and manage system settings.</p>
+    </a>   
     <a href="{{ url_for('generate') }}" class="dashboard-tile">
       <h3>➕ Add Equipment</h3>
       <p>Create QR codes and assign equipment to clients.</p>
@@ -42,6 +46,10 @@
       <h3>🏢 Manage Clients</h3>
       <p>Assign or transfer clients across managers.</p>
     </a>
+    <a href="{{ url_for('upload_logo') }}" class="dashboard-tile">
+      <h3>🖼 Upload Company Logo</h3>
+      <p>Change or update your company branding easily.</p>
+    </a>   
   </div>
 
   <div class="dashboard-section">
