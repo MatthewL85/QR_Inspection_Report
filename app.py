@@ -1,23 +1,39 @@
 from auth import create_user, authenticate_user, user_exists
-from flask import Flask, render_template, request, redirect, url_for, send_file, session, flash, abort
+from flask import Flask, render_template, request, redirect, url_for, send_file, session, flash, abort, make_response
 from werkzeug.security import generate_password_hash
 from dateutil.relativedelta import relativedelta
 from weasyprint import HTML
-from flask import make_response
 import csv
 import os
 import qrcode
 import json
 from datetime import datetime
 
-app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'  # Replace with a secure key
+# Load company settings
+SETTINGS_FILE = 'static/settings.json'
 
+def load_settings():
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    else:
+        return {}
+
+app = Flask(__name__)
+app.secret_key = 'your_secret_key_here'  # 🔥 Set secret key immediately
+
+# Load settings once at startup
+app_settings = load_settings()
+
+@app.context_processor
+def inject_settings():
+    return dict(settings=app_settings)
+
+# Other global constants
 DATA_FILE = 'equipment.csv'
 LOG_CSV = 'inspection_logs.csv'
 QR_FOLDER = 'static/qrcodes'
 USER_CSV = 'users.csv'
-
 
 os.makedirs(QR_FOLDER, exist_ok=True)
 
@@ -1557,22 +1573,22 @@ def filtered_inspection_export():
         return redirect(url_for('login'))
 
     if request.method == 'GET':
-        # Load client list
+        # Load clients
         client_list = []
         if os.path.exists('clients.csv'):
             with open('clients.csv', newline='', encoding='utf-8') as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    client_name = row.get('client_name', '')
-                    if client_name:
-                        client_list.append(client_name)
+                    if row.get('client_name'):
+                        client_list.append(row['client_name'])
 
         return render_template('export_inspection_log.html', clients=client_list)
 
-    # POST - Apply filters and generate PDF
+    # POST - apply filters
     selected_client = request.form.get('client')
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
+    add_watermark = request.form.get('add_watermark') == 'yes'
 
     logs = []
     if os.path.exists(LOG_CSV):
@@ -1590,26 +1606,14 @@ def filtered_inspection_export():
                 if match:
                     logs.append(row)
 
-    # Dummy equipment for header/title
     equipment = {'name': 'Filtered Inspections', 'id': 'Multiple'}
 
-    # 🖼 Company logo handling
-    company_name = session['user']['company']
-    logo_filename = f"{company_name}.png"
-    logo_path = os.path.join('static', 'logos', logo_filename)
-
-    if os.path.exists(logo_path):
-        logo_url = '/' + logo_path
-    else:
-        logo_url = None  # fallback, no logo
-
-    # Render the PDF
     rendered = render_template(
         'inspection_log_pdf.html',
         logs=logs,
         equipment=equipment,
         now=datetime.now(),
-        logo_url=logo_url
+        add_watermark=add_watermark
     )
 
     pdf = HTML(string=rendered).write_pdf()
@@ -1647,17 +1651,34 @@ def admin_settings():
         flash("Unauthorized access", "danger")
         return redirect(url_for('login'))
 
+    # Load current settings
+    settings = load_settings()
+
     if request.method == 'POST':
-        file = request.files['logo']
-        if file:
+        # Update text settings
+        settings['company_name'] = request.form.get('company_name', settings.get('company_name', ''))
+        settings['company_address'] = request.form.get('company_address', settings.get('company_address', ''))
+        settings['company_email'] = request.form.get('company_email', settings.get('company_email', ''))
+        settings['company_phone'] = request.form.get('company_phone', settings.get('company_phone', ''))
+        settings['company_license'] = request.form.get('company_license', settings.get('company_license', ''))
+
+        # Handle logo upload
+        file = request.files.get('logo')
+        if file and file.filename != '':
             filename = session['user']['company'] + '.png'
             save_path = os.path.join('static', 'logos', filename)
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             file.save(save_path)
             flash("Logo uploaded successfully!", "success")
-            return redirect(url_for('admin_settings'))
 
-    return render_template('admin_settings.html')
+        # Save settings to settings.json
+        with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(settings, f, indent=4)
+
+        flash("Settings updated successfully!", "success")
+        return redirect(url_for('admin_settings'))
+
+    return render_template('admin_settings.html', settings=settings)
 
 @app.route('/contractor/settings', methods=['GET', 'POST'])
 def contractor_settings():

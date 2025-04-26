@@ -1,0 +1,12 @@
+{
+    "company_name": "Your Company Ltd",
+    "address_line1": "123 Main Street",
+    "address_line2": "Dublin, Ireland",
+    "company_registration_number": "1234567A",
+    "license_number": "PSA123456",
+    "contact_email": "info@yourcompany.com",
+    "contact_phone": "+353 1 234 5678",
+    "logo_path": "static/logos/default.png",
+    "watermark": ""
+  }
+  
