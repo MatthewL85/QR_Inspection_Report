@@ -19,6 +19,16 @@ USER_CSV = 'users.csv'
 
 os.makedirs(QR_FOLDER, exist_ok=True)
 
+# Custom filter to format timestamp
+@app.template_filter('format_datetime')
+def format_datetime_filter(value):
+    """Format ISO datetime to DD-MM-YYYY HH:MM:SS"""
+    try:
+        dt = datetime.fromisoformat(value)
+        return dt.strftime('%d-%m-%Y %H:%M:%S')
+    except Exception:
+        return value  # fallback if invalid
+
 
 if not os.path.exists(LOG_CSV):
     with open(LOG_CSV, 'w', newline='') as f:
