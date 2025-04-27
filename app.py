@@ -10,6 +10,7 @@ import json
 from datetime import datetime
 from collections import defaultdict
 import uuid
+import re
 
 # Load company settings
 SETTINGS_FILE = 'static/settings.json'
@@ -26,6 +27,28 @@ app.secret_key = 'your_secret_key_here'  # 🔥 Set secret key immediately
 
 # Load settings once at startup
 app_settings = load_settings()
+
+
+def validate_pin_strength(pin):
+    """
+    Ensure PIN meets minimum security requirements:
+    - At least 8 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one digit
+    - At least one special character
+    """
+    if len(pin) < 8:
+        return False
+    if not re.search(r'[A-Z]', pin):
+        return False
+    if not re.search(r'[a-z]', pin):
+        return False
+    if not re.search(r'[0-9]', pin):
+        return False
+    if not re.search(r'[\W_]', pin):  # non-word character (symbol)
+        return False
+    return True
 
 @app.context_processor
 def inject_settings():
@@ -494,21 +517,45 @@ def admin_contractor_dashboard():
 
 @app.route('/admin/clients')
 def manage_clients():
-    clients = load_clients()
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
 
-    # Load assignments
+    clients = []
+    if os.path.exists('clients.csv'):
+        with open('clients.csv', newline='', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                try:
+                    contacts = json.loads(row['contacts'].replace('""', '"'))
+                except json.JSONDecodeError:
+                    contacts = []
+
+                client = {
+                    'id': row['id'],
+                    'name': row['client_name'],
+                    'address': row['address'],
+                    'contacts': contacts,
+                    'assigned_manager_email': row.get('assigned_manager_email', ''),
+                    'company': row.get('company', ''),
+                    'client_code': row.get('client_code', '')  # ✅ Now also load client_code
+                }
+                clients.append(client)
+
+    # Load assignments (who is assigned to manage which client)
     assignments = {}
     if os.path.exists('assignments.csv'):
-        with open('assignments.csv', newline='') as f:
+        with open('assignments.csv', newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
                 assignments[row['client_name']] = row['manager_email']
 
-    # Attach PM email to each client
+    # Attach Property Manager email to each client
     for client in clients:
         client['assigned_pm'] = assignments.get(client['name'], '—')
 
     return render_template('manage_clients.html', clients=clients)
+
 
 @app.route('/admin/reports')
 def admin_reports():
@@ -849,19 +896,31 @@ def edit_user(email):
     if request.method == 'POST':
         new_role = request.form['role']
         new_company = request.form['company']
+        new_pin = request.form.get('pin', '').strip()
 
         # Restrict Contractor Admin from changing role to non-contractor
         if session['user']['role'] == 'Admin Contractor' and new_role != 'Contractor':
             flash("You can only assign Contractor role.", "danger")
             return redirect(url_for('manage_users'))
 
+        # Validate PIN if provided
+        if new_pin:
+            import re
+            pin_pattern = r'^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}$'
+            if not re.match(pin_pattern, new_pin):
+                flash('PIN must be at least 8 characters long, including a number, a symbol, a lowercase and uppercase letter.', 'danger')
+                return redirect(url_for('edit_user', email=email))
+
+        # Update the user
         for u in users:
             if u['username'] == email:
                 u['role'] = new_role
                 u['company'] = new_company
+                if new_pin:
+                    u['pin'] = new_pin
                 break
 
-        with open(USER_CSV, 'w', newline='') as csvfile:
+        with open(USER_CSV, 'w', newline='', encoding='utf-8') as csvfile:
             fieldnames = ['username', 'password', 'role', 'company', 'pin', 'name_or_company']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
@@ -872,20 +931,14 @@ def edit_user(email):
 
     return render_template('edit_user.html', user=user_to_edit)
 
+
 @app.route('/admin/add-user', methods=['GET', 'POST'])
 def add_user():
     if 'user' not in session or session['user']['role'] not in ['Admin', 'Admin Contractor']:
         flash("Unauthorized access", "danger")
         return redirect(url_for('login'))
 
-    current_role = session['user']['role']
-    company = session['user']['company']
-
-    # Set allowed roles based on who is logged in
-    if current_role == 'Admin':
-        allowed_roles = ['Admin', 'Contractor', 'Property Manager']
-    else:
-        allowed_roles = ['Contractor']
+    # ... load allowed roles, etc.
 
     if request.method == 'POST':
         username = request.form['username'].strip()
@@ -895,18 +948,15 @@ def add_user():
         pin = request.form['pin'].strip()
         name_or_company = request.form['name_or_company'].strip()
 
-        if role not in allowed_roles:
-            flash("Invalid role selection.", "danger")
-            return render_template('add_user.html', allowed_roles=allowed_roles)
-
         if password != confirm_password:
             flash("Passwords do not match.", "danger")
             return render_template('add_user.html', allowed_roles=allowed_roles)
 
-        if user_exists(username):
-            flash("User already exists.", "warning")
+        if not validate_pin_strength(pin):
+            flash("PIN does not meet security requirements. Must be at least 8 characters with uppercase, lowercase, number, and symbol.", "danger")
             return render_template('add_user.html', allowed_roles=allowed_roles)
 
+        # ✅ Now it's safe to continue creating the user
         create_user(username=username, password=password, role=role, pin=pin, company=company, name_or_company=name_or_company)
         flash("User added successfully!", "success")
         return redirect(url_for('manage_users'))
@@ -927,23 +977,46 @@ def forgot_password():
 
 def load_clients():
     clients = []
-    with open('clients.csv', 'r', newline='', encoding='utf-8') as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            try:
-                contacts = json.loads(row['contacts'].replace('""', '"'))
-            except json.JSONDecodeError:
-                contacts = []
+    if os.path.exists('clients.csv'):
+        with open('clients.csv', 'r', newline='', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                # Parse contacts field
+                try:
+                    contacts = json.loads(row.get('contacts', '[]').replace('""', '"'))
+                except json.JSONDecodeError:
+                    contacts = []
 
-            client = {
-                'name': row['client_name'],
-                'address': row['address'],
-                'contacts': contacts,
-                'assigned_manager_email': row.get('assigned_manager_email', ''),
-                'company': row.get('company', '')
-            }
-            clients.append(client)
+                client = {
+                    'id': row.get('id', ''),  # Keep using client ID (UUID or custom)
+                    'name': row.get('client_name', ''),
+                    'address': row.get('address', ''),
+                    'contacts': contacts,
+                    'assigned_pm': row.get('assigned_manager_email', '').strip(),
+                    'company': row.get('company', ''),
+                    'client_code': row.get('client_code', '')  # <-- ADD this so it loads properly
+                }
+                clients.append(client)
     return clients
+
+def save_clients(clients):
+    """Save the list of clients to clients.csv."""
+    fieldnames = ['id', 'client_name', 'address', 'contacts', 'assigned_manager_email', 'company', 'client_code']
+
+    with open('clients.csv', 'w', newline='', encoding='utf-8') as file:
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for client in clients:
+            writer.writerow({
+                'id': client.get('id', ''),
+                'client_name': client.get('name', ''),
+                'address': client.get('address', ''),
+                'contacts': json.dumps(client.get('contacts', [])),
+                'assigned_manager_email': client.get('assigned_pm', ''),  # <-- FIX HERE
+                'company': client.get('company', ''),
+                'client_code': client.get('client_code', '')
+            })
 
 @app.route('/report/<client_id>')
 def report_client(client_id):
@@ -955,90 +1028,87 @@ def report_client(client_id):
 
 @app.route('/add-client', methods=['GET', 'POST'])
 def add_client():
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
     if request.method == 'POST':
-        # Generate a new ID (can be improved later with UUID or auto-increment)
-        new_id = str(uuid.uuid4())  # import uuid at the top
+        clients = load_clients()
 
-        name = request.form['name']
-        address = request.form['address']
+        name = request.form['name'].strip()
+        address = request.form['address'].strip()
 
+        # Contacts
         contacts = []
         for i in range(1, 10):
             contact_name = request.form.get(f'contact{i}_name', '').strip()
             contact_email = request.form.get(f'contact{i}_email', '').strip()
             contact_phone = request.form.get(f'contact{i}_phone', '').strip()
-            if contact_name:  # Only include if there's a name
+            if contact_name:
                 contacts.append({
                     'name': contact_name,
                     'email': contact_email,
                     'phone': contact_phone
                 })
 
-        # Prepare row
-        row = {
+        # Generate client ID and code
+        new_id = str(uuid.uuid4())  # You must `import uuid` at top if not yet
+        client_code = ''.join([word[0] for word in name.upper().split() if word.isalnum()][:2])  # Example: "Rathborne Village" => "RV"
+
+        new_client = {
             'id': new_id,
             'name': name,
-            'address': address
+            'address': address,
+            'contacts': contacts,
+            'assigned_pm': '',
+            'company': session['user']['company'],  # Match current Admin's company
+            'client_code': client_code
         }
-        for idx, contact in enumerate(contacts, 1):
-            row[f'contact{idx}_name'] = contact['name']
-            row[f'contact{idx}_email'] = contact['email']
-            row[f'contact{idx}_phone'] = contact['phone']
 
-        # Get all fieldnames including dynamic contact fields
-        fieldnames = ['id', 'name', 'address']
-        for i in range(1, 10):
-            fieldnames += [f'contact{i}_name', f'contact{i}_email', f'contact{i}_phone']
+        clients.append(new_client)
+        save_clients(clients)
 
-        # Save to clients.csv
-        file_exists = os.path.isfile('clients.csv')
-        with open('clients.csv', 'a', newline='', encoding='utf-8') as file:
-            writer = csv.DictWriter(file, fieldnames=fieldnames)
-            if not file_exists:
-                writer.writeheader()
-            writer.writerow(row)
-
-        return redirect(url_for('show_dashboard'))  # Adjust as needed
+        flash(f"Client '{name}' added successfully!", "success")
+        return redirect(url_for('manage_clients'))
 
     return render_template('add_client.html')
 
+
 @app.route('/edit-client/<client_id>', methods=['GET', 'POST'])
 def edit_client(client_id):
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
     clients = load_clients()
-    client = next((c for c in clients if c['name'] == client_id), None)
+    client = next((c for c in clients if c['id'] == client_id), None)
 
     if not client:
-        return "Client not found", 404
+        flash("Client not found.", "danger")
+        return redirect(url_for('manage_clients'))
 
     if request.method == 'POST':
-        client['name'] = request.form['name']
-        client['address'] = request.form['address']
+        client['name'] = request.form['name'].strip()
+        client['address'] = request.form['address'].strip()
 
+        # Update contacts
         contacts = []
         for i in range(1, 10):
-            name = request.form.get(f'contact{i}_name', '').strip()
-            email = request.form.get(f'contact{i}_email', '').strip()
-            phone = request.form.get(f'contact{i}_phone', '').strip()
-            if name:
-                contacts.append({'name': name, 'email': email, 'phone': phone})
+            contact_name = request.form.get(f'contact{i}_name', '').strip()
+            contact_email = request.form.get(f'contact{i}_email', '').strip()
+            contact_phone = request.form.get(f'contact{i}_phone', '').strip()
+            if contact_name:
+                contacts.append({
+                    'name': contact_name,
+                    'email': contact_email,
+                    'phone': contact_phone
+                })
 
         client['contacts'] = contacts
 
-        # Save back to CSV
-        with open('clients.csv', 'w', newline='', encoding='utf-8') as file:
-            fieldnames = ['client_name', 'address', 'contacts', 'assigned_manager_email', 'company']
-            writer = csv.DictWriter(file, fieldnames=fieldnames)
-            writer.writeheader()
-            for c in clients:
-                row = {
-                    'client_name': c['name'],
-                    'address': c['address'],
-                    'contacts': json.dumps(c['contacts']),
-                    'assigned_manager_email': c.get('assigned_manager_email', ''),
-                    'company': c.get('company', '')
-                }
-                writer.writerow(row)
+        save_clients(clients)
 
+        flash("Client updated successfully!", "success")
         return redirect(url_for('manage_clients'))
 
     return render_template('edit_client.html', client=client)

@@ -1,44 +1,50 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Manage Property Manager Assignments</title>
-</head>
-<body>
-    <h1>Manage Property Manager Assignments</h1>
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+  <h1>👥 Assign Property Managers to Clients</h1>
 
-    <form method="POST">
-        <table border="1" cellpadding="6" cellspacing="0">
-            <thead>
-                <tr>
-                    <th>Client</th>
-                    <th>Assigned Property Manager</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for client in clients %}
-                <tr>
-                    <td>{{ client.name }}</td>
-                    <td>
-                        <select name="pm_for_{{ client.name }}">
-                            <option value="">-- Unassigned --</option>
-                            {% for pm in managers %}
-                            <option value="{{ pm.username }}"
-                                {% if assignments.get(client.name) == pm.username %}selected{% endif %}>
-                                {{ pm.username }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <br>
-        <button type="submit">💾 Save Assignments</button>
-    </form>
+  <form method="POST" style="margin-top: 2em;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Client Name</th>
+          <th>Current Assigned PM</th>
+          <th>Assign New PM</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for client in clients %}
+        <tr>
+          <td><strong>{{ client.name }}</strong></td>
+          <td>
+            {% if assignments.get(client.name) %}
+              {{ assignments.get(client.name) }}
+            {% else %}
+              <em>Not Assigned</em>
+            {% endif %}
+          </td>
+          <td>
+            <select name="pm_for_{{ client.name }}" class="form-select">
+              <option value="">-- No Change --</option>
+              {% for manager in managers %}
+                <option value="{{ manager.username }}" {% if assignments.get(client.name) == manager.username %}selected{% endif %}>
+                  {{ manager.name_or_company or manager.username }}
+                </option>
+              {% endfor %}
+            </select>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
-    <br>
-    <a href="{{ url_for('manage_clients') }}">⬅ Back to Clients</a>
-</body>
-</html>
+    <div class="text-center mt-4">
+      <button type="submit" class="btn btn-primary">💾 Save Assignments</button>
+    </div>
+  </form>
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('manage_clients') }}" class="btn btn-secondary">⬅ Back to Manage Clients</a>
+  </div>
+</div>
+{% endblock %}

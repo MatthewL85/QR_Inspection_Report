@@ -1,4 +1,3 @@
-<!-- templates/manage_clients.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,11 +13,21 @@
         h1 {
             color: #333;
         }
+        .actions a {
+            margin-right: 1em;
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .actions a:hover {
+            text-decoration: underline;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 1em;
+            margin-top: 1.5em;
             background-color: white;
+            font-size: 14px;
         }
         th, td {
             padding: 0.8em;
@@ -29,32 +38,39 @@
         th {
             background-color: #f1f1f1;
         }
-        .actions a {
+        .btn {
+            display: inline-block;
             margin-right: 1em;
-            color: #007bff;
+            margin-bottom: 1em;
+            padding: 0.6em 1.2em;
+            border-radius: 5px;
             text-decoration: none;
+            font-weight: bold;
         }
-        .actions a:hover {
-            text-decoration: underline;
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
         }
     </style>
 </head>
 <body>
 
-<h1>Manage Clients</h1>
+<h1>🏢 Manage Clients</h1>
 
-<a href="{{ url_for('add_client') }}" style="display: inline-block; margin-bottom: 1em; padding: 0.5em 1em; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
-    ➕ Add New Client
-</a>
+<!-- Buttons -->
+<a href="{{ url_for('add_client') }}" class="btn btn-primary">➕ Add New Client</a>
+<a href="{{ url_for('admin_assignments') }}" class="btn btn-secondary">🗂️ Manage Assignments</a>
 
-<a href="{{ url_for('admin_assignments') }}" style="display:inline-block; margin-bottom: 1em; padding: 0.5em 1em; background-color: #6c757d; color: white; text-decoration: none; border-radius: 5px;">
-    🗂️ Manage Assignments
-</a>
-
+<!-- Clients Table -->
 <table>
     <thead>
         <tr>
             <th>Client Name</th>
+            <th>Client Code</th>
             <th>Address</th>
             <th>Contacts</th>
             <th>Assigned PM</th>
@@ -65,30 +81,35 @@
         {% for client in clients %}
         <tr>
             <td>{{ client.name }}</td>
+            <td>{{ client.id }}</td> <!-- Show the new ID (e.g., RV, HC) -->
             <td>{{ client.address }}</td>
             <td>
-                <ul>
+                {% if client.contacts %}
+                    <ul style="padding-left: 1em;">
                     {% for contact in client.contacts %}
-                    <li>
-                        {{ contact.name }}<br>
-                        <a href="mailto:{{ contact.email }}">{{ contact.email }}</a><br>
-                        {{ contact.phone }}
-                    </li>
+                        <li>
+                            <strong>{{ contact.name }}</strong><br>
+                            📧 <a href="mailto:{{ contact.email }}">{{ contact.email }}</a><br>
+                            📞 {{ contact.phone }}
+                        </li>
                     {% endfor %}
-                </ul>
+                    </ul>
+                {% else %}
+                    —
+                {% endif %}
             </td>
-            <td>{{ client.assigned_pm }}</td>
+            <td>{{ client.assigned_pm or '—' }}</td>
             <td class="actions">
-                <a href="{{ url_for('edit_client', client_id=client.name|urlencode) }}">Edit</a>
-                <a href="{{ url_for('admin_assignments') }}">Assign PM</a>
+                <a href="{{ url_for('edit_client', client_id=client.name|urlencode) }}">✏️ Edit</a>
+                <a href="{{ url_for('admin_assignments') }}">👤 Assign PM</a>
             </td>
-        </tr>        
+        </tr>
         {% endfor %}
     </tbody>
 </table>
 
 <br>
-<a href="{{ url_for('admin_dashboard') }}">⬅ Back to Dashboard</a>
+<a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">⬅ Back to Dashboard</a>
 
 </body>
 </html>

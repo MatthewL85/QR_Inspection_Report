@@ -1,95 +1,75 @@
-<!-- templates/edit_client.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Edit Client</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 2em;
-            background-color: #f9f9f9;
-        }
-        fieldset {
-            border: 1px solid #ccc;
-            padding: 1em;
-        }
-        legend {
-            font-weight: bold;
-        }
-        input {
-            width: 300px;
-            margin-bottom: 0.5em;
-        }
-    </style>
-</head>
-<body>
-    <h1>Edit Client: {{ client.name }}</h1>
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+  <h1>✏️ Edit Client: {{ client.name }}</h1>
 
-    <form method="POST" id="clientForm">
-        <label>Client Name:</label><br>
-        <input type="text" name="name" value="{{ client.name }}" required><br><br>
+  <form method="POST" id="clientForm">
+    <div style="margin-bottom: 1em;">
+      <label><strong>Client Name:</strong></label><br>
+      <input type="text" name="name" value="{{ client.name }}" required style="width: 100%;">
+    </div>
 
-        <label>Address:</label><br>
-        <input type="text" name="address" value="{{ client.address }}" required><br><br>
+    <div style="margin-bottom: 1em;">
+      <label><strong>Address:</strong></label><br>
+      <input type="text" name="address" value="{{ client.address }}" required style="width: 100%;">
+    </div>
 
-        <h3>Contacts</h3>
-        <div id="contactsContainer">
-            {% for i in range(client.contacts|length) %}
-            <div class="contact-block">
-                <fieldset>
-                    <legend>Contact {{ i+1 }}</legend>
-                    <label>Name:</label><br>
-                    <input type="text" name="contact{{ i+1 }}_name" value="{{ client.contacts[i].name }}"><br>
+    <h3>📞 Contacts (Optional)</h3>
 
-                    <label>Email:</label><br>
-                    <input type="email" name="contact{{ i+1 }}_email" value="{{ client.contacts[i].email }}"><br>
+    <div id="contactsContainer">
+      {% for i in range(client.contacts|length) %}
+      <div class="contact-block" style="border: 1px solid #ccc; padding: 1em; margin-bottom: 1em; border-radius: 8px;">
+        <legend><strong>Contact {{ i+1 }}</strong></legend>
+        <label>Name:</label><br>
+        <input type="text" name="contact{{ i+1 }}_name" value="{{ client.contacts[i].name }}" style="width: 100%;"><br>
 
-                    <label>Phone:</label><br>
-                    <input type="text" name="contact{{ i+1 }}_phone" value="{{ client.contacts[i].phone }}"><br>
-                </fieldset>
-                <br>
-            </div>
-            {% endfor %}
-        </div>
+        <label>Email:</label><br>
+        <input type="email" name="contact{{ i+1 }}_email" value="{{ client.contacts[i].email }}" style="width: 100%;"><br>
 
-        <button type="button" onclick="addContact()">➕ Add Contact</button><br><br>
-        <button type="submit">Save Changes</button>
-    </form>
+        <label>Phone:</label><br>
+        <input type="text" name="contact{{ i+1 }}_phone" value="{{ client.contacts[i].phone }}" style="width: 100%;"><br>
+      </div>
+      {% endfor %}
+    </div>
 
-    <br>
-    <a href="{{ url_for('manage_clients') }}">⬅ Back to Clients</a>
+    <button type="button" onclick="addContact()" class="btn btn-secondary" style="margin-top: 1em;">➕ Add Contact</button><br><br>
 
-    <script>
-        let contactCount = {{ client.contacts|length }};
-        const maxContacts = 9;
-        
-        function addContact() {
-            if (contactCount >= maxContacts) {
-                alert("You can only add up to 9 contacts.");
-                return;
-            }
-        
-            contactCount++;
-            const container = document.getElementById("contactsContainer");
-        
-            const div = document.createElement("div");
-            div.className = "contact-block";
-            div.innerHTML = `
-                <fieldset>
-                    <legend>Contact ${contactCount}</legend>
-                    <label>Name:</label><br>
-                    <input type="text" name="contact${contactCount}_name"><br>
-        
-                    <label>Email:</label><br>
-                    <input type="email" name="contact${contactCount}_email"><br>
-        
-                    <label>Phone:</label><br>
-                    <input type="text" name="contact${contactCount}_phone"><br>
-                </fieldset><br>
-            `;
-            container.appendChild(div);
-        }
-        </script>        
-</body>
-</html>
+    <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+  </form>
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('manage_clients') }}" class="btn btn-secondary">⬅ Back to Manage Clients</a>
+  </div>
+</div>
+
+<script>
+let contactCount = {{ client.contacts|length }};
+const maxContacts = 9;
+
+function addContact() {
+  if (contactCount >= maxContacts) {
+    alert("You can only add up to 9 contacts.");
+    return;
+  }
+
+  contactCount++;
+  const container = document.getElementById("contactsContainer");
+
+  const div = document.createElement("div");
+  div.className = "contact-block";
+  div.style = "border: 1px solid #ccc; padding: 1em; margin-bottom: 1em; border-radius: 8px;";
+  div.innerHTML = `
+    <legend><strong>Contact ${contactCount}</strong></legend>
+    <label>Name:</label><br>
+    <input type="text" name="contact${contactCount}_name" style="width: 100%;"><br>
+
+    <label>Email:</label><br>
+    <input type="email" name="contact${contactCount}_email" style="width: 100%;"><br>
+
+    <label>Phone:</label><br>
+    <input type="text" name="contact${contactCount}_phone" style="width: 100%;"><br>
+  `;
+  container.appendChild(div);
+}
+</script>
+{% endblock %}

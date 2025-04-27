@@ -1,42 +1,32 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container mt-5" style="max-width: 600px;">
-  <h2 class="mb-4 text-center">✏️ Edit User</h2>
-
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }}">{{ message }}</div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
+<div class="container">
+  <h1>✏ Edit User</h1>
 
   <form method="POST">
-    <div class="mb-3">
-      <label for="username" class="form-label">Email</label>
-      <input type="email" class="form-control" id="username" value="{{ user.username }}" disabled>
-    </div>
+    <label>Email / Username:</label><br>
+    <input type="email" name="username" value="{{ user.username }}" readonly><br><br>
 
-    <div class="mb-3">
-      <label for="role" class="form-label">Role</label>
-      <select name="role" class="form-select" required>
-        <option value="Admin" {% if user.role == 'Admin' %}selected{% endif %}>Admin</option>
-        <option value="Admin Contractor" {% if user.role == 'Admin Contractor' %}selected{% endif %}>Admin Contractor</option>
-        <option value="Property Manager" {% if user.role == 'Property Manager' %}selected{% endif %}>Property Manager</option>
-        <option value="Contractor" {% if user.role == 'Contractor' %}selected{% endif %}>Contractor</option>
-      </select>
-    </div>
+    <label>Role:</label><br>
+    <select name="role" required>
+      <option value="Property Manager" {% if user.role == 'Property Manager' %}selected{% endif %}>Property Manager</option>
+      <option value="Admin" {% if user.role == 'Admin' %}selected{% endif %}>Admin</option>
+    </select><br><br>
 
-    <div class="mb-3">
-      <label for="company" class="form-label">Company</label>
-      <input type="text" class="form-control" name="company" value="{{ user.company }}" required>
-    </div>
+    <label>Full Name:</label><br>
+    <input type="text" name="name_or_company" value="{{ user.name_or_company }}" required><br><br>
 
-    <button type="submit" class="btn btn-primary w-100">Update User</button>
+    <label for="pin">Secure PIN:</label><br>
+    <input type="text" name="pin" 
+       pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}" 
+       title="PIN must be at least 8 characters long, and include a number, a symbol, a lowercase and uppercase letter."
+       required><br><br>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
   </form>
 
   <div class="text-center mt-4">
-    <a href="{{ url_for('show_dashboard') }}" class="btn btn-secondary">⬅ Return to Dashboard</a>
+    <a href="{{ url_for('manage_users') }}" class="btn btn-secondary">⬅ Back to User List</a>
   </div>
 </div>
 {% endblock %}

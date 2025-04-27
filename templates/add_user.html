@@ -1,61 +1,38 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container mt-5" style="max-width: 600px;">
-  <h2 class="mb-4 text-center">➕ Add New User</h2>
-
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }}">{{ message }}</div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
+<div class="container">
+  <h1>➕ Add New User</h1>
 
   <form method="POST">
-    <div class="mb-3">
-      <label for="username" class="form-label">Email (Username)</label>
-      <input type="email" class="form-control" id="username" name="username" required>
-    </div>
+    <label>Email / Username:</label><br>
+    <input type="email" name="username" required><br><br>
 
-    <div class="mb-3">
-      <label for="password" class="form-label">Password</label>
-      <input type="password" class="form-control" id="password" name="password" required>
-    </div>
+    <label>Password:</label><br>
+    <input type="password" name="password" required><br><br>
 
-    <div class="mb-3">
-      <label for="confirm_password" class="form-label">Confirm Password</label>
-      <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-    </div>
+    <label>Confirm Password:</label><br>
+    <input type="password" name="confirm_password" required><br><br>
 
-    <div class="mb-3">
-      <label for="role" class="form-label">Role</label>
-      <select class="form-select" name="role" required>
-        {% if session['user']['role'] == 'Admin' %}
-          <option value="Admin">Admin</option>
-          <option value="Contractor">Contractor</option>
-          <option value="Property Manager">Property Manager</option>
-        {% elif session['user']['role'] == 'Admin Contractor' %}
-          <option value="Contractor">Contractor</option>
-        {% endif %}
-      </select>
-    </div>
+    <label>Role:</label><br>
+    <select name="role" required>
+      <option value="Property Manager">Property Manager</option>
+      <option value="Admin">Admin</option>
+    </select><br><br>
 
-    <div class="mb-3">
-      <label for="pin" class="form-label">PIN (For QR Inspection Access)</label>
-      <input type="text" class="form-control" id="pin" name="pin" maxlength="10">
-    </div>
+    <label>Full Name:</label><br>
+    <input type="text" name="name_or_company" required><br><br>
 
-    <div class="mb-3">
-      <label for="name_or_company" class="form-label">Name or Company</label>
-      <input type="text" class="form-control" id="name_or_company" name="name_or_company" required>
-    </div>
+    <label for="pin">Secure PIN:</label><br>
+    <input type="text" name="pin" 
+       pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}" 
+       title="PIN must be at least 8 characters long, and include a number, a symbol, a lowercase and uppercase letter."
+       required><br><br>
 
-    <button type="submit" class="btn btn-primary w-100">Add User</button>
+    <button type="submit" class="btn btn-primary">Add User</button>
   </form>
 
-    <div class="text-center mt-4">
-    <a href="{{ url_for('show_dashboard') }}" class="btn btn-secondary">⬅ Return to Dashboard</a>
-    </div>
+  <div class="text-center mt-4">
+    <a href="{{ url_for('manage_users') }}" class="btn btn-secondary">⬅ Back to User List</a>
+  </div>
 </div>
-
 {% endblock %}

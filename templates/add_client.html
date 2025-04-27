@@ -1,95 +1,74 @@
-<!-- templates/add_client.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Add Client</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 2em;
-            background-color: #f9f9f9;
-        }
-        fieldset {
-            border: 1px solid #ccc;
-            padding: 1em;
-        }
-        legend {
-            font-weight: bold;
-        }
-        input {
-            width: 300px;
-            margin-bottom: 0.5em;
-        }
-    </style>
-</head>
-<body>
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+  <h1>➕ Add New Client</h1>
 
-<h1>Add New Client</h1>
-
-<form method="POST" id="clientForm">
-    <label>Client Name:</label><br>
-    <input type="text" name="name" required><br><br>
-
-    <label>Address:</label><br>
-    <input type="text" name="address" required><br><br>
-
-    <h3>Contacts</h3>
-    <div id="contactsContainer">
-        <!-- First contact block starts automatically -->
-        <div class="contact-block">
-            <fieldset>
-                <legend>Contact 1</legend>
-                <label>Name:</label><br>
-                <input type="text" name="contact1_name"><br>
-
-                <label>Email:</label><br>
-                <input type="email" name="contact1_email"><br>
-
-                <label>Phone:</label><br>
-                <input type="text" name="contact1_phone"><br>
-            </fieldset><br>
-        </div>
+  <form method="POST" id="clientForm">
+    <div style="margin-bottom: 1em;">
+      <label><strong>Client Name:</strong></label><br>
+      <input type="text" name="name" required style="width: 100%;">
     </div>
 
-    <button type="button" onclick="addContact()">➕ Add Contact</button><br><br>
-    <button type="submit">Add Client</button>
-</form>
+    <div style="margin-bottom: 1em;">
+      <label><strong>Address:</strong></label><br>
+      <input type="text" name="address" required style="width: 100%;">
+    </div>
 
-<br>
-<a href="{{ url_for('show_dashboard') }}">⬅ Back to Dashboard</a>
+    <h3>📞 Contacts (Optional)</h3>
+
+    <div id="contactsContainer">
+      <!-- First contact block automatically visible -->
+      <div class="contact-block" style="border: 1px solid #ccc; padding: 1em; margin-bottom: 1em; border-radius: 8px;">
+        <legend><strong>Contact 1</strong></legend>
+        <label>Name:</label><br>
+        <input type="text" name="contact1_name" style="width: 100%;"><br>
+
+        <label>Email:</label><br>
+        <input type="email" name="contact1_email" style="width: 100%;"><br>
+
+        <label>Phone:</label><br>
+        <input type="text" name="contact1_phone" style="width: 100%;"><br>
+      </div>
+    </div>
+
+    <button type="button" onclick="addContact()" class="btn btn-secondary" style="margin-top: 1em;">➕ Add Contact</button><br><br>
+
+    <button type="submit" class="btn btn-primary">Save Client</button>
+  </form>
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('manage_clients') }}" class="btn btn-secondary">⬅ Back to Manage Clients</a>
+  </div>
+</div>
 
 <script>
 let contactCount = 1;
 const maxContacts = 9;
 
 function addContact() {
-    if (contactCount >= maxContacts) {
-        alert("You can only add up to 9 contacts.");
-        return;
-    }
+  if (contactCount >= maxContacts) {
+    alert("You can only add up to 9 contacts.");
+    return;
+  }
 
-    contactCount++;
-    const container = document.getElementById("contactsContainer");
+  contactCount++;
+  const container = document.getElementById("contactsContainer");
 
-    const div = document.createElement("div");
-    div.className = "contact-block";
-    div.innerHTML = `
-        <fieldset>
-            <legend>Contact ${contactCount}</legend>
-            <label>Name:</label><br>
-            <input type="text" name="contact${contactCount}_name"><br>
+  const div = document.createElement("div");
+  div.className = "contact-block";
+  div.style = "border: 1px solid #ccc; padding: 1em; margin-bottom: 1em; border-radius: 8px;";
+  div.innerHTML = `
+    <legend><strong>Contact ${contactCount}</strong></legend>
+    <label>Name:</label><br>
+    <input type="text" name="contact${contactCount}_name" style="width: 100%;"><br>
 
-            <label>Email:</label><br>
-            <input type="email" name="contact${contactCount}_email"><br>
+    <label>Email:</label><br>
+    <input type="email" name="contact${contactCount}_email" style="width: 100%;"><br>
 
-            <label>Phone:</label><br>
-            <input type="text" name="contact${contactCount}_phone"><br>
-        </fieldset><br>
-    `;
-    container.appendChild(div);
+    <label>Phone:</label><br>
+    <input type="text" name="contact${contactCount}_phone" style="width: 100%;"><br>
+  `;
+  container.appendChild(div);
 }
 </script>
-
-</body>
-</html>
+{% endblock %}
