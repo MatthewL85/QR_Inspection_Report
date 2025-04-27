@@ -81,7 +81,7 @@
         {% for client in clients %}
         <tr>
             <td>{{ client.name }}</td>
-            <td>{{ client.id }}</td> <!-- Show the new ID (e.g., RV, HC) -->
+            <td>{{ client.client_code }}</td> <!-- FIXED: show client_code here -->
             <td>{{ client.address }}</td>
             <td>
                 {% if client.contacts %}
@@ -100,7 +100,7 @@
             </td>
             <td>{{ client.assigned_pm or '—' }}</td>
             <td class="actions">
-                <a href="{{ url_for('edit_client', client_id=client.name|urlencode) }}">✏️ Edit</a>
+                <a href="{{ url_for('edit_client', client_id=client.id|urlencode) }}">✏️ Edit</a> <!-- FIXED: pass id instead of name -->
                 <a href="{{ url_for('admin_assignments') }}">👤 Assign PM</a>
             </td>
         </tr>

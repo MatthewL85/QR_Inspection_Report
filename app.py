@@ -1056,9 +1056,9 @@ def add_client():
                     'phone': contact_phone
                 })
 
-        # Generate client ID and code
-        new_id = str(uuid.uuid4())  # You must `import uuid` at top if not yet
-        client_code = ''.join([word[0] for word in name.upper().split() if word.isalnum()][:2])  # Example: "Rathborne Village" => "RV"
+        # 🆕 Generate Client ID (UUID) and Client Code (Initials)
+        new_id = str(uuid.uuid4())  # You must `import uuid` at the top!
+        client_code = ''.join([word[0] for word in name.upper().split() if word.isalnum()])[:2]  # E.g., "Rathborne Village" ➔ "RV"
 
         new_client = {
             'id': new_id,
@@ -1095,6 +1095,9 @@ def edit_client(client_id):
     if request.method == 'POST':
         client['name'] = request.form['name'].strip()
         client['address'] = request.form['address'].strip()
+
+        # ✨ NEW: Refresh the client_code if name changed
+        client['client_code'] = ''.join([word[0] for word in client['name'].upper().split() if word.isalnum()])[:2]
 
         # Update contacts
         contacts = []
