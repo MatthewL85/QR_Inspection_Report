@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html>
+<<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Add Maintenance Task</title>
@@ -9,7 +9,6 @@
             margin: 2em;
             background-color: #f9f9f9;
         }
-
         form {
             max-width: 600px;
             background-color: white;
@@ -17,18 +16,15 @@
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-
         label {
             font-weight: bold;
         }
-
         input, select, textarea {
             width: 100%;
             margin-bottom: 1em;
             padding: 0.5em;
             font-size: 1em;
         }
-
         button {
             padding: 0.6em 1.5em;
             background-color: #007bff;
@@ -38,18 +34,15 @@
             cursor: pointer;
             border-radius: 5px;
         }
-
         button:hover {
             background-color: #0056b3;
         }
-
         a {
             display: inline-block;
             margin-top: 1em;
             text-decoration: none;
             color: #007bff;
         }
-
         a:hover {
             text-decoration: underline;
         }
@@ -63,8 +56,12 @@
     <label for="client">Client:</label>
     <select name="client" required>
         <option value="" disabled selected>Select a client</option>
-        {% for client in client_names %}
-        <option value="{{ client }}">{{ client }}</option>
+        {% for letter, clients in client_groups.items() %}
+            <optgroup label="{{ letter }}">
+                {% for client in clients %}
+                <option value="{{ client }}">{{ client }}</option>
+                {% endfor %}
+            </optgroup>
         {% endfor %}
     </select>
 
@@ -91,19 +88,21 @@
     <label>
         <input type="checkbox" name="repeat_tasks" value="yes">
         Generate future tasks based on frequency
-      </label><br><br>      
+    </label><br><br>
 
     <label for="notes">Notes (optional):</label>
     <textarea name="notes" rows="4"></textarea>
 
-    <button type="submit">Add Task</button>
+    <button type="submit">➕ Add Task</button>
 </form>
 
-{% if session['user']['role'] == 'Admin' %}
-  <a href="{{ url_for('admin_management_dashboard') }}">⬅ Back to Dashboard</a>
-{% else %}
-  <a href="{{ url_for('property_manager_dashboard') }}">⬅ Back to Dashboard</a>
-{% endif %}
+<div style="margin-top: 2em;">
+    {% if session['user']['role'] == 'Admin' %}
+        <a href="{{ url_for('admin_management_dashboard') }}">⬅ Back to Dashboard</a>
+    {% else %}
+        <a href="{{ url_for('property_manager_dashboard') }}">⬅ Back to Dashboard</a>
+    {% endif %}
+</div>
 
 </body>
 </html>

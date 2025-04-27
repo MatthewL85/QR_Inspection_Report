@@ -1,44 +1,100 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="dashboard-container">
-  <h2>✏ Edit Maintenance Task</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Maintenance Task</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            background-color: #f9f9f9;
+        }
+        form {
+            max-width: 600px;
+            background-color: white;
+            padding: 2em;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        label {
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            margin-bottom: 1em;
+            padding: 0.5em;
+            font-size: 1em;
+        }
+        button {
+            padding: 0.6em 1.5em;
+            background-color: #28a745;
+            border: none;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #1e7e34;
+        }
+        a {
+            display: inline-block;
+            margin-top: 1em;
+            text-decoration: none;
+            color: #007bff;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
 
-  <form method="POST">
+<h1>Edit Maintenance Task</h1>
+
+<form method="POST">
     <input type="hidden" name="original_title" value="{{ task.title }}">
     <input type="hidden" name="original_date" value="{{ task.date }}">
     <input type="hidden" name="original_client" value="{{ task.client }}">
 
-    <label>Client:</label><br>
+    <label for="client">Client:</label>
     <select name="client" required>
-      {% for client in client_names %}
-        <option value="{{ client }}" {% if client == task.client %}selected{% endif %}>
-          {{ client }}
-        </option>
-      {% endfor %}
-    </select><br><br>
+        <option value="" disabled>Select a client</option>
+        {% for letter, clients in client_groups.items() %}
+            <optgroup label="{{ letter }}">
+                {% for client_name in clients %}
+                    <option value="{{ client_name }}" {% if task.client == client_name %}selected{% endif %}>{{ client_name }}</option>
+                {% endfor %}
+            </optgroup>
+        {% endfor %}
+    </select>
 
-    <label>Task Title:</label><br>
-    <input type="text" name="title" value="{{ task.title }}" required><br><br>
+    <label for="title">Task Title:</label>
+    <input type="text" name="title" value="{{ task.title }}" required>
 
-    <label>Scheduled Date:</label><br>
-    <input type="date" name="date" value="{{ task.date }}" required><br><br>
+    <label for="date">Scheduled Date:</label>
+    <input type="date" name="date" value="{{ task.date }}" required>
 
-    <label>Frequency:</label><br>
-    <select name="frequency" required>
-      {% for option in frequency_options %}
-        <option value="{{ option }}" {% if option == task.frequency %}selected{% endif %}>
-          {{ option }}
-        </option>
-      {% endfor %}
-    </select><br><br>
+    <label for="frequency">Frequency:</label>
+    <select name="frequency">
+        {% for option in frequency_options %}
+            <option value="{{ option }}" {% if task.frequency == option %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+    </select>
 
-    <label>Notes:</label><br>
-    <textarea name="notes" rows="4">{{ task.notes }}</textarea><br><br>
+    <label for="notes">Notes (optional):</label>
+    <textarea name="notes" rows="4">{{ task.notes }}</textarea>
 
     <button type="submit">💾 Save Changes</button>
-  </form>
+</form>
 
-  <br>
-  <a href="{{ url_for('property_manager_dashboard') }}">⬅ Cancel</a>
+<div style="margin-top: 2em;">
+    {% if session['user']['role'] == 'Admin' %}
+        <a href="{{ url_for('admin_management_dashboard') }}">⬅ Back to Dashboard</a>
+    {% else %}
+        <a href="{{ url_for('property_manager_dashboard') }}">⬅ Back to Dashboard</a>
+    {% endif %}
 </div>
-{% endblock %}
+
+</body>
+</html>

@@ -8,6 +8,7 @@ import os
 import qrcode
 import json
 from datetime import datetime
+from collections import defaultdict
 
 # Load company settings
 SETTINGS_FILE = 'static/settings.json'
@@ -117,12 +118,13 @@ def generate():
         with open('clients.csv', newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                if row['name']:  # or row['client_name'] if your column is named that
-                    client_names.append(row['name'])
+                client_name = row.get('client_name')
+                if client_name:
+                    client_names.append(client_name)
 
     if request.method == 'POST':
-        eq_id = request.form['id']
         client = request.form['client']
+        eq_id = request.form['id']
         name = request.form['name']
         location = request.form['location']
         model = request.form['model']
@@ -130,25 +132,34 @@ def generate():
         last_inspection = request.form['last_inspection']
         pin = request.form['pin']
 
+        # Save new equipment to equipment.csv
         file_exists = os.path.isfile(DATA_FILE)
-
-        with open(DATA_FILE, 'a', newline='') as file:
+        with open(DATA_FILE, 'a', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
             if not file_exists:
-               writer.writerow(['id', 'client', 'name', 'location', 'model', 'age', 'last_inspection', 'pin', 'created_by'])
-            created_by = session['user']['username'] if 'user' in session else 'Unknown'
+                writer.writerow(['id', 'client', 'name', 'location', 'model', 'age', 'last_inspection', 'pin', 'created_by'])
+
+            created_by = session['user'].get('full_name') or session['user'].get('name_or_company') or session['user']['username']
+
             writer.writerow([eq_id, client, name, location, model, age, last_inspection, pin, created_by])
 
-            print("Saved to CSV:", eq_id, name, pin)
-            print("CSV Path:", os.path.abspath(DATA_FILE))
+            print(f"✅ Equipment saved: {eq_id} for client {client}")
 
-        # Generate QR Code
+        # Generate QR Code linking to the inspection page
         qr_url = url_for('enter_pin', equipment_id=eq_id, _external=True)
         img = qrcode.make(qr_url)
-        img.save(f'{QR_FOLDER}/{eq_id}.png')
-        return redirect(url_for('index'))
+        os.makedirs(QR_FOLDER, exist_ok=True)
+        img.save(os.path.join(QR_FOLDER, f"{eq_id}.png"))
 
-    return render_template('generate.html')
+        flash("Equipment created and QR code generated successfully!", "success")
+        if session['user']['role'] == 'Admin':
+            return redirect(url_for('admin_management_dashboard'))
+        else:
+            return redirect(url_for('property_manager_dashboard'))
+
+    # GET request
+    return render_template('generate.html', client_names=sorted(client_names))
+
 
 @app.route('/inspect/<equipment_id>', methods=['GET', 'POST'])
 def inspect(equipment_id):
@@ -600,35 +611,33 @@ def get_missed_inspections_for_pm(pm_email):
                         continue  # skip bad formats
     return missed_alerts
 
-def get_upcoming_maintenance_for_pm(pm_username):
+def get_upcoming_maintenance():
     upcoming = []
     today = datetime.today().date()
     seen_equipment = set()
 
     if os.path.exists(LOG_CSV):
-        with open(LOG_CSV, newline='') as csvfile:
+        with open(LOG_CSV, newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 eq_id = row['equipment_id']
-                created_by = get_equipment_by_id(eq_id).get('created_by', '')
-                
                 if row['functional'].startswith("Next Maintenance:") and eq_id not in seen_equipment:
-                    if created_by == pm_username:
-                        try:
-                            next_date = datetime.strptime(
-                                row['functional'].replace("Next Maintenance:", "").strip(), '%Y-%m-%d'
-                            ).date()
-                            if next_date >= today:
-                                upcoming.append({
-                                    'equipment_id': eq_id,
-                                    'client': row['client'],
-                                    'name': row['name'],
-                                    'next_date': next_date,
-                                    'inspector': row['inspector_pin'],
-                                })
-                                seen_equipment.add(eq_id)
-                        except ValueError:
-                            continue
+                    try:
+                        next_date = datetime.strptime(
+                            row['functional'].replace("Next Maintenance:", "").strip(), '%Y-%m-%d'
+                        ).date()
+                        if next_date >= today:
+                            upcoming.append({
+                                'equipment_id': eq_id,
+                                'client': row['client'],
+                                'name': row['name'],
+                                'next_date': next_date,
+                                'inspector': row['inspector_pin'],
+                            })
+                            seen_equipment.add(eq_id)
+                    except ValueError:
+                        continue
+
     return sorted(upcoming, key=lambda x: x['next_date'])
 
 @app.route('/pm/alerts')
@@ -1091,20 +1100,30 @@ def pm_inspections():
 
     return render_template('pm_inspections.html', logs=logs, clients=assigned_clients)
 
+from collections import defaultdict
+
 @app.route('/add-maintenance-task', methods=['GET', 'POST'])
 def add_maintenance_task():
     if 'user' not in session or session['user']['role'] not in ['Admin', 'Property Manager']:
         flash("Unauthorized access", "danger")
         return redirect(url_for('login'))
 
-    client_names = []
+    client_groups = defaultdict(list)
+
+    # Load and group client names
     if os.path.exists('clients.csv'):
         with open('clients.csv', newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                client_name = row.get('client_name')
+                client_name = row.get('client_name', '').strip()
                 if client_name:
-                    client_names.append(client_name)
+                    first_letter = client_name[0].upper()
+                    client_groups[first_letter].append(client_name)
+
+    for letter in client_groups:
+        client_groups[letter] = sorted(client_groups[letter])
+
+    client_groups = dict(sorted(client_groups.items()))  # final sorting A-Z
 
     if request.method == 'POST':
         client = request.form['client']
@@ -1145,11 +1164,10 @@ def add_maintenance_task():
                     'Bi-annual': relativedelta(months=6),
                     'Annually': relativedelta(years=1)
                 }
-
                 interval = intervals.get(frequency)
                 if interval:
                     base_date = datetime.strptime(date, "%Y-%m-%d").date()
-                    for i in range(1, 12):  # Generate 11 more tasks
+                    for i in range(1, 12):  # Generate 11 future tasks
                         next_date = base_date + (interval * i)
                         writer.writerow({
                             'client': client,
@@ -1159,17 +1177,18 @@ def add_maintenance_task():
                             'frequency': frequency,
                             'created_by': created_by,
                             'completed': 'no'
-                                    })
+                        })
                     print(f"✅ Generated 11 recurring tasks for frequency: {frequency}")
 
-        # Redirect
+        # Redirect after saving
         if session['user']['role'] == 'Property Manager':
             return redirect(url_for('property_manager_maintenance_planner'))
         else:
             return redirect(url_for('admin_maintenance_planner'))
 
     # GET request
-    return render_template('add_maintenance_task.html', client_names=client_names)
+    return render_template('add_maintenance_task.html', client_groups=client_groups)
+
 
 def get_missed_tasks_for_pm(username):
     today = datetime.today().date()
@@ -1308,21 +1327,22 @@ def edit_task():
             flash("Task not found.", "danger")
             return redirect(url_for('property_manager_dashboard'))
 
-        # Load client list based on role
-        client_names = []
+        # Group client names A–Z
+        client_groups = {}
         if os.path.exists('clients.csv'):
             with open('clients.csv', newline='', encoding='utf-8') as f:
                 reader = csv.DictReader(f)
-                if session['user']['role'] == 'Admin':
-                    for row in reader:
-                        if row.get('client_name'):
-                            client_names.append(row['client_name'])
-                else:
-                    assigned_clients = get_clients_for_manager(session['user']['username'])
-                    for row in reader:
-                        if row.get('client_name') and row['client_name'] in assigned_clients:
-                            client_names.append(row['client_name'])
+                for row in reader:
+                    client_name = row.get('client_name')
+                    if client_name:
+                        first_letter = client_name[0].upper()
+                        client_groups.setdefault(first_letter, []).append(client_name)
 
+        # Sort clients inside each letter group
+        for letter in client_groups:
+            client_groups[letter].sort()
+
+        # Frequency options
         frequency_options = [
             'One-time', 'Daily', 'Weekly', 'Fortnightly', 'Monthly',
             'Bi-monthly', 'Tri-monthly', 'Quarterly', 'Bi-annual', 'Annually'
@@ -1331,7 +1351,7 @@ def edit_task():
         return render_template(
             'edit_task.html',
             task=task_to_edit,
-            client_names=client_names,
+            client_groups=client_groups,
             frequency_options=frequency_options
         )
 
@@ -1362,15 +1382,6 @@ def edit_task():
         for row in updated_rows:
             clean_row = {field: row.get(field, '') for field in fieldnames}
             writer.writerow(clean_row)
-
-    # ✅ Save to Task History
-    save_task_history(
-        action='edit',
-        title=request.form['title'],
-        client=request.form['client'],
-        date=request.form['date'],
-        performed_by=session['user']['username']
-    )
 
     flash("Task updated successfully!", "success")
     if session['user']['role'] == 'Admin':
@@ -1698,6 +1709,35 @@ def contractor_settings():
 
     return render_template('contractor_settings.html')
 
+@app.route('/get-next-equipment-id', methods=['POST'])
+def get_next_equipment_id():
+    client = request.form['client']
+    client_initials = ''.join(word[0] for word in client.split() if word).upper()
+
+    existing_ids = []
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row['client'] == client:
+                    existing_ids.append(row['id'])
+
+    next_number = 1
+    if existing_ids:
+        numbers = []
+        for eq_id in existing_ids:
+            try:
+                parts = eq_id.split('-')
+                if len(parts) >= 2:
+                    num = int(parts[1])
+                    numbers.append(num)
+            except (ValueError, IndexError):
+                continue
+        if numbers:
+            next_number = max(numbers) + 1
+
+    new_id = f"EQP-{str(next_number).zfill(5)}-{client_initials}"
+    return {'next_id': new_id}
 
 if __name__ == '__main__':
     app.run(debug=True)

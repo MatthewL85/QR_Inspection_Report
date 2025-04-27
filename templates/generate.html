@@ -1,44 +1,124 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Generate QR Code</title>
+    <meta charset="UTF-8">
+    <title>Add New Equipment</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            background-color: #f9f9f9;
+        }
+        form {
+            max-width: 600px;
+            background-color: white;
+            padding: 2em;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        label {
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            margin-bottom: 1em;
+            padding: 0.5em;
+            font-size: 1em;
+        }
+        button {
+            padding: 0.6em 1.5em;
+            background-color: #007bff;
+            border: none;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        a {
+            display: inline-block;
+            margin-top: 1em;
+            text-decoration: none;
+            color: #007bff;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script>
+      function fetchNextEquipmentId() {
+          const client = document.querySelector('select[name="client"]').value;
+          const idInput = document.querySelector('input[name="id"]');
+  
+          if (!client) {
+              idInput.value = '';
+              return;
+          }
+  
+          fetch('/get-next-equipment-id', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: `client=${encodeURIComponent(client)}`
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.next_id) {
+                  idInput.value = data.next_id;
+              } else {
+                  idInput.value = '';
+              }
+          })
+          .catch(error => {
+              console.error('Error fetching ID:', error);
+              idInput.value = '';
+          });
+      }
+    </script>
 </head>
 <body>
-    <h1>Add New Equipment</h1>
-    <form method="POST">
-        <label>ID:</label><br>
-        <input type="text" name="id" required><br><br>
 
-        <label>Client:</label><br>
-        <select name="client" required>
-            <option value="" disabled selected>Select a client</option>
-            {% for client in client_names %}
-            <option value="{{ client }}">{{ client }}</option>
-            {% endfor %}
-        </select><br><br>
+<h1>Add New Equipment</h1>
 
-        <label>Name:</label><br>
-        <input type="text" name="name" required><br><br>
+<form method="POST">
+    <label for="client">Client:</label>
+    <select name="client" onchange="fetchNextEquipmentId()" required>
+        <option value="" disabled selected>Select a client</option>
+        {% for client in client_names %}
+        <option value="{{ client }}">{{ client }}</option>
+        {% endfor %}
+    </select>
 
-        <label>Location:</label><br>
-        <input type="text" name="location" required><br><br>
+    <label for="id">Equipment ID:</label>
+    <input type="text" name="id" readonly required>
 
-        <label>Model:</label><br>
-        <input type="text" name="model"><br><br>
+    <label for="name">Equipment Name:</label>
+    <input type="text" name="name" required>
 
-        <label>Age:</label><br>
-        <input type="text" name="age"><br><br>
+    <label for="location">Location (Optional):</label>
+    <input type="text" name="location">
 
-        <label>Last Inspection Date:</label><br>
-        <input type="date" name="last_inspection"><br><br>
+    <label for="model">Model (Optional):</label>
+    <input type="text" name="model">
 
-        <label>Your PIN:</label><br>
-        <input type="text" name="pin" required><br><br>
+    <label for="age">Age (Optional):</label>
+    <input type="text" name="age">
 
-        <button type="submit">Generate QR Code</button>
-    </form>
+    <label for="last_inspection">Last Inspection Date:</label>
+    <input type="date" name="last_inspection">
 
-    <br>
-    <a href="/">⬅ Back to Home</a>
+    <label for="pin">Your PIN:</label>
+    <input type="text" name="pin" required>
+
+    <button type="submit">Generate QR Code</button>
+</form>
+
+{% if session['user']['role'] == 'Admin' %}
+  <a href="{{ url_for('admin_management_dashboard') }}">⬅ Back to Dashboard</a>
+{% else %}
+  <a href="{{ url_for('property_manager_dashboard') }}">⬅ Back to Dashboard</a>
+{% endif %}
+
 </body>
 </html>
