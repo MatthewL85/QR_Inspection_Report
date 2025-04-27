@@ -938,7 +938,11 @@ def add_user():
         flash("Unauthorized access", "danger")
         return redirect(url_for('login'))
 
-    # ... load allowed roles, etc.
+    # ✅ Load allowed roles correctly
+    if session['user']['role'] == 'Admin':
+        allowed_roles = ['Admin', 'Property Manager']
+    elif session['user']['role'] == 'Admin Contractor':
+        allowed_roles = ['Contractor']
 
     if request.method == 'POST':
         username = request.form['username'].strip()
@@ -947,6 +951,7 @@ def add_user():
         role = request.form['role'].strip()
         pin = request.form['pin'].strip()
         name_or_company = request.form['name_or_company'].strip()
+        company = session['user']['company']  # ✅ Also needed!
 
         if password != confirm_password:
             flash("Passwords do not match.", "danger")
