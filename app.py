@@ -9,6 +9,7 @@ import qrcode
 import json
 from datetime import datetime
 from collections import defaultdict
+import uuid
 
 # Load company settings
 SETTINGS_FILE = 'static/settings.json'
