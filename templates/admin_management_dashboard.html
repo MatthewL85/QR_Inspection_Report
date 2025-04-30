@@ -1,92 +1,80 @@
 {% extends 'base.html' %}
+{% block title %}Admin Dashboard - LogixPM{% endblock %}
 {% block content %}
-<div class="dashboard-container">
-  <h1>Admin Dashboard (Management)</h1>
-  <p>Welcome, {{ session['user']['username'] }} from {{ session['user']['company'] }}</p>
-  <a href="{{ url_for('logout') }}">Logout</a>
 
-  <div class="dashboard-grid">
-    <a href="{{ url_for('admin_settings') }}" class="dashboard-tile">
-      <h3>⚙️ Settings</h3>
-      <p>Upload Logo and manage system settings.</p>
-    </a>   
-    <a href="{{ url_for('generate') }}" class="dashboard-tile">
-      <h3>➕ Add Equipment</h3>
-      <p>Create QR codes and assign equipment to clients.</p>
-    </a>
-    <a href="{{ url_for('view_qrcodes') }}" class="dashboard-tile">
-      <h3>📦 View QR Codes</h3>
-      <p>Access all QR codes for your company’s clients.</p>
-    </a>
-    <a href="{{ url_for('view_logs') }}" class="dashboard-tile">
-      <h3>🧾 All Logs</h3>
-      <p>See inspection logs across all your managed clients.</p>
-    </a>
-    <a href="{{ url_for('filtered_inspection_export') }}" class="dashboard-tile" style="background-color: #ffc107;">
-      <h3>📤 Export Inspections</h3>
-      <p>Generate PDF reports with custom filters (Client, Date Range).</p>
-    </a>    
-    <a href="{{ url_for('admin_alerts') }}" class="dashboard-tile">
-      <h3>⚠️ Missed Inspections</h3>
-      <p>View overdue inspections based on PPM.</p>
-    </a>
-    <a href="{{ url_for('admin_maintenance_planner') }}" class="dashboard-tile">
-      <h3>🛠️ Maintenance Planner</h3>
-      <p>Plan and schedule upcoming inspections.</p>
-    </a>
-    <a href="{{ url_for('task_history') }}" class="dashboard-tile">
-      <h3>📜 Task History</h3>
-      <p>View edits and deletions made by users.</p>
-    </a>   
-    <a href="{{ url_for('manage_users') }}" class="dashboard-tile">
-      <h3>👥 Manage Users</h3>
-      <p>Add Property Managers or edit access levels.</p>
-    </a>
-    <a href="{{ url_for('manage_clients') }}" class="dashboard-tile">
-      <h3>🏢 Manage Clients</h3>
-      <p>Assign or transfer clients across managers.</p>
-    </a>
-    <a href="{{ url_for('upload_logo') }}" class="dashboard-tile">
-      <h3>🖼 Upload Company Logo</h3>
-      <p>Change or update your company branding easily.</p>
-    </a>   
+<div class="container-fluid">
+  <h2 class="mb-4">Welcome, {{ session['user']['username'] }} from {{ session['user']['company'] }}</h2>
+
+  <div class="row g-4">
+    <!-- Main Dashboard Cards -->
+    {% set tiles = [
+      ('admin_settings', '⚙️ Settings', 'Upload Logo and manage system settings.'),
+      ('generate', '➕ Add Equipment', 'Create QR codes and assign equipment to clients.'),
+      ('view_qrcodes', '📦 View QR Codes', 'Access all QR codes for your company’s clients.'),
+      ('view_logs', '🧾 All Logs', 'See inspection logs across all your managed clients.'),
+      ('filtered_inspection_export', '📤 Export Inspections', 'Generate PDF reports with custom filters (Client, Date Range).'),
+      ('admin_alerts', '⚠️ Missed Inspections', 'View overdue inspections based on PPM.'),
+      ('admin_maintenance_planner', '🛠️ Maintenance Planner', 'Plan and schedule upcoming inspections.'),
+      ('task_history', '📜 Task History', 'View edits and deletions made by users.'),
+      ('manage_users', '👥 Manage Users', 'Add Property Managers or edit access levels.'),
+      ('manage_clients', '🏢 Manage Clients', 'Assign or transfer clients across managers.')
+          ] %}
+    
+    {% for url_name, title, desc in tiles %}
+    <div class="col-md-4">
+      <a href="{{ url_for(url_name) }}" class="text-decoration-none">
+        <div class="card border-start border-primary border-4 shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">{{ title }}</h5>
+            <p class="card-text">{{ desc }}</p>
+          </div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
   </div>
 
-  <div class="dashboard-section">
-    <h4>⚠️ Missed Maintenance Tasks</h4>
+  <!-- Missed Maintenance Tasks -->
+  <div class="mt-5">
+    <h4 class="mb-3 text-danger">⚠️ Missed Maintenance Tasks</h4>
     {% if missed_tasks %}
-      <ul>
+      <ul class="list-group">
         {% for task in missed_tasks %}
-        <li style="color: red;">
-          ⚠️ {{ task.title }} ({{ task.client }}) - {{ task.date }} | Created by: {{ task.created_by }}
-          
-          {% if task.completed != 'yes' %}
-          <form action="{{ url_for('complete_task') }}" method="POST" style="display:inline;">
-            <input type="hidden" name="title" value="{{ task.title }}">
-            <input type="hidden" name="date" value="{{ task.date }}">
-            <input type="hidden" name="client" value="{{ task.client }}">
-            <button type="submit" style="margin-left: 10px;">✔ Mark as Done</button>
-          </form>
+        <li class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-start">
+          <div>
+            <strong>{{ task.title }}</strong> ({{ task.client }}) — {{ task.date }}  
+            <br><small>Created by: {{ task.created_by }}</small>
+          </div>
+          <div class="mt-2 mt-md-0 d-flex gap-2">
+            {% if task.completed != 'yes' %}
+              <form action="{{ url_for('complete_task') }}" method="POST">
+                <input type="hidden" name="title" value="{{ task.title }}">
+                <input type="hidden" name="date" value="{{ task.date }}">
+                <input type="hidden" name="client" value="{{ task.client }}">
+                <button class="btn btn-success btn-sm">✔ Mark as Done</button>
+              </form>
 
-          <form action="{{ url_for('edit_task') }}" method="GET" style="display:inline;">
-            <input type="hidden" name="title" value="{{ task.title }}">
-            <input type="hidden" name="date" value="{{ task.date }}">
-            <input type="hidden" name="client" value="{{ task.client }}">
-            <button type="submit" style="margin-left: 5px;">✏ Edit</button>
-          </form>
-          {% else %}
-          ✅ Completed
-          {% endif %}
-        </li>        
+              <form action="{{ url_for('edit_task') }}" method="GET">
+                <input type="hidden" name="title" value="{{ task.title }}">
+                <input type="hidden" name="date" value="{{ task.date }}">
+                <input type="hidden" name="client" value="{{ task.client }}">
+                <button class="btn btn-warning btn-sm">✏ Edit</button>
+              </form>
+            {% else %}
+              <span class="text-success">✅ Completed</span>
+            {% endif %}
+          </div>
+        </li>
         {% endfor %}
       </ul>
     {% else %}
-      <p>No missed tasks across clients 🎉</p>
+      <div class="alert alert-success">No missed tasks across clients 🎉</div>
     {% endif %}
   </div>
 
-  <div class="text-center mt-4">
+  <div class="text-center mt-5">
     <a href="{{ url_for('show_dashboard') }}" class="btn btn-secondary">⬅ Return to Dashboard</a>
-  </div>  
+  </div>
 </div>
+
 {% endblock %}

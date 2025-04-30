@@ -1,51 +1,92 @@
 {% extends 'base.html' %}
+{% block title %}Admin Dashboard - LogixPM{% endblock %}
 {% block content %}
-<div class="dashboard-container">
-  <h1>Welcome, Admin {{ session['user']['username'] }}</h1>
-  <a href="{{ url_for('logout') }}">Logout</a>
 
-  <div class="dashboard-grid">
+<div class="container-fluid">
+  <h2 class="mb-4">Welcome, Admin {{ session['user']['username'] }}</h2>
 
-    <a href="{{ url_for('generate') }}" class="dashboard-tile">
-      <h3>➕ Add New Equipment + QR Code</h3>
-      <p>Create a new equipment entry and assign it to a client.</p>
-    </a>
+  <div class="row g-4">
+    <div class="col-md-4">
+      <a href="{{ url_for('generate') }}" class="text-decoration-none">
+        <div class="card border-start border-primary border-4 shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title text-primary">➕ Add New Equipment + QR Code</h5>
+            <p class="card-text">Create a new equipment entry and assign it to a client.</p>
+          </div>
+        </div>
+      </a>
+    </div>
 
-    <a href="{{ url_for('index') }}" class="dashboard-tile">
-      <h3>📋 All Equipment</h3>
-      <p>Browse all equipment across clients.</p>
-    </a>
+    <div class="col-md-4">
+      <a href="{{ url_for('index') }}" class="text-decoration-none">
+        <div class="card border-start border-success border-4 shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title text-success">📋 All Equipment</h5>
+            <p class="card-text">Browse all equipment across clients.</p>
+          </div>
+        </div>
+      </a>
+    </div>
 
-    <a href="{{ url_for('view_qrcodes') }}" class="dashboard-tile">
-      <h3>🔗 All QR Codes</h3>
-      <p>View/download all QR codes across clients.</p>
-    </a>
+    <div class="col-md-4">
+      <a href="{{ url_for('view_qrcodes') }}" class="text-decoration-none">
+        <div class="card border-start border-info border-4 shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title text-info">🔗 All QR Codes</h5>
+            <p class="card-text">View/download all QR codes across clients.</p>
+          </div>
+        </div>
+      </a>
+    </div>
 
-    <a href="{{ url_for('view_logs') }}" class="dashboard-tile">
-      <h3>🧾 All Inspection Logs</h3>
-      <p>Access all inspections submitted by Property Managers and Contractors.</p>
-    </a>
+    <div class="col-md-4">
+      <a href="{{ url_for('view_logs') }}" class="text-decoration-none">
+        <div class="card border-start border-dark border-4 shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title text-dark">🧾 All Inspection Logs</h5>
+            <p class="card-text">Access all inspections submitted by PMs and Contractors.</p>
+          </div>
+        </div>
+      </a>
+    </div>
 
-    <a href="#" class="dashboard-tile disabled">
-      <h3>⚠️ Missed Inspections</h3>
-      <p>Alerts for missed PPMs. (Coming Soon)</p>
-    </a>
+    <!-- Disabled (Coming Soon) -->
+    <div class="col-md-4">
+      <div class="card bg-light text-muted h-100 border-start border-warning border-4">
+        <div class="card-body">
+          <h5 class="card-title">⚠️ Missed Inspections</h5>
+          <p class="card-text">Alerts for missed PPMs. (Coming Soon)</p>
+        </div>
+      </div>
+    </div>
 
-    <a href="#" class="dashboard-tile disabled">
-      <h3>🛠️ Maintenance Planner</h3>
-      <p>Auto-generate schedules based on PPM dates. (Coming Soon)</p>
-    </a>
+    <div class="col-md-4">
+      <div class="card bg-light text-muted h-100 border-start border-secondary border-4">
+        <div class="card-body">
+          <h5 class="card-title">🛠️ Maintenance Planner</h5>
+          <p class="card-text">Auto-generate schedules based on PPM dates. (Coming Soon)</p>
+        </div>
+      </div>
+    </div>
 
-    <a href="#" class="dashboard-tile disabled">
-      <h3>👥 Manage Users</h3>
-      <p>Create/remove Property Managers, assign roles. (Coming Soon)</p>
-    </a>
+    <div class="col-md-4">
+      <div class="card bg-light text-muted h-100 border-start border-secondary border-4">
+        <div class="card-body">
+          <h5 class="card-title">👥 Manage Users</h5>
+          <p class="card-text">Create/remove Property Managers, assign roles. (Coming Soon)</p>
+        </div>
+      </div>
+    </div>
 
-    <a href="#" class="dashboard-tile disabled">
-      <h3>📂 Manage Clients</h3>
-      <p>Add/edit clients and reassign equipment. (Coming Soon)</p>
-    </a>
-
+    <div class="col-md-4">
+      <div class="card bg-light text-muted h-100 border-start border-secondary border-4">
+        <div class="card-body">
+          <h5 class="card-title">📂 Manage Clients</h5>
+          <p class="card-text">Add/edit clients and reassign equipment. (Coming Soon)</p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
+
 {% endblock %}
