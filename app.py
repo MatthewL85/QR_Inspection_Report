@@ -1818,5 +1818,13 @@ def get_next_equipment_id():
     new_id = f"EQP-{str(next_number).zfill(5)}-{client_initials}"
     return {'next_id': new_id}
 
+@app.route('/admin/capex')
+def capex_dashboard():
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    return render_template('capex_dashboard.html')
+
 if __name__ == '__main__':
     app.run(debug=True)
