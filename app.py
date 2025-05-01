@@ -501,10 +501,12 @@ def admin_management_dashboard():
         return redirect(url_for('login'))
 
     missed_tasks = get_missed_tasks_for_admin()
+    missed_count = len(missed_tasks)
 
     return render_template(
         'admin_management_dashboard.html',
-        missed_tasks=missed_tasks
+        missed_tasks=missed_tasks,
+        missed_count=missed_count
     )
 
 @app.route('/admin-contractor-dashboard')
