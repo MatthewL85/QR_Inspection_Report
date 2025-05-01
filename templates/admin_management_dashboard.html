@@ -60,15 +60,15 @@
 
     <!-- Remaining Dashboard Cards -->
     {% set tiles = [
-      ('admin_settings', '⚙️ Settings', 'Upload Logo and manage system settings.'),
       ('generate', '➕ Add Equipment', 'Create QR codes and assign equipment to clients.'),
       ('view_qrcodes', '📦 View QR Codes', 'Access all QR codes for your company’s clients.'),
       ('view_logs', '🧾 All Logs', 'See inspection logs across all your managed clients.'),
       ('filtered_inspection_export', '📤 Export Inspections', 'Generate PDF reports with custom filters (Client, Date Range).'),
       ('task_history', '📜 Task History', 'View edits and deletions made by users.'),
       ('manage_users', '👥 Manage Users', 'Add Property Managers or edit access levels.'),
-      ('manage_clients', '🏢 Manage Clients', 'Assign or transfer clients across managers.')
-    ] %}
+      ('manage_clients', '🏢 Manage Clients', 'Assign or transfer clients across managers.'),
+      ('director_dashboard', '🏛️ Director Dashboard', 'Access CAPEX requests and manage director-specific tools.')
+    ] %}    
 
     {% for url_name, title, desc in tiles %}
     <div class="col-md-4">
