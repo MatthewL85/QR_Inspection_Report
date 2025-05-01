@@ -503,10 +503,15 @@ def admin_management_dashboard():
     missed_tasks = get_missed_tasks_for_admin()
     missed_count = len(missed_tasks)
 
+    upcoming = get_upcoming_maintenance()
+    this_month = datetime.today().month
+    planner_this_month = [m for m in upcoming if m['next_date'].month == this_month]
+
     return render_template(
         'admin_management_dashboard.html',
         missed_tasks=missed_tasks,
         missed_count=missed_count
+        planner_this_month=planner_this_month
     )
 
 @app.route('/admin-contractor-dashboard')
