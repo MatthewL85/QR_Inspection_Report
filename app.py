@@ -507,6 +507,9 @@ def admin_management_dashboard():
     this_month = datetime.today().month
     planner_this_month = [m for m in upcoming if m['next_date'].month == this_month]
 
+    print("📅 ALL upcoming:", upcoming)
+    print("📅 Filtered planner_this_month:", planner_this_month)
+
     return render_template(
         'admin_management_dashboard.html',
         missed_tasks=missed_tasks,
