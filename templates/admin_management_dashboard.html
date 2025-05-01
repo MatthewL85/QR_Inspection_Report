@@ -20,29 +20,40 @@
     </div>
 
     <!-- Live Maintenance Planner Widget -->
-    <div class="col-md-8">
-      <div class="card border-start border-info border-4 shadow-sm h-100">
-        <div class="card-body">
-          <h5 class="card-title text-info">🛠️ Maintenance Planner - This Month</h5>
-          {% if planner_this_month %}
-            <ul class="list-group list-group-flush">
-              {% for task in planner_this_month[:5] %}
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span>
-                  <strong>{{ task.name }}</strong> ({{ task.client }})
-                  <br><small class="text-muted">{{ task.next_date.strftime('%d %b %Y') }}</small>
-                </span>
-                <span class="badge bg-info text-dark">{{ task.inspector }}</span>
-              </li>
-              {% endfor %}
-            </ul>
-            <a href="{{ url_for('admin_maintenance_planner') }}" class="btn btn-outline-info btn-sm mt-3">View Full Planner</a>
-          {% else %}
-            <p class="text-muted">No maintenance scheduled this month.</p>
-          {% endif %}
+<div class="col-md-8">
+  <div class="card border-start border-info border-4 shadow-sm h-100">
+    <div class="card-body">
+      <h5 class="card-title text-info">🛠️ Maintenance Planner - This Month</h5>
+
+      {% if planner_this_month %}
+        <ul class="list-group list-group-flush">
+          {% for task in planner_this_month[:5] %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>
+              <strong>{{ task.name }}</strong> ({{ task.client }})
+              <br><small class="text-muted">{{ task.next_date.strftime('%d %b %Y') }}</small>
+            </span>
+            <span class="badge bg-info text-dark">{{ task.inspector }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        <div class="mt-3 d-flex justify-content-between">
+          <a href="{{ url_for('admin_maintenance_planner') }}" class="btn btn-outline-info btn-sm">
+            📅 View Full Planner
+          </a>
+          <a href="{{ url_for('add_maintenance_task') }}" class="btn btn-outline-success btn-sm">
+            ➕ Add Maintenance Task
+          </a>
         </div>
-      </div>
+      {% else %}
+        <p class="text-muted">No maintenance scheduled this month.</p>
+        <a href="{{ url_for('add_maintenance_task') }}" class="btn btn-outline-success btn-sm mt-2">
+          ➕ Add Maintenance Task
+        </a>
+      {% endif %}
     </div>
+  </div>
+</div>
 
     <!-- Remaining Dashboard Cards -->
     {% set tiles = [
