@@ -19,6 +19,31 @@
       </a>
     </div>
 
+    <!-- Live Maintenance Planner Widget -->
+    <div class="col-md-8">
+      <div class="card border-start border-info border-4 shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title text-info">🛠️ Maintenance Planner - This Month</h5>
+          {% if planner_this_month %}
+            <ul class="list-group list-group-flush">
+              {% for task in planner_this_month[:5] %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>
+                  <strong>{{ task.name }}</strong> ({{ task.client }})
+                  <br><small class="text-muted">{{ task.next_date.strftime('%d %b %Y') }}</small>
+                </span>
+                <span class="badge bg-info text-dark">{{ task.inspector }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+            <a href="{{ url_for('admin_maintenance_planner') }}" class="btn btn-outline-info btn-sm mt-3">View Full Planner</a>
+          {% else %}
+            <p class="text-muted">No maintenance scheduled this month.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
     <!-- Remaining Dashboard Cards -->
     {% set tiles = [
       ('admin_settings', '⚙️ Settings', 'Upload Logo and manage system settings.'),
@@ -26,7 +51,6 @@
       ('view_qrcodes', '📦 View QR Codes', 'Access all QR codes for your company’s clients.'),
       ('view_logs', '🧾 All Logs', 'See inspection logs across all your managed clients.'),
       ('filtered_inspection_export', '📤 Export Inspections', 'Generate PDF reports with custom filters (Client, Date Range).'),
-      ('admin_maintenance_planner', '🛠️ Maintenance Planner', 'Plan and schedule upcoming inspections.'),
       ('task_history', '📜 Task History', 'View edits and deletions made by users.'),
       ('manage_users', '👥 Manage Users', 'Add Property Managers or edit access levels.'),
       ('manage_clients', '🏢 Manage Clients', 'Assign or transfer clients across managers.')
