@@ -510,7 +510,7 @@ def admin_management_dashboard():
     return render_template(
         'admin_management_dashboard.html',
         missed_tasks=missed_tasks,
-        missed_count=missed_count
+        missed_count=missed_count,
         planner_this_month=planner_this_month
     )
 
