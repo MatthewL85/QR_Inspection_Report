@@ -511,7 +511,7 @@ def admin_management_dashboard():
         'admin_management_dashboard.html',
         missed_tasks=missed_tasks,
         missed_count=missed_count,
-        planner_this_month=planner_this_month  # ✅ correct
+        planner_this_month=planner_this_month  # ✅ FIXED here
     )
 
 @app.route('/admin-contractor-dashboard')
