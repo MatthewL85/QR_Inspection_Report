@@ -3,8 +3,11 @@
 {% block content %}
 
 <div class="container-fluid">
-  <h2 class="mb-4">Welcome, {{ session['user']['username'] }} from {{ session['user']['company'] }}</h2>
-
+  <h2 class="mb-4">
+    Welcome, {{ session['user'].get('full_name') or session['user'].get('name_or_company') or session['user']['username'] }}
+    ({{ session['user']['role'] }})
+  </h2>  
+  
   <div class="row g-4">
     <!-- Smart Missed Inspections Card -->
     <div class="col-md-4">
