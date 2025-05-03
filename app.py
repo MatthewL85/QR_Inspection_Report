@@ -1836,13 +1836,49 @@ def capex_dashboard():
 
     return render_template('capex_dashboard.html')
 
-@app.route('/director-dashboard')
+@app.route("/director_dashboard")
 def director_dashboard():
-    if 'user' not in session or session['user']['role'] != 'Admin':
-        flash("Unauthorized access", "danger")
-        return redirect(url_for('login'))
+    capex_requests = []
+    if os.path.exists("capex_requests.csv"):
+        with open("capex_requests.csv", newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                capex_requests.append(row)
+    return render_template("director_dashboard.html", capex_requests=capex_requests)
 
-    return render_template('director_dashboard.html')
+
+@app.route("/submit_capex", methods=["GET", "POST"])
+def submit_capex():
+    if request.method == "POST":
+        area = request.form.get("area")
+        description = request.form.get("description")
+        estimated_cost = request.form.get("estimated_cost")
+        submitted_by = session.get("user_email", "Unknown")
+        date_submitted = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        file = request.files.get("file")
+
+        capex_id = str(uuid.uuid4())
+        filename = ""
+        if file and file.filename:
+            upload_folder = "static/uploads/capex"
+            os.makedirs(upload_folder, exist_ok=True)
+            filename = f"{capex_id}_{file.filename}"
+            file_path = os.path.join(upload_folder, filename)
+            file.save(file_path)
+        else:
+            file_path = ""
+
+        with open("capex_requests.csv", "a", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                capex_id, area, description, estimated_cost, "Submitted",
+                submitted_by, "", file_path, date_submitted
+            ])
+
+        flash("CAPEX request submitted successfully.", "success")
+        return redirect(url_for("submit_capex"))
+
+    return render_template("submit_capex.html")
 
 
 if __name__ == '__main__':

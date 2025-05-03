@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Submit CAPEX Request</h2>
+  <form method="POST" enctype="multipart/form-data">
+    <div class="mb-3">
+      <label for="area" class="form-label">Area</label>
+      <select class="form-select" name="area" required>
+        <option value="">Select Area</option>
+        <option value="Landscaping">Landscaping</option>
+        <option value="Painting">Painting</option>
+        <option value="Lift">Lift</option>
+        <option value="General Repairs">General Repairs</option>
+        <option value="Security">Security</option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <label for="description" class="form-label">Description</label>
+      <textarea class="form-control" name="description" rows="4" required></textarea>
+    </div>
+    <div class="mb-3">
+      <label for="estimated_cost" class="form-label">Estimated Cost (€)</label>
+      <input type="number" step="0.01" class="form-control" name="estimated_cost" required>
+    </div>
+    <div class="mb-3">
+      <label for="file" class="form-label">Upload Supporting File (optional)</label>
+      <input class="form-control" type="file" name="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+    </div>
+    <button type="submit" class="btn btn-primary">Submit Request</button>
+  </form>
+</div>
+{% endblock %}

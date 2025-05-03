@@ -1,8 +1,43 @@
 {% extends 'base.html' %}
-{% block title %}Director Dashboard - LogixPM{% endblock %}
 {% block content %}
-<div class="container">
-  <h2>🏗 Director Dashboard</h2>
-  <p>This will be the main CAPEX tracker view for board members and directors.</p>
+<div class="container mt-4">
+  <h2>Director Dashboard - CAPEX Requests</h2>
+  {% if capex_requests %}
+    <table class="table table-bordered table-striped">
+      <thead>
+        <tr>
+          <th>Area</th>
+          <th>Description</th>
+          <th>Estimated Cost</th>
+          <th>Status</th>
+          <th>Submitted By</th>
+          <th>Date</th>
+          <th>File</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for request in capex_requests %}
+        <tr>
+          <td>{{ request.area }}</td>
+          <td>{{ request.description }}</td>
+          <td>€{{ request.estimated_cost }}</td>
+          <td>{{ request.status }}</td>
+          <td>{{ request.submitted_by }}</td>
+          <td>{{ request.date_submitted }}</td>
+          <td>
+            {% if request.file_path %}
+              <a href="{{ url_for('static', filename=request.file_path.replace('static/', '')) }}" target="_blank">View</a>
+            {% else %}
+              No file
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No CAPEX requests found.</p>
+  {% endif %}
 </div>
 {% endblock %}
+
