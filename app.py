@@ -1836,5 +1836,14 @@ def capex_dashboard():
 
     return render_template('capex_dashboard.html')
 
+@app.route('/director-dashboard')
+def director_dashboard():
+    if 'user' not in session or session['user']['role'] != 'Admin':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
+    return render_template('director_dashboard.html')
+
+
 if __name__ == '__main__':
     app.run(debug=True)
