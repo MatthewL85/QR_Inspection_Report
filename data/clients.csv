@@ -1,0 +1,2 @@
+id,client_name,address,contacts,assigned_manager_email,company
+RV,Rosemount,"12 Main Street, Dublin","[{""name"": ""John Doe"", ""email"": ""john@example.com"", ""phone"": ""123456""}, {""name"": ""Jane Smith"", ""email"": ""jane@example.com"", ""phone"": ""987654""}]",pm1@example.com,Alpha PM Ltd
