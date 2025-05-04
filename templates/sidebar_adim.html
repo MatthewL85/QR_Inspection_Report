@@ -1,0 +1,40 @@
+<aside class="bg-white border-end" style="width: 250px; min-height: 100vh;">
+    <div class="p-3">
+      <h5 class="fw-bold text-primary">LogixPM</h5>
+      <hr>
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+            <i class="fas fa-chart-line me-2"></i>Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('generate') }}">
+            <i class="fas fa-cogs me-2"></i>Equipment
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('view_logs') }}">
+            <i class="fas fa-qrcode me-2"></i>Inspections
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin_alerts') }}">
+            <i class="fas fa-exclamation-triangle me-2"></i>Missed Tasks
+          </a>
+        </li>
+        {% if 'capex' in company_features %}
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('capex_dashboard') }}">
+            <i class="fas fa-euro-sign me-2"></i>CAPEX Tracker
+          </a>
+        </li>
+        {% endif %}
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin_settings') }}">
+            <i class="fas fa-cog me-2"></i>Settings
+          </a>
+        </li>
+      </ul>
+    </div>
+  </aside>
