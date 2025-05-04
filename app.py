@@ -438,38 +438,42 @@ def report_by_equipment(equipment_id):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    session.pop('user', None)  # Clear old session
+
     if request.method == 'POST':
-        email = request.form['email'].strip()
+        email = request.form['email']
         password = request.form['password']
-        user = authenticate_user(email, password)
+
+        user = None
+        if os.path.exists('users.csv'):
+            with open('users.csv', newline='', encoding='utf-8') as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    if row['email'].lower() == email.lower():
+                        if check_password_hash(row['password'], password):
+                            user = row
+                            break
 
         if user:
-            # Normalize role casing
-            user['role'] = user.get('role', '').strip().title()
-            session['user'] = user
-            flash('Login successful!', 'success')
+            session['user'] = {
+                'email': user['email'],
+                'role': user['role'],
+                'name': user.get('name', '')
+            }
 
-            role = user['role']
-
-            # Direct to specific dashboards
-            if role == 'Admin Contractor':
-                return redirect(url_for('admin_contractor_dashboard'))
-            elif role == 'Admin':
-                return redirect(url_for('admin_management_dashboard'))
-            elif role == 'Property Manager':
-                return redirect(url_for('property_manager_dashboard'))
-            elif role == 'Contractor':
-                return redirect(url_for('contractor_dashboard'))
-            elif role == 'Director':
+            # Role-based dashboard redirect
+            if user['role'] == 'Director':
                 return redirect(url_for('director_dashboard'))
+            elif user['role'] in ['Admin Contractor', 'Contractor']:
+                return redirect(url_for('contractor_dashboard'))
             else:
-                flash("Unknown role. Please contact your administrator.", "danger")
-                return redirect(url_for('login'))
-
+                return redirect(url_for('admin_dashboard'))
         else:
             flash('Invalid email or password.', 'danger')
+            return redirect(url_for('login'))
 
     return render_template('login.html')
+
 
 @app.route('/logout')
 def logout():
