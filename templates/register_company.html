@@ -1,38 +1,46 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="container mt-5" style="max-width: 600px;">
-  <h2 class="mb-4 text-center">Register {{ company_type }} Company</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register - {{ company_type|capitalize }}</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="card shadow rounded p-4 mx-auto" style="max-width: 600px;">
+            <h2 class="text-center mb-4 text-primary">
+                {% if company_type == 'omc' %}
+                    Register Your Owner Management Company
+                {% elif company_type == 'contractor' %}
+                    Register Your Contractor Company
+                {% else %}
+                    Register Your Property / Facilities Management Company
+                {% endif %}
+            </h2>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }}">{{ message }}</div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="company_name" class="form-label">Company Name</label>
+                    <input type="text" class="form-control" id="company_name" name="company_name" required>
+                </div>
 
-  <form method="POST">
-    <div class="mb-3">
-      <label for="company_name" class="form-label">Company Name</label>
-      <input type="text" class="form-control" id="company_name" name="company_name" required>
+                <div class="mb-3">
+                    <label for="admin_email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="admin_email" name="admin_email" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="confirm_password" class="form-label">Confirm Password</label>
+                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 mt-3">Register</button>
+            </form>
+        </div>
     </div>
-
-    <div class="mb-3">
-      <label for="admin_email" class="form-label">Admin Email</label>
-      <input type="email" class="form-control" id="admin_email" name="admin_email" required>
-    </div>
-
-    <div class="mb-3">
-      <label for="password" class="form-label">Password</label>
-      <input type="password" class="form-control" id="password" name="password" required>
-    </div>
-
-    <div class="mb-3">
-      <label for="confirm_password" class="form-label">Confirm Password</label>
-      <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-    </div>
-
-    <button type="submit" class="btn btn-primary w-100">Register {{ company_type }}</button>
-  </form>
-</div>
-{% endblock %}
+</body>

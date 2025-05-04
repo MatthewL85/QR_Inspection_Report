@@ -1,12 +1,50 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="container mt-5" style="max-width: 500px;">
-  <h2 class="mb-4 text-center">Welcome to ScanLogix</h2>
-  <p class="text-center">To begin, please choose your company type:</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Company Onboarding</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container text-center mt-5">
+        <h2 class="mb-4">Select Company Type to Register</h2>
+        <div class="row justify-content-center">
 
-  <div class="d-grid gap-3">
-    <a href="{{ url_for('register_company', company_type='Management') }}" class="btn btn-primary btn-lg">🏢 Property / Facilities Management</a>
-    <a href="{{ url_for('register_company', company_type='Contractor') }}" class="btn btn-success btn-lg">🔧 Contractor Company</a>
-  </div>
-</div>
-{% endblock %}
+            <!-- Management Company -->
+            <div class="col-md-3 mb-3">
+                <a href="{{ url_for('register_company', company_type='management') }}" class="btn btn-outline-primary w-100 py-3">
+                    Property Management Company
+                </a>
+            </div>
+
+            <!-- Contractor Company -->
+            <div class="col-md-3 mb-3">
+                <a href="{{ url_for('register_company', company_type='contractor') }}" class="btn btn-outline-secondary w-100 py-3">
+                    Contractor Company
+                </a>
+            </div>
+
+            <!-- Owner Management Company (OMC) -->
+            <div class="col-md-3 mb-3">
+                <a href="{{ url_for('register_company', company_type='omc') }}" class="btn btn-outline-success w-100 py-3">
+                    Owner Management Company
+                </a>
+            </div>
+
+        </div>
+
+        <!-- Optional: Display known OMCs for quick reference or pre-registration link -->
+        <h4 class="mt-5">Register as an Owner Management Company</h4>
+        <div class="row justify-content-center">
+            {% for omc_name in omc_names %}
+                <div class="col-md-4 mb-2">
+                    <a href="{{ url_for('register_company', company_type='omc') }}" class="btn btn-success w-100">
+                        {{ omc_name }}
+                    </a>
+                </div>
+            {% else %}
+                <p>No Owner Management Companies found.</p>
+            {% endfor %}
+        </div>
+    </div>
+</body>
