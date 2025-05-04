@@ -1,6 +1,6 @@
 <!-- Sidebar + Navbar layout -->
 <div class="d-flex">
-    {% if 'user' in session %}
+    {% if 'user' in session and request.endpoint not in ['login', 'register_company'] %}
       {% if session['user']['role'] == 'Admin Contractor' %}
         {% include 'sidebar_contractor.html' %}
       {% elif session['user']['role'] == 'Director' %}
@@ -9,8 +9,11 @@
         {% include 'sidebar_admin.html' %}
       {% endif %}
     {% endif %}
+  
     <div class="flex-grow-1">
-      {% include 'navbar.html' %}
+      {% if request.endpoint not in ['login', 'register_company'] %}
+        {% include 'navbar.html' %}
+      {% endif %}
       <main class="container-fluid py-4">
         {% block content %}{% endblock %}
       </main>
