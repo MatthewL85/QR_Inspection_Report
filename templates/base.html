@@ -3,10 +3,10 @@
   {% elif session.get('user') and session['user']['role'] in ['Admin Contractor', 'Contractor'] %}contractor-orange
   {% else %}logixpm-blue
   {% endif %}">
-  
+
   <!-- 🔄 Spinner HTML -->
   <div id="spinner-overlay">
-      <div class="spinner"></div>
+    <div class="spinner"></div>
   </div>
 
   {% if session.get('user') %}
@@ -28,7 +28,12 @@
   {% else %}
     <!-- No sidebar/navbar layout for login/register pages -->
     <main class="container-fluid py-5">
-      {% block content %}{% endblock %}
+      <!-- Content will be inserted below -->
     </main>
   {% endif %}
+
+  {% if not session.get('user') %}
+    {% block content %}{% endblock %}
+  {% endif %}
 </body>
+
