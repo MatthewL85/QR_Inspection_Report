@@ -796,9 +796,12 @@ def onboard():
     return render_template('onboard.html', omc_names=omc_names, management_names=management_names, contractor_names=contractor_names)
 
     
-@app.route('/register-company/<company_type>/<company_name>', methods=['GET', 'POST'])
-def register_company(company_type, company_name):
+@app.route('/register-company/<company_type>', methods=['GET', 'POST'])
+def register_company(company_type):
+    company_name = request.args.get('company_name', '')  # Makes it optional on GET
+
     if request.method == 'POST':
+        company_name = request.form['company_name'].strip()
         admin_email = request.form['admin_email']
         password = request.form['password']
         confirm_password = request.form['confirm_password']
