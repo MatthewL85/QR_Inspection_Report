@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}LogixPM{% endblock %}</title>
 
-  <!-- Material Dashboard Bootstrap 5 CSS -->
+  <!-- Material Dashboard CSS -->
   <link href="https://cdn.jsdelivr.net/npm/@material-dashboard/bootstrap@latest/css/material-dashboard.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -22,29 +22,26 @@
     <div class="spinner"></div>
   </div>
 
-  {% block content %}
+  <div class="d-flex">
     {% if session.get('user') %}
-      <div class="d-flex">
-        {% if session['user']['role'] == 'Admin Contractor' %}
-          {% include 'sidebar_contractor.html' %}
-        {% elif session['user']['role'] == 'Director' %}
-          {% include 'sidebar_director.html' %}
-        {% else %}
-          {% include 'sidebar_admin.html' %}
-        {% endif %}
-        <div class="flex-grow-1">
-          {% include 'navbar.html' %}
-          <main class="container-fluid py-4">
-            {% block inner_content %}{% endblock %}
-          </main>
-        </div>
-      </div>
-    {% else %}
-      <main class="container d-flex justify-content-center align-items-center min-vh-100">
-        {% block inner_content %}{% endblock %}
-      </main>
+      {% if session['user']['role'] == 'Admin Contractor' %}
+        {% include 'sidebar_contractor.html' %}
+      {% elif session['user']['role'] == 'Director' %}
+        {% include 'sidebar_director.html' %}
+      {% else %}
+        {% include 'sidebar_admin.html' %}
+      {% endif %}
     {% endif %}
-  {% endblock %}
+    
+    <div class="flex-grow-1">
+      {% if session.get('user') %}
+        {% include 'navbar.html' %}
+      {% endif %}
+      <main class="container-fluid py-4">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
 
   <!-- Core JS -->
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
