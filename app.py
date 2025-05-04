@@ -460,6 +460,8 @@ def login():
                 return redirect(url_for('property_manager_dashboard'))
             elif role == 'Contractor':
                 return redirect(url_for('contractor_dashboard'))
+            elif role == 'Director':
+                return redirect(url_for('director_dashboard'))
             else:
                 flash("Unknown role. Please contact your administrator.", "danger")
                 return redirect(url_for('login'))
