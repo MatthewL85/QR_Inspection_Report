@@ -798,13 +798,15 @@ def onboard():
     
 @app.route('/register-company/<company_type>', methods=['GET', 'POST'])
 def register_company(company_type):
-    company_name = request.args.get('company_name', '')  # Makes it optional on GET
+    company_name = request.args.get('company_name', '')  # Optional on GET
 
     if request.method == 'POST':
         company_name = request.form['company_name'].strip()
         admin_email = request.form['admin_email']
         password = request.form['password']
         confirm_password = request.form['confirm_password']
+
+        flash("Form submitted.", "info")  # ✅ Debug: Check if form is received
 
         print("Submitted:", company_name, admin_email, password, confirm_password)
 
@@ -824,8 +826,12 @@ def register_company(company_type):
         else:
             role = 'Admin'
 
-        # Create user (let create_user handle password hashing)
-        create_user(username=admin_email, password=password, role=role, company=company_name)
+        # ✅ Wrap in try/except to catch file/write errors
+        try:
+            create_user(username=admin_email, password=password, role=role, company=company_name)
+        except Exception as e:
+            flash(f"An error occurred while creating the user: {e}", "danger")
+            return render_template('register_company.html', company_type=company_type, company_name=company_name)
 
         flash(f"{company_type.capitalize()} '{company_name}' registered successfully! You can now log in.", "success")
         return redirect(url_for('login'))
