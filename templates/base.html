@@ -1,6 +1,16 @@
-<!-- Sidebar + Navbar layout -->
-<div class="d-flex">
-    {% if 'user' in session and request.endpoint not in ['login', 'register_company'] %}
+<body class="bg-light
+  {% if session.get('user') and session['user']['role'] == 'Director' %}director-green
+  {% elif session.get('user') and session['user']['role'] in ['Admin Contractor', 'Contractor'] %}contractor-orange
+  {% else %}logixpm-blue
+  {% endif %}">
+  
+  <!-- 🔄 Spinner HTML -->
+  <div id="spinner-overlay">
+      <div class="spinner"></div>
+  </div>
+
+  {% if session.get('user') %}
+    <div class="d-flex">
       {% if session['user']['role'] == 'Admin Contractor' %}
         {% include 'sidebar_contractor.html' %}
       {% elif session['user']['role'] == 'Director' %}
@@ -8,15 +18,17 @@
       {% else %}
         {% include 'sidebar_admin.html' %}
       {% endif %}
-    {% endif %}
-  
-    <div class="flex-grow-1">
-      {% if request.endpoint not in ['login', 'register_company'] %}
+      <div class="flex-grow-1">
         {% include 'navbar.html' %}
-      {% endif %}
-      <main class="container-fluid py-4">
-        {% block content %}{% endblock %}
-      </main>
+        <main class="container-fluid py-4">
+          {% block content %}{% endblock %}
+        </main>
+      </div>
     </div>
-  </div>
-  
+  {% else %}
+    <!-- No sidebar/navbar layout for login/register pages -->
+    <main class="container-fluid py-5">
+      {% block content %}{% endblock %}
+    </main>
+  {% endif %}
+</body>
