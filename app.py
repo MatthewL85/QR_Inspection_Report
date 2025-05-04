@@ -777,12 +777,28 @@ def property_manager_maintenance_planner():
 
 @app.route('/onboard')
 def onboard():
-    return render_template('onboard.html')
+    omc_names = []
+    management_names = []
+    contractor_names = []
+
+    with open('data/clients.csv', mode='r', newline='', encoding='utf-8') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            client_type = row.get('client_type', '').lower()
+            name = row['client_name'].replace(' ', '-')
+            if client_type == 'omc':
+                omc_names.append(name)
+            elif client_type == 'management':
+                management_names.append(name)
+            elif client_type == 'contractor':
+                contractor_names.append(name)
+
+    return render_template('onboard.html', omc_names=omc_names, management_names=management_names, contractor_names=contractor_names)
+
     
-@app.route('/register-company/<company_type>', methods=['GET', 'POST'])
-def register_company(company_type):
+@app.route('/register-company/<company_type>/<company_name>', methods=['GET', 'POST'])
+def register_company(company_type, company_name):
     if request.method == 'POST':
-        company_name = request.form['company_name']
         admin_email = request.form['admin_email']
         password = request.form['password']
         confirm_password = request.form['confirm_password']
@@ -791,26 +807,28 @@ def register_company(company_type):
 
         if password != confirm_password:
             flash("Passwords do not match.", "danger")
-            return render_template('register_company.html', company_type=company_type)
+            return render_template('register_company.html', company_type=company_type, company_name=company_name)
 
         if user_exists(admin_email):
             flash("An account with that email already exists.", "warning")
-            return render_template('register_company.html', company_type=company_type)
+            return render_template('register_company.html', company_type=company_type, company_name=company_name)
 
-        # 👇 Assign a different admin role based on company_type
+        # ✅ Assign role based on company_type
         if company_type.lower() == 'contractor':
             role = 'Admin Contractor'
+        elif company_type.lower() == 'omc':
+            role = 'Director'
         else:
             role = 'Admin'
 
-        # ❌ Remove generate_password_hash here
-        # ✅ Let create_user handle the hashing
+        # Create user (let create_user handle password hashing)
         create_user(username=admin_email, password=password, role=role, company=company_name)
 
-        flash(f"{company_type} registered successfully! You can now log in.", "success")
+        flash(f"{company_type.capitalize()} '{company_name}' registered successfully! You can now log in.", "success")
         return redirect(url_for('login'))
 
-    return render_template('register_company.html', company_type=company_type)
+    return render_template('register_company.html', company_type=company_type, company_name=company_name)
+
 
 @app.route('/admin/users')
 def manage_users():
@@ -1838,6 +1856,10 @@ def capex_dashboard():
 
 @app.route("/director_dashboard")
 def director_dashboard():
+    if 'user' not in session or session['user']['role'] != 'Director':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('login'))
+
     capex_requests = []
     if os.path.exists("capex_requests.csv"):
         with open("capex_requests.csv", newline="", encoding="utf-8") as f:
