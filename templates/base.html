@@ -12,8 +12,8 @@
 </head>
 
 <body class="bg-light
-  {% if session.get('user') and session['user']['role'] == 'Director' %} director-green
-  {% elif session.get('user') and session['user']['role'] in ['Admin Contractor', 'Contractor'] %} contractor-orange
+  {% if session['user']['role'] == 'Director' %} director-green
+  {% elif session['user']['role'] in ['Admin Contractor', 'Contractor'] %} contractor-orange
   {% else %} logixpm-blue
   {% endif %}">
 
@@ -22,31 +22,22 @@
     <div class="spinner"></div>
   </div>
 
-  {% if session.get('user') %}
-    <!-- ✅ Authenticated User Layout -->
-    <div class="d-flex">
-      {% if session['user']['role'] == 'Admin Contractor' %}
-        {% include 'sidebar_contractor.html' %}
-      {% elif session['user']['role'] == 'Director' %}
-        {% include 'sidebar_director.html' %}
-      {% else %}
-        {% include 'sidebar_admin.html' %}
-      {% endif %}
-      <div class="flex-grow-1">
-        {% include 'navbar.html' %}
-        <main class="container-fluid py-4">
-          {% block content %}{% endblock %}
-        </main>
-      </div>
-    </div>
-  {% else %}
-    <!-- 🚪 Guest Layout (Login/Register/etc) -->
-    <main class="container d-flex justify-content-center align-items-center min-vh-100">
-      <div class="w-100" style="max-width: 500px;">
+  <div class="d-flex">
+    {% if session['user']['role'] == 'Admin Contractor' %}
+      {% include 'sidebar_contractor.html' %}
+    {% elif session['user']['role'] == 'Director' %}
+      {% include 'sidebar_director.html' %}
+    {% else %}
+      {% include 'sidebar_admin.html' %}
+    {% endif %}
+
+    <div class="flex-grow-1">
+      {% include 'navbar.html' %}
+      <main class="container-fluid py-4">
         {% block content %}{% endblock %}
-      </div>
-    </main>
-  {% endif %}
+      </main>
+    </div>
+  </div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
