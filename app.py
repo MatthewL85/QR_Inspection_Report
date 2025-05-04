@@ -1880,6 +1880,11 @@ def director_dashboard():
     return render_template("director_dashboard.html", capex_requests=capex_requests)
 
 
+@app.route('/director-settings')
+def director_settings():
+    return render_template('director_settings.html')
+
+
 @app.route("/submit_capex", methods=["GET", "POST"])
 def submit_capex():
     if request.method == "POST":
