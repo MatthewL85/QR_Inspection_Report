@@ -438,42 +438,42 @@ def report_by_equipment(equipment_id):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    session.pop('user', None)  # Clear old session
+    session.pop('user', None)
 
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-
         user = None
+
         if os.path.exists('users.csv'):
             with open('users.csv', newline='', encoding='utf-8') as file:
                 reader = csv.DictReader(file)
                 for row in reader:
-                    if row['email'].lower() == email.lower():
+                    if row['username'].lower() == email.lower():
                         if check_password_hash(row['password'], password):
                             user = row
                             break
 
         if user:
             session['user'] = {
-                'email': user['email'],
+                'email': user['username'],
                 'role': user['role'],
-                'name': user.get('name', '')
+                'company': user['company'],
+                'name': user.get('name_or_company', '')
             }
 
-            # Role-based dashboard redirect
             if user['role'] == 'Director':
                 return redirect(url_for('director_dashboard'))
             elif user['role'] in ['Admin Contractor', 'Contractor']:
                 return redirect(url_for('contractor_dashboard'))
             else:
                 return redirect(url_for('admin_dashboard'))
-        else:
-            flash('Invalid email or password.', 'danger')
-            return redirect(url_for('login'))
+
+        flash('Invalid email or password.', 'danger')
+        return redirect(url_for('login'))
 
     return render_template('login.html')
-
+    
 
 @app.route('/logout')
 def logout():
