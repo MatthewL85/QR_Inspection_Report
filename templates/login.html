@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login | LogixPM</title>
+  <title>Log in | LogixPM</title>
 
   <link href="https://cdn.jsdelivr.net/npm/@material-dashboard/bootstrap@latest/css/material-dashboard.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
@@ -14,7 +14,7 @@
 
   <main class="container d-flex justify-content-center align-items-center min-vh-100">
     <div class="col-md-6 col-lg-5">
-      <div class="card shadow">
+      <div class="card shadow border-0">
         <div class="card-header bg-gradient-primary text-white text-center py-3">
           <h5 class="mb-0">Log in to LogixPM</h5>
         </div>
@@ -32,14 +32,16 @@
           {% endwith %}
 
           <form method="POST" action="{{ url_for('login') }}">
-            <div class="form-group mb-3">
+            <div class="mb-3">
               <label for="email" class="form-label">Email</label>
               <input type="email" class="form-control form-control-lg" id="email" name="email" required />
             </div>
-            <div class="form-group mb-4">
+
+            <div class="mb-4">
               <label for="password" class="form-label">Password</label>
               <input type="password" class="form-control form-control-lg" id="password" name="password" required />
             </div>
+
             <div class="d-grid">
               <button type="submit" class="btn bg-gradient-primary btn-lg">Log In</button>
             </div>
