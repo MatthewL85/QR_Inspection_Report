@@ -36,3 +36,10 @@ body {
     font-size: 0.9rem;
   }
   
+  .centered-container {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
