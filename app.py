@@ -1,6 +1,6 @@
 from auth import create_user, authenticate_user, user_exists
 from flask import Flask, render_template, request, redirect, url_for, send_file, session, flash, abort, make_response
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 from dateutil.relativedelta import relativedelta
 from weasyprint import HTML
 import csv
