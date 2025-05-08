@@ -31,7 +31,6 @@
       {% else %}
         {% include 'sidebar_admin.html' %}
       {% endif %}
-
       <div class="flex-grow-1">
         {% include 'navbar.html' %}
         <main class="container-fluid py-4">
@@ -40,7 +39,7 @@
       </div>
     </div>
   {% else %}
-    <!-- Show only the login page (already guarded by route) -->
+    <!-- Guest layout (login/register/etc.) -->
     <main class="container d-flex justify-content-center align-items-center min-vh-100">
       <div class="w-100" style="max-width: 500px;">
         {% block content %}{% endblock %}
