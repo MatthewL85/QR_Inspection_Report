@@ -472,7 +472,7 @@ def login():
         flash('Invalid email or password.', 'danger')
         return redirect(url_for('login'))
 
-    return render_template('login.html')
+    return render_template('login_test.html')
     
 
 @app.route('/logout')
