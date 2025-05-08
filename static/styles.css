@@ -1,6 +1,38 @@
 body {
-    font-family: Arial, sans-serif;
-    background: #f8f9fa;
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+    background-color: #f8f9fa;
+    color: #344767;
     margin: 0;
     padding: 0;
-}
+  }
+  
+  /* Card enhancements */
+  .card {
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Material buttons */
+  .btn.bg-gradient-primary {
+    background: linear-gradient(87deg, #2152ff 0, #21d4fd 100%) !important;
+    color: #fff !important;
+    border: none;
+  }
+  .btn.bg-gradient-primary:hover {
+    opacity: 0.95;
+  }
+  
+  /* Inputs */
+  .form-control {
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+  }
+  
+  /* Alerts */
+  .alert {
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
