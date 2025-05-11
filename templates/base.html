@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
 <body class="g-sidenav-show bg-light
   {% if session.get('user') and session['user']['role'] == 'Director' %} director-green
   {% elif session.get('user') and session['user']['role'] in ['Admin Contractor', 'Contractor'] %} contractor-orange
