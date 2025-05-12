@@ -20,7 +20,7 @@
   <div id="spinner-overlay"><div class="spinner"></div></div>
 
   {% if session.get('user') %}
-  <div class="d-flex" id="layout-wrapper" style="min-height: 100vh;">
+  <div class="d-flex flex-row" style="min-height: 100vh;">
     {% if session['user']['role'] == 'Admin Contractor' %}
       {% include 'sidebar_contractor.html' %}
     {% elif session['user']['role'] == 'Director' %}
@@ -29,12 +29,13 @@
       {% include 'sidebar_admin.html' %}
     {% endif %}
   
-    <div class="main-content flex-grow-1 ms-sm-3">
+    <div class="flex-grow-1" style="overflow-x: hidden;">
       {% include 'navbar.html' %}
       <main class="container-fluid py-4">
-        </main>
-      </div>
+        {% block content %}{% endblock %}
+      </main>
     </div>
+  </div>  
   {% else %}
     <main class="container d-flex justify-content-center align-items-center min-vh-100">
       <div class="w-100" style="max-width: 500px;">
