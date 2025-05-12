@@ -20,18 +20,18 @@
   <div id="spinner-overlay"><div class="spinner"></div></div>
 
   {% if session.get('user') %}
-    <div class="wrapper d-flex">
-      {% if session['user']['role'] == 'Admin Contractor' %}
-        {% include 'sidebar_contractor.html' %}
-      {% elif session['user']['role'] == 'Director' %}
-        {% include 'sidebar_director.html' %}
-      {% else %}
-        {% include 'sidebar_admin.html' %}
-      {% endif %}
-      <div class="main-content flex-grow-1">
-        {% include 'navbar.html' %}
-        <main class="container-fluid py-4" id="auth-wrapper">
-          <!-- Authenticated content wrapper -->
+  <div class="d-flex" id="layout-wrapper" style="min-height: 100vh;">
+    {% if session['user']['role'] == 'Admin Contractor' %}
+      {% include 'sidebar_contractor.html' %}
+    {% elif session['user']['role'] == 'Director' %}
+      {% include 'sidebar_director.html' %}
+    {% else %}
+      {% include 'sidebar_admin.html' %}
+    {% endif %}
+  
+    <div class="main-content flex-grow-1 ms-sm-3">
+      {% include 'navbar.html' %}
+      <main class="container-fluid py-4">
         </main>
       </div>
     </div>

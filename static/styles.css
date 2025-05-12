@@ -43,3 +43,11 @@ body {
     align-items: center;
   }
   
+  #layout-wrapper {
+    display: flex;
+  }
+  
+  .main-content {
+    margin-left: 250px; /* Match sidebar width */
+  }
+  
