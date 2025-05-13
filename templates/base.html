@@ -32,9 +32,11 @@
     <div class="flex-grow-1" style="overflow-x: hidden;">
       {% include 'navbar.html' %}
       <main class="container-fluid py-4">
+        {% block content %}{% endblock %}
       </main>
     </div>
-  </div>  
+  </div> 
+   
   {% else %}
     <main class="container d-flex justify-content-center align-items-center min-vh-100">
       <div class="w-100" style="max-width: 500px;">
