@@ -39,14 +39,11 @@
     <main class="container d-flex justify-content-center align-items-center min-vh-100">
       <div class="w-100" style="max-width: 500px;">
         <div class="card shadow border-0 w-100 p-4" id="guest-card">
-          <!-- Guest layout content wrapper -->
+          {% block content %}{% endblock %}
         </div>
       </div>
     </main>
   {% endif %}
-
-  <!-- This is the ONLY content block declaration -->
-  {% block content %}{% endblock %}
 
   <script src="{{ url_for('static', filename='assets/js/core/bootstrap.min.js') }}"></script>
   <script src="{{ url_for('static', filename='assets/js/material-dashboard.min.js') }}"></script>
