@@ -14,36 +14,37 @@
   {% if session.get('user') and session['user']['role'] == 'Director' %} director-green
   {% elif session.get('user') and session['user']['role'] in ['Admin Contractor', 'Contractor'] %} contractor-orange
   {% else %} logixpm-blue
-  {% endif %} ">
+  {% endif %}">
 
   <!-- Spinner -->
   <div id="spinner-overlay"><div class="spinner"></div></div>
 
   {% if session.get('user') %}
-  <div class="d-flex flex-row" style="min-height: 100vh;">
-    {% if session['user']['role'] == 'Admin Contractor' %}
-      {% include 'sidebar_contractor.html' %}
-    {% elif session['user']['role'] == 'Director' %}
-      {% include 'sidebar_director.html' %}
-    {% else %}
-      {% include 'sidebar_admin.html' %}
-    {% endif %}
+    <div class="d-flex" style="min-height: 100vh;">
+      {% if session['user']['role'] == 'Admin Contractor' %}
+        {% include 'sidebar_contractor.html' %}
+      {% elif session['user']['role'] == 'Director' %}
+        {% include 'sidebar_director.html' %}
+      {% else %}
+        {% include 'sidebar_admin.html' %}
+      {% endif %}
 
-    <div class="flex-grow-1 d-flex flex-column">
-      {% include 'navbar.html' %}
-      <main class="container-fluid py-4 flex-grow-1">
-        {% block content %}{% endblock %}
-      </main>
-    </div>
-  </div>
-  {% else %}
-  <main class="container d-flex justify-content-center align-items-center min-vh-100">
-    <div class="w-100" style="max-width: 500px;">
-      <div class="card shadow border-0 w-100 p-4" id="guest-card">
-        {% block content %}{% endblock %}
+      <div class="flex-grow-1 d-flex flex-column">
+        {% include 'navbar.html' %}
+        <main class="flex-grow-1 p-3">
+          {% block content %}{% endblock %}
+        </main>
       </div>
     </div>
-  </main>
+  {% else %}
+    <!-- Guest layout -->
+    <main class="container d-flex justify-content-center align-items-center min-vh-100">
+      <div class="w-100" style="max-width: 500px;">
+        <div class="card shadow border-0 p-4">
+          {% block content %}{% endblock %}
+        </div>
+      </div>
+    </main>
   {% endif %}
 
   <script src="{{ url_for('static', filename='assets/js/core/bootstrap.min.js') }}"></script>
@@ -51,3 +52,4 @@
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
+
