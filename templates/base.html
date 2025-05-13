@@ -10,6 +10,16 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 
+<style>
+    @media (min-width: 768px) {
+      #main-content {
+        margin-left: 250px;
+        max-width: calc(100% - 250px);
+      }
+    }
+  </style>
+</head>
+
 <body class="g-sidenav-show bg-light
   {% if session.get('user') and session['user']['role'] == 'Director' %} director-green
   {% elif session.get('user') and session['user']['role'] in ['Admin Contractor', 'Contractor'] %} contractor-orange
@@ -33,7 +43,7 @@
           {% endif %}
         </div>
   
-        <div class="col ps-md-4" style="margin-left: 250px; max-width: calc(100% - 250px);">
+        <div class="col ps-md-4" style="margin-left: 0; max-width: 100%;" id="main-content">
           {% include 'navbar.html' %}
           <main class="py-4">
             {% block page_content %}{% endblock %}
