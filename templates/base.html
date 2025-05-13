@@ -20,33 +20,33 @@
   <div id="spinner-overlay"><div class="spinner"></div></div>
 
   {% if session.get('user') %}
-    <div class="d-flex flex-row" style="min-height: 100vh;">
-      {% if session['user']['role'] == 'Admin Contractor' %}
-        {% include 'sidebar_contractor.html' %}
-      {% elif session['user']['role'] == 'Director' %}
-        {% include 'sidebar_director.html' %}
-      {% else %}
-        {% include 'sidebar_admin.html' %}
-      {% endif %}
-
-      <div class="flex-grow-1" style="overflow-x: hidden;">
-        {% include 'navbar.html' %}
-        <main class="container-fluid py-4">
-          {% block content %}{% endblock %}
+  <div class="d-flex flex-row" style="min-height: 100vh;">
+    {% if session['user']['role'] == 'Admin Contractor' %}
+      {% include 'sidebar_contractor.html' %}
+    {% elif session['user']['role'] == 'Director' %}
+      {% include 'sidebar_director.html' %}
+    {% else %}
+      {% include 'sidebar_admin.html' %}
+    {% endif %}
+  
+    <div class="flex-grow-1" style="overflow-x: hidden;">
+      {% include 'navbar.html' %}
+      <main class="container-fluid py-4">
         </main>
-      </div>
     </div>
+  </div> 
+
   {% else %}
-    <!-- Guest layout (login/register) -->
     <main class="container d-flex justify-content-center align-items-center min-vh-100">
       <div class="w-100" style="max-width: 500px;">
         <div class="card shadow border-0 w-100 p-4" id="guest-card">
-        </div>
-        </div>
-        {% block content %}{% endblock %}
-    </main>
 
+        </div>
+      </div>
+    </main>
   {% endif %}
+
+  {% block content %}{% endblock %}
 
   <script src="{{ url_for('static', filename='assets/js/core/bootstrap.min.js') }}"></script>
   <script src="{{ url_for('static', filename='assets/js/material-dashboard.min.js') }}"></script>
