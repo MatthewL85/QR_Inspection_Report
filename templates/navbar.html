@@ -1,4 +1,4 @@
-<!-- navbar.html -->
+<!-- navbar.html --> 
 <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-4 py-2">
   <div class="container-fluid">
     <span class="navbar-brand fw-bold 
@@ -37,6 +37,12 @@
           {% endif %}
         </ul>
       </li>
+
+      {% if 'user' in session %}
+        <li class="nav-item d-none d-md-block">
+          <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm ms-3">Logout</a>
+        </li>
+      {% endif %}
     </ul>
   </div>
 </nav>
