@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -20,38 +20,37 @@
   <div id="spinner-overlay"><div class="spinner"></div></div>
 
   {% block content %}
-  <div class="container-fluid">
-    <div class="row">
-      {% if session.get('user') %}
-        <div class="col-auto px-0">
-          {% if session['user']['role'] == 'Admin Contractor' %}
-            {% include 'sidebar_contractor.html' %}
-          {% elif session['user']['role'] == 'Director' %}
-            {% include 'sidebar_director.html' %}
-          {% else %}
-            {% include 'sidebar_admin.html' %}
-          {% endif %}
+    {% if session.get('user') %}
+      {% if session['user']['role'] == 'Admin Contractor' %}
+        <div class="sidebar">
+          {% include 'sidebar_contractor.html' %}
         </div>
-  
-        <div class="col ps-md-4" id="main-content">
-          {% include 'navbar.html' %}
-          <main class="py-4">
-            {% block page_content %}{% endblock %}
-          </main>
+      {% elif session['user']['role'] == 'Director' %}
+        <div class="sidebar">
+          {% include 'sidebar_director.html' %}
         </div>
       {% else %}
-        <div class="col-12">
-          <main class="d-flex justify-content-center align-items-center min-vh-100">
-            <div class="w-100" style="max-width: 500px;">
-              <div class="card shadow border-0 w-100 p-4" id="guest-card">
-                {% block guest_content %}{% endblock %}
-              </div>
-            </div>
-          </main>
+        <div class="sidebar">
+          {% include 'sidebar_admin.html' %}
         </div>
       {% endif %}
-    </div>
-  </div>  
+
+      <div id="main-content">
+        {% include 'navbar.html' %}
+        <main class="py-4">
+          {% block page_content %}{% endblock %}
+        </main>
+      </div>
+
+    {% else %}
+      <main class="d-flex justify-content-center align-items-center min-vh-100">
+        <div class="w-100" style="max-width: 500px;">
+          <div class="card shadow border-0 w-100 p-4" id="guest-card">
+            {% block guest_content %}{% endblock %}
+          </div>
+        </div>
+      </main>
+    {% endif %}
   {% endblock %}
 
   <script src="{{ url_for('static', filename='assets/js/core/bootstrap.min.js') }}"></script>
