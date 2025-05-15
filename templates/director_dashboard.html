@@ -1,7 +1,10 @@
 {% extends 'base.html' %}
-{% block content %}
+{% block title %}Director Dashboard - CAPEX Requests{% endblock %}
+
+{% block page_content %}
 <div class="container mt-4">
   <h2>Director Dashboard - CAPEX Requests</h2>
+
   {% if capex_requests %}
     <table class="table table-bordered table-striped">
       <thead>
@@ -40,4 +43,3 @@
   {% endif %}
 </div>
 {% endblock %}
-
