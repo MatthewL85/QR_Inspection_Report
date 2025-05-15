@@ -64,6 +64,10 @@ body {
 }
 
 @media (max-width: 767px) {
+  .sidebar {
+    display: none;
+  }
+
   #main-content {
     margin-left: 0;
   }
