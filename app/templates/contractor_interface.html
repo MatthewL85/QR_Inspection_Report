@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Contractor Inspection</title>
+</head>
+<body>
+    <h1>🔧 Contractor: {{ company }}</h1>
+    <h2>Equipment ID: {{ equipment.id }}</h2>
+    <p><strong>Name:</strong> {{ equipment.name }}</p>
+    <p><strong>Client:</strong> {{ equipment.client }}</p>
+    <p><strong>Location:</strong> {{ equipment.location }}</p>
+
+    <form method="POST" enctype="multipart/form-data" action="">
+        <label for="visit_date">Date of Visit:</label><br>
+        <input type="date" name="visit_date" required><br><br>
+    
+        <label for="visit_type">Type of Visit:</label><br>
+        <select name="visit_type" required>
+            <option value="Scheduled">Scheduled</option>
+            <option value="Callout">Callout</option>
+        </select><br><br>
+    
+        <label for="notes">Notes:</label><br>
+        <textarea name="notes" rows="4" cols="50"></textarea><br><br>
+    
+        <label for="media">Upload Photo or Video:</label><br>
+        <input type="file" name="media" accept="image/*,video/*"><br><br>
+    
+        {% if allow_edit %}
+            <label for="next_maintenance">Next Planned Maintenance Date:</label><br>
+            <input type="date" name="next_maintenance" value="{{ next_maintenance }}"><br><br>
+        {% else %}
+            <p><strong>Next Planned Maintenance:</strong> {{ next_maintenance }}</p>
+            <p><em>This date cannot be changed until 1 week before it's due.</em></p>
+        {% endif %}
+    
+        <button type="submit">Submit Inspection</button>
+    </form>
+    
+</body>
+</html>

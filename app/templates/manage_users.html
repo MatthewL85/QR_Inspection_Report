@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+  <h1>👥 Manage Users</h1>
+
+  <div style="margin-bottom: 1.5em;">
+    <a href="{{ url_for('add_user') }}" class="btn btn-success">➕ Add New User</a>
+  </div>
+
+  {% if users %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Email / Username</th>
+        <th>Role</th>
+        <th>Name</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+      <tr>
+        <td>{{ user.username }}</td>
+        <td>{{ user.role }}</td>
+        <td>{{ user.name_or_company or '-' }}</td>
+        <td>
+          <a href="{{ url_for('edit_user', email=user.username) }}" class="btn btn-sm btn-outline-primary">✏ Edit</a>
+          <a href="{{ url_for('delete_user', username=user.username) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this user?');">🗑 Delete</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p>No users found.</p>
+  {% endif %}
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('admin_management_dashboard') if session['user']['role'] == 'Admin' else url_for('admin_contractor_dashboard') }}" class="btn btn-secondary">⬅ Back to Dashboard</a>
+  </div>
+</div>
+{% endblock %}

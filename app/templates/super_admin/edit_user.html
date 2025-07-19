@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <div class="card shadow-sm rounded-4 p-4">
+    <h2 class="text-center mb-4">✏️ Edit User</h2>
+
+    <form method="POST">
+      <!-- Full Name -->
+      <div class="mb-3">
+        <label for="full_name" class="form-label">Full Name</label>
+        <input type="text" class="form-control" name="full_name" id="full_name" value="{{ user.full_name }}" required>
+      </div>
+
+      <!-- Email -->
+      <div class="mb-3">
+        <label for="email" class="form-label">Email / Username</label>
+        <input type="email" class="form-control" name="email" id="email" value="{{ user.email }}" required>
+      </div>
+
+      <!-- Role -->
+      <div class="mb-3">
+        <label for="role_id" class="form-label">Role</label>
+        <select name="role_id" id="role_id" class="form-select" required onchange="toggleCompanyDropdown()">
+          <option value="2" {% if user.role_id == 2 %}selected{% endif %}>Property Manager</option>
+          <option value="3" {% if user.role_id == 3 %}selected{% endif %}>Admin</option>
+          <option value="5" {% if user.role_id == 5 %}selected{% endif %}>Contractor</option>
+        </select>
+      </div>
+
+      <!-- PIN -->
+      <div class="mb-3">
+        <label for="pin" class="form-label">Secure PIN</label>
+        <input type="text" class="form-control" name="pin" id="pin" value="{{ user.pin }}"
+          pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}"
+          title="PIN must be at least 8 characters, include uppercase, lowercase, number, and a symbol." required>
+      </div>
+
+      <!-- Company Selection -->
+      <div class="mb-3" id="management_company_section">
+        <label for="company_id" class="form-label">Management Company</label>
+        <select name="company_id" id="company_id" class="form-select">
+          {% for client in management_companies %}
+            <option value="{{ client.id }}" {% if user.company_id == client.id %}selected{% endif %}>{{ client.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-3 d-none" id="contractor_company_section">
+        <label for="contractor_id" class="form-label">Contractor Company</label>
+        <select name="contractor_id" id="contractor_id" class="form-select">
+          {% for contractor in contractor_companies %}
+            <option value="{{ contractor.id }}" {% if user.company_id == contractor.id %}selected{% endif %}>{{ contractor.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Active Toggle -->
+      <div class="form-check form-switch mb-4">
+        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if user.is_active %}checked{% endif %}>
+        <label class="form-check-label" for="is_active">Active</label>
+      </div>
+
+      <!-- Optional Password Reset -->
+      <div class="mb-3">
+        <label for="new_password" class="form-label">New Password (optional)</label>
+        <input type="password" class="form-control" name="new_password" id="new_password">
+      </div>
+
+      <div class="mb-3">
+        <label for="confirm_password" class="form-label">Confirm New Password</label>
+        <input type="password" class="form-control" name="confirm_password" id="confirm_password">
+      </div>
+
+      <!-- Submit -->
+      <div class="text-center">
+        <button type="submit" class="btn btn-success px-5">💾 Update User</button>
+      </div>
+    </form>
+
+    <div class="text-center mt-4">
+      <a href="{{ url_for('super_admin.manage_users') }}" class="btn btn-outline-secondary">
+        ⬅ Back to User List
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleCompanyDropdown() {
+    const role = document.getElementById('role_id').value;
+    const mgmtSection = document.getElementById('management_company_section');
+    const contractorSection = document.getElementById('contractor_company_section');
+
+    if (role === '5') {
+      mgmtSection.classList.add('d-none');
+      contractorSection.classList.remove('d-none');
+    } else {
+      mgmtSection.classList.remove('d-none');
+      contractorSection.classList.add('d-none');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', toggleCompanyDropdown);
+</script>
+{% endblock %}

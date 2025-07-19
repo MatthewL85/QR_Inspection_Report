@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Equipment Inspection Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            background: #f9f9f9;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .logo {
+            max-height: 60px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            vertical-align: top;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .media-link a {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div>
+            <h1>Inspection Summary – Equipment ID {{ equipment.id }}</h1>
+            <h2>{{ equipment.name }} ({{ equipment.location }})</h2>
+        </div>
+        <img src="{{ url_for('static', filename='logo.png') }}" class="logo" alt="Company Logo">
+    </div>
+
+    <p><strong>Client:</strong> {{ equipment.client }}</p>
+    <p><strong>Model:</strong> {{ equipment.model }} | <strong>Age:</strong> {{ equipment.age }}</p>
+    <p><strong>Last Recorded Inspection:</strong> {{ equipment.last_inspection }}</p>
+
+    <h2>Inspection Log</h2>
+    <p><strong>Total Inspections:</strong> {{ logs|length }}</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Inspector</th>
+                <th>Visit Type</th>
+                <th>Visit Date</th>
+                <th>Next Maintenance</th>
+                <th>Notes</th>
+                <th>Media</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+                <tr>
+                    <td>{{ log.timestamp[:10] }}</td>
+                    <td>{{ log.inspector_pin }}</td>
+                    <td>{{ log.clean.replace('Visit Type:', '').strip() }}</td>
+                    <td>{{ log.damage.replace('Visit Date:', '').strip() }}</td>
+                    <td>{{ log.functional.replace('Next Maintenance:', '').strip() }}</td>
+                    <td>{{ log.notes.replace('Media:', '').strip() if 'Media:' not in log.notes else log.notes.split('Media:')[0].strip() }}</td>
+                    <td class="media-link">
+                        {% if 'Media:' in log.notes %}
+                            <a href="{{ url_for('static', filename='uploads/' + log.notes.split('Media:')[1].strip()) }}" target="_blank">View</a>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+<div class="text-center mt-4">
+    <a href="{{ url_for('show_dashboard') }}" class="btn btn-secondary">⬅ Return to Dashboard</a>
+</div>  
+
+</body>
+</html>

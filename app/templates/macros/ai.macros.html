@@ -1,0 +1,28 @@
+{# templates/_macros/ai_macros.html #}
+{% macro show_parsed_summary(summary) %}
+  {% if summary %}
+    <div class="alert alert-info p-2 mb-2">
+      <strong>AI Summary:</strong><br>
+      {{ summary | safe }}
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro show_extracted_data(data) %}
+  {% if data %}
+    <div class="bg-light border rounded p-2 mb-2">
+      <strong>Extracted Data:</strong>
+      <pre class="small">{{ data | json_prettify }}</pre>
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro show_scorecard(scorecard, rank=None) %}
+  {% if scorecard %}
+    <div class="card border border-success bg-success-subtle p-3 mb-2">
+      <strong>GAR Scorecard:</strong><br>
+      <pre class="small">{{ scorecard | truncate_json }}</pre>
+      {% if rank %}<div class="mt-1"><strong>AI Rank:</strong> {{ rank }}</div>{% endif %}
+    </div>
+  {% endif %}
+{% endmacro %}

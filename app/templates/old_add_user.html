@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5" style="max-width: 600px;">
+  <h2 class="mb-4 text-center">➕ Add New User</h2>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST">
+    <div class="mb-3">
+      <label for="username" class="form-label">Email (Username)</label>
+      <input type="email" class="form-control" id="username" name="username" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="password" class="form-label">Password</label>
+      <input type="password" class="form-control" id="password" name="password" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="confirm_password" class="form-label">Confirm Password</label>
+      <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="role" class="form-label">Role</label>
+      <select class="form-select" name="role" required>
+        {% for role in allowed_roles %}
+          <option value="{{ role }}">{{ role }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="pin" class="form-label">PIN (for QR inspections)</label>
+      <input type="text" class="form-control" name="pin">
+    </div>
+
+    <div class="mb-3">
+      <label for="name_or_company" class="form-label">Name / Company</label>
+      <input type="text" class="form-control" name="name_or_company">
+    </div>
+
+    <button type="submit" class="btn btn-success w-100">Add User</button>
+  </form>
+</div>
+{% endblock %}

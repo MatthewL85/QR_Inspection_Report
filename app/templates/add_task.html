@@ -1,0 +1,45 @@
+
+{% extends 'base.html' %}
+{% block page_content %}
+<div class="container mt-5">
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">📝 Create Manual Task</h5>
+    </div>
+    <div class="card-body">
+      <form method="POST">
+        <div class="mb-3">
+          <label for="title" class="form-label">Task Title</label>
+          <input type="text" name="title" id="title" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+          <label for="client" class="form-label">Client</label>
+          <select name="client" id="client" class="form-select" required>
+            {% for client in clients %}
+              <option value="{{ client.name }}">{{ client.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="date" class="form-label">Task Date</label>
+          <input type="date" name="date" id="date" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+          <label for="status" class="form-label">Task Status</label>
+          <select name="status" id="status" class="form-select" required>
+            <option value="Scheduled">Scheduled</option>
+            <option value="Missed">Missed</option>
+            <option value="Complete">Complete</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">➕ Add Task</button>
+        <a href="{{ url_for('property_manager.dashboard') }}" class="btn btn-secondary ms-2">⬅ Back to Dashboard</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Inspection Summary - {{ client.name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            background-color: #f9f9f9;
+        }
+        header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2em;
+        }
+        header img {
+            height: 60px;
+            margin-right: 1em;
+        }
+        h1 {
+            margin: 0;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1em;
+            background-color: white;
+        }
+        th, td {
+            padding: 0.8em;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f1f1;
+        }
+        .media-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .media-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Client Logo">
+    <h1>Inspection Summary for {{ client.name }}</h1>
+</header>
+
+<p><strong>Address:</strong> {{ client.address }}</p>
+
+<h3>Contacts:</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for contact in client.contacts %}
+        <tr>
+            <td>{{ contact.name }}</td>
+            <td>{{ contact.email }}</td>
+            <td>{{ contact.phone }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2 style="margin-top: 2em;">Inspection Logs</h2>
+<p>Total Inspections: {{ logs|length }}</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Equipment ID</th>
+            <th>Name</th>
+            <th>Location</th>
+            <th>Visit Type</th>
+            <th>Notes</th>
+            <th>Next Maintenance</th>
+            <th>Media</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for log in logs %}
+        <tr>
+            <td>{{ log.timestamp[:10] }}</td>
+            <td>{{ log.equipment_id }}</td>
+            <td>{{ log.name }}</td>
+            <td>
+                {% for eq in equipment %}
+                    {% if eq.id == log.equipment_id %}
+                        {{ eq.location }}
+                    {% endif %}
+                {% endfor %}
+            </td>
+            <td>{{ log.clean }}</td>
+            <td>{{ log.notes }}</td>
+            <td>{{ log.functional }}</td>
+            <td class="media-link">
+                {% if "Media:" in log.notes %}
+                    {% set parts = log.notes.split("Media:") %}
+                    <a href="{{ url_for('static', filename='uploads/' ~ parts[1].strip()) }}" target="_blank">View</a>
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<div class="text-center mt-4">
+    <a href="{{ url_for('show_dashboard') }}" class="btn btn-secondary">⬅ Return to Dashboard</a>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Director Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="container mt-5">
+    <div class="text-center mb-4">
+      <h5 class="text-muted">Welcome to {{ company.name }}</h5>
+      <h4 class="text-success">Director Dashboard</h4>
+    </div>
+
+    <div class="card shadow">
+      <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+        <strong>CAPEX Requests</strong>
+        <button class="btn btn-sm btn-light ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+          <i class="material-icons">filter_list</i>
+        </button>
+      </div>
+      <div class="card-body">
+        <div class="collapse mb-4" id="filterCollapse">
+        <form method="GET" class="row g-3">
+          <div class="col-md-3">
+            <label for="area" class="form-label">Filter by Area</label>
+            <select name="area" id="area" class="form-select">
+              <option value="">All Areas</option>
+              {% for area in areas %}
+              <option value="{{ area }}" {% if request.args.get('area') == area %}selected{% endif %}>{{ area }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label for="status" class="form-label">Filter by Status</label>
+            <select name="status" id="status" class="form-select">
+              <option value="">All Statuses</option>
+              {% for s in statuses %}
+              <option value="{{ s }}" {% if request.args.get('status') == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label for="year" class="form-label">Filter by Year</label>
+            <select name="year" id="year" class="form-select">
+              <option value="">All Years</option>
+              {% for y in years %}
+              <option value="{{ y }}" {% if request.args.get('year') == y|string %}selected{% endif %}>{{ y }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3 d-flex align-items-end">
+            <button type="submit" class="btn btn-outline-success w-100">Apply Filters</button>
+          </div>
+        </form>
+      </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% if capex_requests %}
+          <table class="table table-bordered table-striped">
+            <thead class="table-light">
+              <tr>
+                <th>Area</th>
+                <th>Assigned To</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Submitted By</th>
+                <th>Date</th>
+                <th>File</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for request in capex_requests %}
+              <tr>
+                <td>{{ request.area }}</td>
+                <td>
+                  {% set assigned = assignments[request.area] if request.area in assignments else None %}
+                  {% if assigned %}
+                    {{ assigned }}
+                  {% else %}
+                    <em>Unassigned</em>
+                  {% endif %}
+                </td>
+                <td>{{ request.description }}</td>
+                <td>{{ request.status }}</td>
+                <td>{{ request.submitted_by }}</td>
+                <td>{{ request.date_submitted.strftime('%Y-%m-%d') }}</td>
+                <td>
+                  {% if request.file_path %}
+                    <a href="{{ url_for('static', filename=request.file_path.replace('static/', '')) }}" target="_blank">View</a>
+                  {% else %}
+                    No file
+                  {% endif %}
+                </td>
+                <td>
+                  <a href="{{ url_for('view_responses', capex_id=request.id) }}" class="btn btn-sm btn-outline-primary">View Responses</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p>No CAPEX requests found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

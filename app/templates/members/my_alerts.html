@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>📋 My Submitted Alerts</h2>
+  {% if alerts %}
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Category</th>
+        <th>Priority</th>
+        <th>Status</th>
+        <th>Submitted</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for alert in alerts %}
+        <tr>
+          <td>{{ alert.title }}</td>
+          <td>{{ alert.category }}</td>
+          <td>{{ alert.priority }}</td>
+          <td>{{ alert.status }}</td>
+          <td>{{ alert.date_created.strftime('%Y-%m-%d') }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>You have not submitted any issues yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

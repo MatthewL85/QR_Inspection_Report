@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+  <h1>✏ Edit User</h1>
+
+  <form method="POST">
+    <label>Email / Username:</label><br>
+    <input type="email" name="username" value="{{ user.username }}" readonly><br><br>
+
+    <label>Role:</label><br>
+    <select name="role" required>
+      <option value="Property Manager" {% if user.role == 'Property Manager' %}selected{% endif %}>Property Manager</option>
+      <option value="Admin" {% if user.role == 'Admin' %}selected{% endif %}>Admin</option>
+    </select><br><br>
+
+    <label>Full Name:</label><br>
+    <input type="text" name="name_or_company" value="{{ user.name_or_company }}" required><br><br>
+
+    <label for="pin">Secure PIN:</label><br>
+    <input type="text" name="pin" 
+       pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}" 
+       title="PIN must be at least 8 characters long, and include a number, a symbol, a lowercase and uppercase letter."
+       required><br><br>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+  </form>
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('manage_users') }}" class="btn btn-secondary">⬅ Back to User List</a>
+  </div>
+</div>
+{% endblock %}

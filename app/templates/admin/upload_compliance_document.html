@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block page_content %}
+<div class="container-fluid py-4">
+  <div class="card">
+    <div class="card-header">
+      <h5>📤 Upload Compliance Document</h5>
+    </div>
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Document Type</label>
+            <select class="form-select" name="document_type" required>
+              <option value="Insurance">Insurance</option>
+              <option value="Health & Safety">Health & Safety</option>
+              <option value="Certifications">Certifications</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Contractor</label>
+            <select class="form-select" name="contractor_id" required>
+              {% for contractor in contractors %}
+              <option value="{{ contractor.id }}">{{ contractor.full_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Expiry Date</label>
+            <input type="date" name="expiry_date" class="form-control" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Document File</label>
+            <input type="file" name="document" class="form-control" accept=".pdf,.doc,.docx" required>
+          </div>
+        </div>
+
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" name="is_required">
+          <label class="form-check-label">Required for Work Orders</label>
+        </div>
+
+        <button type="submit" class="btn btn-success">Upload</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

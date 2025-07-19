@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+
+  <!-- Row: Summary Tiles -->
+  <div class="row">
+    {% set contractor_users = users | selectattr("role", "equalto", "Contractor") | list %}
+    
+    {{ common_macros.metric_tile("Total Clients", clients|length, "groups", "primary") }}
+    {{ common_macros.metric_tile("Total PMs", managers|length, "supervisor_account", "info") }}
+    {{ common_macros.metric_tile("Total Contractors", contractor_users|length, "engineering", "warning") }}
+    {{ common_macros.metric_tile("Managed Portfolio", "€" ~ total_portfolio_value, "folder_shared", "secondary") }}
+  </div>
+
+  <!-- Row: Secondary Metrics -->
+  <div class="row mt-4">
+    {{ common_macros.metric_tile("Upcoming AGMs", upcoming_agm_count, "calendar-alt", "success", "super_admin.upcoming_agms") }}
+    {{ compliance_macros.compliance_tile("Compliance Docs", compliance_docs, "file-contract", "dark", "super_admin.compliance_documents") }}
+    {{ common_macros.metric_tile("GAR Insights", gar_flagged_count, "robot", "danger", "super_admin.gar_insights") }}
+    {{ common_macros.metric_tile("Expiring Docs", expiring_docs_count, "hourglass-end", "warning", "super_admin.expiring_documents") }}
+  </div>
+
+  <!-- Row: Placeholder Features -->
+  <div class="row mt-4">
+    <div class="col-md-4 mb-4">
+      <div class="card h-100 text-center">
+        <div class="card-body">
+          <i class="fas fa-tools fa-2x mb-2 text-warning"></i>
+          <h5 class="card-title">Works Logix</h5>
+          <p class="card-text">Manage Work Orders & Contractor Assignments</p>
+          <a href="/work-orders" class="btn btn-outline-primary disabled">Coming Soon</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+      <div class="card h-100 text-center">
+        <div class="card-body">
+          <i class="fas fa-coins fa-2x mb-2 text-success"></i>
+          <h5 class="card-title">Finance Logix</h5>
+          <p class="card-text">Service Charge Oversight & Payment Tracking</p>
+          <a href="#" class="btn btn-outline-secondary disabled">Planned</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+      <div class="card h-100 text-center">
+        <div class="card-body">
+          <i class="fas fa-users-cog fa-2x mb-2 text-info"></i>
+          <h5 class="card-title">HR Logix</h5>
+          <p class="card-text">Manage Internal & Contractor Staff Records</p>
+          <a href="#" class="btn btn-outline-info disabled">Pending</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client Table -->
+  <div class="card mt-4">
+    <div class="card-header pb-0">
+      <h6>Client Overview</h6>
+    </div>
+    <div class="card-body px-0 pt-0 pb-2">
+      <div class="table-responsive p-0">
+        <table class="table align-items-center mb-0">
+          <thead>
+            <tr>
+              <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Client Name</th>
+              <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Address</th>
+              <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Contract Value</th>
+              <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Property Manager</th>
+              <th class="text-secondary opacity-7"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for client in clients %}
+            <tr>
+              <td>{{ client.name }}</td>
+              <td>{{ client.address }}</td>
+              <td>€{{ client.contract_value or 0 }}</td>
+              <td>
+                {% if client.assigned_pm %}
+                  {{ client.assigned_pm.full_name }}
+                {% else %}
+                  <span class="text-muted">Unassigned</span>
+                {% endif %}
+              </td>
+              <td class="align-middle">
+                <a href="{{ url_for('super_admin.edit_client', client_id=client.id) }}" class="text-primary font-weight-bold text-xs">Edit</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

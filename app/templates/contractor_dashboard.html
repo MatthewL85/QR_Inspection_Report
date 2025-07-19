@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="dashboard-container">
+    <h2>🔧 Contractor Dashboard</h2>
+    <p>Welcome, {{ company }}</p>
+    <a href="{{ url_for('auth.logout')
+ }}">Logout</a>
+
+    <div class="dashboard-section">
+      <h4>Your Submitted Logs</h4>
+      {% if logs %}
+        <ul>
+          {% for log in logs %}
+            <li>
+              <strong>{{ log['timestamp'] }}</strong> — {{ log['equipment_id'] }} — {{ log['notes'] }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No logs submitted yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{{ url_for('show_dashboard') }}" class="btn btn-secondary">⬅ Return to Dashboard</a>
+      </div>
+  </div>
+{% endblock %}

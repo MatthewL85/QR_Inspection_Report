@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+  <h3 class="mb-4">👤 My Profile</h3>
+
+  <!-- Tabs -->
+  <ul class="nav nav-tabs mb-3" id="profileTabs" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link active" id="overview-tab" data-bs-toggle="tab" href="#overview" role="tab">Overview</a>
+    </li>
+    {% if user.hr_profile %}
+    <li class="nav-item">
+      <a class="nav-link" id="hr-tab" data-bs-toggle="tab" href="#hr" role="tab">HR Profile</a>
+    </li>
+    {% endif %}
+    {% if user.leave_summary %}
+    <li class="nav-item">
+      <a class="nav-link" id="leave-tab" data-bs-toggle="tab" href="#leave" role="tab">Leave</a>
+    </li>
+    {% endif %}
+    {% if user.documents %}
+    <li class="nav-item">
+      <a class="nav-link" id="docs-tab" data-bs-toggle="tab" href="#documents" role="tab">Documents</a>
+    </li>
+    {% endif %}
+    {% if user.role.name in ['Property Manager', 'Super Admin'] %}
+    <li class="nav-item">
+      <a class="nav-link" id="settings-tab" data-bs-toggle="tab" href="#settings" role="tab">Settings</a>
+    </li>
+    {% endif %}
+  </ul>
+
+  <!-- Tab Content -->
+  <div class="tab-content" id="profileTabsContent">
+
+    <!-- Overview -->
+    <div class="tab-pane fade show active" id="overview" role="tabpanel">
+      <div class="card mb-4">
+        <div class="card-header pb-0"><strong>Account Details</strong></div>
+        <div class="card-body">
+          <form method="POST" action="{{ url_for('auth.edit_profile') }}" enctype="multipart/form-data">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <!-- Profile Photo -->
+            <div class="mb-3">
+              <label class="form-label"><strong>Profile Picture:</strong></label><br>
+              {% if user.profile_photo %}
+              <img src="{{ url_for('static', filename=user.profile_photo) }}" class="rounded-circle mb-2" width="100" height="100">
+              {% endif %}
+              <input class="form-control" type="file" name="profile_photo">
+            </div>
+
+            <!-- Full Name -->
+            <div class="mb-3">
+              <label for="full_name" class="form-label"><strong>Full Name:</strong></label>
+              <input type="text" class="form-control" id="full_name" name="full_name" value="{{ user.full_name }}" required>
+            </div>
+
+            <!-- Email -->
+            <div class="mb-3">
+              <label class="form-label"><strong>Email:</strong></label>
+              <input type="email" class="form-control" value="{{ user.email }}" readonly>
+            </div>
+
+            <!-- Role -->
+            <div class="mb-3">
+              <label class="form-label"><strong>Role:</strong></label>
+              <input type="text" class="form-control" value="{{ user.role.name if user.role else '—' }}" readonly>
+            </div>
+
+            <!-- Company -->
+            <div class="mb-3">
+              <label class="form-label"><strong>Company:</strong></label>
+              <input type="text" class="form-control" value="{{ user.company.name if user.company else '—' }}" readonly>
+            </div>
+
+            <!-- PIN -->
+            <div class="mb-3">
+              <label class="form-label"><strong>PIN:</strong></label>
+              <input type="password" class="form-control" value="********" readonly>
+            </div>
+
+            <!-- Change Password -->
+            <div class="mb-3">
+              <label class="form-label"><strong>New Password:</strong></label>
+              <input type="password" class="form-control" id="new_password" name="new_password" placeholder="Enter new password">
+              <small id="password-strength" class="form-text password-strength"></small>
+            </div>
+            <div class="mb-3">
+              <label class="form-label"><strong>Confirm Password:</strong></label>
+              <input type="password" class="form-control" name="confirm_password" placeholder="Confirm new password">
+            </div>
+
+            <!-- Share with Directors -->
+            {% if user.role.name == 'Property Manager' %}
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="shareWithDirectors" name="share_with_directors" {% if user.share_with_directors %}checked{% endif %}>
+              <label class="form-check-label" for="shareWithDirectors">Allow Directors to view my profile on Director Logix</label>
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- HR Profile -->
+    {% if user.hr_profile %}
+    <div class="tab-pane fade" id="hr" role="tabpanel">
+      <div class="card mb-4">
+        <div class="card-header pb-0"><strong>HR Profile</strong></div>
+        <div class="card-body">
+          <p><strong>Job Title:</strong> {{ user.hr_profile.job_title or '—' }}</p>
+          <p><strong>Department:</strong> {{ user.hr_profile.department.name if user.hr_profile.department else '—' }}</p>
+          <p><strong>Manager:</strong> {{ user.hr_profile.manager.full_name if user.hr_profile.manager else '—' }}</p>
+          <p><strong>Start Date:</strong> {{ user.hr_profile.start_date or '—' }}</p>
+          <p><strong>Status:</strong> {{ user.hr_profile.employment_status or '—' }}</p>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Leave Summary -->
+    {% if user.leave_summary %}
+    <div class="tab-pane fade" id="leave" role="tabpanel">
+      <div class="card mb-4">
+        <div class="card-header pb-0"><strong>Leave Summary</strong></div>
+        <div class="card-body">
+          <p><strong>Entitlement:</strong> {{ user.leave_summary.entitlement or 0 }} days</p>
+          <p><strong>Taken:</strong> {{ user.leave_summary.taken or 0 }} days</p>
+          <p><strong>Remaining:</strong> {{ user.leave_summary.remaining or 0 }} days</p>
+          <p><strong>Next Leave:</strong> {{ user.leave_summary.next_leave or '—' }}</p>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Documents -->
+    {% if user.documents %}
+    <div class="tab-pane fade" id="documents" role="tabpanel">
+      <div class="card mb-4">
+        <div class="card-header pb-0"><strong>Uploaded Documents</strong></div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            {% for doc in user.documents %}
+            <li class="list-group-item">
+              <a href="{{ url_for('static', filename='uploads/' + doc.file_path) }}" target="_blank">{{ doc.name }}</a>
+              <span class="text-muted">({{ doc.status or 'No status' }})</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Settings -->
+    {% if user.role.name in ['Property Manager', 'Super Admin'] %}
+    <div class="tab-pane fade" id="settings" role="tabpanel">
+      <div class="card mb-4">
+        <div class="card-header pb-0"><strong>Profile Settings</strong></div>
+        <div class="card-body">
+
+          {% if user.role.name == 'Property Manager' %}
+          <form method="POST" action="{{ url_for('auth.toggle_sharing') }}" class="mb-4">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="shareWithDirectors" name="share_with_directors" {% if user.share_with_directors %}checked{% endif %}>
+              <label class="form-check-label" for="shareWithDirectors">Allow Directors to view my profile on Director Logix</label>
+            </div>
+            <button type="submit" class="btn btn-primary mt-2">Save Preferences</button>
+          </form>
+          {% endif %}
+
+          {% if user.role.name == 'Super Admin' %}
+          <form method="POST" action="{{ url_for('auth.change_email') }}" class="mb-4">
+            <div class="mb-3">
+              <label for="new_email" class="form-label"><strong>Change Email:</strong></label>
+              <input type="email" class="form-control" name="new_email" id="new_email" required>
+            </div>
+            <div class="mb-3">
+              <label for="confirm_email" class="form-label"><strong>Confirm Email:</strong></label>
+              <input type="email" class="form-control" name="confirm_email" id="confirm_email" required>
+            </div>
+            <button type="submit" class="btn btn-warning">📧 Update Email</button>
+          </form>
+
+          <form method="POST" action="{{ url_for('auth.deactivate_account') }}" onsubmit="return confirm('Are you sure you want to deactivate your account?');">
+            <button type="submit" class="btn btn-danger">🚫 Deactivate My Account</button>
+          </form>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Password Strength Meter -->
+<script>
+  const passwordInput = document.getElementById("new_password");
+  const strengthText = document.getElementById("password-strength");
+
+  passwordInput?.addEventListener("input", () => {
+    const val = passwordInput.value;
+    let strength = 0;
+    if (val.length >= 8) strength++;
+    if (/[A-Z]/.test(val)) strength++;
+    if (/[a-z]/.test(val)) strength++;
+    if (/[0-9]/.test(val)) strength++;
+    if (/[^A-Za-z0-9]/.test(val)) strength++;
+
+    const messages = ["Very Weak", "Weak", "Moderate", "Strong", "Very Strong"];
+    strengthText.textContent = val.length ? `Strength: ${messages[strength - 1] || 'Too Short'}` : '';
+    strengthText.className = `form-text password-strength strength-${strength}`;
+  });
+</script>
+{% endblock %}

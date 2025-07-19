@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>🔍 Review Alert: {{ alert.title }}</h2>
+  <form method="POST">
+    <div class="mb-3">
+      <label class="form-label">Description</label>
+      <p class="form-control-plaintext">{{ alert.description }}</p>
+    </div>
+
+    {% if alert.media_filename %}
+    <div class="mb-3">
+      <label class="form-label">Attached Media</label>
+      {% if alert.media_filename.endswith(('.jpg', '.jpeg', '.png')) %}
+        <img src="{{ url_for('static', filename='uploads/' ~ alert.media_filename) }}"
+             alt="Alert Image"
+             class="img-fluid rounded border" style="max-height: 400px;">
+      {% elif alert.media_filename.endswith(('.mp4', '.mov', '.avi')) %}
+        <video controls class="w-100 border rounded" style="max-height: 400px;">
+          <source src="{{ url_for('static', filename='uploads/' ~ alert.media_filename) }}">
+          Your browser does not support the video tag.
+        </video>
+      {% else %}
+        <a href="{{ url_for('static', filename='uploads/' ~ alert.media_filename) }}" target="_blank">
+          View Attached File
+        </a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="mb-3">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-select">
+        <option value="Open" {% if alert.status == 'Open' %}selected{% endif %}>Open</option>
+        <option value="In Progress" {% if alert.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+        <option value="Resolved" {% if alert.status == 'Resolved' %}selected{% endif %}>Resolved</option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Category</label>
+      <input type="text" class="form-control" name="category" value="{{ alert.category }}">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Priority</label>
+      <select name="priority" class="form-select">
+        <option value="Low" {% if alert.priority == 'Low' %}selected{% endif %}>Low</option>
+        <option value="Medium" {% if alert.priority == 'Medium' %}selected{% endif %}>Medium</option>
+        <option value="High" {% if alert.priority == 'High' %}selected{% endif %}>High</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-success">Save Changes</button>
+  </form>
+</div>
+{% endblock %}

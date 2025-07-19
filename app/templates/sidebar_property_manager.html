@@ -1,0 +1,53 @@
+<aside class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 ms-3 bg-white fixed-start" id="sidenav-main" style="width: 250px;">
+  <div class="sidenav-header">
+    <h5 class="text-primary fw-bold ps-3 pt-3">PM Logix</h5>
+    <hr class="horizontal dark mt-2 mb-2" />
+  </div>
+
+  <div class="collapse navbar-collapse w-auto">
+    <ul class="navbar-nav">
+
+      <!-- MAIN NAVIGATION -->
+      <li class="nav-header text-muted ps-3">Main</li>
+
+      <li class="nav-item">
+        <a class="nav-link text-dark" href="{{ url_for('property_manager.dashboard') }}">
+          <i class="fas fa-home text-primary me-2"></i>
+          <span class="nav-link-text">Dashboard</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link text-dark" href="{{ url_for('capex_bp.submit_capex') }}">
+          <i class="fas fa-euro-sign text-success me-2"></i>
+          <span class="nav-link-text">Submit CAPEX</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link text-dark" href="{{ url_for('pm_alerts') }}">
+          <i class="fas fa-exclamation-circle text-warning me-2"></i>
+          <span class="nav-link-text">Alerts</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link text-dark" href="{{ url_for('pm_maintenance_planner') }}">
+          <i class="fas fa-calendar-check text-info me-2"></i>
+          <span class="nav-link-text">Planner</span>
+        </a>
+      </li>
+
+      <!-- SYSTEM SECTION -->
+      <li class="nav-header text-muted ps-3 mt-3">System</li>
+
+      <li class="nav-item mt-auto">
+        <a class="nav-link text-dark" href="{{ url_for('pm_settings') }}">
+          <i class="fas fa-cog text-secondary me-2"></i>
+          <span class="nav-link-text">Settings</span>
+        </a>
+      </li>
+
+    </ul>
+  </div>
+</aside>

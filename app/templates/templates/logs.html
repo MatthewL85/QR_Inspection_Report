@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inspection Logs</title>
+</head>
+<body>
+    <h1>Inspection Logs</h1>
+    {% if logs %}
+    <table border="1">
+        <tr>
+            {% for key in logs[0].keys() %}
+            <th>{{ key }}</th>
+            {% endfor %}
+        </tr>
+        {% for row in logs %}
+        <tr>
+            {% for value in row.values() %}
+            <td>{{ value }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No inspections logged yet.</p>
+    {% endif %}
+</body>
+</html>

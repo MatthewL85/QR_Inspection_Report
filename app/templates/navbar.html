@@ -1,0 +1,48 @@
+<!-- navbar.html -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-4 py-2">
+  <div class="container-fluid">
+    <span class="navbar-brand fw-bold 
+      {% if session.get('user', {}).get('role') == 'Director' %}
+        text-success
+      {% elif session.get('user', {}).get('role') in ['Contractor', 'Admin Contractor'] %}
+        text-warning
+      {% else %}
+        text-primary
+      {% endif %}">
+      {% if session.get('user', {}).get('role') == 'Director' %}
+        Director Logix
+      {% elif session.get('user', {}).get('role') in ['Contractor', 'Admin Contractor'] %}
+        Contractor Logix
+      {% else %}
+        LogixPM
+      {% endif %}
+    </span>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+        {% if session.get('user') %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-user-circle"></i>
+            {{ session.get('user', {}).get('full_name') or 'Guest' }}
+            <span class="badge bg-secondary text-uppercase">{{ session.get('user', {}).get('role') }}</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+            <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">Profile / Settings</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+          </ul>
+        </li>
+        {% else %}
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>

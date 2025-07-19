@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block page_content %}
+<div class="container py-4">
+  <div class="card shadow p-4">
+    <h2 class="mb-4">➕ Add New Equipment & Generate QR Code</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+      <div class="mb-3">
+        <label for="client" class="form-label">Client</label>
+        <select name="client" class="form-select" onchange="fetchNextEquipmentId()" required>
+          <option value="" disabled selected>Select a client</option>
+          {% for client in client_names %}
+          <option value="{{ client }}">{{ client }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label for="id" class="form-label">Equipment ID</label>
+        <input type="text" name="id" class="form-control" readonly required>
+      </div>
+
+      <div class="mb-3">
+        <label for="name" class="form-label">Equipment Name</label>
+        <input type="text" name="name" class="form-control" required>
+      </div>
+
+      <div class="mb-3">
+        <label for="equipment_type" class="form-label">Equipment Type</label>
+        <select name="equipment_type" class="form-select" required>
+          <option value="" disabled selected>Select type</option>
+          <option>Fire Alarm</option>
+          <option>CCTV</option>
+          <option>Pump</option>
+          <option>Emergency Lighting</option>
+          <option>Lift</option>
+          <option>Security Panel</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label for="serial_number" class="form-label">Serial Number</label>
+        <input type="text" name="serial_number" class="form-control">
+      </div>
+
+      <div class="mb-3">
+        <label for="location" class="form-label">Location (Optional)</label>
+        <input type="text" name="location" class="form-control">
+      </div>
+
+      <div class="mb-3">
+        <label for="model" class="form-label">Model (Optional)</label>
+        <input type="text" name="model" class="form-control">
+      </div>
+
+      <div class="mb-3">
+        <label for="age" class="form-label">Age (Optional)</label>
+        <input type="text" name="age" class="form-control">
+      </div>
+
+      <div class="mb-3">
+        <label for="maintenance_frequency" class="form-label">Maintenance Frequency</label>
+        <select name="maintenance_frequency" class="form-select">
+          <option value="" disabled selected>Select frequency</option>
+          <option>Monthly</option>
+          <option>Quarterly</option>
+          <option>Bi-Annually</option>
+          <option>Annually</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label for="warranty_expiry" class="form-label">Warranty Expiry Date</label>
+        <input type="date" name="warranty_expiry" class="form-control">
+      </div>
+
+      <div class="mb-3">
+        <label for="last_inspection" class="form-label">Last Inspection Date</label>
+        <input type="date" name="last_inspection" class="form-control">
+      </div>
+
+      <div class="mb-3">
+        <label for="photo" class="form-label">Upload Equipment Photo</label>
+        <input type="file" name="photo" class="form-control">
+      </div>
+
+      <div class="mb-3">
+        <label for="warranty_document" class="form-label">Upload Warranty Document (PDF)</label>
+        <input type="file" name="warranty_document" class="form-control" accept=".pdf">
+      </div>
+
+      <div class="mb-3">
+        <label for="pin" class="form-label">Your PIN</label>
+        <input type="text" name="pin" class="form-control" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Generate QR Code</button>
+    </form>
+
+    <div class="mt-4">
+      {% if session['role'] == 'Admin' %}
+        <a href="{{ url_for('admin.dashboard')
+
+ }}">⬅ Back to Admin Dashboard</a>
+      {% elif session['role'] == 'Property Manager' %}
+        <a href="{{ url_for('property_manager.dashboard') }}">⬅ Back to PM Dashboard</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+function fetchNextEquipmentId() {
+  const client = document.querySelector('select[name="client"]').value;
+  const idInput = document.querySelector('input[name="id"]');
+
+  if (!client) {
+    idInput.value = '';
+    return;
+  }
+
+  fetch('/get-next-equipment-id', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `client=${encodeURIComponent(client)}`
+  })
+  .then(response => response.json())
+  .then(data => {
+    idInput.value = data.next_id || '';
+  })
+  .catch(error => {
+    console.error('Error fetching ID:', error);
+    idInput.value = '';
+  });
+}
+</script>
+{% endblock %}

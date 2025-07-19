@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard - LogixPM{% endblock %}
+{% block page_content %}
+
+<div class="container-fluid px-4 mt-4"></div>
+  <h2 class="mb-4">
+    Welcome, {{ session['user'].get('full_name') or session['user'].get('name_or_company') or session['user']['username'] }}
+    ({{ session['user']['role'] }})
+  </h2>  
+  
+  <div class="row g-4">
+    <!-- Smart Missed Inspections Card -->
+    <div class="col-md-4">
+      <a href="{{ url_for('admin.alerts') }}" class="text-decoration-none">
+        <div class="card border-start border-danger border-4 shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title text-danger">⚠️ Missed Inspections</h5>
+            <p class="card-text fs-4 fw-bold">{{ missed_count }}</p>
+            <p class="text-muted">View overdue inspections based on PPM.</p>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Live Maintenance Planner Widget -->
+<div class="col-md-8">
+  <div class="card border-start border-info border-4 shadow-sm h-100">
+    <div class="card-body">
+      <h5 class="card-title text-info">🛠️ Maintenance Planner - This Month</h5>
+
+      {% if planner_this_month %}
+        <ul class="list-group list-group-flush">
+          {% for task in planner_this_month[:5] %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>
+              <strong>{{ task.name }}</strong> ({{ task.client }})
+              <br><small class="text-muted">{{ task.next_date.strftime('%d %b %Y') }}</small>
+            </span>
+            <span class="badge bg-info text-dark">{{ task.inspector }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        <div class="mt-3 d-flex justify-content-between">
+          <a href="{{ url_for('admin_maintenance_planner') }}" class="btn btn-outline-info btn-sm">
+            📅 View Full Planner
+          </a>
+          <a href="{{ url_for('add_maintenance_task') }}" class="btn btn-outline-success btn-sm">
+            ➕ Add Maintenance Task
+          </a>
+        </div>
+      {% else %}
+        <p class="text-muted">No maintenance scheduled this month.</p>
+        <a href="{{ url_for('add_maintenance_task') }}" class="btn btn-outline-success btn-sm mt-2">
+          ➕ Add Maintenance Task
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+    <!-- Remaining Dashboard Cards -->
+    {% set tiles = [
+      ('generate', '➕ Add Equipment', 'Create QR codes and assign equipment to clients.'),
+      ('view_qrcodes', '📦 View QR Codes', 'Access all QR codes for your company’s clients.'),
+      ('view_logs', '🧾 All Logs', 'See inspection logs across all your managed clients.'),
+      ('filtered_inspection_export', '📤 Export Inspections', 'Generate PDF reports with custom filters (Client, Date Range).'),
+      ('task_history', '📜 Task History', 'View edits and deletions made by users.'),
+      ('manage_users', '👥 Manage Users', 'Add Property Managers or edit access levels.'),
+      ('manage_clients', '🏢 Manage Clients', 'Assign or transfer clients across managers.'),
+      ('director_dashboard', '🏛️ Director Dashboard', 'Access CAPEX requests and manage director-specific tools.')
+    ] %}    
+
+    {% for url_name, title, desc in tiles %}
+    <div class="col-md-4">
+      <a href="{{ url_for(url_name) }}" class="text-decoration-none">
+        <div class="card border-start border-primary border-4 shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">{{ title }}</h5>
+            <p class="card-text">{{ desc }}</p>
+          </div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Missed Maintenance Tasks -->
+  <div class="mt-5">
+    <h4 class="mb-3 text-danger">⚠️ Missed Maintenance Tasks</h4>
+    {% if missed_tasks %}
+      <ul class="list-group">
+        {% for task in missed_tasks %}
+        <li class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-start">
+          <div>
+            <strong>{{ task.title }}</strong> ({{ task.client }}) — {{ task.date }}  
+            <br><small>Created by: {{ task.created_by }}</small>
+          </div>
+          <div class="mt-2 mt-md-0 d-flex gap-2">
+            {% if task.completed != 'yes' %}
+              <form action="{{ url_for('complete_task') }}" method="POST">
+                <input type="hidden" name="title" value="{{ task.title }}">
+                <input type="hidden" name="date" value="{{ task.date }}">
+                <input type="hidden" name="client" value="{{ task.client }}">
+                <button class="btn btn-success btn-sm">✔ Mark as Done</button>
+              </form>
+
+              <form action="{{ url_for('edit_task') }}" method="GET">
+                <input type="hidden" name="title" value="{{ task.title }}">
+                <input type="hidden" name="date" value="{{ task.date }}">
+                <input type="hidden" name="client" value="{{ task.client }}">
+                <button class="btn btn-warning btn-sm">✏ Edit</button>
+              </form>
+            {% else %}
+              <span class="text-success">✅ Completed</span>
+            {% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="alert alert-success">No missed tasks across clients 🎉</div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

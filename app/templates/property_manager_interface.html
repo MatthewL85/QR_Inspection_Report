@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Property Manager Inspection</title>
+</head>
+<body>
+    <h1>Inspection for Equipment ID: {{ equipment['id'] }}</h1>
+    <p>Property Manager: {{ pm_name }}</p>
+
+    <form action="{{ url_for('property_manager_interface', equipment_id=equipment['id'], pm_name=pm_name) }}" method="POST" enctype="multipart/form-data">
+        <label>Clean:</label>
+        <select name="clean">
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+        </select><br><br>
+
+        <label>Damage:</label>
+        <select name="damage">
+            <option value="None">None</option>
+            <option value="Minor">Minor</option>
+            <option value="Severe">Severe</option>
+        </select><br><br>
+
+        <label>Functional:</label>
+        <select name="functional">
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+        </select><br><br>
+
+        <label>Notes:</label><br>
+        <textarea name="notes" rows="4" cols="50"></textarea><br><br>
+
+        <label>Upload Photo/Video (optional):</label><br>
+        <input type="file" name="media"><br><br>
+
+        <input type="submit" value="Submit Inspection">
+    </form>
+</body>
+</html>

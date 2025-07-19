@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}LogixPM{% endblock %}</title>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Core CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/material-dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+  {% block styles %}{% endblock %}
+</head>
+
+<body class="g-sidenav-show bg-light
+  {% if session.get('user') and session['user']['role'] == 'Director' %} director-green
+  {% elif session.get('user') and session['user']['role'] in ['Admin Contractor', 'Contractor'] %} contractor-orange
+  {% else %} logixpm-blue
+  {% endif %}">
+
+  <!-- ✅ Import Macros Globally -->
+  {% import 'macros/audit_macros.html' as audit %}
+  {% import 'macros/compliance_macros.html' as compliance %}
+  {% import 'macros/common_macros.html' as common %}
+  {% import 'macros/gar_macros.html' as gar %}
+
+  <!-- Spinner -->
+  <div id="spinner-overlay"><div class="spinner"></div></div>
+
+  {% block content %}
+    {% if session.get('user') %}
+      <!-- Sidebar -->
+      <div class="sidebar" id="sidebar">
+        % if session['user']['role'] == 'Admin Contractor' %}
+          {% include 'sidebar_contractor.html' %}
+        {% elif session['user']['role'] == 'Director' %}
+          {% include 'sidebar_director.html' %}
+        {% elif session['user']['role'] == 'Property Manager' %}
+          {% include 'sidebar_property_manager.html' %}
+        {% elif session['user']['role'] == 'Super Admin' %}
+          {% include 'super_admin/sidebar_super_admin.html' %}
+        {% else %}
+          {% include 'sidebar_admin.html' %}
+        {% endif %}
+      </div>
+
+      <!-- Main content -->
+      <div id="main-content">
+        <div class="d-flex justify-content-between align-items-center px-3 pt-2">
+          <button id="sidebarToggle" class="btn btn-sm btn-outline-secondary d-md-none">
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+
+        {% include 'navbar.html' %}
+
+        <!-- Flash messages -->
+        <div class="container mt-2">
+          {{ common.flash_messages() }}
+        </div>
+
+        <main class="py-4">
+          {% block page_content %}{% endblock %}
+        </main>
+      </div>
+
+    {% else %}
+      <!-- Guest Content -->
+      <main class="d-flex justify-content-center align-items-center min-vh-100">
+        <div class="w-100" style="max-width: 500px;">
+          <div class="card shadow border-0 w-100 p-4" id="guest-card">
+            {% block guest_content %}{% endblock %}
+          </div>
+        </div>
+      </main>
+    {% endif %}
+  {% endblock %}
+
+  <!-- ✅ Scripts -->
+  <script src="{{ url_for('static', filename='assets/js/core/bootstrap.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/js/material-dashboard.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/sidebar_mobile_collapse.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

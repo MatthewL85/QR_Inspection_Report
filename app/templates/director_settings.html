@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid py-4">
+
+  <div class="row mb-4">
+    <div class="col-12">
+      <h4 class="text-primary fw-bold">
+        <i class="fas fa-cog me-2"></i>Director Settings
+      </h4>
+      <hr>
+    </div>
+  </div>
+
+  <!-- Profile Settings -->
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card shadow-sm rounded-4">
+        <div class="card-header bg-gradient-primary text-white rounded-top-4">
+          <h6 class="mb-0"><i class="fas fa-user me-2"></i>Profile</h6>
+        </div>
+        <div class="card-body">
+          <form method="POST" action="{{ url_for('director_update_profile') }}">
+            <div class="mb-3">
+              <label for="full_name" class="form-label">Full Name</label>
+              <input type="text" class="form-control" id="full_name" name="full_name" value="{{ user.full_name }}" required>
+            </div>
+            <div class="mb-3">
+              <label for="email" class="form-label">Email (Read-only)</label>
+              <input type="email" class="form-control" id="email" value="{{ user.email }}" readonly>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Save Changes</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Password Section -->
+    <div class="col-md-6">
+      <div class="card shadow-sm rounded-4">
+        <div class="card-header bg-gradient-dark text-white rounded-top-4">
+          <h6 class="mb-0"><i class="fas fa-key me-2"></i>Change Password</h6>
+        </div>
+        <div class="card-body">
+          <form method="POST" action="{{ url_for('director_change_password') }}">
+            <div class="mb-3">
+              <label for="current_password" class="form-label">Current Password</label>
+              <input type="password" class="form-control" id="current_password" name="current_password" required>
+            </div>
+            <div class="mb-3">
+              <label for="new_password" class="form-label">New Password</label>
+              <input type="password" class="form-control" id="new_password" name="new_password" required>
+            </div>
+            <div class="mb-3">
+              <label for="confirm_password" class="form-label">Confirm New Password</label>
+              <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+            </div>
+            <button type="submit" class="btn btn-dark w-100">Update Password</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

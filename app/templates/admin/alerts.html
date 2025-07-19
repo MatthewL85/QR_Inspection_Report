@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>🚨 Active Alerts</h2>
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th>Client</th>
+        <th>Title</th>
+        <th>Category</th>
+        <th>Priority</th>
+        <th>Status</th>
+        <th>Created</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for alert in alerts %}
+        <tr>
+          <td>{{ alert.client }}</td>
+          <td>{{ alert.title }}</td>
+          <td>{{ alert.category }}</td>
+          <td>{{ alert.priority }}</td>
+          <td>{{ alert.status }}</td>
+          <td>{{ alert.date_created }}</td>
+          <td><a href="#" class="btn btn-sm btn-outline-primary">View</a></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

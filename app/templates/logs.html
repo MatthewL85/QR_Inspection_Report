@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="report-container">
+    <div class="report-header">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Company Logo" class="report-logo">
+        <h1>📋 Inspection Logs</h1>
+    </div>
+    <div class="text-center mt-4">
+        <form method="GET" action="{{ url_for('download_inspection_log', equipment_id='all') }}">
+          <button type="submit" class="btn btn-primary">⬇ Download Full Inspection Log (PDF)</button>
+        </form>
+      </div>
+    <div class="report-section">
+        {% if logs %}
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Equipment ID</th>
+                        <th>Name</th>
+                        <th>Location</th>
+                        <th>Company</th>
+                        <th>Inspector</th>
+                        <th>Visit Type</th>
+                        <th>Visit Date</th>
+                        <th>Next Maintenance</th>
+                        <th>Notes</th>
+                        <th>Media</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                        <tr>
+                            <td>{{ log.timestamp.split('T')[0] }}</td>
+                            <td>{{ log.equipment_id }}</td>
+                            <td>{{ log.name }}</td>
+                            <td>{{ log.get('location', '') }}</td>
+                            <td>{{ log.get('client', '') or log.get('company', '') }}</td>
+                            <td>{{ log.inspector_pin }}</td>
+                            <td>{{ log.clean.replace('Visit Type:', '') }}</td>
+                            <td>{{ log.damage.replace('Visit Date:', '') }}</td>
+                            <td>{{ log.functional.replace('Next Maintenance:', '') }}</td>
+                            <td>{{ log.notes.split('Media:')[0].strip() }}</td>
+                            <td>
+                                {% if 'Media:' in log.notes %}
+                                    {% set media_file = log.notes.split('Media:')[-1].strip() %}
+                                    {% if media_file.endswith('.mp4') %}
+                                        <video width="200" controls>
+                                            <source src="{{ url_for('static', filename='uploads/' ~ media_file) }}" type="video/mp4">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    {% else %}
+                                        <img src="{{ url_for('static', filename='uploads/' ~ media_file) }}" alt="Uploaded media" style="max-width: 200px; height: auto;">
+                                    {% endif %}
+                                    <br>
+                                    <a href="{{ url_for('static', filename='uploads/' ~ media_file) }}" download>⬇ Download</a>
+                                {% else %}
+                                    &mdash;
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No inspection logs found.</p>
+        {% endif %}
+    </div>
+    <div class="text-center mt-4">
+        <a href="{{ url_for('show_dashboard') }}" class="btn btn-secondary">⬅ Return to Dashboard</a>
+      </div>     
+</div>
+{% endblock %}

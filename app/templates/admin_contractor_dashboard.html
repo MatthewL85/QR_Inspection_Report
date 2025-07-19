@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="dashboard-container">
+  <h1>Admin Contractor Dashboard</h1>
+  <p>Welcome, {{ session['user']['username'] }} ({{ session['user']['company'] }})</p>
+  <div style="text-align: right; margin-bottom: 10px;">
+    <a href="{{ url_for('auth.logout')
+ }}">Logout</a>
+  </div>
+
+  <div class="dashboard-grid">
+    <a href="{{ url_for('contractor_settings') }}" class="dashboard-tile">
+      <h3>⚙️ Settings</h3>
+      <p>Upload your company logo and settings.</p>
+    </a>
+    
+    <a href="{{ url_for('admin.reports') }}" class="dashboard-tile">
+      <h3>📄 Contractor Inspection Logs</h3>
+      <p>View all inspections submitted by your contractors.</p>
+    </a>
+
+    <a href="#" class="dashboard-tile disabled">
+      <h3>🧾 Invoicing (Coming Soon)</h3>
+      <p>Generate or view contractor invoices for extra work.</p>
+    </a>
+
+    <a href="{{ url_for('admin_maintenance_planner') }}" class="dashboard-tile">
+      <h3>🛠 Maintenance Planner</h3>
+      <p>Track upcoming maintenance per contractor schedule.</p>
+    </a>
+
+    <a href="{{ url_for('manage_users') }}" class="dashboard-tile">
+      <h3>👥 Manage Users</h3>
+      <p>Add or remove contractor employees.</p>
+    </a>
+  </div>
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('show_dashboard') }}" class="btn btn-secondary">⬅ Return to Dashboard</a>
+  </div> 
+</div>
+{% endblock %}

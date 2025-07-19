@@ -1,0 +1,1 @@
+from .director_area_assignment import DirectorAreaAssignment

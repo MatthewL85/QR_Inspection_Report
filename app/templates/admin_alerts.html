@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>🚨 Missed Inspections</h2>
+
+{% if missed_alerts %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Equipment ID</th>
+        <th>Client</th>
+        <th>Scheduled Date</th>
+        <th>Inspector</th>
+        <th>Timestamp</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for alert in missed_alerts %}
+      <tr>
+        <td>{{ alert['equipment_id'] }}</td>
+        <td>{{ alert['client'] }}</td>
+        <td>{{ alert['functional'].replace("Next Maintenance:", "").strip() }}</td>
+        <td>{{ alert['inspector_pin'] }}</td>
+        <td>{{ alert['timestamp'] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>No missed inspections at the moment.</p>
+{% endif %}
+
+<div class="text-center mt-4">
+    <a href="{{ url_for('show_dashboard') }}" class="btn btn-secondary">⬅ Return to Dashboard</a>
+  </div>  
+{% endblock %}

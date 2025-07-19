@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid py-4">
+  <h3 class="mb-4">⚠️ All Alerts</h3>
+
+  {% if alerts %}
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>Client</th>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Date Created</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for alert in alerts %}
+          <tr>
+            <td>{{ alert.client.name if alert.client else '—' }}</td>
+            <td>{{ alert.title }}</td>
+            <td>{{ alert.category }}</td>
+            <td>{{ alert.priority }}</td>
+            <td>{{ alert.status }}</td>
+            <td>{{ alert.timestamp.strftime('%Y-%m-%d') if alert.timestamp else '—' }}</td>
+            <td>
+              <a href="{{ url_for('super_admin.review_alert', alert_id=alert.id) }}" class="btn btn-sm btn-primary">Review</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p>No alerts available.</p>
+  {% endif %}
+</div>
+{% endblock %}

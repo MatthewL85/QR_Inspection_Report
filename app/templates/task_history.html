@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="dashboard-container">
+  <h1>📜 Task History Log</h1>
+  <p>View all edits and deletions performed by users.</p>
+
+  <!-- 🔍 Filter Form -->
+  <form method="POST" style="margin-bottom: 1.5em;">
+    <div style="display: flex; gap: 1em; flex-wrap: wrap; align-items: center;">
+      <div>
+        <label for="performed_by">Filter by User:</label>
+        <select name="performed_by">
+          <option value="">All</option>
+          {% for user in users %}
+          <option value="{{ user }}">{{ user }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="action">Filter by Action:</label>
+        <select name="action">
+          <option value="">All</option>
+          {% for act in actions %}
+          <option value="{{ act }}">{{ act.title() }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 1.5em;">Apply Filters</button>
+      </div>
+
+      <div style="align-self: flex-end;">
+        <button type="submit" formaction="{{ url_for('download_task_history') }}" class="btn btn-success btn-sm" style="margin-left: 1em;">
+          📥 Download CSV
+        </button>
+      </div>      
+    </div>
+  </form>
+
+  <!-- 🗂 History Table -->
+  {% if history %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Action</th>
+        <th>Task Title</th>
+        <th>Client</th>
+        <th>Task Date</th>
+        <th>Performed By</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in history %}
+      <tr>
+        <td>{{ entry.timestamp | format_datetime }}</td> <!-- Clean DD-MM-YYYY HH:MM:SS -->
+        <td>
+          {% if entry.action == 'edit' %}
+            <span style="color: #007bff;">🖊️ {{ entry.action.title() }}</span>
+          {% elif entry.action == 'delete' %}
+            <span style="color: #dc3545;">🗑️ {{ entry.action.title() }}</span>
+          {% else %}
+            {{ entry.action.title() }}
+          {% endif %}
+        </td>
+        <td>{{ entry.title }}</td>
+        <td>{{ entry.client }}</td>
+        <td>{{ entry.date }}</td>
+        <td>{{ entry.performed_by }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p>No history records found.</p>
+  {% endif %}
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('admin_management_dashboard') }}" class="btn btn-secondary">⬅ Return to Dashboard</a>
+  </div>
+</div>
+{% endblock %}

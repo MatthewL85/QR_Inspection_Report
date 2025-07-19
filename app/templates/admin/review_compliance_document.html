@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block page_content %}
+<div class="container-fluid py-4">
+
+  <div class="card">
+    <div class="card-header">
+      <h5>📝 Review Compliance Document</h5>
+    </div>
+    <div class="card-body">
+      <form method="POST">
+        <div class="mb-3">
+          <label class="form-label">Document Type</label>
+          <input type="text" class="form-control" value="{{ document.document_type }}" disabled>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Uploaded By</label>
+          <input type="text" class="form-control" value="{{ document.uploaded_by.full_name if document.uploaded_by else 'N/A' }}" disabled>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Download File</label><br>
+          <a href="{{ url_for('static', filename=document.file_path) }}" target="_blank" class="btn btn-outline-primary btn-sm">
+            📥 {{ document.file_name }}
+          </a>
+        </div>
+
+        <div class="mb-3">
+          <label for="expiry_date" class="form-label">Expiry Date</label>
+          <input type="date" class="form-control" name="expiry_date" value="{{ document.expiry_date }}">
+        </div>
+
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="is_required" name="is_required"
+                 {% if document.is_required_for_work_order %}checked{% endif %}>
+          <label class="form-check-label" for="is_required">
+            Required for Work Orders
+          </label>
+        </div>
+
+        <div class="mb-3">
+          <label for="review_comment" class="form-label">Review Comment (optional)</label>
+          <textarea class="form-control" name="review_comment" rows="3">{{ document.review_comment or '' }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-success">✔ Mark as Reviewed</button>
+        <a href="{{ url_for('admin.compliance_documents') }}" class="btn btn-secondary">Cancel</a>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

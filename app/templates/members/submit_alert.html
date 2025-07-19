@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>📨 Submit a New Issue</h2>
+  <form method="POST" enctype="multipart/form-data">
+    <div class="mb-3">
+      <label for="title" class="form-label">Title</label>
+      <input type="text" class="form-control" name="title" required>
+    </div>
+    <div class="mb-3">
+      <label for="description" class="form-label">Description</label>
+      <textarea class="form-control" name="description" rows="4" required></textarea>
+    </div>
+    <div class="mb-3">
+      <label for="category" class="form-label">Category</label>
+      <select class="form-select" name="category">
+        <option>General</option>
+        <option>Cleaning</option>
+        <option>Plumbing</option>
+        <option>Electrical</option>
+        <option>Security</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <label for="priority" class="form-label">Priority</label>
+      <select class="form-select" name="priority">
+        <option>Low</option>
+        <option>Medium</option>
+        <option>High</option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <label for="media" class="form-label">Photo or Video (Optional)</label>
+      <input class="form-control" type="file" name="media">
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+  </form>
+</div>
+{% endblock %}

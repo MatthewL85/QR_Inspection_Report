@@ -1,0 +1,29 @@
+<aside class="bg-white border-end" style="width: 250px; min-height: 100vh;">
+  <div class="p-3">
+    <h5 class="fw-bold text-warning">Contractor Logix</h5>
+    <hr>
+    <ul class="nav flex-column">
+      <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'contractor_dashboard' %}active text-primary fw-bold{% endif %}" href="{{ url_for('contractor_dashboard') }}">
+          <i class="fas fa-tools me-2"></i>Dashboard
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'contractor_inspections' %}active text-primary fw-bold{% endif %}" href="{{ url_for('contractor_inspections') }}">
+          <i class="fas fa-clipboard-check me-2"></i>My Inspections
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'contractor_ppm_calendar' %}active text-primary fw-bold{% endif %}" href="{{ url_for('contractor_ppm_calendar') }}">
+          <i class="fas fa-calendar-alt me-2"></i>PPM Calendar
+        </a>
+      </li>
+      <li class="nav-item mt-auto">
+        <a class="nav-link {% if request.endpoint == 'contractor_settings' %}active text-primary fw-bold{% endif %} text-dark" href="{{ url_for('contractor_settings') }}">
+          <i class="fas fa-cog text-secondary me-2"></i>
+          <span class="nav-link-text">Settings</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+</aside>

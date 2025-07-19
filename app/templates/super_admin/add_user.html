@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-5">
+  <div class="card shadow-sm rounded-4 p-4">
+    <h2 class="text-center mb-4">➕ Add New User</h2>
+
+    <form method="POST">
+      <!-- Full Name -->
+      <div class="mb-3">
+        <label for="full_name" class="form-label">Full Name</label>
+        <input type="text" class="form-control" name="full_name" id="full_name" required>
+      </div>
+
+      <!-- Email -->
+      <div class="mb-3">
+        <label for="username" class="form-label">Email / Username</label>
+        <input type="email" class="form-control" name="username" id="username" required>
+      </div>
+
+      <!-- Password -->
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" class="form-control" name="password" id="password" required>
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="mb-3">
+        <label for="confirm_password" class="form-label">Confirm Password</label>
+        <input type="password" class="form-control" name="confirm_password" id="confirm_password" required>
+      </div>
+
+      <!-- Role -->
+      <div class="mb-3">
+        <label for="role" class="form-label">Role</label>
+        <select name="role" id="role" class="form-select" required onchange="toggleCompanyDropdown()">
+          {% for role in roles %}
+            <option value="{{ role.id }}">{{ role.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Secure PIN -->
+      <div class="mb-3">
+        <label for="pin" class="form-label">Secure PIN</label>
+        <input type="text" class="form-control" name="pin" id="pin"
+          pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}"
+          title="PIN must be at least 8 characters, include uppercase, lowercase, number, and a symbol." required>
+      </div>
+
+      <!-- Company Selection (Conditional by Role) -->
+      <div class="mb-3" id="management_company_section">
+        <label for="company_id" class="form-label">Assign to Management Company</label>
+        <select name="company_id" id="company_id" class="form-select">
+          {% for client in management_companies %}
+            <option value="{{ client.id }}">{{ client.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-3 d-none" id="contractor_company_section">
+        <label for="contractor_id" class="form-label">Assign to Contractor Company</label>
+        <select name="contractor_id" id="contractor_id" class="form-select">
+          {% for contractor in contractor_companies %}
+            <option value="{{ contractor.id }}">{{ contractor.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Active Toggle -->
+      <div class="form-check form-switch mb-4">
+        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+        <label class="form-check-label" for="is_active">Active</label>
+      </div>
+
+      <!-- Submit -->
+      <div class="text-center">
+        <button type="submit" class="btn btn-primary px-5">Add User</button>
+      </div>
+    </form>
+
+    <div class="text-center mt-4">
+      <a href="{{ url_for('super_admin.manage_users') }}" class="btn btn-outline-secondary">
+        ⬅ Back to User List
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleCompanyDropdown() {
+    const roleId = parseInt(document.getElementById('role').value);
+    const mgmtSection = document.getElementById('management_company_section');
+    const contractorSection = document.getElementById('contractor_company_section');
+
+    if (roleId === 5) {  // Contractor role ID
+      mgmtSection.classList.add('d-none');
+      contractorSection.classList.remove('d-none');
+    } else {
+      mgmtSection.classList.remove('d-none');
+      contractorSection.classList.add('d-none');
+    }
+  }
+
+  // Run on load in case of form resubmission
+  document.addEventListener('DOMContentLoaded', toggleCompanyDropdown);
+</script>
+
+{% endblock %}
+

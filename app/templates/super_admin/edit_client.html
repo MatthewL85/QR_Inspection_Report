@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h3 class="text-primary">✏️ Edit Client</h3>
+  <form method="POST" class="row g-3">
+
+    <!-- Country -->
+    <div class="col-md-4">
+      <label class="form-label">Country</label>
+      <select name="country" id="countrySelect" class="form-select" required onchange="updateClientTypeOptions(); updateTaxFields();">
+        <option value="">-- Select Country --</option>
+        <option value="Ireland" {% if client.country == 'Ireland' %}selected{% endif %}>Ireland</option>
+        <option value="UK" {% if client.country == 'UK' %}selected{% endif %}>United Kingdom</option>
+        <option value="USA" {% if client.country == 'USA' %}selected{% endif %}>United States</option>
+        <option value="Canada" {% if client.country == 'Canada' %}selected{% endif %}>Canada</option>
+        <option value="Australia" {% if client.country == 'Australia' %}selected{% endif %}>Australia</option>
+        <option value="New Zealand" {% if client.country == 'New Zealand' %}selected{% endif %}>New Zealand</option>
+        <option value="Singapore" {% if client.country == 'Singapore' %}selected{% endif %}>Singapore</option>
+        <option value="Hong Kong" {% if client.country == 'Hong Kong' %}selected{% endif %}>Hong Kong</option>
+        <option value="UAE (Dubai)" {% if client.country == 'UAE (Dubai)' %}selected{% endif %}>UAE (Dubai)</option>
+      </select>
+    </div>
+
+    <!-- Currency (auto-set) -->
+    <div class="col-md-4">
+      <label class="form-label">Currency</label>
+      <input name="currency" id="currencyField" class="form-control" value="{{ client.currency }}" readonly>
+    </div>
+
+    <!-- Client Type -->
+    <div class="col-md-4">
+      <label class="form-label">Client Type</label>
+      <select name="client_type" id="clientTypeSelect" class="form-select" required onchange="updateLegalBasis()">
+        <option value="">-- Select Client Type --</option>
+        <option selected>{{ client.client_type }}</option>
+      </select>
+    </div>
+
+    <input type="hidden" name="legal_basis" id="legalBasisField" value="{{ client.legal_basis }}">
+
+    <div class="col-md-6" id="vatFieldGroup" style="display:none;">
+      <label class="form-label">VAT Registration Number</label>
+      <input name="vat_reg_number" class="form-control" value="{{ client.vat_reg_number }}">
+    </div>
+    <div class="col-md-6" id="taxFieldGroup" style="display:none;">
+      <label class="form-label">Tax Number</label>
+      <input name="tax_number" class="form-control" value="{{ client.tax_number }}">
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Client Name</label>
+      <input name="name" required class="form-control" value="{{ client.name }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Address</label>
+      <input name="address" class="form-control" value="{{ client.address }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Postal Code</label>
+      <input name="postal_code" class="form-control" value="{{ client.postal_code }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Registration Number</label>
+      <input name="registration_number" class="form-control" value="{{ client.registration_number }}">
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Year of Construction</label>
+      <input name="year_of_construction" class="form-control" value="{{ client.year_of_construction }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Number of Units</label>
+      <input name="number_of_units" type="number" class="form-control" value="{{ client.number_of_units }}">
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Region / Province</label>
+      <select name="region" id="regionSelect" class="form-select" onchange="updateTaxFields();">
+        <option selected>{{ client.region }}</option>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Timezone</label>
+      <select name="timezone" id="timezoneSelect" class="form-select">
+        <option selected>{{ client.timezone }}</option>
+      </select>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Preferred Language</label>
+      <select name="preferred_language" class="form-select">
+        <option value="EN" {% if client.preferred_language == 'EN' %}selected{% endif %}>English</option>
+        <option value="FR" {% if client.preferred_language == 'FR' %}selected{% endif %}>French</option>
+        <option value="ES" {% if client.preferred_language == 'ES' %}selected{% endif %}>Spanish</option>
+        <option value="DE" {% if client.preferred_language == 'DE' %}selected{% endif %}>German</option>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Ownership Type</label>
+      <select name="ownership_type" class="form-select">
+        <option value="Freehold" {% if client.ownership_type == 'Freehold' %}selected{% endif %}>Freehold</option>
+        <option value="Leasehold" {% if client.ownership_type == 'Leasehold' %}selected{% endif %}>Leasehold</option>
+      </select>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Assign Property Manager</label>
+      <select name="assigned_pm_id" class="form-select">
+        <option value="">-- Select Property Manager --</option>
+        {% for pm in property_managers %}
+          <option value="{{ pm.id }}" {% if client.assigned_pm_id == pm.id %}selected{% endif %}>{{ pm.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Deed of Covenants</label>
+      <input name="deed_of_covenants" class="form-control" value="{{ client.deed_of_covenants }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Data Protection Compliance</label>
+      <input name="data_protection_compliance" class="form-control" value="{{ client.data_protection_compliance }}">
+    </div>
+
+    <div class="col-md-6 form-check">
+      <input class="form-check-input" type="checkbox" name="transfer_of_common_area" {% if client.transfer_of_common_area %}checked{% endif %}>
+      <label class="form-check-label">Transfer of Common Area Completed</label>
+    </div>
+    <div class="col-md-6 form-check">
+      <input class="form-check-input" type="checkbox" name="consent_to_communicate" {% if client.consent_to_communicate %}checked{% endif %}>
+      <label class="form-check-label">Consent to Communicate</label>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Minimum Directors</label>
+      <input name="min_directors" type="number" class="form-control" value="{{ client.min_directors }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Maximum Directors</label>
+      <input name="max_directors" type="number" class="form-control" value="{{ client.max_directors }}">
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Number of Blocks</label>
+      <input name="number_of_blocks" type="number" class="form-control" value="{{ client.number_of_blocks }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Block Names</label>
+      <input name="block_names" class="form-control" value="{{ client.block_names }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Cores Per Block</label>
+      <input name="cores_per_block" class="form-control" value="{{ client.cores_per_block }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Apartments Per Block</label>
+      <input name="apartments_per_block" class="form-control" value="{{ client.apartments_per_block }}">
+    </div>
+
+    <!-- Audit Info -->
+    <div class="col-md-12 text-end">
+      <small class="text-muted">Last updated: {{ client.updated_at.strftime('%d-%b-%Y %H:%M') if client.updated_at else 'N/A' }}</small>
+    </div>
+
+    <div class="col-12 mt-4">
+      <button type="submit" class="btn btn-primary">💾 Update Client</button>
+      <a href="{{ url_for('super_admin.manage_clients') }}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+<script src="{{ url_for('static', filename='js/client-config.js') }}"></script>
+{% endblock %}
+

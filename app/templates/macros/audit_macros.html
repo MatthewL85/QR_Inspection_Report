@@ -1,0 +1,35 @@
+{# templates/macros/audit_macros.html #}
+{% macro render_audit_log_entry(entry) %}
+<tr>
+  <td>{{ entry.timestamp.strftime('%d-%m-%Y %H:%M') }}</td>
+  <td>{{ entry.user.full_name if entry.user else 'System' }}</td>
+  <td>{{ entry.model_name }}</td>
+  <td>{{ entry.field_name }}</td>
+  <td><span class="text-muted">{{ entry.old_value or '—' }}</span></td>
+  <td><strong>{{ entry.new_value or '—' }}</strong></td>
+  <td>{{ entry.change_reason or 'N/A' }}</td>
+</tr>
+{% endmacro %}
+
+{% macro render_audit_table(logs) %}
+<table class="table table-hover">
+  <thead class="text-primary">
+    <tr>
+      <th>Timestamp</th>
+      <th>User</th>
+      <th>Model</th>
+      <th>Field</th>
+      <th>Old Value</th>
+      <th>New Value</th>
+      <th>Reason</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for log in logs %}
+      {{ render_audit_log_entry(log) }}
+    {% else %}
+      <tr><td colspan="7" class="text-center">No audit logs found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endmacro %}

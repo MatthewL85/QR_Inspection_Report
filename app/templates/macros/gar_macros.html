@@ -1,0 +1,20 @@
+{% macro render_ai_scorecard(scorecard) %}
+  <div class="card p-3 bg-light border rounded shadow-sm mb-3">
+    <h6 class="fw-bold text-primary mb-2">AI Scorecard</h6>
+    <pre class="mb-0 small">{{ scorecard | json_prettify }}</pre>
+  </div>
+{% endmacro %}
+
+{% macro render_gar_summary(summary) %}
+  <div class="alert alert-info border-start border-4 border-primary shadow-sm">
+    <strong>GAR Summary:</strong><br />
+    {{ summary | safe }}
+  </div>
+{% endmacro %}
+
+{% macro render_highlighted_text(text, keywords=[]) %}
+  {% set highlighted = highlight_keywords(text, keywords) %}
+  <div class="p-2 border rounded bg-white">
+    {{ highlighted | safe }}
+  </div>
+{% endmacro %}

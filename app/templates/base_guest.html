@@ -1,0 +1,41 @@
+{% extends "base_guest.html" %}
+
+{% block title %}Login | LogixPM{% endblock %}
+
+{% block content %}
+<div class="card shadow border-0">
+  <div class="card-header bg-gradient-primary text-white text-center py-3">
+    <h5 class="mb-0">Log in to LogixPM</h5>
+  </div>
+  <div class="card-body px-4 py-4">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('login') }}">
+      <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control form-control-lg" id="email" name="email" required />
+      </div>
+
+      <div class="mb-4">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" class="form-control form-control-lg" id="password" name="password" required />
+      </div>
+
+      <div class="d-grid">
+        <button type="submit" class="btn bg-gradient-primary btn-lg">Log In</button>
+      </div>
+    </form>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+  <h4 class="mb-4">📅 Upcoming AGMs</h4>
+
+  <!-- 1 Month -->
+  <div class="card mb-4">
+    <div class="card-header bg-gradient-danger text-white">
+      AGMs Within 1 Month
+    </div>
+    <div class="card-body">
+      {% if agms_1_month %}
+        <ul class="list-group">
+          {% for client in agms_1_month %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ client.name }}</strong>
+                <span class="text-muted ms-2">Due by {{ client.financial_year_end.strftime('%d-%b-%Y') }}</span>
+              </div>
+              <form method="POST" action="{{ url_for('admin.mark_agm_completed', client_id=client.id) }}">
+                <button class="btn btn-sm btn-outline-success" onclick="return confirm('Mark {{ client.name }} as AGM completed?')">
+                  ✅ Complete
+                </button>
+              </form>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted">No AGMs due in the next month.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 2 Months -->
+  <div class="card mb-4">
+    <div class="card-header bg-gradient-warning text-dark">
+      AGMs Within 2 Months
+    </div>
+    <div class="card-body">
+      {% if agms_2_month %}
+        <ul class="list-group">
+          {% for client in agms_2_month %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ client.name }}</strong>
+                <span class="text-muted ms-2">Due by {{ client.financial_year_end.strftime('%d-%b-%Y') }}</span>
+              </div>
+              <form method="POST" action="{{ url_for('admin.mark_agm_completed', client_id=client.id) }}">
+                <button class="btn btn-sm btn-outline-success" onclick="return confirm('Mark {{ client.name }} as AGM completed?')">
+                  ✅ Complete
+                </button>
+              </form>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted">No AGMs due in 2 months.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 3 Months -->
+  <div class="card mb-4">
+    <div class="card-header bg-gradient-info text-white">
+      AGMs Within 3 Months
+    </div>
+    <div class="card-body">
+      {% if agms_3_month %}
+        <ul class="list-group">
+          {% for client in agms_3_month %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ client.name }}</strong>
+                <span class="text-muted ms-2">Due by {{ client.financial_year_end.strftime('%d-%b-%Y') }}</span>
+              </div>
+              <form method="POST" action="{{ url_for('admin.mark_agm_completed', client_id=client.id) }}">
+                <button class="btn btn-sm btn-outline-success" onclick="return confirm('Mark {{ client.name }} as AGM completed?')">
+                  ✅ Complete
+                </button>
+              </form>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted">No AGMs due in 3 months.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Completed AGMs -->
+  <div class="card mt-5">
+    <div class="card-header bg-gradient-success text-white">
+      ✅ Completed AGMs
+    </div>
+    <div class="card-body">
+      {% if completed_agms %}
+        <ul class="list-group">
+          {% for client in completed_agms %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <strong>{{ client.name }}</strong>
+              <span class="badge bg-success">Completed</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted">No AGMs marked as completed.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+
+  <!-- Row: Summary Tiles -->
+  <div class="row">
+    <!-- Total Clients -->
+    <div class="col-xl-3 col-sm-6 mb-4">
+      <div class="card h-100">
+        <div class="card-body p-3">
+          <div class="row">
+            <div class="col-8">
+              <div class="numbers">
+                <p class="text-sm mb-0 text-uppercase font-weight-bold">Total Clients</p>
+                <h5 class="font-weight-bolder">{{ clients|length }}</h5>
+              </div>
+            </div>
+            <div class="col-4 text-end">
+              <div class="icon icon-shape bg-gradient-primary shadow text-center border-radius-md">
+                <i class="material-icons">groups</i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Property Managers -->
+    <div class="col-xl-3 col-sm-6 mb-4">
+      <div class="card h-100">
+        <div class="card-body p-3">
+          <div class="row">
+            <div class="col-8">
+              <div class="numbers">
+                <p class="text-sm mb-0 text-uppercase font-weight-bold">Total PMs</p>
+                <h5 class="font-weight-bolder">{{ managers|length }}</h5>
+              </div>
+            </div>
+            <div class="col-4 text-end">
+              <div class="icon icon-shape bg-gradient-info shadow text-center border-radius-md">
+                <i class="material-icons">supervisor_account</i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Contractors -->
+    <div class="col-xl-3 col-sm-6 mb-4">
+      <div class="card h-100">
+        <div class="card-body p-3">
+          <div class="row">
+            <div class="col-8">
+              <div class="numbers">
+                <p class="text-sm mb-0 text-uppercase font-weight-bold">Total Contractors</p>
+                <h5 class="font-weight-bolder">
+                  {% set contractors = managers | selectattr("role", "equalto", "Contractor") | list %}
+                  {{ contractors|length }}
+                </h5>
+              </div>
+            </div>
+            <div class="col-4 text-end">
+              <div class="icon icon-shape bg-gradient-warning shadow text-center border-radius-md">
+                <i class="material-icons">engineering</i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Managed Portfolio -->
+    <div class="col-xl-3 col-sm-6 mb-4">
+      <div class="card h-100">
+        <div class="card-body p-3">
+          <div class="row">
+            <div class="col-8">
+              <div class="numbers">
+                <p class="text-sm mb-0 text-uppercase font-weight-bold">Managed Portfolio</p>
+                <h5 class="font-weight-bolder">€{{ total_portfolio_value }}</h5>
+              </div>
+            </div>
+            <div class="col-4 text-end">
+              <div class="icon icon-shape bg-gradient-secondary shadow text-center border-radius-md">
+                <i class="material-icons">folder_shared</i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-4">
+  <!-- Upcoming AGMs -->
+  <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+    <div class="card h-100">
+      <div class="card-body p-3">
+        <div class="row">
+          <div class="col-8">
+            <div class="numbers">
+              <p class="text-sm mb-0 text-uppercase font-weight-bold">Upcoming AGMs</p>
+              <h5 class="font-weight-bolder">{{ upcoming_agm_count }}</h5>
+            </div>
+          </div>
+          <div class="col-4 text-end">
+            <div class="icon icon-shape bg-gradient-success shadow text-center border-radius-md">
+              <i class="fas fa-calendar-alt text-white"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer p-2 text-end">
+        <a href="{{ url_for('admin.upcoming_agms') }}" class="text-sm text-primary">View All</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compliance Documents -->
+  <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+    <div class="card h-100">
+      <div class="card-body p-3">
+        <div class="row">
+          <div class="col-8">
+            <div class="numbers">
+              <p class="text-sm mb-0 text-uppercase font-weight-bold">Compliance Docs</p>
+              <h5 class="font-weight-bolder">{{ compliance_docs }}</h5>
+            </div>
+          </div>
+          <div class="col-4 text-end">
+            <div class="icon icon-shape bg-gradient-dark shadow text-center border-radius-md">
+              <i class="fas fa-file-contract text-white"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer p-2 text-end">
+        <a href="{{ url_for('admin.compliance_documents') }}" class="text-sm text-primary">Manage</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- Works Logix Placeholder -->
+  <div class="row mt-4">
+    <div class="col-md-4 mb-4">
+      <div class="card h-100 text-center">
+        <div class="card-body">
+          <i class="fas fa-tools fa-2x mb-2 text-warning"></i>
+          <h5 class="card-title">Works Logix</h5>
+          <p class="card-text">Manage Work Orders & Contractor Assignments</p>
+          <a href="/work-orders" class="btn btn-outline-primary disabled">Coming Soon</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client Table -->
+  <div class="card mt-4">
+    <div class="card-header pb-0">
+      <h6>Client Overview</h6>
+    </div>
+    <div class="card-body px-0 pt-0 pb-2">
+      <div class="table-responsive p-0">
+        <table class="table align-items-center mb-0">
+          <thead>
+            <tr>
+              <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Client Name</th>
+              <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Address</th>
+              <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Contract Value</th>
+              <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Property Manager</th>
+              <th class="text-secondary opacity-7"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for client in clients %}
+            <tr>
+              <td>{{ client.name }}</td>
+              <td>{{ client.address }}</td>
+              <td>€{{ client.contract_value or 0 }}</td>
+              <td>
+                {% if client.assigned_pm %}
+                  {{ client.assigned_pm.full_name }}
+                {% else %}
+                  <span class="text-muted">Unassigned</span>
+                {% endif %}
+              </td>
+              <td class="align-middle">
+                <a href="#" class="text-primary font-weight-bold text-xs">Edit</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block styles %}
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/material-dashboard@3.0.4/assets/css/material-dashboard.css" rel="stylesheet" />
+{% endblock %}

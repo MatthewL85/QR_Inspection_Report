@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+  <div class="card shadow-lg rounded-4">
+    <div class="card-header bg-gradient-info text-white d-flex justify-content-between align-items-center">
+      <h4 class="mb-0">🔍 Review Alert: {{ alert.title }}</h4>
+      <span class="badge bg-{{ 'danger' if alert.priority == 'High' else 'warning' if alert.priority == 'Medium' else 'success' }}">
+        {{ alert.priority }} Priority
+      </span>
+    </div>
+    <div class="card-body">
+
+      <!-- Description -->
+      <div class="mb-4">
+        <label class="form-label"><strong>Description:</strong></label>
+        <p class="form-control-plaintext">{{ alert.description }}</p>
+      </div>
+
+      <!-- Client & Metadata -->
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label"><strong>Client:</strong></label>
+          <p class="form-control-plaintext">{{ alert.client.name if alert.client else '—' }}</p>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label"><strong>Date Created:</strong></label>
+          <p class="form-control-plaintext">{{ alert.date_created.strftime('%d %b %Y') if alert.date_created else '—' }}</p>
+        </div>
+      </div>
+
+      <!-- Attached Media -->
+      {% if alert.media_filename %}
+        <div class="mb-4">
+          <label class="form-label"><strong>Attached Media:</strong></label>
+          {% if alert.media_filename.endswith(('.jpg', '.jpeg', '.png')) %}
+            <img src="{{ url_for('static', filename='uploads/' ~ alert.media_filename) }}" alt="Alert Media" class="img-fluid rounded border">
+          {% elif alert.media_filename.endswith(('.mp4', '.mov', '.avi')) %}
+            <video controls class="w-100 border rounded" style="max-height: 400px;">
+              <source src="{{ url_for('static', filename='uploads/' ~ alert.media_filename) }}">
+              Your browser does not support the video tag.
+            </video>
+          {% else %}
+            <a href="{{ url_for('static', filename='uploads/' ~ alert.media_filename) }}" target="_blank">View File</a>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <!-- Form -->
+      <form method="POST">
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+              {% for status in ['Open', 'In Progress', 'Resolved', 'Escalated to Work Order'] %}
+                <option value="{{ status }}" {% if alert.status == status %}selected{% endif %}>{{ status }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Category</label>
+            <input type="text" name="category" class="form-control" value="{{ alert.category }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Priority</label>
+            <select name="priority" class="form-select">
+              {% for level in ['Low', 'Medium', 'High'] %}
+                <option value="{{ level }}" {% if alert.priority == level %}selected{% endif %}>{{ level }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- Create Work Order Toggle -->
+        <div class="form-check form-switch my-3">
+          <input class="form-check-input" type="checkbox" id="create_work_order" name="create_work_order">
+          <label class="form-check-label" for="create_work_order">Create Work Order from this Alert</label>
+        </div>
+
+        <button type="submit" class="btn btn-success px-4">💾 Save Changes</button>
+        <a href="{{ url_for('super_admin.alerts') }}" class="btn btn-outline-secondary ms-2">⬅ Back to Alerts</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

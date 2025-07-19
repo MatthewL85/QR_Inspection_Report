@@ -1,0 +1,107 @@
+{% set current_path = request.path %}
+
+<aside class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 ms-3 bg-white fixed-start" id="sidenav-main" style="width: 250px;">
+  <div class="sidenav-header">
+    <h5 class="text-primary fw-bold ps-3 pt-3">LogixPM</h5>
+    <hr class="horizontal dark mt-2 mb-2" />
+  </div>
+
+  <div class="collapse navbar-collapse w-auto">
+    <ul class="navbar-nav">
+
+      <!-- MAIN NAVIGATION -->
+      <li class="nav-header text-muted ps-3">Main</li>
+
+      <li class="nav-item">
+        <a class="nav-link {% if current_path.startswith('/admin/dashboard') %}active text-primary{% else %}text-dark{% endif %}" href="{{ url_for('admin.dashboard')
+
+ }}">
+          <i class="fas fa-chart-line me-2"></i>
+          <span class="nav-link-text">Dashboard</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link {% if current_path.startswith('/equipment') %}active text-info{% else %}text-dark{% endif %}" href="{{ url_for('equipment.generate') }}">
+          <i class="fas fa-cogs me-2"></i>
+          <span class="nav-link-text">Equipment</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link {% if current_path.startswith('/admin/alerts') %}active text-warning{% else %}text-dark{% endif %}" href="{{ url_for('admin.alerts') }}">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          <span class="nav-link-text">Missed Tasks</span>
+        </a>
+      </li>
+
+      {% if 'capex' in company_features %}
+      <li class="nav-item">
+        <a class="nav-link {% if current_path.startswith('/capex') %}active text-secondary{% else %}text-dark{% endif %}" href="{{ url_for('capex_dashboard') }}">
+          <i class="fas fa-euro-sign me-2"></i>
+          <span class="nav-link-text">CAPEX Tracker</span>
+        </a>
+      </li>
+      {% endif %}
+
+      <!-- REPORTING SECTION -->
+      <li class="nav-header text-muted ps-3 mt-3">Reports</li>
+
+      <li class="nav-item">
+        <a class="nav-link {% if current_path.startswith('/admin/logs') %}active text-dark fw-bold{% else %}text-dark{% endif %}" href="{{ url_for('admin.logs') }}">
+          <i class="fas fa-history text-dark me-2"></i>
+          <span class="nav-link-text">Activity Logs</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link {% if current_path.startswith('/admin/reports') %}active text-dark fw-bold{% else %}text-dark{% endif %}" href="{{ url_for('admin.reports') }}">
+          <i class="fas fa-file-alt text-dark me-2"></i>
+          <span class="nav-link-text">Inspection Reports</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link text-dark" href="{{ url_for('admin.upcoming_agms') }}">
+          <i class="fas fa-calendar-alt text-info me-2"></i>
+          <span class="nav-link-text">Upcoming AGMs</span>
+        </a>
+      </li>
+
+      <!-- Admin Tools -->
+      <li class="nav-header text-muted ps-3 mt-3">Admin Tools</li>
+
+      <li class="nav-item">
+        <a class="nav-link text-dark" href="{{ url_for('admin.manage_clients') }}">
+          <i class="fas fa-users text-primary me-2"></i>
+          <span class="nav-link-text">Manage Clients</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link text-dark" href="{{ url_for('admin.manage_users') }}">
+          <i class="fas fa-user-cog text-info me-2"></i>
+          <span class="nav-link-text">Manage Users</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link text-dark" href="{{ url_for('admin.reports') }}">
+          <i class="fas fa-chart-line text-success me-2"></i>
+          <span class="nav-link-text">Reports</span>
+        </a>
+      </li>
+
+      <!-- SETTINGS -->
+      <li class="nav-header text-muted ps-3 mt-3">System</li>
+
+      <li class="nav-item">
+        <a class="nav-link {% if current_path.startswith('/admin/settings') %}active text-muted fw-bold{% else %}text-dark{% endif %}" href="{{ url_for('admin.admin_settings') }}">
+          <i class="fas fa-cog me-2"></i>
+          <span class="nav-link-text">Settings</span>
+        </a>
+      </li>
+
+    </ul>
+  </div>
+</aside>
