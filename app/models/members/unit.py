@@ -81,7 +81,7 @@ class Unit(db.Model):
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
     # 🔁 Relationships
-    company = db.relationship('Company', backref='units')
+    company = db.relationship('Company', back_populates='units')
     client = db.relationship('Client', backref='units')
 
     def __repr__(self):

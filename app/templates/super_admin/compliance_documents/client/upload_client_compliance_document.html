@@ -1,0 +1,95 @@
+{% extends 'layouts/super_admin_base.html' %}
+
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+  <div class="card shadow-sm border-0">
+    <div class="card-header d-flex justify-content-between align-items-center bg-white">
+      <h5 class="mb-0">📤 Upload Client Compliance Document</h5>
+      <a href="{{ url_for('super_admin.client_compliance_documents') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="material-icons me-1">arrow_back</i> Back to Client Documents
+      </a>
+    </div>
+
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+        {{ form.hidden_tag() }}
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            {{ form.client_id.label(class="form-label") }}
+            {{ form.client_id(class="form-select", required=True) }}
+            {% if form.client_id.errors %}
+              <div class="text-danger small">{{ form.client_id.errors[0] }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            {{ form.document_type.label(class="form-label") }}
+            {{ form.document_type(class="form-select", required=True) }}
+            {% if form.document_type.errors %}
+              <div class="text-danger small">{{ form.document_type.errors[0] }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            {{ form.expires_at.label(class="form-label") }}
+            {{ form.expires_at(class="form-control", type="date", required=True) }}
+            {% if form.expires_at.errors %}
+              <div class="text-danger small">{{ form.expires_at.errors[0] }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            {{ form.files.label(class="form-label") }}
+            {{ form.files(class="form-control", multiple=True, accept=".pdf,.doc,.docx") }}
+            <div class="form-text">Accepted: PDF, DOC, DOCX. Multiple files allowed.</div>
+            {% if form.files.errors %}
+              <div class="text-danger small">{{ form.files.errors[0] }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="mb-3">
+          {{ form.description.label(class="form-label") }}
+          {{ form.description(class="form-control") }}
+        </div>
+
+        <div class="form-check form-switch mb-3">
+          {{ form.is_required(class="form-check-input", id="is_required") }}
+          <label class="form-check-label" for="is_required">Required for Work Orders</label>
+        </div>
+
+        <div class="form-check form-switch mb-4">
+          {{ form.ai_reviewed(class="form-check-input", id="ai_reviewed") }}
+          <label class="form-check-label" for="ai_reviewed">Mark as AI Reviewed</label>
+        </div>
+
+        <button type="submit" class="btn btn-success">
+          <i class="material-icons me-1">cloud_upload</i> Upload Document(s)
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Client-Side Validation -->
+<script>
+(() => {
+  'use strict';
+  const forms = document.querySelectorAll('.needs-validation');
+  Array.from(forms).forEach(form => {
+    form.addEventListener('submit', event => {
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    }, false);
+  });
+})();
+</script>
+{% endblock %}

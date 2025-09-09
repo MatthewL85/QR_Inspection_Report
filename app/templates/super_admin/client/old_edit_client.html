@@ -1,0 +1,392 @@
+{% extends 'layouts/super_admin_base.html' %}
+
+{# Macros split by concern #}
+{% import 'macros/postal.html' as Postal %}
+{% import 'macros/ownership.html' as Own %}
+{% import 'macros/mgmt_company.html' as MC %}
+{% import 'macros/jurisdiction.html' as J %}
+
+{# Local macro to enforce a consistent placeholder in assignment selects #}
+{% macro select_with_placeholder(field, label_text) -%}
+  <label for="{{ field.id }}" class="form-label">{{ label_text }}</label>
+  <select id="{{ field.id }}" name="{{ field.name }}" class="form-select">
+    {# Normalize current value; if None -> '0' so placeholder shows selected #}
+    {% set current = (field.data if field.data is not none else 0) %}
+
+    {# Check if choices already contain a (0, '— Select —') style entry #}
+    {% set has_placeholder = false %}
+    {% for _val, _text in field.choices %}
+      {% if (_val in (0, '0')) and ('Select' in _text) %}
+        {% set has_placeholder = true %}
+      {% endif %}
+    {% endfor %}
+
+    {# Inject placeholder if missing #}
+    {% if not has_placeholder %}
+      <option value="0" {% if current in (None, '', 0, '0') %}selected{% endif %}>— Select —</option>
+    {% endif %}
+
+    {# Render choices; select when value matches (string-compare for safety) #}
+    {% for val, text in field.choices %}
+      <option value="{{ val }}"
+        {% if (current|string) == (val|string) %}selected{% endif %}>
+        {{ text }}
+      </option>
+    {% endfor %}
+  </select>
+{%- endmacro %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">✏️ Edit Client</h4>
+    <a href="{{ url_for('super_admin.manage_clients') }}" class="btn btn-outline-secondary">
+      ⬅ Back to Manage Clients
+    </a>
+  </div>
+
+  <form method="POST" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+
+    <!-- Core Info -->
+    <div class="card mb-4">
+      <div class="card-header pb-0"><strong>Core Information</strong></div>
+      <div class="card-body row g-3">
+        <div class="col-md-6">
+          {{ form.name.label }} {{ form.name(class_='form-control') }}
+        </div>
+
+        <div class="col-md-6">
+          {{ form.contract_value.label }}
+          {{ form.contract_value(class_='form-control', step='1', placeholder='e.g. 120000') }}
+          {% if form.contract_value.data %}
+            <small class="text-muted">Preview: {{ form.contract_value.data | int_comma }}</small>
+          {% endif %}
+        </div>
+
+        <div class="col-md-6">
+          {{ form.address.label }} {{ form.address(class_='form-control') }}
+        </div>
+
+        <div class="col-md-4">
+          <label id="postalLabelEdit" class="form-label">{{ Postal.postal_label(form.country.data) }}</label>
+          {{ form.postal_code(class_='form-control') }}
+        </div>
+
+        <div class="col-md-4">
+          {{ form.registration_number.label }} {{ form.registration_number(class_='form-control') }}
+        </div>
+        <div class="col-md-4">
+          {{ form.vat_reg_number.label }} {{ form.vat_reg_number(class_='form-control') }}
+        </div>
+        <div class="col-md-4">
+          {{ form.tax_number.label }} {{ form.tax_number(class_='form-control') }}
+        </div>
+        <div class="col-md-4">
+          {{ form.year_of_construction.label }} {{ form.year_of_construction(class_='form-control') }}
+        </div>
+        <div class="col-md-4">
+          {{ form.number_of_units.label }} {{ form.number_of_units(class_='form-control') }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Governance -->
+    <div class="card mb-4">
+      <div class="card-header pb-0"><strong>Governance & Legal</strong></div>
+      <div class="card-body row g-3">
+
+        {# Client Type as a select driven by jurisdiction. #}
+        <div class="col-md-4">
+          <label for="{{ form.client_type.id }}" class="form-label">Client Type</label>
+          <select id="{{ form.client_type.id }}" name="{{ form.client_type.name }}" class="form-select">
+            {% for t in (MC.mgmt_company_types_for(form.country.data)).split(',') %}
+              {% set opt = t.strip() %}
+              <option value="{{ opt }}" {% if form.client_type.data == opt %}selected{% endif %}>{{ opt }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          {{ form.financial_year_end.label }} {{ form.financial_year_end(class_='form-control', type='date') }}
+        </div>
+        <div class="col-md-4">
+          {{ form.last_agm_date.label }} {{ form.last_agm_date(class_='form-control', type='date') }}
+        </div>
+
+        <div class="col-md-3 mt-2 d-flex align-items-center">
+          {{ form.agm_completed(class="form-check-input me-2") }} {{ form.agm_completed.label(class="form-check-label mb-0") }}
+        </div>
+        <div class="col-md-3 mt-2 d-flex align-items-center">
+          {{ form.transfer_of_common_area(class="form-check-input me-2") }} {{ form.transfer_of_common_area.label(class="form-check-label mb-0") }}
+        </div>
+
+        <div class="col-md-6">
+          {{ form.deed_of_covenants.label }} {{ form.deed_of_covenants(class_='form-control') }}
+        </div>
+        <div class="col-md-6">
+          {{ form.data_protection_compliance.label }} {{ form.data_protection_compliance(class_='form-control') }}
+        </div>
+
+        {# ✅ Consent to communicate as Yes/No select mapped to BooleanField #}
+        <div class="col-md-3">
+          <label for="{{ form.consent_to_communicate.id }}" class="form-label">Consent to Communicate</label>
+          <select id="{{ form.consent_to_communicate.id }}"
+                  name="{{ form.consent_to_communicate.name }}"
+                  class="form-select">
+            <option value="true"  {% if form.consent_to_communicate.data %}selected{% endif %}>Yes</option>
+            <option value="false" {% if not form.consent_to_communicate.data %}selected{% endif %}>No</option>
+          </select>
+        </div>
+
+        <div class="col-md-3 mt-2 d-flex align-items-center">
+          {{ form.enforce_gdpr(class="form-check-input me-2") }} {{ form.enforce_gdpr.label(class="form-check-label mb-0") }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Location & Language -->
+    <div class="card mb-4">
+      <div class="card-header pb-0"><strong>Location & Language</strong></div>
+      <div class="card-body row g-3">
+        <div class="col-md-4">
+          {{ form.country.label }} {{ form.country(class_='form-control', id='countryFieldEdit') }}
+        </div>
+        <div class="col-md-4">
+          {{ form.region.label }} {{ form.region(class_='form-control') }}
+        </div>
+        <div class="col-md-4">
+          {{ form.currency.label }} {{ form.currency(class_='form-control', placeholder=J.currency_for(form.country.data)) }}
+        </div>
+        <div class="col-md-4">
+          {{ form.timezone.label }} {{ form.timezone(class_='form-control', placeholder=J.timezone_for(form.country.data)) }}
+        </div>
+        <div class="col-md-4">
+          {{ form.preferred_language.label }} {{ form.preferred_language(class_='form-control', placeholder=J.language_for(form.country.data)) }}
+        </div>
+
+        {# Ownership Type with datalist suggestions by jurisdiction #}
+        <div class="col-md-4">
+          {{ form.ownership_type.label }} 
+          {{ form.ownership_type(class_='form-control', list='ownershipSuggestionsEdit') }}
+          <datalist id="ownershipSuggestionsEdit">
+            {% for t in Own.ownership_types_for(form.country.data).split(',') %}
+              <option value="{{ t.strip() }}"></option>
+            {% endfor %}
+          </datalist>
+        </div>
+      </div>
+    </div>
+
+    <!-- Block Structure -->
+    <div class="card mb-4">
+      <div class="card-header pb-0"><strong>Block Structure</strong></div>
+      <div class="card-body row g-3">
+        <div class="col-md-3">
+          {{ form.min_directors.label }} {{ form.min_directors(class_='form-control') }}
+        </div>
+        <div class="col-md-3">
+          {{ form.max_directors.label }} {{ form.max_directors(class_='form-control') }}
+        </div>
+        <div class="col-md-3">
+          {{ form.number_of_blocks.label }} {{ form.number_of_blocks(class_='form-control') }}
+        </div>
+        <div class="col-md-3">
+          {{ form.block_names.label }} {{ form.block_names(class_='form-control') }}
+        </div>
+        <div class="col-md-6">
+          {{ form.cores_per_block.label }} {{ form.cores_per_block(class_='form-control') }}
+        </div>
+        <div class="col-md-6">
+          {{ form.apartments_per_block.label }} {{ form.apartments_per_block(class_='form-control') }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Contract Upload -->
+    <div class="card mb-4">
+      <div class="card-header pb-0"><strong>Contract Document</strong></div>
+      <div class="card-body">
+        {% if client.document_path %}
+          <p class="mb-2">
+            📎 Existing File:
+            <a href="{{ url_for('static', filename=client.document_path) }}" target="_blank">Download Current</a>
+          </p>
+        {% endif %}
+        {{ form.document_file.label }} {{ form.document_file(class_='form-control') }}
+      </div>
+    </div>
+
+    <!-- Assignments -->
+    <div class="card mb-4">
+      <div class="card-header pb-0"><strong>Assignments</strong></div>
+      <div class="card-body row g-3">
+        <div class="col-md-4">
+          {{ select_with_placeholder(form.assigned_pm_id, 'Property Manager') }}
+          <small class="text-muted d-block mt-1">Leave as “— Select —” to keep this unassigned.</small>
+        </div>
+        <div class="col-md-4">
+          {{ select_with_placeholder(form.assigned_fc_id, 'Financial Controller') }}
+          <small class="text-muted d-block mt-1">Optional; picks up reporting & approvals flow.</small>
+        </div>
+        <div class="col-md-4">
+          {{ select_with_placeholder(form.assigned_assistant_id, 'Assistant') }}
+          <small class="text-muted d-block mt-1">Optional support role for day‑to‑day tasks.</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI & GAR -->
+    <div class="card mb-4">
+      <div class="card-header pb-0"><strong>AI & GAR Intelligence</strong></div>
+      <div class="card-body row g-3">
+        <div class="col-md-6">
+          {{ form.ownership_types.label }} {{ form.ownership_types(class_='form-select', multiple=True) }}
+        </div>
+        <div class="col-md-6">
+          {{ form.capex_profile.label }} {{ form.capex_profile(class_='form-control') }}
+        </div>
+        <div class="col-md-6">
+          {{ form.tags.label }} {{ form.tags(class_='form-control') }}
+        </div>
+        <div class="col-md-6">
+          {{ form.ai_key_clauses.label }} {{ form.ai_key_clauses(class_='form-control', rows=3) }}
+        </div>
+
+        <div class="col-md-3 mt-2 d-flex align-items-center">
+          {{ form.is_gar_monitored(class="form-check-input me-2") }} {{ form.is_gar_monitored.label(class="form-check-label mb-0") }}
+        </div>
+        <div class="col-md-3 mt-2 d-flex align-items-center">
+          {{ form.gar_chat_ready(class="form-check-input me-2") }} {{ form.gar_chat_ready.label(class="form-check-label mb-0") }}
+        </div>
+        <div class="col-md-6">
+          {{ form.gar_resolution_status.label }} {{ form.gar_resolution_status(class_='form-select') }}
+        </div>
+
+        <div class="col-md-12">
+          {{ form.ai_governance_summary.label }} {{ form.ai_governance_summary(class_='form-control', rows=2) }}
+        </div>
+        <div class="col-md-12">
+          {{ form.ai_flagged_risks.label }} {{ form.ai_flagged_risks(class_='form-control', rows=2) }}
+        </div>
+        <div class="col-md-12">
+          {{ form.ai_advice_summary.label }} {{ form.ai_advice_summary(class_='form-control', rows=2) }}
+        </div>
+        <div class="col-md-12">
+          {{ form.ai_review_comment.label }} {{ form.ai_review_comment(class_='form-control', rows=2) }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="text-end">
+      <button type="submit" class="btn btn-success d-inline-flex align-items-center gap-1">
+        <i class="material-icons" style="font-size:16px; line-height:1">save</i>
+        <span>Save Changes</span>
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Live-updating postal label, client type options, and ownership suggestions when Country changes (Edit page)
+  (function () {
+    const countryEl = document.getElementById('countryFieldEdit');
+    const postalLabelEl = document.getElementById('postalLabelEdit');
+    const clientTypeEl = document.getElementById('{{ form.client_type.id }}');
+    const ownershipDatalistEl = document.getElementById('ownershipSuggestionsEdit');
+
+    if (!countryEl) return;
+    function norm(v){ return (v || '').toLowerCase().trim(); }
+
+    function postalFor(country) {
+      const c = norm(country);
+      if (['ireland','ie','republic of ireland'].includes(c)) return 'Eircode';
+      if (['united kingdom','uk','great britain','england','scotland','wales','northern ireland'].includes(c)) return 'Postcode';
+      if (['united states','united states of america','usa','us'].includes(c)) return 'ZIP Code';
+      if (['canada','ca','singapore','sg','hong kong','hk','hong kong sar'].includes(c)) return 'Postal Code';
+      if (['australia','au','new zealand','nz'].includes(c)) return 'Postcode';
+      if (['united arab emirates','uae','u.a.e','dubai','abu dhabi','sharjah','ajman','umm al-quwain','ras al khaimah','fujairah'].includes(c)) return 'PO Box';
+      const eu = ['austria','belgium','bulgaria','croatia','cyprus','czech republic','czechia','denmark','estonia','finland','france','germany','greece','hungary','iceland','italy','latvia','lithuania','luxembourg','malta','netherlands','norway','poland','portugal','romania','slovakia','slovenia','spain','sweden','switzerland'];
+      if (eu.includes(c)) return 'Postal Code';
+      return 'Postal Code';
+    }
+    function mgmtTypesFor(country) {
+      const c = norm(country);
+      if (['ireland','ie','republic of ireland'].includes(c)) return ['Owner Management Company (OMC)'];
+      if (['united kingdom','uk','great britain','england','wales'].includes(c)) return ['Resident Management Company (RMC)','Right to Manage (RTM)'];
+      if (['scotland'].includes(c)) return ['Property Factor','Owners’ Association'];
+      if (['northern ireland'].includes(c)) return ['Management Company','Owners’ Association'];
+      if (['united states','united states of america','usa','us'].includes(c)) return ['Homeowners Association (HOA)','Condominium Association','Co-op Board'];
+      if (['canada','ca'].includes(c)) return ['Condominium Corporation (Strata)','HOA'];
+      if (['australia','au'].includes(c)) return ['Owners Corporation','Strata Scheme','Community Title Scheme'];
+      if (['new zealand','nz'].includes(c)) return ['Body Corporate','Incorporated Society'];
+      if (['singapore','sg'].includes(c)) return ['Management Corporation Strata Title (MCST)'];
+      if (['hong kong','hk','hong kong sar'].includes(c)) return ['Owners’ Corporation'];
+      if (['united arab emirates','uae','u.a.e','dubai','abu dhabi','sharjah','ajman','umm al-quwain','ras al khaimah','fujairah'].includes(c)) return ['Jointly Owned Property (JOP) Association','Owners’ Association'];
+      const eu = ['austria','belgium','bulgaria','croatia','cyprus','czech republic','czechia','denmark','estonia','finland','france','germany','greece','hungary','iceland','italy','latvia','lithuania','luxembourg','malta','netherlands','norway','poland','portugal','romania','slovakia','slovenia','spain','sweden','switzerland'];
+      if (eu.includes(c)) return ['Owners’ Association','Management Company'];
+      return ['Management Company','Owners’ Association'];
+    }
+    function ownershipTypesFor(country) {
+      const c = norm(country);
+      if (['ireland','ie','republic of ireland','united kingdom','uk','great britain','england','scotland','wales','northern ireland'].includes(c)) return ['Freehold','Leasehold','Share of Freehold'];
+      if (['united states','united states of america','usa','us'].includes(c)) return ['Freehold','Condominium','Co-op'];
+      if (['canada','ca'].includes(c)) return ['Freehold','Condominium (Strata)','Leasehold'];
+      if (['australia','au'].includes(c)) return ['Freehold','Strata Title','Community Title'];
+      if (['new zealand','nz'].includes(c)) return ['Freehold','Unit Title','Leasehold'];
+      if (['singapore','sg'].includes(c)) return ['Freehold','Leasehold','Strata'];
+      if (['hong kong','hk','hong kong sar'].includes(c)) return ['Leasehold','Strata'];
+      if (['united arab emirates','uae','u.a.e','dubai','abu dhabi','sharjah','ajman','umm al-quwain','ras al khaimah','fujairah'].includes(c)) return ['Freehold','Leasehold','Strata'];
+      const eu = ['austria','belgium','bulgaria','croatia','cyprus','czech republic','czechia','denmark','estonia','finland','france','germany','greece','hungary','iceland','italy','latvia','lithuania','luxembourg','malta','netherlands','norway','poland','portugal','romania','slovakia','slovenia','spain','sweden','switzerland'];
+      if (eu.includes(c)) return ['Freehold','Leasehold'];
+      return ['Freehold','Leasehold'];
+    }
+    function refreshForCountry() {
+      const val = countryEl.value;
+      if (postalLabelEl) postalLabelEl.textContent = postalFor(val);
+      if (clientTypeEl) {
+        const opts = mgmtTypesFor(val);
+        clientTypeEl.innerHTML = '';
+        opts.forEach(text => {
+          const opt = document.createElement('option');
+          opt.value = text;
+          opt.textContent = text;
+          clientTypeEl.appendChild(opt);
+        });
+      }
+      if (ownershipDatalistEl) {
+        const types = ownershipTypesFor(val);
+        ownershipDatalistEl.innerHTML = '';
+        types.forEach(t => {
+          const o = document.createElement('option');
+          o.value = t;
+          ownershipDatalistEl.appendChild(o);
+        });
+      }
+    }
+    countryEl.addEventListener('change', refreshForCountry);
+    refreshForCountry();
+  })();
+</script>
+
+<script>
+  // Strip commas/spaces from Contract Value on submit
+  (function () {
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('form').forEach(function (form) {
+        form.addEventListener('submit', function () {
+          var cv = form.querySelector('[name="contract_value"]');
+          if (cv && typeof cv.value === 'string') {
+            cv.value = cv.value.replace(/[, ]+/g, '').trim();
+          }
+        }, { passive: true });
+      });
+    });
+  })();
+</script>
+{% endblock %}

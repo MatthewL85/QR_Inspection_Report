@@ -1,0 +1,530 @@
+{% extends 'layouts/super_admin_base.html' %}
+{% block title %}Add Client{% endblock %}
+
+{% import 'macros/postal.html' as Postal %}
+{% import 'macros/ownership.html' as Own %}
+{% import 'macros/mgmt_company.html' as MC %}
+{% import 'macros/jurisdiction.html' as J %}
+{% import 'macros/tax.html' as Tax %}
+{% import 'macros/governance_data.html' as GOVDATA %}
+
+<style>
+  select.form-select { display:block!important; width:100%; }
+  select.form-select option { white-space:normal; }
+  .is-invalid{ border-color:#dc3545; }
+  .form-text-muted{ color:#6c757d; font-size:.875rem; }
+</style>
+
+{% macro select_with_placeholder(field, label_text) -%}
+  <label for="{{ field.id }}" class="form-label">{{ label_text }}</label>
+  <select id="{{ field.id }}" name="{{ field.name }}" class="form-select">
+    {% set current = (field.data if field.data is not none else 0) %}
+    {% set has_placeholder = false %}
+    {% for _val, _text in field.choices %}
+      {% if (_val in (0, '0')) and ('Select' in _text) %}
+        {% set has_placeholder = true %}
+      {% endif %}
+    {% endfor %}
+    {% if not has_placeholder %}
+      <option value="0" {% if current in (None, '', 0, '0') %}selected{% endif %}>— Select —</option>
+    {% endif %}
+    {% for val, text in field.choices %}
+      <option value="{{ val }}" {% if (current|string) == (val|string) %}selected{% endif %}>{{ text }}</option>
+    {% endfor %}
+  </select>
+{%- endmacro %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+  {{ GOVDATA.emit_loader() }}
+
+  <div class="card">
+    <div class="card-header pb-0">
+      <h4 class="mb-0">➕ Add New Client</h4>
+      <p class="text-muted text-sm">Fill in the client + development profile to enable GAR insights, compliance, and smart workflows.</p>
+    </div>
+
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+
+        <h5 class="mt-2">📇 Core Details</h5>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control", id="clientNameField") }}
+          </div>
+
+          {% if form.property_name is defined %}
+          <div class="col-md-6 mb-3">
+            {{ form.property_name.label(class="form-label") }}
+            {{ form.property_name(class="form-control", id="propertyNameField") }}
+          </div>
+          {% endif %}
+
+          {% if preview_client_code %}
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Client Code</label>
+            <input type="text" class="form-control" value="{{ preview_client_code }}" readonly>
+            <small class="text-muted">Auto-generated and not editable.</small>
+          </div>
+          {% endif %}
+
+          <div class="col-md-6 mb-3">
+            {{ form.contract_value.label(class="form-label") }}
+            {{ form.contract_value(class="form-control", step="1", value=(form.contract_value.data|int_comma if form.contract_value.data else "")) }}
+            <small class="text-muted">Shown without decimals, e.g. 12,345</small>
+          </div>
+
+          {% if form.address_line1 is defined %}
+          <div class="col-md-6 mb-3">
+            {{ form.address_line1.label(class="form-label") }}
+            {{ form.address_line1(class="form-control") }}
+          </div>
+          {% endif %}
+          {% if form.address_line2 is defined %}
+          <div class="col-md-6 mb-3">
+            {{ form.address_line2.label(class="form-label") }}
+            {{ form.address_line2(class="form-control") }}
+          </div>
+          {% endif %}
+          {% if form.city is defined %}
+          <div class="col-md-4 mb-3">
+            {{ form.city.label(class="form-label") }}
+            {{ form.city(class="form-control") }}
+          </div>
+          {% endif %}
+
+          <div class="col-md-4 mb-3">
+            {{ form.country.label(class="form-label") }}
+            {{ form.country(class="form-control", id="countryField") }}
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <label id="regionLabel" class="form-label">{{ J.region_label(form.country.data) }}</label>
+            {{ form.region(type="hidden", id="regionHidden") }}
+            <select id="regionSelectAdd" class="form-select d-none"></select>
+            <input id="regionTextAdd" type="text" class="form-control" placeholder="Region / Province / State">
+            <small class="text-muted" id="regionHelp"></small>
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <label id="postalLabel" class="form-label">{{ Postal.postal_label(form.country.data) }}</label>
+            {{ form.postal_code(class="form-control") }}
+          </div>
+
+          <div class="col-md-4 mb-3">
+            {{ form.currency.label(class="form-label") }}
+            {{ form.currency(class="form-control", id="currencyField", placeholder=J.currency_for(form.country.data)) }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.timezone.label(class="form-label") }}
+            {{ form.timezone(class="form-control", id="timezoneField", placeholder=J.timezone_for(form.country.data)) }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.preferred_language.label(class="form-label") }}
+            {{ form.preferred_language(class="form-control", placeholder=J.language_for(form.country.data)) }}
+          </div>
+
+          {% if form.year_of_construction is defined %}
+          <div class="col-md-4 mb-3">
+            {{ form.year_of_construction.label(class="form-label") }}
+            {{ form.year_of_construction(class="form-control", placeholder="e.g. 2006") }}
+          </div>
+          {% endif %}
+        </div>
+
+        <hr class="my-4 border-secondary">
+        <h5 class="mt-2">📅 Governance & Compliance</h5>
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label for="{{ form.client_type.id }}" class="form-label">Client Type</label>
+            <select id="{{ form.client_type.id }}" name="{{ form.client_type.name }}" class="form-select"></select>
+          </div>
+
+          <!-- Financial Year End as DD/MM only -->
+          <div class="col-md-4 mb-3">
+            {{ form.financial_year_end.label(class="form-label") }}
+            <input type="text"
+                   id="financialYearEnd"
+                   name="{{ form.financial_year_end.name }}"
+                   value="{{ form.financial_year_end.data or '' }}"
+                   class="form-control"
+                   placeholder="DD/MM"
+                   inputmode="numeric"
+                   pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])$"
+                   aria-describedby="fyeHelp">
+            <small id="fyeHelp" class="form-text-muted">Format: DD/MM (e.g. 31/12)</small>
+          </div>
+
+          <div class="col-md-4 mb-3">
+            {{ form.last_agm_date.label(class="form-label") }}
+            {{ form.last_agm_date(class="form-control", type="date") }}
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <label for="transferSelect" class="form-label">Transfer of Common Area</label>
+            <select id="transferSelect" class="form-select" name="transfer_of_common_area_select">
+              <option value="false" {% if not form.transfer_of_common_area.data %}selected{% endif %}> No </option>
+              <option value="true"  {% if form.transfer_of_common_area.data %}selected{% endif %}> Yes </option>
+            </select>
+            {{ form.transfer_of_common_area(type="hidden", id="transferHidden") }}
+          </div>
+          <div class="col-md-4 mb-3" id="transferDateWrap" style="display:none">
+            <label for="transferDate" class="form-label">Transfer Completion Date</label>
+            <input type="date" id="transferDate" name="transfer_of_common_area_date" class="form-control"
+                   value="{{ (form.transfer_of_common_area_date.data if form.transfer_of_common_area_date is defined) or '' }}">
+          </div>
+
+          {% if form.enforce_gdpr is defined %}
+          <div class="col-md-4 mb-3 d-flex align-items-center">
+            {{ form.enforce_gdpr(class="form-check-input me-2", id="enforceGdpr") }}
+            <label for="enforceGdpr" class="form-check-label mb-0">Data Protection (GDPR) Compliance</label>
+          </div>
+          <div class="col-12 mb-2">
+            <small class="text-muted" id="gdprHint">{{ J.gdpr_hint(form.country.data) }}</small>
+          </div>
+          {% endif %}
+        </div>
+
+        <div id="jurisdictionInfo" class="mt-2"></div>
+
+        <hr class="my-4 border-secondary">
+        <h5 class="mt-2">🏘️ Ownership & Units</h5>
+        <div class="row">
+          <!-- Ownership type as dropdown -->
+          <div class="col-md-4 mb-3">
+            <label class="form-label" for="{{ form.ownership_type.id }}">Ownership Type</label>
+            <select id="{{ form.ownership_type.id }}" name="{{ form.ownership_type.name }}" class="form-select">
+              {% for t in Own.ownership_types_for(form.country.data).split(',') %}
+                {% set opt = t.strip() %}
+                <option value="{{ opt }}" {% if form.ownership_type.data == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-4 mb-3">
+            {{ form.number_of_units.label(class="form-label") }}
+            {{ form.number_of_units(class="form-control", id="unitsTotalField") }}
+            <small class="text-muted">Auto-sums from the breakdown below.</small>
+          </div>
+
+          <div class="col-12"></div>
+          {% if form.units_apartments is defined %}
+          <div class="col-md-3 mb-3">
+            {{ form.units_apartments.label(class="form-label") }}
+            {{ form.units_apartments(class="form-control unit-part", id="unitsAptField") }}
+          </div>
+          {% endif %}
+          {% if form.units_houses is defined %}
+          <div class="col-md-3 mb-3">
+            {{ form.units_houses.label(class="form-label") }}
+            {{ form.units_houses(class="form-control unit-part", id="unitsHouseField") }}
+          </div>
+          {% endif %}
+          {% if form.units_duplexes is defined %}
+          <div class="col-md-3 mb-3">
+            {{ form.units_duplexes.label(class="form-label") }}
+            {{ form.units_duplexes(class="form-control unit-part", id="unitsDuplexField") }}
+          </div>
+          {% endif %}
+          {% if form.units_commercial is defined %}
+          <div class="col-md-3 mb-3">
+            {{ form.units_commercial.label(class="form-label") }}
+            {{ form.units_commercial(class="form-control unit-part", id="unitsCommField") }}
+          </div>
+          {% endif %}
+        </div>
+
+        <hr class="my-4 border-secondary">
+        <h5 class="mt-2">🏢 Block Structure</h5>
+        <div class="row">
+          <div class="col-md-3 mb-3">{{ form.min_directors.label(class="form-label") }} {{ form.min_directors(class="form-control") }}</div>
+          <div class="col-md-3 mb-3">{{ form.max_directors.label(class="form-label") }} {{ form.max_directors(class="form-control") }}</div>
+          <div class="col-md-3 mb-3">
+            {{ form.number_of_blocks.label(class="form-label") }}
+            {{ form.number_of_blocks(class="form-control", id="numBlocksField") }}
+          </div>
+          <div class="col-md-3 mb-3">
+            {{ form.block_names.label(class="form-label") }}
+            {{ form.block_names(class="form-control", id="blockNamesField", placeholder="A,B,C or custom names comma-separated") }}
+            <small class="text-muted">Auto-fills A,B,C… when Number of Blocks > 1.</small>
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.cores_per_block.label(class="form-label") }}
+            {{ form.cores_per_block(class="form-control", id="coresPerBlockField", placeholder="e.g. 2 or 2,2,2") }}
+            <small class="text-muted">Enter one value to auto-duplicate per block.</small>
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.apartments_per_block.label(class="form-label") }}
+            {{ form.apartments_per_block(class="form-control", id="aptsPerBlockField", placeholder="e.g. 24 or 24,24,18") }}
+            <small class="text-muted">For houses/duplex: treat as “per street”.</small>
+          </div>
+        </div>
+
+        <hr class="my-4 border-secondary">
+        <h5 class="mt-2">💸 Valuation</h5>
+        <div class="row">
+          {% if form.reinstatement_value is defined %}
+          <div class="col-md-6 mb-3">
+            {{ form.reinstatement_value.label(class="form-label") }}
+            {{ form.reinstatement_value(class="form-control", placeholder="e.g. 15,000,000") }}
+          </div>
+          {% endif %}
+          {% if form.reinstatement_valuation_date is defined %}
+          <div class="col-md-6 mb-3">
+            {{ form.reinstatement_valuation_date.label(class="form-label") }}
+            {{ form.reinstatement_valuation_date(class="form-control", type="date") }}
+          </div>
+          {% endif %}
+        </div>
+
+        <hr class="my-4 border-secondary">
+        <h5 class="mt-2">👥 Assignments</h5>
+        <div class="row">
+          <div class="col-md-4 mb-4">
+            {{ select_with_placeholder(form.assigned_pm_id, 'Property Manager') }}
+            <small class="text-muted d-block mt-1">Leave as “— Select —” to keep unassigned.</small>
+          </div>
+          {% if form.assigned_fc_id is defined %}
+          <div class="col-md-4 mb-4">
+            {{ select_with_placeholder(form.assigned_fc_id, 'Financial Controller') }}
+            <small class="text-muted d-block mt-1">Optional; for approvals & finance flow.</small>
+          </div>
+          {% endif %}
+          {% if form.assigned_assistant_id is defined %}
+          <div class="col-md-4 mb-4">
+            {{ select_with_placeholder(form.assigned_assistant_id, 'Assistant') }}
+            <small class="text-muted d-block mt-1">Optional support role for day-to-day tasks.</small>
+          </div>
+          {% endif %}
+        </div>
+
+        <hr class="my-4 border-secondary">
+        <h5 class="mt-2">🧠 AI Document Upload</h5>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            {{ form.document_file.label(class="form-label") }}
+            {{ form.document_file(class="form-control") }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.capex_status.label(class="form-label") }}
+            {{ form.capex_status(class="form-select") }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.ownership_types.label(class="form-label") }}
+            {{ form.ownership_types(class="form-select", multiple=True) }}
+          </div>
+          <div class="col-12 mb-3">
+            {{ form.ai_key_clauses.label(class="form-label") }}
+            {{ form.ai_key_clauses(class="form-control", rows=4) }}
+          </div>
+        </div>
+
+        <h5 class="mt-2">💬 GAR Monitoring</h5>
+        <div class="row">
+          <div class="col-md-4 mb-3 d-flex align-items-center">
+            {{ form.is_gar_monitored(class="form-check-input me-2") }}
+            {{ form.is_gar_monitored.label(class="form-check-label mb-0") }}
+          </div>
+          <div class="col-md-4 mb-3 d-flex align-items-center">
+            {{ form.gar_chat_ready(class="form-check-input me-2") }}
+            {{ form.gar_chat_ready.label(class="form-check-label mb-0") }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.gar_resolution_status.label(class="form-label") }}
+            {{ form.gar_resolution_status(class="form-select") }}
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <button type="submit" class="btn btn-primary">💾 Save Client</button>
+          <a href="{{ url_for('super_admin.manage_clients') }}" class="btn btn-secondary">↩ Back to Clients</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/regions.js', v='103') }}"></script>
+<script src="{{ url_for('static', filename='js/juris.js',   v='1') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Ensure JURIS_DATA exists (fallback if macro didn't inject it)
+  if (!window.JURIS_DATA) {
+    fetch('{{ url_for("static", filename="data/jurisdictions.json") }}', { cache: 'no-store' })
+      .then(r => r.json()).then(d => { window.JURIS_DATA = d; window.dispatchEvent(new Event('juris:ready')); })
+      .catch(() => console.warn('jurisdictions.json not found; using defaults only'));
+  }
+
+  // Region picker (dropdown/text hybrid) — GUARD if regions.js is missing
+  if (window.RegionPicker && typeof RegionPicker.init === 'function') {
+    RegionPicker.init({
+      countrySelectorId: 'countryField',
+      hiddenRegionId: 'regionHidden',
+      selectId: 'regionSelectAdd',
+      textId: 'regionTextAdd',
+      labelId: 'regionLabel',
+      helpId: 'regionHelp'
+    });
+  } else {
+    console.warn('RegionPicker not found; using basic region text input.');
+  }
+
+  const countryEl    = document.getElementById('countryField');
+  const regionHidden = document.getElementById('regionHidden');
+  const regionSelect = document.getElementById('regionSelectAdd');
+  const regionText   = document.getElementById('regionTextAdd');
+
+  const postalLbl    = document.getElementById('postalLabel');
+  const clientTypeEl = document.getElementById('{{ form.client_type.id }}');
+  const currencyEl   = document.getElementById('currencyField');
+  const timezoneEl   = document.getElementById('timezoneField');
+  const vatLbl       = document.getElementById('vatLabel');
+  const vatHelp      = document.getElementById('vatHelp');
+  const taxLbl       = document.getElementById('taxLabel');
+  const taxHelp      = document.getElementById('taxHelp');
+
+  // FY End DD/MM validation helper (simple mask)
+  const fye = document.getElementById('financialYearEnd');
+  function formatDDMM(v){
+    return v.replace(/[^0-9]/g,'').slice(0,4).replace(/(^\d{2})(\d{0,2})/, (_,d,m)=> m? d+'/'+m : d);
+  }
+  fye && fye.addEventListener('input', e => {
+    e.target.value = formatDDMM(e.target.value);
+    e.target.classList.toggle('is-invalid',
+      !!e.target.value && !/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])$/.test(e.target.value)
+    );
+  });
+
+  // Units breakdown → auto-sum into total
+  const unitParts = Array.from(document.querySelectorAll('.unit-part'));
+  const unitsTotal = document.getElementById('unitsTotalField');
+  function sumUnits(){
+    const total = unitParts.reduce((acc, el) => {
+      const v = parseInt((el.value || '0').replace(/,/g,''), 10);
+      return acc + (isNaN(v) ? 0 : v);
+    }, 0);
+    if (unitsTotal) unitsTotal.value = total || '';
+  }
+  unitParts.forEach(el => el.addEventListener('input', sumUnits));
+  sumUnits();
+
+  // Block auto-duplication
+  const numBlocksEl = document.getElementById('numBlocksField');
+  const blockNamesEl = document.getElementById('blockNamesField');
+  const coresEl = document.getElementById('coresPerBlockField');
+  const aptsEl  = document.getElementById('aptsPerBlockField');
+
+  function makeAlphaNames(n){
+    const names = [];
+    for (let i=0;i<n;i++){
+      // A..Z then AA..AZ if needed
+      let q = i, s = '';
+      do {
+        s = String.fromCharCode(65 + (q % 26)) + s;
+        q = Math.floor(q / 26) - 1;
+      } while (q >= 0);
+      names.push(s);
+    }
+    return names.join(',');
+  }
+  function dupValueToList(val, n){
+    if (!val) return '';
+    if (val.includes(',')) return val; // already a list
+    return Array(n).fill(val.trim()).join(',');
+  }
+  function onBlocksChange(){
+    const n = parseInt(numBlocksEl.value || '0', 10);
+    if (!isNaN(n) && n > 1) {
+      if (!blockNamesEl.value.trim()) blockNamesEl.value = makeAlphaNames(n);
+      if (coresEl.value.trim() && !coresEl.value.includes(',')) coresEl.value = dupValueToList(coresEl.value, n);
+      if (aptsEl.value.trim()  && !aptsEl.value.includes(','))  aptsEl.value  = dupValueToList(aptsEl.value, n);
+    }
+  }
+  numBlocksEl && numBlocksEl.addEventListener('input', onBlocksChange);
+  [coresEl, aptsEl].forEach(el => el && el.addEventListener('blur', onBlocksChange));
+
+  // Country-driven helpers
+  function norm(v){ return (v || '').toLowerCase().trim(); }
+  function postalFor(country) {
+    const cn = norm(country);
+    if (['ireland','ie','republic of ireland'].includes(cn)) return 'Eircode';
+    if (['uk','united kingdom','great britain','england','scotland','wales','northern ireland'].includes(cn)) return 'Postcode';
+    if (['us','usa','united states','united states of america'].includes(cn)) return 'ZIP Code';
+    const eu = ['austria','belgium','bulgaria','croatia','cyprus','czech republic','czechia','denmark','estonia','finland','france','germany','greece','hungary','iceland','italy','latvia','lithuania','luxembourg','malta','netherlands','norway','poland','portugal','romania','slovakia','slovenia','spain','sweden','switzerland'];
+    if (eu.includes(cn) || cn==='canada' || cn==='singapore' || cn==='hong kong') return 'Postal Code';
+    if (cn==='australia' || cn==='new zealand') return 'Postcode';
+    if (['uae','united arab emirates','u.a.e','dubai','abu dhabi','sharjah','ajman','umm al-quwain','ras al khaimah','fujairah'].includes(cn)) return 'PO Box';
+    return 'Postal Code';
+  }
+
+  // Track manual edits to avoid overwriting
+  const userEdited = { currency: false, timezone: false };
+  currencyEl && currencyEl.addEventListener('input', () => userEdited.currency = true);
+  timezoneEl && timezoneEl.addEventListener('input', () => userEdited.timezone = true);
+
+  // Hydrate dependent fields (currency, timezone, client types, labels)
+  function hydrate() {
+    const c = countryEl ? countryEl.value : '';
+    const r = regionHidden ? regionHidden.value : '';
+
+    if (postalLbl) postalLbl.textContent = postalFor(c);
+
+    // Effective jurisdiction (country → wildcard → region override)
+    const eff  = (window.Juris && window.JURIS_DATA && typeof Juris.effective === 'function')
+                   ? (Juris.effective(window.JURIS_DATA, c, r) || {})
+                   : {};
+    const fall = (window.RegionPicker && typeof RegionPicker.defaultsFor === 'function')
+                   ? (RegionPicker.defaultsFor(c) || {})
+                   : {};
+
+    // Currency & timezone
+    if (currencyEl && !userEdited.currency)  currencyEl.value  = eff.currency  || fall.currency  || '';
+    if (timezoneEl && !userEdited.timezone)  timezoneEl.value  = eff.timezone  || fall.timezone  || '';
+
+    // Client types — only replace options if we actually have a list
+    if (clientTypeEl) {
+      const list = Array.isArray(eff.clientTypes) ? eff.clientTypes : [];
+      if (list.length) {
+        const preserve = clientTypeEl.value;
+        clientTypeEl.innerHTML = '';
+        list.forEach(t => {
+          const o = document.createElement('option');
+          o.value = t; o.textContent = t;
+          clientTypeEl.appendChild(o);
+        });
+        if ([...clientTypeEl.options].some(o => o.value === preserve)) clientTypeEl.value = preserve;
+      }
+    }
+
+    // TODO: If you expose VAT/tax labels from JURIS_DATA, update vatLbl/taxLbl here.
+  }
+
+  // Wire events
+  ['change','input'].forEach(evt => {
+    countryEl    && countryEl.addEventListener(evt, hydrate);
+    regionSelect && regionSelect.addEventListener(evt, hydrate);
+    regionText   && regionText.addEventListener(evt, hydrate);
+  });
+  if (window.addEventListener) window.addEventListener('juris:ready', hydrate);
+
+  // Initial run
+  hydrate();
+
+  // Transfer toggle
+  const transferSelect = document.getElementById('transferSelect');
+  const transferHidden = document.getElementById('transferHidden');
+  const transferDateWrap = document.getElementById('transferDateWrap');
+  function syncTransfer(){
+    const val = (transferSelect && transferSelect.value) === 'true';
+    if (transferHidden) transferHidden.value = val ? 'y' : '';
+    if (transferDateWrap) transferDateWrap.style.display = val ? '' : 'none';
+  }
+  transferSelect && transferSelect.addEventListener('change', syncTransfer);
+  syncTransfer();
+});
+</script>
+{% endblock %}

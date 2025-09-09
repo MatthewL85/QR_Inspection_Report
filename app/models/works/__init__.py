@@ -7,3 +7,4 @@ from .work_order_setting_audit_log import WorkOrderSettingAuditLog
 from .work_order_policy import WorkOrderPolicy
 from .quote_response import QuoteResponse
 from .quote_recipient import QuoteRecipient
+from .special_project import ClientSpecialProject

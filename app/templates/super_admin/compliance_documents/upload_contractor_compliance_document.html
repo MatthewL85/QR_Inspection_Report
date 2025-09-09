@@ -1,0 +1,140 @@
+{% extends 'layouts/super_admin_base.html' %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header d-flex justify-content-between align-items-center bg-white">
+      <h5 class="mb-0">
+        {{ '✏️ Edit' if document else '📤 Upload' }} Compliance Document
+      </h5>
+      <a href="{{ url_for('super_admin.compliance_documents') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="material-icons me-1">arrow_back</i> Back to Documents
+      </a>
+    </div>
+
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+
+        <!-- 📋 Document Info -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label for="document_type" class="form-label">Document Type</label>
+            <select id="document_type" name="document_type" class="form-select" required>
+              <option value="" disabled {{ 'selected' if not document }}>Choose document type</option>
+              {% for option in ['Insurance', 'Health & Safety', 'Certifications', 'Other'] %}
+              <option value="{{ option }}" {% if document and document.document_type == option %}selected{% endif %}>{{ option }}</option>
+              {% endfor %}
+            </select>
+            <div class="invalid-feedback">Please select a document type.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="contractor_id" class="form-label">Contractor</label>
+            <select id="contractor_id" name="contractor_id" class="form-select" required>
+              <option value="" disabled {{ 'selected' if not document }}>Select contractor</option>
+              {% for contractor in contractors %}
+              <option value="{{ contractor.id }}" {% if document and contractor.id == document.contractor_id %}selected{% endif %}>
+                {{ contractor.full_name }}
+              </option>
+              {% endfor %}
+            </select>
+            <div class="invalid-feedback">Please select a contractor.</div>
+          </div>
+        </div>
+
+        <!-- 📅 Expiry & File Upload -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label for="expiry_date" class="form-label">Expiry Date</label>
+            <input type="date" id="expiry_date" name="expiry_date" class="form-control"
+              value="{{ document.expiry_date|strftime('%Y-%m-%d') if document and document.expiry_date else '' }}" required>
+            <div class="invalid-feedback">Please select an expiry date.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="files" class="form-label">Select File(s)</label>
+            <input type="file" id="files" name="files[]" class="form-control" accept=".pdf,.doc,.docx"
+              {% if not document %}multiple required{% endif %}>
+            <div class="form-text">
+              Accepted: PDF, DOC, DOCX. 
+              {% if not document %}Multiple uploads allowed.{% else %}Leave blank to keep existing file.{% endif %}
+            </div>
+            <div class="invalid-feedback">Please upload at least one file.</div>
+          </div>
+        </div>
+
+        <!-- 📝 Optional Description -->
+        <div class="mb-3">
+          <label for="description" class="form-label">Description (optional)</label>
+          <textarea id="description" name="description" class="form-control" rows="2">{{ document.description or '' }}</textarea>
+        </div>
+
+        <!-- 🧾 Compliance Flags -->
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="is_required" name="is_required"
+            {% if document and document.is_required_for_work_order %}checked{% endif %}>
+          <label class="form-check-label" for="is_required">Required for Work Orders</label>
+        </div>
+
+        <!-- 🤖 AI Toggle -->
+        <div class="form-check form-switch mb-4">
+          <input class="form-check-input" type="checkbox" id="ai_reviewed" name="ai_reviewed"
+            {% if document and document.ai_status == 'Reviewed' %}checked{% endif %}>
+          <label class="form-check-label" for="ai_reviewed">Mark as AI-Reviewed</label>
+        </div>
+
+        <!-- 👁 PDF Preview -->
+        <div id="previewContainer" class="mb-4" style="display: none;">
+          <label class="form-label">Preview</label>
+          <div class="border rounded p-2">
+            <iframe id="previewFrame" style="width:100%; height:400px;" frameborder="0"></iframe>
+          </div>
+        </div>
+
+        <!-- ✅ Submit -->
+        <div class="d-flex justify-content-start">
+          <button type="submit" class="btn btn-success">
+            <i class="material-icons me-1">cloud_upload</i>
+            {{ 'Save Changes' if document else 'Upload Document(s)' }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Client-Side Validation + Preview -->
+<script>
+  (() => {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+
+    const fileInput = document.getElementById('files');
+    const previewFrame = document.getElementById('previewFrame');
+    const previewContainer = document.getElementById('previewContainer');
+
+    if (fileInput) {
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file && file.type === 'application/pdf') {
+          previewContainer.style.display = 'block';
+          previewFrame.src = URL.createObjectURL(file);
+        } else {
+          previewContainer.style.display = 'none';
+        }
+      });
+    }
+  })();
+</script>
+{% endblock %}

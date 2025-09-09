@@ -45,8 +45,8 @@ class FinanceBatch(db.Model):
     client = db.relationship("Client", backref="finance_batches")
     created_by = db.relationship("User", foreign_keys=[created_by_id])
     last_modified_by = db.relationship("User", foreign_keys=[last_modified_by_id])
-    invoices = db.relationship("Invoice", backref="finance_batch", lazy='dynamic')
-    accounts = db.relationship("Account", backref="finance_batch", lazy='dynamic')
+    invoices = db.relationship("Invoice", back_populates="finance_batch", lazy='dynamic')
+    linked_accounts = db.relationship("Account", back_populates="finance_batch", lazy='dynamic')
 
     def __repr__(self):
         return f"<FinanceBatch {self.batch_name} [{self.status}]>"

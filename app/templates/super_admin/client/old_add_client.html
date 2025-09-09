@@ -1,0 +1,395 @@
+{% extends 'layouts/super_admin_base.html' %}
+{% block title %}Add Client{% endblock %}
+
+{# Macros split by concern #}
+{% import 'macros/postal.html' as Postal %}
+{% import 'macros/ownership.html' as Own %}
+{% import 'macros/mgmt_company.html' as MC %}
+{% import 'macros/jurisdiction.html' as J %}
+
+{# Local macro to enforce a consistent placeholder in assignment selects #}
+{% macro select_with_placeholder(field, label_text) -%}
+  <label for="{{ field.id }}" class="form-label">{{ label_text }}</label>
+  <select id="{{ field.id }}" name="{{ field.name }}" class="form-select">
+    {% set current = (field.data if field.data is not none else 0) %}
+    {% set has_placeholder = false %}
+    {% for _val, _text in field.choices %}
+      {% if (_val in (0, '0')) and ('Select' in _text) %}
+        {% set has_placeholder = true %}
+      {% endif %}
+    {% endfor %}
+    {% if not has_placeholder %}
+      <option value="0" {% if current in (None, '', 0, '0') %}selected{% endif %}>— Select —</option>
+    {% endif %}
+    {% for val, text in field.choices %}
+      <option value="{{ val }}" {% if (current|string) == (val|string) %}selected{% endif %}>{{ text }}</option>
+    {% endfor %}
+  </select>
+{%- endmacro %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+  <div class="card">
+    <div class="card-header pb-0">
+      <h4 class="mb-0">➕ Add New Client</h4>
+      <p class="text-muted text-sm">
+        Fill in the full client profile to enable smart tracking, GAR insights, and compliance features.
+      </p>
+    </div>
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+
+        <!-- Core Info -->
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control") }}
+          </div>
+
+          <div class="col-md-6 mb-3">
+            {{ form.contract_value.label(class="form-label") }}
+            {# show as 12,345 (no decimals) without altering submitted value semantics #}
+            {{ form.contract_value(class="form-control", step="1", value=(form.contract_value.data|int_comma if form.contract_value.data else "")) }}
+            <small class="text-muted">Shown without decimals, e.g. 12,345</small>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            {{ form.address.label(class="form-label") }}
+            {{ form.address(class="form-control") }}
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label id="postalLabel" class="form-label">{{ Postal.postal_label(form.country.data) }}</label>
+            {{ form.postal_code(class="form-control") }}
+          </div>
+
+          <div class="col-md-4 mb-3">
+            {{ form.registration_number.label(class="form-label") }}
+            {{ form.registration_number(class="form-control") }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.vat_reg_number.label(class="form-label") }}
+            {{ form.vat_reg_number(class="form-control") }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.tax_number.label(class="form-label") }}
+            {{ form.tax_number(class="form-control") }}
+          </div>
+        </div>
+
+        <!-- Management Company -->
+        <div class="alert alert-info d-flex align-items-center mb-3">
+          <i class="material-icons me-2">business</i>
+          <div>
+            <strong>Management Company:</strong>
+            {{ current_user.company.name if current_user.company else '—' }}
+          </div>
+        </div>
+
+        <hr class="my-4 border-secondary">
+
+        <!-- Governance -->
+        <h5 class="mt-4">📅 Governance & Compliance</h5>
+        <div class="row">
+          {# Client Type as a select fed by jurisdiction (form field is StringField; this select will still post the value) #}
+          <div class="col-md-4 mb-3">
+            <label for="{{ form.client_type.id }}" class="form-label">Client Type</label>
+            <select id="{{ form.client_type.id }}" name="{{ form.client_type.name }}" class="form-select">
+              {% for t in (MC.mgmt_company_types_for(form.country.data)).split(',') %}
+                {% set opt = t.strip() %}
+                <option value="{{ opt }}" {% if form.client_type.data == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-4 mb-3">
+            {{ form.financial_year_end.label(class="form-label") }}
+            {{ form.financial_year_end(class="form-control") }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.last_agm_date.label(class="form-label") }}
+            {{ form.last_agm_date(class="form-control") }}
+          </div>
+
+          <div class="col-md-4 mb-3 d-flex align-items-center">
+            {{ form.agm_completed(class="form-check-input me-2") }}
+            {{ form.agm_completed.label(class="form-check-label mb-0") }}
+          </div>
+          <div class="col-md-4 mb-3 d-flex align-items-center">
+            {{ form.transfer_of_common_area(class="form-check-input me-2") }}
+            {{ form.transfer_of_common_area.label(class="form-check-label mb-0") }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.data_protection_compliance.label(class="form-label") }}
+            {{ form.data_protection_compliance(class="form-control") }}
+          </div>
+        </div>
+
+        <hr class="my-4 border-secondary">
+
+        <!-- Jurisdiction -->
+        <h5 class="mt-4">🌍 Jurisdiction & Location</h5>
+        <div class="row">
+          <div class="col-md-3 mb-3">
+            {{ form.country.label(class="form-label") }}
+            {{ form.country(class="form-control", id="countryField") }}
+          </div>
+          <div class="col-md-3 mb-3">
+            {{ form.region.label(class="form-label") }}
+            {{ form.region(class="form-control") }}
+          </div>
+          <div class="col-md-3 mb-3">
+            {{ form.currency.label(class="form-label") }}
+            {{ form.currency(class="form-control", placeholder=J.currency_for(form.country.data)) }}
+          </div>
+          <div class="col-md-3 mb-3">
+            {{ form.timezone.label(class="form-label") }}
+            {{ form.timezone(class="form-control", placeholder=J.timezone_for(form.country.data)) }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.preferred_language.label(class="form-label") }}
+            {{ form.preferred_language(class="form-control", placeholder=J.language_for(form.country.data)) }}
+          </div>
+
+          {# Ownership Type as free text with datalist suggestions by jurisdiction #}
+          <div class="col-md-4 mb-3">
+            {{ form.ownership_type.label(class="form-label") }}
+            {{ form.ownership_type(class="form-control", list="ownershipSuggestions") }}
+            <datalist id="ownershipSuggestions">
+              {% for t in Own.ownership_types_for(form.country.data).split(',') %}
+                <option value="{{ t.strip() }}"></option>
+              {% endfor %}
+            </datalist>
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <label for="{{ form.consent_to_communicate.id }}" class="form-label">Consent to Communicate</label>
+            <select id="{{ form.consent_to_communicate.id }}"
+                    name="{{ form.consent_to_communicate.name }}"
+                    class="form-select">
+              <option value="true"  {% if form.consent_to_communicate.data in (True, 'true', 'True', '1', 1) %}selected{% endif %}>Yes</option>
+              <option value="false" {% if form.consent_to_communicate.data in (False, 'false', 'False', '0', 0, None, '') %}selected{% endif %}>No</option>
+            </select>
+          </div>
+        </div>
+
+        <hr class="my-4 border-secondary">
+
+        <!-- Block Structure -->
+        <h5 class="mt-4">🏢 Block Structure</h5>
+        <div class="row">
+          <div class="col-md-3 mb-3">{{ form.number_of_blocks.label(class="form-label") }} {{ form.number_of_blocks(class="form-control") }}</div>
+          <div class="col-md-3 mb-3">{{ form.min_directors.label(class="form-label") }} {{ form.min_directors(class="form-control") }}</div>
+          <div class="col-md-3 mb-3">{{ form.max_directors.label(class="form-label") }} {{ form.max_directors(class="form-control") }}</div>
+          <div class="col-md-3 mb-3">{{ form.number_of_units.label(class="form-label") }} {{ form.number_of_units(class="form-control") }}</div>
+          <div class="col-md-4 mb-3">{{ form.block_names.label(class="form-label") }} {{ form.block_names(class="form-control") }}</div>
+          <div class="col-md-4 mb-3">{{ form.cores_per_block.label(class="form-label") }} {{ form.cores_per_block(class="form-control") }}</div>
+          <div class="col-md-4 mb-3">{{ form.apartments_per_block.label(class="form-label") }} {{ form.apartments_per_block(class="form-control") }}</div>
+        </div>
+
+        <hr class="my-4 border-secondary">
+
+        <!-- Valuation -->
+        <h5 class="mt-4">🏗️ Reinstatement Valuation</h5>
+        <div class="row">
+          <div class="col-md-6 mb-3">{{ form.reinstatement_value.label(class="form-label") }} {{ form.reinstatement_value(class="form-control") }}</div>
+          <div class="col-md-6 mb-3">{{ form.reinstatement_valuation_date.label(class="form-label") }} {{ form.reinstatement_valuation_date(class="form-control") }}</div>
+        </div>
+
+        <hr class="my-4 border-secondary">
+
+        <!-- Assignments -->
+        <h5 class="mt-4">👥 Assignments</h5>
+        <div class="row">
+          <div class="col-md-4 mb-4">
+            {{ select_with_placeholder(form.assigned_pm_id, 'Property Manager') }}
+            <small class="text-muted d-block mt-1">Leave as “  Select  ” to keep unassigned.</small>
+          </div>
+          <div class="col-md-4 mb-4">
+            {{ select_with_placeholder(form.assigned_fc_id, 'Financial Controller') }}
+            <small class="text-muted d-block mt-1">Optional; for approvals & finance flow.</small>
+          </div>
+          <div class="col-md-4 mb-4">
+            {{ select_with_placeholder(form.assigned_assistant_id, 'Assistant') }}
+            <small class="text-muted d-block mt-1">Optional support role for day‑to‑day tasks.</small>
+          </div>
+        </div>
+
+        <!-- Upload + AI Fields -->
+        <h5 class="mt-4">🧠 AI Document Upload</h5>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            {{ form.document_file.label(class="form-label") }}
+            {{ form.document_file(class="form-control") }}
+          </div>
+
+          <div class="col-md-6 mb-3">
+            {{ form.capex_status.label(class="form-label") }}
+            {{ form.capex_status(class="form-select") }}
+            <small class="text-muted">
+              Track the CAPEX profile setup state. Full CAPEX planning is completed after onboarding.
+            </small>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            {{ form.ownership_types.label(class="form-label") }}
+            {{ form.ownership_types(class="form-select", multiple=True) }}
+          </div>
+
+          <div class="col-12 mb-3">
+            {{ form.ai_key_clauses.label(class="form-label") }}
+            {{ form.ai_key_clauses(class="form-control", rows=4) }}
+          </div>
+        </div>
+
+        <hr class="my-4 border-secondary">
+
+        <!-- GAR -->
+        <h5 class="mt-4">💬 GAR Monitoring</h5>
+        <div class="row">
+          <div class="col-md-4 mb-3 d-flex align-items-center">
+            {{ form.is_gar_monitored(class="form-check-input me-2") }}
+            {{ form.is_gar_monitored.label(class="form-check-label mb-0") }}
+          </div>
+          <div class="col-md-4 mb-3 d-flex align-items-center">
+            {{ form.gar_chat_ready(class="form-check-input me-2") }}
+            {{ form.gar_chat_ready.label(class="form-check-label mb-0") }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.gar_resolution_status.label(class="form-label") }}
+            {{ form.gar_resolution_status(class="form-select") }}
+          </div>
+        </div>
+
+        <hr class="my-4 border-secondary">
+
+        <!-- 🚗 Car Parking (Coming Soon) -->
+        <h5 class="mt-4">🚗 Car Parking</h5>
+        <div class="alert alert-secondary text-sm">
+          Fields for number of spaces, allocation type, and EV charging will be added once model support is live.
+        </div>
+
+        <div class="mt-4">
+          <button type="submit" class="btn btn-primary">💾 Save Client</button>
+          <a href="{{ url_for('super_admin.manage_clients') }}" class="btn btn-secondary">↩ Back to Clients</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Live-updating postal label + client type options + ownership suggestions when Country changes
+  (function () {
+    const countryEl = document.getElementById('countryField');
+    const postalLabelEl = document.getElementById('postalLabel');
+    const clientTypeEl = document.getElementById('{{ form.client_type.id }}');
+    const ownershipDatalistId = 'ownershipSuggestions';
+    const ownershipDatalistEl = document.getElementById(ownershipDatalistId);
+
+    if (!countryEl) return;
+
+    function norm(v){ return (v || '').toLowerCase().trim(); }
+
+    function postalFor(country) {
+      const c = norm(country);
+      if (['ireland','ie','republic of ireland'].includes(c)) return 'Eircode';
+      if (['united kingdom','uk','great britain','england','scotland','wales','northern ireland'].includes(c)) return 'Postcode';
+      if (['united states','united states of america','usa','us'].includes(c)) return 'ZIP Code';
+      if (['canada','ca','singapore','sg','hong kong','hk','hong kong sar'].includes(c)) return 'Postal Code';
+      if (['australia','au','new zealand','nz'].includes(c)) return 'Postcode';
+      if (['united arab emirates','uae','u.a.e','dubai','abu dhabi','sharjah','ajman','umm al-quwain','ras al khaimah','fujairah'].includes(c)) return 'PO Box';
+      // broad EU default
+      const eu = ['austria','belgium','bulgaria','croatia','cyprus','czech republic','czechia','denmark','estonia','finland','france','germany','greece','hungary','iceland','italy','latvia','lithuania','luxembourg','malta','netherlands','norway','poland','portugal','romania','slovakia','slovenia','spain','sweden','switzerland'];
+      if (eu.includes(c)) return 'Postal Code';
+      return 'Postal Code';
+    }
+
+    function mgmtTypesFor(country) {
+      const c = norm(country);
+      if (['ireland','ie','republic of ireland'].includes(c)) return ['Owner Management Company (OMC)'];
+      if (['united kingdom','uk','great britain','england','wales'].includes(c)) return ['Resident Management Company (RMC)', 'Right to Manage (RTM)'];
+      if (['scotland'].includes(c)) return ['Property Factor', 'Owners’ Association'];
+      if (['northern ireland'].includes(c)) return ['Management Company', 'Owners’ Association'];
+      if (['united states','united states of america','usa','us'].includes(c)) return ['Homeowners Association (HOA)', 'Condominium Association', 'Co-op Board'];
+      if (['canada','ca'].includes(c)) return ['Condominium Corporation (Strata)', 'HOA'];
+      if (['australia','au'].includes(c)) return ['Owners Corporation', 'Strata Scheme', 'Community Title Scheme'];
+      if (['new zealand','nz'].includes(c)) return ['Body Corporate', 'Incorporated Society'];
+      if (['singapore','sg'].includes(c)) return ['Management Corporation Strata Title (MCST)'];
+      if (['hong kong','hk','hong kong sar'].includes(c)) return ['Owners’ Corporation'];
+      if (['united arab emirates','uae','u.a.e','dubai','abu dhabi','sharjah','ajman','umm al-quwain','ras al khaimah','fujairah'].includes(c)) return ['Jointly Owned Property (JOP) Association', 'Owners’ Association'];
+      const eu = ['austria','belgium','bulgaria','croatia','cyprus','czech republic','czechia','denmark','estonia','finland','france','germany','greece','hungary','iceland','italy','latvia','lithuania','luxembourg','malta','netherlands','norway','poland','portugal','romania','slovakia','slovenia','spain','sweden','switzerland'];
+      if (eu.includes(c)) return ['Owners’ Association', 'Management Company'];
+      return ['Management Company', 'Owners’ Association'];
+    }
+
+    function ownershipTypesFor(country) {
+      const c = norm(country);
+      if (['ireland','ie','republic of ireland','united kingdom','uk','great britain','england','scotland','wales','northern ireland'].includes(c)) return ['Freehold','Leasehold','Share of Freehold'];
+      if (['united states','united states of america','usa','us'].includes(c)) return ['Freehold','Condominium','Co-op'];
+      if (['canada','ca'].includes(c)) return ['Freehold','Condominium (Strata)','Leasehold'];
+      if (['australia','au'].includes(c)) return ['Freehold','Strata Title','Community Title'];
+      if (['new zealand','nz'].includes(c)) return ['Freehold','Unit Title','Leasehold'];
+      if (['singapore','sg'].includes(c)) return ['Freehold','Leasehold','Strata'];
+      if (['hong kong','hk','hong kong sar'].includes(c)) return ['Leasehold','Strata'];
+      if (['united arab emirates','uae','u.a.e','dubai','abu dhabi','sharjah','ajman','umm al-quwain','ras al khaimah','fujairah'].includes(c)) return ['Freehold','Leasehold','Strata'];
+      const eu = ['austria','belgium','bulgaria','croatia','cyprus','czech republic','czechia','denmark','estonia','finland','france','germany','greece','hungary','iceland','italy','latvia','lithuania','luxembourg','malta','netherlands','norway','poland','portugal','romania','slovakia','slovenia','spain','sweden','switzerland'];
+      if (eu.includes(c)) return ['Freehold','Leasehold'];
+      return ['Freehold','Leasehold'];
+    }
+
+    function refreshForCountry() {
+      const val = countryEl.value;
+
+      // Postal label
+      if (postalLabelEl) postalLabelEl.textContent = postalFor(val);
+
+      // Client Type options
+      if (clientTypeEl) {
+        const opts = mgmtTypesFor(val);
+        clientTypeEl.innerHTML = '';
+        opts.forEach(text => {
+          const opt = document.createElement('option');
+          opt.value = text;
+          opt.textContent = text;
+          clientTypeEl.appendChild(opt);
+        });
+      }
+
+      // Ownership datalist suggestions
+      if (ownershipDatalistEl) {
+        const types = ownershipTypesFor(val);
+        ownershipDatalistEl.innerHTML = '';
+        types.forEach(t => {
+          const o = document.createElement('option');
+          o.value = t;
+          ownershipDatalistEl.appendChild(o);
+        });
+      }
+    }
+
+    countryEl.addEventListener('change', refreshForCountry);
+    // run once on load
+    refreshForCountry();
+  })();
+</script>
+
+<script>
+  // Strip commas/spaces from Contract Value on submit
+  (function () {
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('form').forEach(function (form) {
+        form.addEventListener('submit', function () {
+          var cv = form.querySelector('[name="contract_value"]');
+          if (cv && typeof cv.value === 'string') {
+            cv.value = cv.value.replace(/[, ]+/g, '').trim();
+          }
+        }, { passive: true });
+      });
+    });
+  })();
+</script>
+{% endblock %}

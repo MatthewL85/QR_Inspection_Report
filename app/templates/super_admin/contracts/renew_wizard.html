@@ -1,0 +1,244 @@
+{% extends 'layouts/super_admin_base.html' %}
+{% block page_content %}
+<div class="container-fluid py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">📝 Contract Renewal — {{ client.name }}</h4>
+    <a href="{{ url_for('super_admin.view_client', client_id=client.id) }}" class="btn btn-outline-secondary">
+      ⬅ Back to Client
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+
+      <!-- Progress / Steps -->
+      <ul class="nav nav-pills mb-3">
+        <li class="nav-item"><span class="nav-link {{ 'active' if step==1 else '' }}">1. Template</span></li>
+        <li class="nav-item"><span class="nav-link {{ 'active' if step==2 else '' }}">2. Details</span></li>
+        <li class="nav-item"><span class="nav-link {{ 'active' if step==3 else '' }}">3. Preview & Send</span></li>
+      </ul>
+
+      {# ---------------------- STEP 1: CHOOSE TEMPLATE ---------------------- #}
+      {% if step == 1 %}
+      <form method="post" class="mt-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+        {% if latest_versions %}
+          <div class="table-responsive">
+            <table class="table align-items-center">
+              <thead>
+                <tr>
+                  <th>Template</th>
+                  <th>Version</th>
+                  <th>Jurisdiction</th>
+                  <th>Authority</th>
+                  <th class="text-end">Select</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for tpl, ver in latest_versions %}
+                <tr>
+                  <td>
+                    <div class="fw-semibold">{{ tpl.name }}</div>
+                    {% if tpl.description %}<small class="text-muted">{{ tpl.description }}</small>{% endif %}
+                  </td>
+                  <td>{{ ver.version_label }}</td>
+                  <td>{{ tpl.jurisdiction }}</td>
+                  <td>{{ tpl.authority or '—' }}</td>
+                  <td class="text-end">
+                    <div class="form-check d-inline-block">
+                      <input class="form-check-input" type="radio" name="template_version_id" value="{{ ver.id }}" id="tv_{{ ver.id }}">
+                      <label class="form-check-label" for="tv_{{ ver.id }}">Use</label>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mt-3">
+            <button class="btn btn-primary">Continue</button>
+          </div>
+        {% else %}
+          <div class="alert alert-warning mb-0">
+            No active templates found for this jurisdiction. Seed or create a template first.
+          </div>
+        {% endif %}
+      </form>
+      {% endif %}
+
+      {# ---------------------- STEP 2: SCHEMA-DRIVEN DETAILS ---------------- #}
+      {% if step == 2 %}
+        {% from 'super_admin/contracts/_form_schema.html' import render_sections %}
+        <form method="post" class="mt-3" id="dynamicSchemaForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+          {% if schema and schema.sections %}
+            {{ render_sections(schema, form_values or {}, errors or {}) }}
+            <div class="mt-4 d-flex gap-2">
+              <button class="btn btn-primary">Continue</button>
+              <a href="{{ url_for('super_admin.view_client', client_id=client.id) }}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+          {% else %}
+            <div class="alert alert-warning">
+              This template version has no form schema. Please add <code>form_schema</code> on the template version.
+            </div>
+          {% endif %}
+        </form>
+      {% endif %}
+
+      {# ---------------------- STEP 3: PREVIEW & SEND ----------------------- #}
+      {% if step == 3 %}
+        <div class="alert alert-info">
+          Preview generated. HTML/PDF artifacts have been created for this draft.
+        </div>
+
+        <dl class="row">
+          <dt class="col-sm-3">Contract Value</dt>
+          <dd class="col-sm-9">
+            {{ contract.currency }} {{ "{:,.2f}".format(contract.contract_value) }}
+            <!-- ✎ inline edit -->
+            <button
+              class="btn btn-sm btn-link p-0 ms-2"
+              data-bs-toggle="modal"
+              data-bs-target="#inlineEditModal"
+              data-path="fees.base_ex_vat"
+              data-label="Base Fee (ex VAT)"
+              data-type="number"
+              data-current="{{ '{:.2f}'.format(contract.contract_value|float) }}"
+            >✎ Edit</button>
+          </dd>
+
+          <dt class="col-sm-3">Period</dt>
+          <dd class="col-sm-9">
+            {{ contract.start_date }} → {{ contract.end_date }}
+            <!-- ✎ inline edit (start) -->
+            <button
+              class="btn btn-sm btn-link p-0 ms-2"
+              data-bs-toggle="modal"
+              data-bs-target="#inlineEditModal"
+              data-path="term.start"
+              data-label="Start Date"
+              data-type="date"
+              data-current="{{ contract.start_date.isoformat() if contract.start_date }}"
+            >✎</button>
+            <!-- ✎ inline edit (end) -->
+            <button
+              class="btn btn-sm btn-link p-0 ms-2"
+              data-bs-toggle="modal"
+              data-bs-target="#inlineEditModal"
+              data-path="term.end"
+              data-label="End Date"
+              data-type="date"
+              data-current="{{ contract.end_date.isoformat() if contract.end_date }}"
+            >✎</button>
+          </dd>
+
+          <dt class="col-sm-3">Next Fee Increase</dt>
+          <dd class="col-sm-9">{{ contract.next_fee_increase_date or '—' }}</dd>
+        </dl>
+
+        {% if contract.additional_fees %}
+          <h6>Additional Charges</h6>
+          <div class="mb-3">
+            {% set fees = contract.fees_dict() %}
+            {% for name, amt in fees.items() %}
+              <span class="badge bg-light text-dark border me-1 mb-1">
+                {{ name }}: {{ contract.currency }} {{ "{:,.2f}".format(amt) }}
+              </span>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          {% if html_url %}
+            <a class="btn btn-outline-secondary" href="{{ html_url }}" target="_blank">Open HTML</a>
+          {% endif %}
+          {% if pdf_url %}
+            <a class="btn btn-outline-secondary" href="{{ pdf_url }}" target="_blank">Open PDF</a>
+          {% else %}
+            <span class="text-muted align-self-center">PDF not generated (renderer not installed).</span>
+          {% endif %}
+          <!-- Back & Edit to Step 2 (rehydrates the form) -->
+          <a class="btn btn-outline-primary"
+             href="{{ url_for('super_admin_contracts.renew', client_id=client.id, step=2, tv_id=contract.template_version_id) }}">
+            ← Back & Edit
+          </a>
+          <!-- ✅ Check for newer template version -->
+          <a class="btn btn-outline-info"
+             href="{{ url_for('super_admin_contracts.contracts_check_update', contract_id=contract.id) }}">
+            Check for newer template
+          </a>
+        </div>
+
+        <form method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button class="btn btn-success">Send for e-signature</button>
+          <a href="{{ url_for('super_admin.view_client', client_id=client.id) }}" class="btn btn-outline-secondary ms-2">Finish</a>
+        </form>
+
+        {# -------- Inline Edit Modal (kept inside Step 3 so `contract` exists) -------- #}
+        <div class="modal fade" id="inlineEditModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <form class="modal-content" method="post" action="{{ url_for('super_admin_contracts.contracts_inline_update', contract_id=contract.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <input type="hidden" name="json_path" id="jsonPathInput">
+              <div class="modal-header">
+                <h5 class="modal-title" id="inlineEditLabel">Edit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div id="inlineEditField"></div>
+                <div class="form-text">Saving updates the contract and regenerates the preview/PDF.</div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn btn-primary">Save</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    // Only bind if the Step-3 inline edit modal exists on the page
+    const modal = document.getElementById('inlineEditModal');
+    if (!modal) return;
+
+    modal.addEventListener('show.bs.modal', (ev) => {
+      const btn   = ev.relatedTarget;
+      const path  = btn.getAttribute('data-path');
+      const label = btn.getAttribute('data-label') || 'Edit';
+      const type  = btn.getAttribute('data-type') || 'text';
+      const current = btn.getAttribute('data-current') || '';
+
+      const titleEl = document.getElementById('inlineEditLabel');
+      const pathEl  = document.getElementById('jsonPathInput');
+      const field   = document.getElementById('inlineEditField');
+      if (!titleEl || !pathEl || !field) return;
+
+      titleEl.textContent = label;
+      pathEl.value = path;
+
+      field.innerHTML = '';
+      const input = document.createElement('input');
+      input.name = 'value';
+      input.className = 'form-control';
+      input.type = type;
+      if (type === 'number') { input.step = '0.01'; input.min = '0'; }
+      if (current) input.value = current;
+      field.appendChild(input);
+    });
+  })();
+</script>
+{% endblock %}

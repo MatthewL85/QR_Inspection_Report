@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white d-flex align-items-center justify-content-between">
+          <h5 class="mb-0">Contract Audits</h5>
+          <a href="javascript:history.back()" class="btn btn-sm btn-outline-secondary">Back</a>
+        </div>
+
+        <div class="card-body">
+          <form class="row g-2 mb-3" method="get">
+            <div class="col-sm-2">
+              <label class="form-label">Contract ID</label>
+              <input type="number" name="contract_id" value="{{ filters.contract_id or '' }}" class="form-control" placeholder="e.g. 42">
+            </div>
+            <div class="col-sm-2">
+              <label class="form-label">Action</label>
+              <select name="action" class="form-select">
+                <option value="">All</option>
+                {% for a in actions %}
+                  <option value="{{ a }}" {% if filters.action == a %}selected{% endif %}>{{ a }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-sm-2">
+              <label class="form-label">Actor ID</label>
+              <input type="number" name="actor_id" value="{{ filters.actor_id or '' }}" class="form-control">
+            </div>
+            <div class="col-sm-2">
+              <label class="form-label">Per Page</label>
+              <select name="per_page" class="form-select">
+                {% for n in [10,25,50,100] %}
+                  <option value="{{ n }}" {% if filters.per_page == n %}selected{% endif %}>{{ n }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-sm-4 d-flex align-items-end">
+              <button class="btn btn-primary me-2">Filter</button>
+              {# Keep super_admin_audits.list because your route blueprint is super_admin_audits with endpoint "list" #}
+              <a href="{{ url_for('super_admin_audits.list') }}" class="btn btn-outline-secondary">Reset</a>
+            </div>
+          </form>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>ID</th>
+                  <th>Date/Time (UTC)</th>
+                  <th>Action</th>
+                  <th>Contract</th>
+                  <th>Actor</th>
+                  <th>Delta</th>
+                  <th>JSON</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for a in audits.items %}
+                  <tr>
+                    <td class="text-muted">{{ a.id }}</td>
+                    <td>{{ a.happened_at.strftime("%Y-%m-%d %H:%M:%S") if a.happened_at }}</td>
+                    <td>
+                      <span class="badge bg-info text-dark text-uppercase">{{ a.action }}</span>
+                    </td>
+                    <td>
+                      {# If your route preloads ClientContract objects into contract_map #}
+                      {% set c = contract_map.get(a.contract_id) %}
+                      {% if c %}
+                        <span class="fw-semibold">#{{ c.id }}</span>
+                        {# Prefer showing the client/site name under it, if available #}
+                        {% if c.client and c.client.name %}
+                          <small class="text-muted d-block">{{ c.client.name }}</small>
+                        {% endif %}
+                      {% else %}
+                        #{{ a.contract_id }}
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% set u = actor_map.get(a.actor_id) %}
+                      {% if u %}
+                        <span class="fw-semibold">{{ u.full_name or u.name or u.email }}</span>
+                        <small class="text-muted d-block">#{{ u.id }}</small>
+                      {% else %}
+                        {% if a.actor_id %}#{{ a.actor_id }}{% else %}<span class="text-muted">System</span>{% endif %}
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% set keys = changed_by_id.get(a.id) %}
+                      {% if keys %}
+                        {% for k in keys[:3] %}
+                          <span class="badge bg-secondary">{{ k }}</span>
+                        {% endfor %}
+                        {% if keys|length > 3 %}
+                          <span class="badge bg-secondary">+{{ keys|length - 3 }}</span>
+                        {% endif %}
+                      {% else %}
+                        <span class="text-muted">—</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <button
+                        class="btn btn-sm btn-outline-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#jsonModal{{ a.id }}">
+                        View
+                      </button>
+
+                      <!-- Modal -->
+                      <div class="modal fade" id="jsonModal{{ a.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h6 class="modal-title">Audit #{{ a.id }} JSON</h6>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                              <div class="row">
+                                <div class="col-md-6">
+                                  <h6 class="text-muted">Before</h6>
+                                  <pre class="bg-light p-3 rounded"><code>{{ a.before_data | tojson(indent=2) }}</code></pre>
+                                </div>
+                                <div class="col-md-6">
+                                  <h6 class="text-muted">After</h6>
+                                  <pre class="bg-light p-3 rounded"><code>{{ a.after_data | tojson(indent=2) }}</code></pre>
+                                </div>
+                              </div>
+                              {% if a.notes %}
+                                <p class="mt-3"><strong>Notes:</strong> {{ a.notes }}</p>
+                              {% endif %}
+                            </div>
+                            <div class="modal-footer">
+                              <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <nav class="mt-3">
+            <ul class="pagination mb-0">
+              <li class="page-item {% if not audits.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('super_admin_audits.list', page=audits.prev_num, **filters) }}">Prev</a>
+              </li>
+              {% for p in range(1, audits.pages + 1) %}
+                <li class="page-item {% if p == audits.page %}active{% endif %}">
+                  <a class="page-link" href="{{ url_for('super_admin_audits.list', page=p, **filters) }}">{{ p }}</a>
+                </li>
+              {% endfor %}
+              <li class="page-item {% if not audits.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('super_admin_audits.list', page=audits.next_num, **filters) }}">Next</a>
+              </li>
+            </ul>
+          </nav>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

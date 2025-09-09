@@ -22,7 +22,7 @@ class WorkOrderCompletion(db.Model):
     confirmed_by_admin_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 
     # 🔁 Relationships
-    work_order = db.relationship('WorkOrder', backref='completion', uselist=False)
+    work_order = db.relationship('WorkOrder', back_populates='completion', uselist=False)
     completed_by = db.relationship('User', foreign_keys=[completed_by_id])
     contractor = db.relationship('Contractor', backref='completed_work_orders')
     assigned_user = db.relationship('User', foreign_keys=[assigned_user_id])

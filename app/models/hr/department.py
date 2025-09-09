@@ -47,7 +47,7 @@ class Department(db.Model):
 
     # 🔁 Relationships
     manager = db.relationship("User", foreign_keys=[manager_id], backref="managed_departments")
-    employees = db.relationship("HRProfile", backref="department", lazy=True)
+    employees = db.relationship('HRProfile', back_populates='department', cascade='all, delete-orphan')
 
     def __repr__(self):
         return f"<Department {self.name} (ID: {self.id})>"

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Super Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="row">
+    <div class="col-12 mb-4">
+      <div class="card">
+        <div class="card-header pb-0">
+          <h4>Welcome, {{ session['user']['name'] }}</h4>
+          <p class="mb-0 text-sm">You are logged in as <strong>Super Admin</strong></p>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Tile 1 -->
+            <div class="col-md-3 mb-3">
+              <div class="card card-plain shadow-sm border">
+                <div class="card-body text-center">
+                  <i class="material-icons text-success md-48">supervisor_account</i>
+                  <h6 class="mt-3">Manage Users</h6>
+                  <a href="{{ url_for('super_admin.manage_users') }}" class="btn btn-sm btn-outline-success mt-2">Go</a>
+                </div>
+              </div>
+            </div>
+            <!-- More tiles will be added later -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

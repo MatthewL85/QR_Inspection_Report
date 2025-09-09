@@ -1,0 +1,125 @@
+{% extends 'layouts/super_admin_base.html' %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">🏢 Manage Clients</h4>
+    <div>
+      <a href="{{ url_for('super_admin.add_client') }}" 
+         class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1">
+        <i class="material-icons" style="font-size:16px; line-height:1">add</i>
+        <span>Add New Client</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body px-0 pt-0 pb-2">
+      <div class="table-responsive p-3">
+        <table class="table align-items-center mb-0">
+          <thead>
+            <tr>
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Client Name</th>
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Client Code</th>
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Address</th>
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Contacts</th>
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Property Manager</th>
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Financial Controller</th>  {# NEW #}
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Assistant</th>            {# NEW #}
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for client in clients %}
+            <tr>
+              <td>{{ client.name }}</td>
+              <td>{{ client.client_code or '—' }}</td>
+              <td>{{ client.address }}</td>
+              <td>
+                {% if client.contacts %}
+                  <ul class="mb-0 ps-3">
+                    {% for contact in client.contacts %}
+                      <li>
+                        <strong>{{ contact.name }}</strong><br>
+                        {% if contact.email %}📧 <a href="mailto:{{ contact.email }}">{{ contact.email }}</a><br>{% endif %}
+                        {% if contact.phone %}📞 {{ contact.phone }}{% endif %}
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+
+              {# PM column — safe before/after migration #}
+              <td>
+                {% if hasattr(client, 'assigned_pm') and client.assigned_pm %}
+                  {{ (client.assigned_pm.full_name or (client.assigned_pm.first_name ~ ' ' ~ client.assigned_pm.last_name)).strip() }}
+                {% elif hasattr(client, 'property_manager') and client.property_manager and client.property_manager.full_name %}
+                  {{ client.property_manager.full_name }}
+                {% elif hasattr(client, 'assigned_pm_id') and client.assigned_pm_id %}
+                  #{{ client.assigned_pm_id }}
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+
+              {# Financial Controller — NEW; safe before/after migration #}
+              <td>
+                {% if hasattr(client, 'assigned_fc') and client.assigned_fc %}
+                  {{ (client.assigned_fc.full_name or (client.assigned_fc.first_name ~ ' ' ~ client.assigned_fc.last_name)).strip() }}
+                {% elif hasattr(client, 'assigned_fc_id') and client.assigned_fc_id %}
+                  #{{ client.assigned_fc_id }}
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+
+              {# Assistant — NEW; safe before/after migration #}
+              <td>
+                {% if hasattr(client, 'assigned_assistant') and client.assigned_assistant %}
+                  {{ (client.assigned_assistant.full_name or (client.assigned_assistant.first_name ~ ' ' ~ client.assigned_assistant.last_name)).strip() }}
+                {% elif hasattr(client, 'assigned_assistant_id') and client.assigned_assistant_id %}
+                  #{{ client.assigned_assistant_id }}
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+
+              <td class="text-end">
+                <div class="actions d-inline-flex flex-wrap justify-content-end gap-2">
+                  <a href="{{ url_for('super_admin.view_client', client_id=client.id) }}" 
+                     class="btn btn-sm btn-outline-info">👁️ View</a>
+                  <a href="{{ url_for('super_admin.edit_client', client_id=client.id) }}" 
+                     class="btn btn-sm btn-outline-primary">✏️ Edit</a>
+
+                  {# Assign buttons — all point to Edit (anchor) unless you have dedicated routes #}
+                  <a href="{{ url_for('super_admin.edit_client', client_id=client.id) }}#assignments" 
+                     class="btn btn-sm btn-outline-secondary">👤 Assign PM</a>
+                  <a href="{{ url_for('super_admin.edit_client', client_id=client.id) }}#assignments" 
+                     class="btn btn-sm btn-outline-dark">💰 Assign FC</a>
+                  <a href="{{ url_for('super_admin.edit_client', client_id=client.id) }}#assignments" 
+                     class="btn btn-sm btn-outline-secondary">🧰 Assign Assistant</a>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="8" class="text-center text-muted">No clients found.</td> {# updated colspan #}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <a href="{{ url_for('super_admin.dashboard') }}" class="btn btn-secondary">
+      ⬅ Back to Dashboard
+    </a>
+  </div>
+
+</div>
+{% endblock %}

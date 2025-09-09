@@ -1,0 +1,83 @@
+{# app/templates/macros/jurisdiction.html #}
+{% macro _norm(x) -%}{{ (x or '')|lower|trim }}{%- endmacro %}
+
+{% macro currency_for(country) -%}
+  {%- set c = _norm(country) -%}
+  {%- if c in ['ireland','ie','republic of ireland'] -%}EUR
+  {%- elif c in ['united kingdom','uk','great britain','england','scotland','wales','northern ireland'] -%}GBP
+  {%- elif c in ['united states','united states of america','usa','us'] -%}USD
+  {%- elif c in ['canada','ca'] -%}CAD
+  {%- elif c in ['australia','au'] -%}AUD
+  {%- elif c in ['new zealand','nz'] -%}NZD
+  {%- elif c in ['singapore','sg'] -%}SGD
+  {%- elif c in ['hong kong','hk','hong kong sar'] -%}HKD
+  {%- elif c in ['united arab emirates','uae','u.a.e','dubai','abu dhabi','sharjah','ajman','umm al-quwain','ras al khaimah','fujairah'] -%}AED
+  {%- elif c in [
+    'austria','belgium','croatia','cyprus','estonia','finland','france','germany','greece',
+    'italy','latvia','lithuania','luxembourg','malta','netherlands','portugal','slovakia','slovenia','spain'
+  ] -%}EUR
+  {%- elif c in ['denmark'] -%}DKK
+  {%- elif c in ['norway'] -%}NOK
+  {%- elif c in ['sweden'] -%}SEK
+  {%- elif c in ['switzerland'] -%}CHF
+  {%- else -%}{% endif -%}
+{%- endmacro %}
+
+{% macro timezone_for(country) -%}
+  {%- set c = _norm(country) -%}
+  {%- if c in ['ireland','ie','republic of ireland','united kingdom','uk','great britain','england','scotland','wales','northern ireland'] -%}Europe/Dublin
+  {%- elif c in ['united states','united states of america','usa','us'] -%}America/New_York
+  {%- elif c in ['canada','ca'] -%}America/Toronto
+  {%- elif c in ['australia','au'] -%}Australia/Sydney
+  {%- elif c in ['new zealand','nz'] -%}Pacific/Auckland
+  {%- elif c in ['united arab emirates','uae','u.a.e','dubai','abu dhabi','sharjah','ajman','umm al-quwain','ras al khaimah','fujairah'] -%}Asia/Dubai
+  {%- else -%}{% endif -%}
+{%- endmacro %}
+
+{% macro language_for(country) -%}
+  {%- set c = _norm(country) -%}
+  {%- if c in ['ireland','ie','republic of ireland','united kingdom','uk','great britain','england','scotland','wales','northern ireland'] -%}English
+  {%- elif c in ['united states','united states of america','usa','us'] -%}English
+  {%- elif c in ['canada','ca'] -%}English/French
+  {%- elif c in ['australia','au'] -%}English
+  {%- elif c in ['new zealand','nz'] -%}English
+  {%- elif c in ['singapore','sg'] -%}English
+  {%- elif c in ['hong kong','hk','hong kong sar'] -%}English/Chinese
+  {%- elif c in ['united arab emirates','uae','u.a.e'] -%}English/Arabic
+  {%- else -%}{% endif -%}
+{%- endmacro %}
+
+{# NEW: dynamic label for the region field #}
+{% macro region_label(country) -%}
+  {%- set c = _norm(country) -%}
+  {%- if c in ['canada','ca'] -%}Province
+  {%- elif c in ['united states','united states of america','usa','us'] -%}State
+  {%- elif c in ['united arab emirates','uae','u.a.e'] -%}Emirate
+  {%- elif c in ['australia','au'] -%}State/Territory
+  {%- elif c in ['united kingdom','uk','great britain'] -%}County/Region
+  {%- elif c in ['england'] -%}County
+  {%- elif c in ['scotland'] -%}Council Area
+  {%- elif c in ['wales'] -%}County
+  {%- elif c in ['northern ireland'] -%}County
+  {%- else -%}Region{%- endif -%}
+{%- endmacro %}
+
+{# NEW: GDPR helpers #}
+{% macro gdpr_required(country) -%}
+  {%- set c = _norm(country) -%}
+  {%- set list = [
+    'ireland','ie','united kingdom','uk','england','scotland','wales','northern ireland',
+    'austria','belgium','bulgaria','croatia','cyprus','czech republic','czechia','denmark','estonia','finland','france',
+    'germany','greece','hungary','iceland','italy','latvia','lithuania','luxembourg','malta','netherlands','norway',
+    'poland','portugal','romania','slovakia','slovenia','spain','sweden','switzerland'
+  ] -%}
+  {{- c in list -}}
+{%- endmacro %}
+
+{% macro gdpr_hint(country) -%}
+  {%- if gdpr_required(country) -%}
+    GDPR/DP compliance required in this jurisdiction.
+  {%- else -%}
+    Local data protection rules may apply.
+  {%- endif -%}
+{%- endmacro %}

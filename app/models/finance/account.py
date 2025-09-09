@@ -14,7 +14,7 @@ class Account(db.Model):
 
     client = db.relationship("Client", backref="accounts")
     unit = db.relationship("Unit", backref="accounts")
-    finance_batch = db.relationship("FinanceBatch", backref="accounts")
+    finance_batch = db.relationship('FinanceBatch', back_populates='linked_accounts')
 
     # 📘 Account Details
     account_name = db.Column(db.String(150), nullable=False)

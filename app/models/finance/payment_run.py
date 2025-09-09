@@ -53,7 +53,7 @@ class PaymentRun(db.Model):
     # 🔗 Relationships
     client = db.relationship('Client', backref='payment_runs')
     created_by = db.relationship('User', foreign_keys=[created_by_id])
-    invoices = db.relationship('Invoice', backref='payment_run', lazy=True)
+    invoices = db.relationship('Invoice', back_populates='payment_run', lazy='dynamic')
 
     def __repr__(self):
         return f"<PaymentRun {self.run_name} | Client ID: {self.client_id}>"

@@ -7,15 +7,15 @@ class Role(db.Model):
     __tablename__ = 'roles'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True, nullable=False)  # e.g., SuperAdmin, Admin, Contractor, PM, Staff, Director
+    name = db.Column(db.String(50), unique=True, nullable=False)
 
-    # 🔁 Core Relationships
     users = db.relationship(
-        'User',
-        foreign_keys='User.role_id',  # ✅ Explicit to prevent ambiguity
+        'User',  # ✅ string reference to avoid circular import
+        foreign_keys='User.role_id',
         back_populates='role',
         lazy=True
     )
+
     permissions = db.relationship(
         'RolePermission',
         backref='role',
@@ -50,10 +50,9 @@ class Role(db.Model):
     created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     updated_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 
-    # 👤 Admin Change Tracking (also needs foreign_keys to avoid ambiguity)
+    # 👤 Admin Change Tracking
     created_by = db.relationship('User', foreign_keys=[created_by_id])
     updated_by = db.relationship('User', foreign_keys=[updated_by_id])
 
     def __repr__(self):
         return f"<Role {self.name}>"
-

@@ -24,7 +24,7 @@
 
       <!-- Clients -->
       <li class="nav-item">
-        <a class="nav-link" href="{{ url_for('super_admin.manage_clients') }}">
+        <a class="nav-link {% if request.endpoint == 'super_admin.manage_clients' %}active{% endif %}" href="{{ url_for('super_admin.manage_clients') }}">
           <div class="icon icon-shape icon-sm text-center me-2 d-flex align-items-center justify-content-center">
             <i class="material-icons text-dark">business</i>
           </div>
@@ -34,7 +34,7 @@
 
       <!-- Users -->
       <li class="nav-item">
-        <a class="nav-link" href="{{ url_for('super_admin.manage_users') }}">
+        <a class="nav-link {% if request.endpoint == 'super_admin.manage_users' %}active{% endif %}" href="{{ url_for('super_admin.manage_users') }}">
           <div class="icon icon-shape icon-sm text-center me-2 d-flex align-items-center justify-content-center">
             <i class="material-icons text-info">people</i>
           </div>
@@ -44,7 +44,7 @@
 
       <!-- Compliance -->
       <li class="nav-item">
-        <a class="nav-link" href="{{ url_for('super_admin.compliance_documents') }}">
+        <a class="nav-link {% if request.endpoint == 'super_admin.compliance_documents' %}active{% endif %}" href="{{ url_for('super_admin.compliance_documents') }}">
           <div class="icon icon-shape icon-sm text-center me-2 d-flex align-items-center justify-content-center">
             <i class="material-icons text-success">assignment_turned_in</i>
           </div>
@@ -54,11 +54,21 @@
 
       <!-- AGMs -->
       <li class="nav-item">
-        <a class="nav-link" href="{{ url_for('super_admin.upcoming_agms') }}">
+        <a class="nav-link {% if request.endpoint == 'super_admin.upcoming_agms' %}active{% endif %}" href="{{ url_for('super_admin.upcoming_agms') }}">
           <div class="icon icon-shape icon-sm text-center me-2 d-flex align-items-center justify-content-center">
             <i class="material-icons text-warning">event</i>
           </div>
           <span class="nav-link-text ms-1">AGMs</span>
+        </a>
+      </li>
+
+      <!-- Contract Audits -->
+      <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'super_admin.contract_audits_list' %}active{% endif %}" href="{{ url_for('super_admin.contract_audits_list') }}">
+          <div class="icon icon-shape icon-sm text-center me-2 d-flex align-items-center justify-content-center">
+            <i class="material-icons text-danger">history</i>
+          </div>
+          <span class="nav-link-text ms-1">Contract Audits</span>
         </a>
       </li>
 

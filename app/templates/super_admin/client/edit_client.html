@@ -1,0 +1,511 @@
+{% extends 'layouts/super_admin_base.html' %}
+
+{% import 'macros/postal.html' as Postal %}
+{% import 'macros/ownership.html' as Own %}
+{% import 'macros/mgmt_company.html' as MC %}
+{% import 'macros/jurisdiction.html' as J %}
+{% import 'macros/tax.html' as Tax %}
+{% import 'macros/governance_data.html' as GOVDATA %}
+
+<style>
+  select.form-select { display:block!important; width:100%; }
+  select.form-select option { white-space:normal; }
+  .is-invalid{ border-color:#dc3545; }
+  .form-text-muted{ color:#6c757d; font-size:.875rem; }
+</style>
+
+{% macro select_with_placeholder(field, label_text) -%}
+  <label for="{{ field.id }}" class="form-label">{{ label_text }}</label>
+  <select id="{{ field.id }}" name="{{ field.name }}" class="form-select">
+    {% set current = (field.data if field.data is not none else 0) %}
+    {% set has_placeholder = false %}
+    {% for _val, _text in field.choices %}
+      {% if (_val in (0, '0')) and ('Select' in _text) %}
+        {% set has_placeholder = true %}
+      {% endif %}
+    {% endfor %}
+    {% if not has_placeholder %}
+      <option value="0" {% if current in (None, '', 0, '0') %}selected{% endif %}>— Select —</option>
+    {% endif %}
+    {% for val, text in field.choices %}
+      <option value="{{ val }}" {% if (current|string) == (val|string) %}selected{% endif %}>{{ text }}</option>
+    {% endfor %}
+  </select>
+{%- endmacro %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+  {{ GOVDATA.emit_loader() }}
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">✏️ Edit Client</h4>
+    <a href="{{ url_for('super_admin.manage_clients') }}" class="btn btn-outline-secondary">⬅ Back to Manage Clients</a>
+  </div>
+
+  <form method="POST" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+
+    <div class="card mb-4">
+      <div class="card-header pb-0"><strong>📇 Core Details</strong></div>
+      <div class="card-body row g-3">
+        <div class="col-md-6">
+          {{ form.name.label }} {{ form.name(class_='form-control', id='clientNameFieldEdit') }}
+        </div>
+
+        {% if form.property_name is defined %}
+        <div class="col-md-6">
+          {{ form.property_name.label }} {{ form.property_name(class_='form-control', id='propertyNameFieldEdit') }}
+        </div>
+        {% endif %}
+
+        {% if preview_client_code %}
+        <div class="col-md-6">
+          <label class="form-label">Client Code</label>
+          <input type="text" class="form-control" value="{{ preview_client_code }}" readonly>
+          <small class="text-muted">Auto-generated and not editable.</small>
+        </div>
+        {% endif %}
+
+        <div class="col-md-6">
+          {{ form.contract_value.label }}
+          {{ form.contract_value(class_='form-control', step='1', placeholder='e.g. 120000') }}
+          {% if form.contract_value.data %}
+            <small class="text-muted">Preview: {{ form.contract_value.data | int_comma }}</small>
+          {% endif %}
+        </div>
+
+        {% if form.address_line1 is defined %}
+        <div class="col-md-6">
+          {{ form.address_line1.label }} {{ form.address_line1(class_='form-control') }}
+        </div>
+        {% endif %}
+        {% if form.address_line2 is defined %}
+        <div class="col-md-6">
+          {{ form.address_line2.label }} {{ form.address_line2(class_='form-control') }}
+        </div>
+        {% endif %}
+        {% if form.city is defined %}
+        <div class="col-md-4">
+          {{ form.city.label }} {{ form.city(class_='form-control') }}
+        </div>
+        {% endif %}
+
+        <div class="col-md-4">
+          {{ form.country.label }} {{ form.country(class_='form-control', id='countryFieldEdit') }}
+        </div>
+        <div class="col-md-4">
+          <label id="regionLabelEdit" class="form-label">{{ J.region_label(form.country.data) }}</label>
+          {{ form.region(type='hidden', id='regionHiddenEdit') }}
+          <select id="regionSelectEdit" class="form-select d-none"></select>
+          <input id="regionTextEdit" type="text" class="form-control" placeholder="Region / Province / State">
+          <small class="text-muted" id="regionHelpEdit"></small>
+        </div>
+        <div class="col-md-4">
+          <label id="postalLabelEdit" class="form-label">{{ Postal.postal_label(form.country.data) }}</label>
+          {{ form.postal_code(class_='form-control') }}
+        </div>
+
+        <div class="col-md-4">
+          {{ form.currency.label }} {{ form.currency(class_='form-control', id='currencyFieldEdit', placeholder=J.currency_for(form.country.data)) }}
+        </div>
+        <div class="col-md-4">
+          {{ form.timezone.label }} {{ form.timezone(class_='form-control', id='timezoneFieldEdit', placeholder=J.timezone_for(form.country.data)) }}
+        </div>
+        <div class="col-md-4">
+          {{ form.preferred_language.label }} {{ form.preferred_language(class_='form-control', placeholder=J.language_for(form.country.data)) }}
+        </div>
+
+        {% if form.year_of_construction is defined %}
+        <div class="col-md-4">
+          {{ form.year_of_construction.label }} {{ form.year_of_construction(class_='form-control') }}
+        </div>
+        {% endif %}
+
+        <div class="col-md-4">
+          {{ form.number_of_units.label }} {{ form.number_of_units(class_='form-control', id='unitsTotalFieldEdit') }}
+        </div>
+
+        {% if form.units_apartments is defined or form.units_houses is defined or form.units_duplexes is defined or form.units_commercial is defined %}
+          <div class="col-12"></div>
+          {% if form.units_apartments is defined %}
+          <div class="col-md-3">
+            {{ form.units_apartments.label }} {{ form.units_apartments(class_='form-control unit-part-edit', id='unitsAptEdit') }}
+          </div>
+          {% endif %}
+          {% if form.units_houses is defined %}
+          <div class="col-md-3">
+            {{ form.units_houses.label }} {{ form.units_houses(class_='form-control unit-part-edit', id='unitsHouseEdit') }}
+          </div>
+          {% endif %}
+          {% if form.units_duplexes is defined %}
+          <div class="col-md-3">
+            {{ form.units_duplexes.label }} {{ form.units_duplexes(class_='form-control unit-part-edit', id='unitsDuplexEdit') }}
+          </div>
+          {% endif %}
+          {% if form.units_commercial is defined %}
+          <div class="col-md-3">
+            {{ form.units_commercial.label }} {{ form.units_commercial(class_='form-control unit-part-edit', id='unitsCommEdit') }}
+          </div>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header pb-0"><strong>📅 Governance & Compliance</strong></div>
+      <div class="card-body row g-3">
+        <div class="col-md-4">
+          <label for="{{ form.client_type.id }}" class="form-label">Client Type</label>
+          <select id="{{ form.client_type.id }}" name="{{ form.client_type.name }}" class="form-select"></select>
+        </div>
+
+        <!-- Financial Year End as DD/MM only -->
+        <div class="col-md-4">
+          {{ form.financial_year_end.label }}
+          <input type="text"
+                 id="financialYearEndEdit"
+                 name="{{ form.financial_year_end.name }}"
+                 value="{{ form.financial_year_end.data or '' }}"
+                 class="form-control"
+                 placeholder="DD/MM"
+                 inputmode="numeric"
+                 pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])$">
+          <small class="form-text-muted">Format: DD/MM (e.g. 31/12)</small>
+        </div>
+
+        <div class="col-md-4">
+          {{ form.last_agm_date.label }} {{ form.last_agm_date(class_='form-control', type='date') }}
+        </div>
+
+        <div class="col-md-4">
+          <label for="transferSelectEdit" class="form-label">Transfer of Common Area</label>
+          <select id="transferSelectEdit" class="form-select" name="transfer_of_common_area_select">
+            <option value="false" {% if not form.transfer_of_common_area.data %}selected{% endif %}>No</option>
+            <option value="true"  {% if form.transfer_of_common_area.data %}selected{% endif %}>Yes</option>
+          </select>
+          {{ form.transfer_of_common_area(type='hidden', id='transferHiddenEdit') }}
+        </div>
+        <div class="col-md-4" id="transferDateWrapEdit" style="display:none">
+          <label for="transferDateEdit" class="form-label">Transfer Completion Date</label>
+          <input type="date" id="transferDateEdit" name="transfer_of_common_area_date" class="form-control"
+                 value="{{ (form.transfer_of_common_area_date.data if form.transfer_of_common_area_date is defined) or '' }}">
+        </div>
+
+        {% if form.deed_of_covenants is defined %}
+        <div class="col-md-6">
+          {{ form.deed_of_covenants.label }} {{ form.deed_of_covenants(class_='form-control') }}
+        </div>
+        {% endif %}
+
+        {% if form.enforce_gdpr is defined %}
+        <div class="col-md-4 mt-2 d-flex align-items-center">
+          {{ form.enforce_gdpr(class="form-check-input me-2", id="enforceGdprEdit") }}
+          <label for="enforceGdprEdit" class="form-check-label mb-0">Data Protection (GDPR) Compliance</label>
+        </div>
+        <div class="col-12">
+          <small class="text-muted" id="gdprHintEdit">{{ J.gdpr_hint(form.country.data) }}</small>
+        </div>
+        {% endif %}
+
+        <div class="col-md-4">
+          <label for="{{ form.consent_to_communicate.id }}" class="form-label">Consent to Communicate</label>
+          <select id="{{ form.consent_to_communicate.id }}"
+                  name="{{ form.consent_to_communicate.name }}"
+                  class="form-select">
+            <option value="true"  {% if form.consent_to_communicate.data %}selected{% endif %}>Yes</option>
+            <option value="false" {% if not form.consent_to_communicate.data %}selected{% endif %}>No</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="px-3 pb-3" id="jurisdictionInfoEdit"></div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header pb-0"><strong>🏘️ Ownership & Location</strong></div>
+      <div class="card-body row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.ownership_type.id }}">Ownership Type</label>
+          <select id="{{ form.ownership_type.id }}" name="{{ form.ownership_type.name }}" class="form-select">
+            {% for t in Own.ownership_types_for(form.country.data).split(',') %}
+              {% set opt = t.strip() %}
+              <option value="{{ opt }}" {% if form.ownership_type.data == opt %}selected{% endif %}>{{ opt }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header pb-0"><strong>🏢 Block Structure</strong></div>
+      <div class="card-body row g-3">
+        <div class="col-md-3">
+          {{ form.min_directors.label }} {{ form.min_directors(class_='form-control') }}
+        </div>
+        <div class="col-md-3">
+          {{ form.max_directors.label }} {{ form.max_directors(class_='form-control') }}
+        </div>
+        <div class="col-md-3">
+          {{ form.number_of_blocks.label }} {{ form.number_of_blocks(class_='form-control', id='numBlocksFieldEdit') }}
+        </div>
+        <div class="col-md-3">
+          {{ form.block_names.label }} {{ form.block_names(class_='form-control', id='blockNamesFieldEdit') }}
+          <small class="text-muted">Auto-fill A,B,C… when increasing block count.</small>
+        </div>
+        <div class="col-md-6">
+          {{ form.cores_per_block.label }} {{ form.cores_per_block(class_='form-control', id='coresPerBlockFieldEdit') }}
+        </div>
+        <div class="col-md-6">
+          {{ form.apartments_per_block.label }} {{ form.apartments_per_block(class_='form-control', id='aptsPerBlockFieldEdit') }}
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header pb-0"><strong>📎 Contract Document</strong></div>
+      <div class="card-body">
+        {% set docs = (client.documents if client is defined and client is not none else []) %}
+        {% if docs and docs|length > 0 %}
+          <ul class="mb-3">
+            {% for d in docs|sort(attribute='upload_date', reverse=true) %}
+              <li>
+                <a href="{{ url_for('static', filename=d.file_path) }}" target="_blank" rel="noopener">
+                  {{ d.file_name or 'Download' }}
+                </a>
+                <small class="text-muted"> — {{ d.category or 'Document' }}{% if d.upload_date %} · {{ d.upload_date.strftime('%Y-%m-%d') }}{% endif %}</small>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted mb-3">No documents uploaded yet.</p>
+        {% endif %}
+        {{ form.document_file.label }} {{ form.document_file(class_='form-control') }}
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header pb-0"><strong>👥 Assignments</strong></div>
+      <div class="card-body row g-3">
+        <div class="col-md-4">
+          {{ select_with_placeholder(form.assigned_pm_id, 'Property Manager') }}
+          <small class="text-muted d-block mt-1">Leave as “— Select —” to keep this unassigned.</small>
+        </div>
+        <div class="col-md-4">
+          {{ select_with_placeholder(form.assigned_fc_id, 'Financial Controller') }}
+          <small class="text-muted d-block mt-1">Optional; picks up reporting & approvals flow.</small>
+        </div>
+        <div class="col-md-4">
+          {{ select_with_placeholder(form.assigned_assistant_id, 'Assistant') }}
+          <small class="text-muted d-block mt-1">Optional support role for day-to-day tasks.</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header pb-0"><strong>🧠 AI & GAR Intelligence</strong></div>
+      <div class="card-body row g-3">
+        <div class="col-md-6">
+          {{ form.ownership_types.label }} {{ form.ownership_types(class_='form-select', multiple=True) }}
+        </div>
+        <div class="col-md-6">
+          {{ form.capex_profile.label }} {{ form.capex_profile(class_='form-control') }}
+        </div>
+        <div class="col-md-6">
+          {{ form.tags.label }} {{ form.tags(class_='form-control') }}
+        </div>
+        <div class="col-md-6">
+          {{ form.ai_key_clauses.label }} {{ form.ai_key_clauses(class_='form-control', rows=3) }}
+        </div>
+
+        <div class="col-md-3 mt-2 d-flex align-items-center">
+          {{ form.is_gar_monitored(class="form-check-input me-2") }} {{ form.is_gar_monitored.label(class="form-check-label mb-0") }}
+        </div>
+        <div class="col-md-3 mt-2 d-flex align-items-center">
+          {{ form.gar_chat_ready(class="form-check-input me-2") }} {{ form.gar_chat_ready.label(class="form-check-label mb-0") }}
+        </div>
+        <div class="col-md-6">
+          {{ form.gar_resolution_status.label }} {{ form.gar_resolution_status(class_='form-select') }}
+        </div>
+
+        <div class="col-md-12">
+          {{ form.ai_governance_summary.label }} {{ form.ai_governance_summary(class_='form-control', rows=2) }}
+        </div>
+        <div class="col-md-12">
+          {{ form.ai_flagged_risks.label }} {{ form.ai_flagged_risks(class_='form-control', rows=2) }}
+        </div>
+        <div class="col-md-12">
+          {{ form.ai_advice_summary.label }} {{ form.ai_advice_summary(class_='form-control', rows=2) }}
+        </div >
+        <div class="col-md-12">
+          {{ form.ai_review_comment.label }} {{ form.ai_review_comment(class_='form-control', rows=2) }}
+        </div>
+      </div>
+    </div>
+
+    <div class="text-end">
+      <button type="submit" class="btn btn-success d-inline-flex align-items-center gap-1">
+        <i class="material-icons" style="font-size:16px; line-height:1">save</i>
+        <span>Save Changes</span>
+      </button>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/regions.js', v='103') }}"></script>
+<script src="{{ url_for('static', filename='js/juris.js',   v='1') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Ensure JURIS_DATA exists (fallback if macro didn't inject it)
+  if (!window.JURIS_DATA) {
+    fetch('{{ url_for("static", filename="data/jurisdictions.json") }}', { cache: 'no-store' })
+      .then(r => r.json()).then(d => { window.JURIS_DATA = d; window.dispatchEvent(new Event('juris:ready')); })
+      .catch(() => console.warn('jurisdictions.json not found; using defaults only'));
+  }
+
+  // Region picker — GUARD if regions.js is missing
+  if (window.RegionPicker && typeof RegionPicker.init === 'function') {
+    RegionPicker.init({
+      countrySelectorId: 'countryFieldEdit',
+      hiddenRegionId: 'regionHiddenEdit',
+      selectId: 'regionSelectEdit',
+      textId: 'regionTextEdit',
+      labelId: 'regionLabelEdit',
+      helpId: 'regionHelpEdit'
+    });
+  } else {
+    console.warn('RegionPicker not found; using basic region text input.');
+  }
+
+  // Element lookups
+  const countryEl    = document.getElementById('countryFieldEdit');
+  const regionHidden = document.getElementById('regionHiddenEdit');
+  const regionSelect = document.getElementById('regionSelectEdit');
+  const regionText   = document.getElementById('regionTextEdit');
+
+  const postalLbl    = document.getElementById('postalLabelEdit');
+  const clientTypeEl = document.getElementById('{{ form.client_type.id }}');
+  const currencyEl   = document.getElementById('currencyFieldEdit');
+  const timezoneEl   = document.getElementById('timezoneFieldEdit');
+
+  // Track manual edits (avoid overwriting user-typed values)
+  const userEdited = { currency: false, timezone: false };
+  currencyEl && currencyEl.addEventListener('input', () => userEdited.currency = true);
+  timezoneEl && timezoneEl.addEventListener('input', () => userEdited.timezone = true);
+
+  // Country-driven helpers
+  function norm(v){ return (v || '').toLowerCase().trim(); }
+  function postalFor(country) {
+    const cn = norm(country);
+    if (['ireland','ie','republic of ireland'].includes(cn)) return 'Eircode';
+    if (['uk','united kingdom','great britain','england','scotland','wales','northern ireland'].includes(cn)) return 'Postcode';
+    if (['us','usa','united states','united states of america'].includes(cn)) return 'ZIP Code';
+    const eu = ['austria','belgium','bulgaria','croatia','cyprus','czech republic','czechia','denmark','estonia','finland','france','germany','greece','hungary','iceland','italy','latvia','lithuania','luxembourg','malta','netherlands','norway','poland','portugal','romania','slovakia','slovenia','spain','sweden','switzerland'];
+    if (eu.includes(cn) || cn==='canada' || cn==='singapore' || cn==='hong kong') return 'Postal Code';
+    if (cn==='australia' || cn==='new zealand') return 'Postcode';
+    if (['uae','united arab emirates','u.a.e','dubai','abu dhabi','sharjah','ajman','umm al-quwain','ras al khaimah','fujairah'].includes(cn)) return 'PO Box';
+    return 'Postal Code';
+  }
+
+  // Hydrate dependent fields (currency, timezone, client types, labels)
+  function hydrate() {
+    const c = countryEl ? countryEl.value : '';
+    const r = regionHidden ? regionHidden.value : '';
+
+    if (postalLbl) postalLbl.textContent = postalFor(c);
+
+    // Effective jurisdiction (country → wildcard → region override)
+    const eff  = (window.Juris && window.JURIS_DATA && typeof Juris.effective === 'function')
+                   ? (Juris.effective(window.JURIS_DATA, c, r) || {})
+                   : {};
+    const fall = (window.RegionPicker && typeof RegionPicker.defaultsFor === 'function')
+                   ? (RegionPicker.defaultsFor(c) || {})
+                   : {};
+
+    // Currency & timezone
+    if (currencyEl && !userEdited.currency)  currencyEl.value  = eff.currency  || fall.currency  || '';
+    if (timezoneEl && !userEdited.timezone)  timezoneEl.value  = eff.timezone  || fall.timezone  || '';
+
+    // Client types — only rebuild if we have a list
+    if (clientTypeEl) {
+      const list = Array.isArray(eff.clientTypes) ? eff.clientTypes : [];
+      if (list.length) {
+        const preserve = clientTypeEl.value;
+        clientTypeEl.innerHTML = '';
+        list.forEach(t => {
+          const o = document.createElement('option');
+          o.value = t; o.textContent = t;
+          clientTypeEl.appendChild(o);
+        });
+        if ([...clientTypeEl.options].some(o => o.value === preserve)) clientTypeEl.value = preserve;
+      }
+    }
+  }
+
+  // Wire events
+  ['change','input'].forEach(evt => {
+    countryEl    && countryEl.addEventListener(evt, hydrate);
+    regionSelect && regionSelect.addEventListener(evt, hydrate);
+    regionText   && regionText.addEventListener(evt, hydrate);
+  });
+  if (window.addEventListener) window.addEventListener('juris:ready', hydrate);
+
+  // Initial run
+  hydrate();
+
+  // ===== Your existing logic preserved below =====
+
+  // Units breakdown → auto-sum
+  const parts = Array.from(document.querySelectorAll('.unit-part-edit'));
+  const totalEl = document.getElementById('unitsTotalFieldEdit');
+  function sumUnits(){
+    const t = parts.reduce((a,el)=> a + (parseInt((el.value||'').replace(/,/g,''),10)||0), 0);
+    if (totalEl) totalEl.value = t || '';
+  }
+  parts.forEach(el => el.addEventListener('input', sumUnits));
+  sumUnits();
+
+  // Block auto-fill
+  const numBlocksEl = document.getElementById('numBlocksFieldEdit');
+  const blockNamesEl = document.getElementById('blockNamesFieldEdit');
+  const coresEl = document.getElementById('coresPerBlockFieldEdit');
+  const aptsEl  = document.getElementById('aptsPerBlockFieldEdit');
+  function makeAlphaNames(n){
+    const names=[]; for(let i=0;i<n;i++){ let q=i,s=''; do{ s=String.fromCharCode(65+(q%26))+s; q=Math.floor(q/26)-1; }while(q>=0); names.push(s); }
+    return names.join(',');
+  }
+  function dup(val,n){ if(!val) return ''; if(val.includes(',')) return val; return Array(n).fill(val.trim()).join(','); }
+  function onBlocksChange(){
+    const n = parseInt(numBlocksEl.value||'0',10);
+    if(!isNaN(n) && n>1){
+      if(!blockNamesEl.value.trim()) blockNamesEl.value = makeAlphaNames(n);
+      if(coresEl.value.trim() && !coresEl.value.includes(',')) coresEl.value = dup(coresEl.value,n);
+      if(aptsEl.value.trim()  && !aptsEl.value.includes(','))  aptsEl.value  = dup(aptsEl.value,n);
+    }
+  }
+  numBlocksEl && numBlocksEl.addEventListener('input', onBlocksChange);
+
+  // FY End mask DD/MM
+  const fye = document.getElementById('financialYearEndEdit');
+  function formatDDMM(v){ return v.replace(/[^0-9]/g,'').slice(0,4).replace(/(^\d{2})(\d{0,2})/,(_,d,m)=> m? d+'/'+m : d); }
+  fye && fye.addEventListener('input', e=>{
+    e.target.value = formatDDMM(e.target.value);
+    e.target.classList.toggle('is-invalid', !!e.target.value && !/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])$/.test(e.target.value));
+  });
+
+  // Transfer toggle
+  const transferSelect = document.getElementById('transferSelectEdit');
+  const transferHidden = document.getElementById('transferHiddenEdit');
+  const transferDateWrap = document.getElementById('transferDateWrapEdit');
+  function syncTransfer(){
+    const val = (transferSelect && transferSelect.value) === 'true';
+    if (transferHidden) transferHidden.value = val ? 'y' : '';
+    if (transferDateWrap) transferDateWrap.style.display = val ? '' : 'none';
+  }
+  transferSelect && transferSelect.addEventListener('change', syncTransfer);
+  syncTransfer();
+});
+</script>
+{% endblock %}

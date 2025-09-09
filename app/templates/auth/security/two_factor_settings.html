@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}2FA Settings{% endblock %}
+
+{% block page_content %}
+<div class="container mt-4">
+  <h4>🛡️ Two-Factor Authentication (2FA)</h4>
+  <form method="POST">
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" id="enabled" name="enabled" {% if user.two_factor_enabled %}checked{% endif %}>
+      <label class="form-check-label" for="enabled">
+        Enable Two-Factor Authentication
+      </label>
+    </div>
+
+    <div class="mb-3">
+      <label for="method">Method</label>
+      <select class="form-select" id="method" name="method">
+        <option value="email" {% if user.two_factor_method == 'email' %}selected{% endif %}>Email</option>
+        <option value="totp" {% if user.two_factor_method == 'totp' %}selected{% endif %}>Authenticator App (TOTP)</option>
+        <option value="sms" {% if user.two_factor_method == 'sms' %}selected{% endif %}>SMS (coming soon)</option>
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Settings</button>
+  </form>
+</div>
+{% endblock %}

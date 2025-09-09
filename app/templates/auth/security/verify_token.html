@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Verify 2FA Token{% endblock %}
+
+{% block page_content %}
+<div class="container mt-4">
+  <h4>🔐 Enter Authenticator Code</h4>
+  <form method="POST">
+    <div class="mb-3">
+      <label for="token">6-digit code</label>
+      <input type="text" name="token" id="token" class="form-control" maxlength="6" required>
+    </div>
+    <button type="submit" class="btn btn-success">Verify & Enable</button>
+  </form>
+</div>
+{% endblock %}

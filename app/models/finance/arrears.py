@@ -63,7 +63,7 @@ class Arrears(db.Model):
     # ⏱ Late Fee / Penalty Log
     late_fee_logs = db.relationship(
         'LateFeeTransactionLog',
-        backref='arrears_ref',
+        back_populates="arrears",
         lazy='dynamic',
         foreign_keys='LateFeeTransactionLog.arrears_id'
     )

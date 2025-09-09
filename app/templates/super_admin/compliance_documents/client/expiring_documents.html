@@ -1,0 +1,27 @@
+{# templates/super_admin/compliance_documents/client/expiring_documents.html #}
+{% extends 'layouts/super_admin_base.html' %}
+
+{% block title %}Client Expiring Compliance Documents{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+  <h4 class="mb-4">⏳ Expiring Client Compliance Documents</h4>
+  <div class="card">
+    <div class="card-body">
+      {% if expiring_docs %}
+        <ul class="list-group">
+          {% for doc in expiring_docs %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <span>
+                <strong>{{ doc.file_name }}</strong> — expires {{ doc.expiry_date.strftime('%d %b %Y') }}
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No documents expiring within the next 30 days.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

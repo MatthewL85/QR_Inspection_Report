@@ -5,6 +5,10 @@ from app.extensions import db
 # ----------------------------
 
 from app.models.audit.audit_log import AuditLog
+from app.models.audit.profile_change_log import ProfileChangeLog
+from app.models.audit.password_change_log import PasswordChangeLog
+from app.models.audit.email_log import EmailLog
+from app.models.audit.contract_audit import ContractAudit
 
 # ----------------------------
 # Core System & Exports Models
@@ -12,7 +16,6 @@ from app.models.audit.audit_log import AuditLog
 from app.models.core.user import User
 from app.models.core.role import Role
 from app.models.core.role_permissions import RolePermission
-from app.models.core.audit import ProfileChangeLog
 from app.models.core.notification import Notification
 from app.models.core.document import Document
 from app.models.core.media_file import MediaFile
@@ -41,6 +44,13 @@ from app.models.client.board_meeting_attendee import BoardMeetingAttendee
 from app.models.client.meeting_integration import MeetingIntegration
 
 # ----------------------------
+# Contracts
+# ----------------------------
+from app.models.contracts.template import ContractTemplate
+from app.models.contracts.template_version import ContractTemplateVersion
+from app.models.contracts.client_contract import ClientContract
+
+# ----------------------------
 # Members
 # ----------------------------
 from app.models.members.member import Member
@@ -54,6 +64,7 @@ from app.models.members.tenancy import Tenancy
 # Contractor / Works
 # ----------------------------
 from app.models.contractor.contractor import Contractor
+from app.models.contractor.contractor_assignment import ContractorAssignment
 from app.models.contractor.contractor_feedback import ContractorFeedback
 from app.models.contractor.contractor_performance import ContractorPerformance
 from app.models.contractor.contractor_compliance_document import ContractorComplianceDocument
@@ -64,6 +75,7 @@ from app.models.works.work_order_setting_audit_log import WorkOrderSettingAuditL
 from app.models.works.work_order_policy import WorkOrderPolicy
 from app.models.works.quote_response import QuoteResponse
 from app.models.works.quote_recipient import QuoteRecipient
+from app.models.works.special_project import ClientSpecialProject
 from app.models.contractor.contractor_team import ContractorTeam
 from app.models.contractor.team_message import TeamMessage
 from app.models.contractor.team_schedule import TeamSchedule

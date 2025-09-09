@@ -13,78 +13,119 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/material-dashboard.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 
+  <!-- DataTables + Export Styling (for all dashboards/logs) -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
   {% block styles %}{% endblock %}
 </head>
 
-<body class="g-sidenav-show bg-light
-  {% if session.get('user') and session['user']['role'] == 'Director' %} director-green
-  {% elif session.get('user') and session['user']['role'] in ['Admin Contractor', 'Contractor'] %} contractor-orange
-  {% else %} logixpm-blue
+<body class="g-sidenav-show
+  {% if current_user.is_authenticated %}
+    {% if current_user.theme_preference == 'dark' %} dark-mode
+    {% elif current_user.theme_preference == 'auto' %} auto-mode
+    {% endif %}
+  {% endif %}
+  {% if session.get('user') %}
+    {% if session['user']['role'] == 'Director' %}
+      director-green
+    {% elif session['user']['role'] in ['Admin Contractor', 'Contractor'] %}
+      contractor-orange
+    {% elif session['user']['role'] == 'Super Admin' %}
+      superadmin-darkblue
+    {% elif session['user']['role'] in ['Member', 'Resident'] %}
+      member-teal
+    {% elif session['user']['role'] == 'Finance' %}
+      finance-purple
+    {% else %}
+      logixpm-blue
+    {% endif %}
   {% endif %}">
 
-  <!-- ✅ Import Macros Globally -->
+  <!-- Global Macros -->
   {% import 'macros/audit_macros.html' as audit %}
   {% import 'macros/compliance_macros.html' as compliance %}
   {% import 'macros/common_macros.html' as common %}
   {% import 'macros/gar_macros.html' as gar %}
 
-  <!-- Spinner -->
+  <!-- Loading Spinner -->
   <div id="spinner-overlay"><div class="spinner"></div></div>
 
-  {% block content %}
-    {% if session.get('user') %}
-      <!-- Sidebar -->
-      <div class="sidebar" id="sidebar">
-        % if session['user']['role'] == 'Admin Contractor' %}
-          {% include 'sidebar_contractor.html' %}
-        {% elif session['user']['role'] == 'Director' %}
-          {% include 'sidebar_director.html' %}
-        {% elif session['user']['role'] == 'Property Manager' %}
-          {% include 'sidebar_property_manager.html' %}
-        {% elif session['user']['role'] == 'Super Admin' %}
-          {% include 'super_admin/sidebar_super_admin.html' %}
-        {% else %}
-          {% include 'sidebar_admin.html' %}
-        {% endif %}
+  {% if session.get('user') %}
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+      {% if session['user']['role'] == 'Super Admin' %}
+        {% include 'super_admin/sidebar_super_admin.html' %}
+      {% elif session['user']['role'] == 'Finance' %}
+        {% include 'finance/sidebar_finance.html' %}
+      {% elif session['user']['role'] in ['Member', 'Resident'] %}
+        {% include 'members/sidebar_member.html' %}
+      {% elif session['user']['role'] == 'Admin Contractor' %}
+        {% include 'contractor/sidebar_contractor.html' %}
+      {% elif session['user']['role'] == 'Director' %}
+        {% include 'director_settings/sidebar_director.html' %}
+      {% elif session['user']['role'] == 'Property Manager' %}
+        {% include 'property_manager/sidebar_property_manager.html' %}
+      {% else %}
+        {% include 'admin/sidebar_admin.html' %}
+      {% endif %}
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content">
+      <div class="d-flex justify-content-between align-items-center px-3 pt-2">
+        <button id="sidebarToggle" class="btn btn-sm btn-outline-secondary d-md-none">
+          <i class="fas fa-bars"></i>
+        </button>
       </div>
 
-      <!-- Main content -->
-      <div id="main-content">
-        <div class="d-flex justify-content-between align-items-center px-3 pt-2">
-          <button id="sidebarToggle" class="btn btn-sm btn-outline-secondary d-md-none">
-            <i class="fas fa-bars"></i>
-          </button>
-        </div>
+      {% include 'navbar.html' %}
 
-        {% include 'navbar.html' %}
-
-        <!-- Flash messages -->
-        <div class="container mt-2">
-          {{ common.flash_messages() }}
-        </div>
-
-        <main class="py-4">
-          {% block page_content %}{% endblock %}
-        </main>
+      <!-- Flash Messages -->
+      <div class="container mt-2">
+        {{ common.flash_messages() }}
       </div>
 
-    {% else %}
-      <!-- Guest Content -->
-      <main class="d-flex justify-content-center align-items-center min-vh-100">
-        <div class="w-100" style="max-width: 500px;">
-          <div class="card shadow border-0 w-100 p-4" id="guest-card">
-            {% block guest_content %}{% endblock %}
-          </div>
-        </div>
+      <!-- Page Content -->
+      <main class="py-4">
+        {% block page_content %}{% endblock %}
       </main>
-    {% endif %}
-  {% endblock %}
+    </div>
 
-  <!-- ✅ Scripts -->
+  {% else %}
+    <!-- Guest Layout -->
+    <main class="d-flex justify-content-center align-items-center min-vh-100">
+      <div class="w-100" style="max-width: 500px;">
+        <div class="card shadow border-0 w-100 p-4" id="guest-card">
+          {% block guest_content %}{% endblock %}
+        </div>
+      </div>
+    </main>
+  {% endif %}
+
+  <!-- Core Scripts -->
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
   <script src="{{ url_for('static', filename='assets/js/core/bootstrap.min.js') }}"></script>
   <script src="{{ url_for('static', filename='assets/js/material-dashboard.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script src="{{ url_for('static', filename='js/sidebar_mobile_collapse.js') }}"></script>
+
+  <!-- DataTables + Export Scripts (global use) -->
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+  <!-- Optional Dark Mode Toggle -->
+  <script>
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+    }
+  </script>
+
   {% block scripts %}{% endblock %}
 </body>
 </html>

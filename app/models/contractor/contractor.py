@@ -1,5 +1,3 @@
-# app/models/contractor.py
-
 from datetime import datetime
 from app.extensions import db
 
@@ -16,11 +14,11 @@ class Contractor(db.Model):
     contact_name = db.Column(db.String(100))
     contact_email = db.Column(db.String(255))
     address = db.Column(db.String(255))
-    business_type = db.Column(db.String(100))  # Plumbing, Electrical, etc.
-    contractor_type = db.Column(db.String(100))  # Sole Trader, Ltd, Partnership (optional)
-    region = db.Column(db.String(100), nullable=True)  # e.g., Leinster
-    coverage_area = db.Column(db.String(255), nullable=True)  # e.g., "Dublin, Wicklow"
-    tags = db.Column(db.String(255), nullable=True)  # e.g., "Fire Safety,24/7,Callout"
+    business_type = db.Column(db.String(100))      # Plumbing, Electrical, etc.
+    contractor_type = db.Column(db.String(100))    # Sole Trader, Ltd, Partnership (optional)
+    region = db.Column(db.String(100), nullable=True)
+    coverage_area = db.Column(db.String(255), nullable=True)
+    tags = db.Column(db.String(255), nullable=True)
 
     # 🔐 Security / Consent / Role Access
     is_active = db.Column(db.Boolean, default=True)
@@ -31,7 +29,7 @@ class Contractor(db.Model):
     # 🔌 External/API Fields
     external_reference = db.Column(db.String(100), nullable=True)
     source_system = db.Column(db.String(100), nullable=True)
-    sync_status = db.Column(db.String(50), default='Pending')  # Synced, Pending, Failed
+    sync_status = db.Column(db.String(50), default='Pending')
     is_external = db.Column(db.Boolean, default=False)
 
     # 🤖 AI Parsing Fields
@@ -42,16 +40,16 @@ class Contractor(db.Model):
     parsed_at = db.Column(db.DateTime)
     parsed_by_ai_version = db.Column(db.String(50))
     ai_profile_locked = db.Column(db.Boolean, default=False)
-    ai_quality_score = db.Column(db.Float, nullable=True)       # Composite GAR score
+    ai_quality_score = db.Column(db.Float, nullable=True)
 
     # 🧠 GAR Governance
     compliance_score = db.Column(db.Float)
-    performance_rating = db.Column(db.String(10))               # A, B, C
+    performance_rating = db.Column(db.String(10))
     gar_trust_score = db.Column(db.Float)
     is_gar_preferred = db.Column(db.Boolean, default=False)
     gar_notes = db.Column(db.Text)
-    risk_assessment = db.Column(db.String(20))                  # "Low", "Medium", "High"
-    compliance_flags = db.Column(db.Text, nullable=True)        # "Expired insurance", "Missing certs"
+    risk_assessment = db.Column(db.String(20))
+    compliance_flags = db.Column(db.Text, nullable=True)
     last_ai_audit_at = db.Column(db.DateTime)
 
     # 💰 Financial Health (AI or Manual)
@@ -72,10 +70,14 @@ class Contractor(db.Model):
 
     # 🔗 Relationships
     work_orders = db.relationship("WorkOrder", backref="contractor_company", lazy=True)
-    documents = db.relationship("ContractorComplianceDocument", backref="contractor_entity", lazy=True)
+    compliance_documents = db.relationship("ContractorComplianceDocument", back_populates="contractor", lazy=True)
     performance_records = db.relationship("ContractorPerformance", backref="contractor_entity", lazy=True)
+    users = db.relationship('User', back_populates='contractor', lazy=True)
 
     def __repr__(self):
         return f"<Contractor {self.company_name} ({self.business_type})>"
 
-
+    @property
+    def name(self) -> str:
+        """Display alias so templates can use contractor.name like client.name."""
+        return self.company_name

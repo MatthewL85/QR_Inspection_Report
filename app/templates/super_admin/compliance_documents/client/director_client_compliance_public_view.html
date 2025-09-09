@@ -1,0 +1,96 @@
+{% extends 'layouts/super_admin_base.html' %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+  <div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">📄 {{ client.name }} – Compliance Documents</h5>
+      <a href="{{ url_for('director.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="material-icons me-1">arrow_back</i> Back to Dashboard
+      </a>
+    </div>
+
+    <div class="card-body">
+      {% if documents %}
+      <div class="table-responsive">
+        <table class="table table-hover align-items-center">
+          <thead>
+            <tr>
+              <th>Document</th>
+              <th>Type</th>
+              <th>Expiry</th>
+              <th>Required</th>
+              <th>AI Status</th>
+              <th>Download</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for doc in documents %}
+            <tr>
+              <td style="max-width: 250px;" class="text-truncate" title="{{ doc.description }}">
+                {{ doc.description or doc.file_name }}
+              </td>
+              <td>{{ doc.document_type }}</td>
+              <td>
+                {% if doc.expiry_date %}
+                  {% if doc.expiry_date < current_date %}
+                    <span class="badge bg-danger">⚠ Expired</span>
+                  {% else %}
+                    {{ doc.expiry_date.strftime('%d %b %Y') }}
+                  {% endif %}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <td>
+                {% if doc.is_required_for_work_order %}
+                  <span class="badge bg-info text-dark">Yes</span>
+                {% else %}
+                  <span class="badge bg-secondary">No</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if doc.ai_status == 'Reviewed' %}
+                  <span class="badge bg-success">✔ Reviewed</span>
+                {% elif doc.ai_status == 'Parsed' %}
+                  <span class="badge bg-info text-dark">Parsed</span>
+                {% elif doc.ai_status == 'Pending' %}
+                  <span class="badge bg-warning text-dark">Pending</span>
+                {% else %}
+                  <span class="badge bg-secondary">—</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{{ url_for('static', filename=doc.file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                  <i class="material-icons">download</i>
+                </a>
+              </td>
+            </tr>
+
+            <!-- AI Summary / Parsed Output -->
+            {% if doc.parsed_summary or doc.extracted_data %}
+            <tr class="bg-light">
+              <td colspan="6">
+                {% if doc.parsed_summary %}
+                  <strong>🧠 Summary:</strong> {{ doc.parsed_summary }}<br>
+                {% endif %}
+                {% if doc.extracted_data %}
+                  <strong>📌 Extracted:</strong> <pre class="mb-0">{{ doc.extracted_data }}</pre>
+                {% endif %}
+              </td>
+            </tr>
+            {% endif %}
+
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-center text-muted py-4">
+        No compliance documents found for this client.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

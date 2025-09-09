@@ -13,7 +13,8 @@ from app.models.maintenance.alert import Alert
 from app.models.maintenance.inspection import Inspection
 from app.models.maintenance.inspection_schedule import InspectionSchedule
 from app.models.core.media_file import MediaFile
-from app.models.core.audit import ProfileChangeLog
+from app.models.audit.profile_change_log import ProfileChangeLog
+from app.models.audit.password_change_log import PasswordChangeLog
 from app.models.core.role import Role
 from app.models.core.role_permissions import RolePermission
 from app.models.finance.finance_batch import FinanceBatch
@@ -94,10 +95,13 @@ from app.models.client.board_resolution import BoardResolution
 from app.models.client.board_meeting_attendee import BoardMeetingAttendee
 from app.models.client.meeting_integration import MeetingIntegration
 from app.models.client.client_compliance_document import ClientComplianceDocument
+from app.models.capex.capex_projects import CapexProject
+from app.models.capex.capex_projects import CapexProjectDependency
 from app.models.capex.capex_request import CapexRequest
 from app.models.capex.capex_response import CapexResponse
 from app.models.capex.capex_approval import CapexApproval
 from app.models.contractor.contractor import Contractor
+from app.models.contractor.contractor_assignment import ContractorAssignment
 from app.models.contractor.contractor_compliance_document import ContractorComplianceDocument
 from app.models.contractor.contractor_performance import ContractorPerformance
 from app.models.contractor.contractor_feedback import ContractorFeedback
@@ -142,6 +146,7 @@ from app.models.communication.email_attachment import EmailAttachment
 from app.models.contractor.contractor_team import ContractorTeam
 from app.models.contractor.team_message import TeamMessage
 from app.models.contractor.team_schedule import TeamSchedule
+from app.models.audit.email_log import EmailLog
 
 db.metadata.clear()
 
@@ -161,6 +166,7 @@ Inspection.__table__.tometadata(db.metadata)
 InspectionSchedule.__table__.tometadata(db.metadata)
 MediaFile.__table__.tometadata(db.metadata)
 ProfileChangeLog.__table__.tometadata(db.metadata)
+PasswordChangeLog.__table__.tometadata(db.metadata)
 Role.__table__.tometadata(db.metadata)
 RolePermission.__table__.tometadata(db.metadata)
 FinanceBatch.__table__.tometadata(db.metadata)
@@ -241,10 +247,12 @@ BoardResolution.__table__.tometadata(db.metadata)
 BoardMeetingAttendee.__table__.tometadata(db.metadata)
 MeetingIntegration.__table__.tometadata(db.metadata)
 ClientComplianceDocument.__table__.tometadata(db.metadata)
+CapexProjects.__table__.tometadata(db.metadata)
 CapexRequest.__table__.tometadata(db.metadata)
 CapexResponse.__table__.tometadata(db.metadata)
 CapexApproval.__table__.tometadata(db.metadata)
 Contractor.__table__.tometadata(db.metadata)
+ContractorAssignment.__table__.tometadata(db.metadata)
 ContractorComplianceDocument.__table__.tometadata(db.metadata)
 ContractorPerformance.__table__.tometadata(db.metadata)
 ContractorFeedback.__table__.tometadata(db.metadata)
@@ -289,6 +297,7 @@ EmailAttachment.__table__.tometadata(db.metadata)
 ContractorTeam.__table__.tometadata(db.metadata)
 TeamMessage.__table__.tometadata(db.metadata)
 TeamSchedule.__table__.tometadata(db.metadata)
+EmailLog.__table__.tometadata(db.metadata)
 
 print("Tables in metadata now:", db.metadata.tables.keys())
 

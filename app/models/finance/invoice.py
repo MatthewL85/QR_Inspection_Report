@@ -34,7 +34,12 @@ class Invoice(db.Model):
     )
     finance_batch_id = db.Column(
         db.Integer,
-        db.ForeignKey('payment_runs.id', use_alter=True, name='fk_invoice_finance_batch', deferrable=True, initially='DEFERRED'),
+        db.ForeignKey('finance_batches.id', use_alter=True, name='fk_invoice_finance_batch', deferrable=True, initially='DEFERRED'),
+        nullable=True
+    )
+    payment_run_id = db.Column(
+        db.Integer,
+        db.ForeignKey('payment_runs.id', use_alter=True, name='fk_invoice_payment_run', deferrable=True, initially='DEFERRED'),
         nullable=True
     )
     unit_id = db.Column(
@@ -42,6 +47,8 @@ class Invoice(db.Model):
         db.ForeignKey('units.id', use_alter=True, name='fk_invoice_unit', deferrable=True, initially='DEFERRED'),
         nullable=True
     )
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=True)
+    company = db.relationship('Company', back_populates='invoices', overlaps="related_invoices")
 
     # 📄 Invoice Metadata
     invoice_number = db.Column(db.String(100), unique=True, nullable=False)
@@ -105,15 +112,17 @@ class Invoice(db.Model):
 
     # 🔁 Relationships
     work_order = db.relationship('WorkOrder', backref=db.backref('invoice', uselist=False))
-    service_charge = db.relationship('ServiceCharge', backref='invoices')
+    service_charge = db.relationship('ServiceCharge', back_populates='invoice', overlaps="service_charge_ref,invoices")
     levy = db.relationship('Levy', backref='invoices')
     contractor = db.relationship('User', foreign_keys=[contractor_id], backref='submitted_invoices')
     approved_by = db.relationship('User', foreign_keys=[approved_by_id], backref='approved_invoices')
     unit = db.relationship('Unit', backref='invoices')
+    finance_batch = db.relationship('FinanceBatch', back_populates='invoices')
+    payment_run = db.relationship('PaymentRun', back_populates='invoices')
 
     late_fee_logs = db.relationship(
         'LateFeeTransactionLog',
-        backref='invoice_ref',
+        back_populates='invoice',
         lazy='dynamic',
         foreign_keys='LateFeeTransactionLog.invoice_id'
     )

@@ -1,0 +1,50 @@
+{# templates/super_admin/users/partials/active_users_table.html #}
+<div class="table-responsive mb-4">
+  <form method="POST" action="{{ url_for('super_admin.bulk_deactivate_users') }}">
+    <table class="table align-items-center">
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="select-all-active"></th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Full Name</th>
+          <th>Company</th>
+          <th>Status</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in active_users.items %}
+        <tr>
+          <td><input type="checkbox" name="user_ids" value="{{ user.id }}"></td>
+          <td>{{ user.email }}</td>
+          <td><span class="badge bg-gradient-info text-white">{{ user.role.name if user.role else '—' }}</span></td>
+          <td>{{ user.full_name or '—' }}</td>
+          <td>{{ user.company.name if user.company else '—' }}</td>
+          <td><span class="badge bg-success">Active</span></td>
+          <td class="text-center">
+            <a href="{{ url_for('super_admin.edit_user', user_id=user.id) }}" class="btn btn-sm btn-outline-primary">
+              <i class="fas fa-edit"></i> Edit
+            </a>
+            <a href="{{ url_for('super_admin.delete_user', user_id=user.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to deactivate this user?');">
+              <i class="fas fa-trash-alt"></i> Deactivate
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="mt-2 text-end">
+      <button type="submit" class="btn btn-danger btn-sm">
+        <i class="fas fa-user-slash"></i> Deactivate Selected
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  document.getElementById('select-all-active').addEventListener('change', function () {
+    const checkboxes = document.querySelectorAll('input[name="user_ids"]');
+    checkboxes.forEach(cb => cb.checked = this.checked);
+  });
+</script>

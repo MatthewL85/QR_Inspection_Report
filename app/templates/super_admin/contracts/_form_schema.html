@@ -1,0 +1,212 @@
+{# app/templates/super_admin/contracts/_form_schema.html
+   Reusable renderer for ContractTemplateVersion.form_schema
+   Supports:
+   - fields:  path, label, type, required, min, max, options, step, help, regex
+   - tables:  path, title, columns:[{path,label,type,step,required,min,max,regex}], add_label, help
+   - inline errors: pass a dict `errors` mapping full paths -> message
+#}
+
+{%- macro _err(errors, path) -%}
+  {%- if errors and errors.get(path) -%}
+    <div class="invalid-feedback d-block">{{ errors.get(path) }}</div>
+  {%- endif -%}
+{%- endmacro -%}
+
+{%- macro _value_for(values, dotted) -%}
+  {%- set cur = values -%}
+  {%- for seg in dotted.split('.') -%}
+    {%- set cur = (cur.get(seg) if cur) -%}
+  {%- endfor -%}
+  {{- cur -}}
+{%- endmacro -%}
+
+{# ---------------- Field ---------------- #}
+{% macro render_field(f, values, errors=None) -%}
+  {# expected keys: path, label, type, required, min, max, options, step, help, regex #}
+  {% set path = f.path %}
+  {% set input_name = 'fs__' ~ path %}
+  {% set label = f.label or path %}
+  {% set typ = (f.type or 'text')|lower %}
+  {% set required = f.required %}
+  {% set val = _value_for(values, path) %}
+
+  <div class="mb-3">
+    <label class="form-label" for="{{ input_name }}">{{ label }}{% if required %} <span class="text-danger">*</span>{% endif %}</label>
+
+    {% if typ == 'textarea' %}
+      <textarea
+        class="form-control{% if errors and errors.get(path) %} is-invalid{% endif %}"
+        id="{{ input_name }}"
+        name="{{ input_name }}"
+        rows="3"
+        {% if required %}required{% endif %}
+      >{{ (val or '') | e }}</textarea>
+
+    {% elif typ == 'select' %}
+      {% set opts = f.options or [] %}
+      <select
+        class="form-select{% if errors and errors.get(path) %} is-invalid{% endif %}"
+        id="{{ input_name }}"
+        name="{{ input_name }}"
+        {% if required %}required{% endif %}
+      >
+        {% for opt in opts %}
+          <option value="{{ opt }}" {% if val == opt %}selected{% endif %}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+
+    {% elif typ == 'checkbox' %}
+      {% set checked = val in [True, 'true', 'on', '1', 1] %}
+      <div class="form-check form-switch">
+        <input
+          class="form-check-input{% if errors and errors.get(path) %} is-invalid{% endif %}"
+          type="checkbox"
+          id="{{ input_name }}"
+          name="{{ input_name }}"
+          {% if checked %}checked{% endif %}
+        >
+        {% if f.help %}<label class="form-check-label text-muted small" for="{{ input_name }}">{{ f.help }}</label>{% endif %}
+      </div>
+
+    {% else %}
+      <input
+        class="form-control{% if errors and errors.get(path) %} is-invalid{% endif %}"
+        id="{{ input_name }}"
+        name="{{ input_name }}"
+        {% if typ in ['number','money'] %}type="number"{% else %}type="{{ typ }}"{% endif %}
+        {% if typ == 'money' %}step="0.01"{% elif typ == 'number' %}step="{{ f.step or '1' }}"{% endif %}
+        {% if f.min is not none %}min="{{ f.min }}"{% endif %}
+        {% if f.max is not none %}max="{{ f.max }}"{% endif %}
+        value="{{ (val or '') | e }}"
+        {% if required %}required{% endif %}
+      >
+      {% if f.help %}<div class="form-text">{{ f.help }}</div>{% endif %}
+      {{ _err(errors, path) }}
+    {% endif %}
+
+    {# for select/checkbox/textarea show error beneath too #}
+    {% if typ in ['select','checkbox','textarea'] %}
+      {{ _err(errors, path) }}
+    {% endif %}
+  </div>
+{%- endmacro %}
+
+{# ---------------- Table ---------------- #}
+{% macro render_table(t, values, errors=None) -%}
+  {# table spec: path, title, columns:[{path,label,type,step,required,min,max,regex}], add_label, help #}
+  {% set tpath = t.path %}
+  {% set base = 'fslist__' ~ tpath %}
+  {% set rows = _value_for(values, tpath) %}
+  {% set rows = rows if rows is iterable and rows is not string else [] %}
+  {% set path_id = tpath|replace('.','_') %}
+
+  <div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+      <h6 class="mb-2">{{ t.title or 'Items' }}</h6>
+      <button class="btn btn-sm btn-outline-primary" type="button" onclick="fs_add_row_{{ path_id }}()">
+        {{ t.add_label or 'Add row' }}
+      </button>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            {% for col in (t.columns or []) %}
+              <th>{{ col.label or col.path }}</th>
+            {% endfor %}
+            <th class="text-end">Remove</th>
+          </tr>
+        </thead>
+        <tbody id="fs_tbody_{{ path_id }}">
+          {% set row_count = (rows|length if rows else 0) or 1 %}
+          {% for i in range(row_count) %}
+            {% set row = rows[i] if rows and rows|length > i else {} %}
+            <tr data-row="{{ i }}">
+              {% for col in (t.columns or []) %}
+                {% set ctyp = (col.type or 'text')|lower %}
+                {% set name = base ~ '__' ~ i ~ '__' ~ col.path %}
+                {% set full = tpath ~ '[' ~ i ~ '].' ~ col.path %}
+                {% set val = row.get(col.path) if row else '' %}
+                <td>
+                  {% if ctyp == 'textarea' %}
+                    <textarea class="form-control form-control-sm{% if errors and errors.get(full) %} is-invalid{% endif %}"
+                              name="{{ name }}" rows="2">{{ (val or '')|e }}</textarea>
+                  {% else %}
+                    <input
+                      class="form-control form-control-sm{% if errors and errors.get(full) %} is-invalid{% endif %}"
+                      name="{{ name }}"
+                      {% if ctyp in ['number','money'] %}type="number"{% else %}type="{{ ctyp }}"{% endif %}
+                      {% if ctyp == 'money' %}step="0.01"{% elif ctyp == 'number' %}step="{{ col.step or '1' }}"{% endif %}
+                      {% if col.min is not none %}min="{{ col.min }}"{% endif %}
+                      {% if col.max is not none %}max="{{ col.max }}"{% endif %}
+                      value="{{ (val or '') | e }}"
+                    >
+                  {% endif %}
+                  {{ _err(errors, full) }}
+                </td>
+              {% endfor %}
+              <td class="text-end">
+                <button class="btn btn-sm btn-outline-danger" type="button" onclick="this.closest('tr').remove()">✕</button>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if t.help %}<div class="form-text">{{ t.help }}</div>{% endif %}
+  </div>
+
+  <script>
+    function fs_add_row_{{ path_id }}() {
+      const tbody = document.getElementById('fs_tbody_{{ path_id }}');
+      const newIndex = tbody.querySelectorAll('tr').length;
+      const tr = document.createElement('tr');
+      tr.setAttribute('data-row', newIndex);
+      tr.innerHTML = `
+        {% for col in (t.columns or []) %}
+          {% set ctyp = (col.type or 'text')|lower %}
+          <td>
+            {% if ctyp == 'textarea' %}
+              <textarea class="form-control form-control-sm" name="{{ base }}__\${newIndex}__{{ col.path }}" rows="2"></textarea>
+            {% else %}
+              <input
+                class="form-control form-control-sm"
+                name="{{ base }}__\${newIndex}__{{ col.path }}"
+                {% if ctyp in ['number','money'] %}type="number"{% else %}type="{{ ctyp }}"{% endif %}
+                {% if ctyp == 'money' %}step="0.01"{% elif ctyp == 'number' %}step="{{ col.step or '1' }}"{% endif %}
+                {% if col.min is not none %}min="{{ col.min }}"{% endif %}
+                {% if col.max is not none %}max="{{ col.max }}"{% endif %}
+              >
+            {% endif %}
+          </td>
+        {% endfor %}
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-danger" type="button" onclick="this.closest('tr').remove()">✕</button>
+        </td>`;
+      tbody.appendChild(tr);
+    }
+  </script>
+{%- endmacro %}
+
+{# ---------------- Sections ---------------- #}
+{% macro render_sections(schema, values, errors=None) -%}
+  {% for s in schema.sections or [] %}
+    <div class="border rounded p-3 mb-3">
+      <h5 class="mb-3">{{ s.title or s.key }}</h5>
+
+      <div class="row">
+        {% for f in (s.fields or []) %}
+          <div class="col-md-6">
+            {{ render_field(f, values, errors) }}
+          </div>
+        {% endfor %}
+      </div>
+
+      {% for t in (s.tables or []) %}
+        {{ render_table(t, values, errors) }}
+      {% endfor %}
+    </div>
+  {% endfor %}
+{%- endmacro %}

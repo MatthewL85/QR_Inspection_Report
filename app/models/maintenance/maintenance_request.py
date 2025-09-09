@@ -26,7 +26,8 @@ class MaintenanceRequest(db.Model):
         db.ForeignKey('work_orders.id', use_alter=True, name='fk_mr_work_order', deferrable=True, initially='DEFERRED'),
         nullable=True
     )
-    work_order = db.relationship('WorkOrder', backref='maintenance_request')
+    
+    work_order = db.relationship('WorkOrder', back_populates='maintenance_request', foreign_keys='WorkOrder.maintenance_request_id', uselist=False)
 
     requested_by_id = db.Column(
         db.Integer,

@@ -1,0 +1,33 @@
+{# app/templates/macros/ownership.html #}
+{% macro _norm(country) -%}{{ (country or '')|lower|trim }}{%- endmacro %}
+
+{# Property ownership models by jurisdiction (for hints/choices) #}
+{% macro ownership_types_for(country) -%}
+  {%- set c = _norm(country) -%}
+  {%- if c in ['ireland','ie','republic of ireland','united kingdom','uk','great britain','england','scotland','wales','northern ireland'] -%}
+    Freehold, Leasehold, Share of Freehold
+  {%- elif c in ['united states','united states of america','usa','us'] -%}
+    Freehold, Condominium, Co-op
+  {%- elif c in ['canada','ca'] -%}
+    Freehold, Condominium (Strata), Leasehold
+  {%- elif c in ['australia','au'] -%}
+    Freehold, Strata Title, Community Title
+  {%- elif c in ['new zealand','nz'] -%}
+    Freehold, Unit Title, Leasehold
+  {%- elif c in ['singapore','sg'] -%}
+    Freehold, Leasehold, Strata
+  {%- elif c in ['hong kong','hk','hong kong sar'] -%}
+    Leasehold, Strata
+  {%- elif c in ['united arab emirates','uae','u.a.e','dubai','abu dhabi','sharjah','ajman','umm al-quwain','ras al khaimah','fujairah'] -%}
+    Freehold, Leasehold, Strata
+  {%- elif c in [
+      'austria','belgium','bulgaria','croatia','cyprus','czech republic','czechia',
+      'denmark','estonia','finland','france','germany','greece','hungary','iceland',
+      'italy','latvia','lithuania','luxembourg','malta','netherlands','norway',
+      'poland','portugal','romania','slovakia','slovenia','spain','sweden','switzerland'
+    ] -%}
+    Freehold, Leasehold
+  {%- else -%}
+    Freehold, Leasehold
+  {%- endif -%}
+{%- endmacro %}

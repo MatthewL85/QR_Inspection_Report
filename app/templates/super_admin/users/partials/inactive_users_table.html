@@ -1,0 +1,63 @@
+{# app/templates/super_admin/users/partials/inactive_users_table.html #}
+<div class="mb-2">
+  <h6 class="mb-3">Inactive Users ({{ total_inactive }})</h6>
+
+  {% if inactive_users.items %}
+    <div class="table-responsive">
+      <table class="table table-sm table-striped align-middle">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Company</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in inactive_users.items %}
+          <tr>
+            <td>{{ u.full_name or '-' }}</td>
+            <td>{{ u.email }}</td>
+            <td>{{ u.role.name if u.role else '-' }}</td>
+            <td>{{ u.company.name if u.company else '-' }}</td>
+            <td class="text-end">
+              <form method="post" action="{{ url_for('super_admin.reactivate_user', user_id=u.id) }}" style="display:inline;">
+                <button class="btn btn-sm btn-success" type="submit">Reactivate</button>
+              </form>
+              <a class="btn btn-sm btn-outline-danger" href="{{ url_for('super_admin.delete_user', user_id=u.id) }}">Delete</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {# Pagination (shares the same 'page' param; if you want independent paging, wire separate params) #}
+    <nav aria-label="Inactive users pagination">
+      <ul class="pagination pagination-sm justify-content-end">
+        {% if inactive_users.has_prev %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('super_admin.manage_users', search=search, role_filter=role_filter, company_filter=company_filter, sort_by=sort_by, sort_dir=sort_dir, page=inactive_users.prev_num) }}">Previous</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        {% endif %}
+
+        <li class="page-item disabled">
+          <span class="page-link">Page {{ inactive_users.page }} / {{ inactive_users.pages or 1 }}</span>
+        </li>
+
+        {% if inactive_users.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('super_admin.manage_users', search=search, role_filter=role_filter, company_filter=company_filter, sort_by=sort_by, sort_dir=sort_dir, page=inactive_users.next_num) }}">Next</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Next</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% else %}
+    <div class="alert alert-secondary mb-0">No inactive users.</div>
+  {% endif %}
+</div>

@@ -1,0 +1,167 @@
+{% extends 'layouts/super_admin_base.html' %}
+{% block page_content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Upgrade Contract Template — {{ client.name }}</h4>
+    <a class="btn btn-outline-secondary"
+       href="{{ url_for('super_admin_contracts.renew', client_id=client.id, step=3, contract_id=contract.id) }}">
+      ⬅ Back to Preview
+    </a>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <p class="mb-2">A newer template version is available for this contract.</p>
+      <ul class="mb-0">
+        <li><strong>Current:</strong> {{ current_version.version_label }}{% if current_version.effective_from %} (from {{ current_version.effective_from }}){% endif %}</li>
+        <li><strong>Latest:</strong> {{ latest_version.version_label }}{% if latest_version.effective_from %} (from {{ latest_version.effective_from }}){% endif %}</li>
+      </ul>
+    </div>
+  </div>
+
+  <form method="post" action="{{ url_for('super_admin_contracts.contracts_apply_update', contract_id=contract.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+    <div class="row g-4">
+      <div class="col-12 col-lg-6">
+        <div class="card h-100">
+          <div class="card-header">
+            <h6 class="mb-0">Schema changes by section</h6>
+            <small class="text-muted">Choose sections to adopt defaults for (new fields only).</small>
+          </div>
+          <div class="card-body">
+            {% if preview.schema_delta %}
+              <div class="accordion" id="schemaDiffAcc">
+              {% for sec_key, changes in preview.schema_delta.items() %}
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="h-{{ sec_key }}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c-{{ sec_key }}">
+                      <div class="d-flex w-100 justify-content-between align-items-center">
+                        <span class="me-3">{{ sec_key }}</span>
+                        <div>
+                          <span class="badge bg-success me-1">{{ changes.added|length }} added</span>
+                          <span class="badge bg-danger me-1">{{ changes.removed|length }} removed</span>
+                          <span class="badge bg-warning text-dark">{{ changes.changed_type|length }} type</span>
+                        </div>
+                      </div>
+                    </button>
+                  </h2>
+                  <div id="c-{{ sec_key }}" class="accordion-collapse collapse" data-bs-parent="#schemaDiffAcc">
+                    <div class="accordion-body">
+                      {% if changes.added %}
+                        <div class="mb-2">
+                          <strong>Added fields</strong>
+                          <ul class="mt-1">
+                            {% for f in changes.added %}
+                              <li><code>{{ f.path }}</code> <small class="text-muted">({{ f.type or 'text' }})</small></li>
+                            {% endfor %}
+                          </ul>
+                        </div>
+                      {% endif %}
+                      {% if changes.removed %}
+                        <div class="mb-2">
+                          <strong>Removed fields</strong>
+                          <ul class="mt-1">
+                            {% for f in changes.removed %}
+                              <li>
+                                <code>{{ f.path }}</code>
+                                <input type="hidden" name="removed_paths" value="{{ f.path }}">
+                              </li>
+                            {% endfor %}
+                          </ul>
+                        </div>
+                      {% endif %}
+                      {% if changes.changed_type %}
+                        <div class="mb-2">
+                          <strong>Type changed</strong>
+                          <ul class="mt-1">
+                            {% for f in changes.changed_type %}
+                              <li><code>{{ f.path }}</code> <small class="text-muted">({{ f.old }} → {{ f.new }})</small></li>
+                            {% endfor %}
+                          </ul>
+                        </div>
+                      {% endif %}
+
+                      <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" name="accept_section" id="sec_{{ sec_key }}" value="{{ sec_key }}">
+                        <label class="form-check-label" for="sec_{{ sec_key }}">
+                          Adopt defaults for this section (only for new/missing fields).
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+              </div>
+
+              {% if removed_paths and removed_paths|length > 0 %}
+                <div class="form-check mt-3">
+                  <input class="form-check-input" type="checkbox" id="archiveRemoved" name="archive_removed">
+                  <label class="form-check-label" for="archiveRemoved">
+                    Archive removed fields into <code>data_json._deprecated</code>
+                  </label>
+                </div>
+              {% endif %}
+            {% else %}
+              <div class="text-muted">No schema differences detected.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-6">
+        <div class="card h-100">
+          <div class="card-header">
+            <h6 class="mb-0">Rendered preview</h6>
+            <small class="text-muted">Before vs After (HTML render with your current data).</small>
+          </div>
+          <div class="card-body">
+            <ul class="nav nav-tabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabBefore" type="button" role="tab">
+                  Before (current)
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabAfter" type="button" role="tab">
+                  After (latest)
+                </button>
+              </li>
+            </ul>
+            <div class="tab-content border-start border-end border-bottom p-3" style="max-height:520px; overflow:auto;">
+              <div class="tab-pane fade show active" id="tabBefore" role="tabpanel">
+                <div class="bg-light p-3 rounded">
+                  {{ html_current|safe }}
+                </div>
+              </div>
+              <div class="tab-pane fade" id="tabAfter" role="tabpanel">
+                <div class="bg-light p-3 rounded">
+                  {{ html_latest|safe }}
+                </div>
+              </div>
+            </div>
+
+            <hr class="my-3">
+            <h6 class="mb-2">Template HTML diff (context)</h6>
+            {% if preview.html_delta and preview.html_delta|length > 0 %}
+              <pre class="small bg-light p-3 rounded" style="max-height: 260px; overflow:auto;">
+{{ preview.html_delta | join('\n') | e }}
+              </pre>
+            {% else %}
+              <div class="text-muted">No significant HTML changes detected.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <button class="btn btn-primary">Apply Update</button>
+      <a class="btn btn-outline-secondary ms-2"
+         href="{{ url_for('super_admin_contracts.renew', client_id=client.id, step=3, contract_id=contract.id) }}">
+        Cancel
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

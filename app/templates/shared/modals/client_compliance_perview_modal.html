@@ -1,0 +1,54 @@
+<!-- templates/shared/modals/_client_compliance_preview_modal.html -->
+<div class="modal fade" id="compliancePreviewModal{{ doc.id }}" tabindex="-1" aria-labelledby="compliancePreviewLabel{{ doc.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-sm">
+
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="compliancePreviewLabel{{ doc.id }}">
+          📝 Compliance Document Preview
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <!-- 📄 File Info -->
+        <p><strong>File:</strong> 
+          <a href="{{ url_for('static', filename=doc.file_path) }}" target="_blank">
+            {{ doc.file_name or doc.document_name }}
+          </a>
+        </p>
+        <p><strong>Type:</strong> {{ doc.document_type or '—' }}</p>
+        <p><strong>Client:</strong> {{ doc.client.name if doc.client else '—' }}</p>
+        <p><strong>Description:</strong> {{ doc.description or '—' }}</p>
+        <p><strong>Expiry:</strong> {{ doc.expires_at.strftime('%d %b %Y') if doc.expires_at else '—' }}</p>
+        <p><strong>Required for Work Orders:</strong> {{ 'Yes' if doc.is_required_for_work_order else 'No' }}</p>
+
+        {% if doc.parsed_summary %}
+        <hr>
+        <h6>🧠 AI Parsed Summary</h6>
+        <pre class="bg-light rounded p-3">{{ doc.parsed_summary }}</pre>
+        {% endif %}
+
+        {% if doc.extracted_data %}
+        <hr>
+        <h6>🧩 Extracted Data</h6>
+        <pre class="bg-light rounded p-3">{{ doc.extracted_data }}</pre>
+        {% endif %}
+
+        {% if doc.parsed_text %}
+        <hr>
+        <h6>📄 Parsed Full Text</h6>
+        <pre class="bg-white rounded p-3 small text-break">{{ doc.parsed_text }}</pre>
+        {% endif %}
+      </div>
+
+      <div class="modal-footer bg-light">
+        <a href="{{ url_for('static', filename=doc.file_path) }}" class="btn btn-outline-primary" download>
+          <i class="material-icons me-1">download</i> Download File
+        </a>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>

@@ -1,5 +1,3 @@
-# app/models/finance/ledger_entry.py
-
 from app.extensions import db
 from datetime import datetime
 from sqlalchemy.dialects.postgresql import JSONB
@@ -15,6 +13,21 @@ class LedgerEntry(db.Model):
     credit_account_id = db.Column(db.Integer, db.ForeignKey('bank_accounts.id'), nullable=False)
     debit_account = db.relationship('BankAccount', foreign_keys=[debit_account_id], backref='debit_entries')
     credit_account = db.relationship('BankAccount', foreign_keys=[credit_account_id], backref='credit_entries')
+
+    # 🔗 Ledger Batch Relationship
+    ledger_batch_id = db.Column(
+        db.Integer,
+        db.ForeignKey('ledger_batches.id', ondelete="SET NULL"),
+        nullable=True
+    )
+    
+    ledger_journal_id = db.Column(
+    db.Integer,
+    db.ForeignKey('ledger_journals.id', ondelete='SET NULL'),
+    nullable=True
+    )
+
+    ledger_journal = db.relationship("LedgerJournal", back_populates="ledger_entries")
 
     # 💰 Financial Data
     amount = db.Column(db.Numeric(14, 2), nullable=False)

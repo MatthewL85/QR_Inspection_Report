@@ -1,5 +1,6 @@
 from datetime import datetime
 from app.extensions import db
+from sqlalchemy.dialects.postgresql import JSONB
 
 class Client(db.Model):
     __tablename__ = 'clients'
@@ -7,12 +8,24 @@ class Client(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     # 🔐 Ownership
-    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
-    company = db.relationship('Company', backref='clients')
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False, index=True)
 
+    company = db.relationship(
+        'Company',
+        back_populates='clients',
+        foreign_keys=[company_id],
+        overlaps="clients"
+    )
+    
     # 🔧 Core Information
     name = db.Column(db.String(120), nullable=False)
+    property_name = db.Column(db.String(150))  # NEW
+    # ✅ New granular address fields (kept legacy 'address' too)
     address = db.Column(db.String(250))
+    address_line1 = db.Column(db.String(250))
+    address_line2 = db.Column(db.String(250))
+    city = db.Column(db.String(120))
+
     postal_code = db.Column(db.String(20))
     registration_number = db.Column(db.String(50))
     vat_reg_number = db.Column(db.String(50))
@@ -22,8 +35,14 @@ class Client(db.Model):
     client_type = db.Column(db.String(50))
     contract_value = db.Column(db.Numeric(10, 2), default=0.0)
 
+    # ➕ Units breakdown (auto-summed into number_of_units in the UI)
+    units_apartments = db.Column(db.Integer, default=0)
+    units_houses = db.Column(db.Integer, default=0)
+    units_duplexes = db.Column(db.Integer, default=0)
+    units_commercial = db.Column(db.Integer, default=0)
+
     # 📅 Governance Dates
-    financial_year_end = db.Column(db.Date, nullable=True)
+    financial_year_end = db.Column(db.String(5), nullable=True)  # "DD/MM"
     last_agm_date = db.Column(db.Date, nullable=True)
     agm_completed = db.Column(db.Boolean, default=False)
 
@@ -37,10 +56,11 @@ class Client(db.Model):
 
     # 🛡️ Legal & Compliance
     transfer_of_common_area = db.Column(db.Boolean, default=False)
+    transfer_of_common_area_date = db.Column(db.Date)  # NEW
     deed_of_covenants = db.Column(db.String(250))
     data_protection_compliance = db.Column(db.String(50))
     consent_to_communicate = db.Column(db.Boolean, default=True)
-    resident_logic = db.Column(db.String(100), default='owner=member, tenant=resident')  # 🔁 Explicit occupancy logic
+    resident_logic = db.Column(db.String(100), default='owner=member, tenant=resident')
     enforce_gdpr = db.Column(db.Boolean, default=True)
     default_visibility_scope = db.Column(db.String(100), default="Admin,Director,PropertyManager")
 
@@ -48,13 +68,19 @@ class Client(db.Model):
     min_directors = db.Column(db.Integer)
     max_directors = db.Column(db.Integer)
     number_of_blocks = db.Column(db.Integer)
-    block_names = db.Column(db.String(300))
-    cores_per_block = db.Column(db.String(300))
-    apartments_per_block = db.Column(db.String(300))
+    block_names = db.Column(db.String(300))           # comma-separated, e.g. "A,B,C"
+    cores_per_block = db.Column(db.String(300))       # "2,2,2" or single value
+    apartments_per_block = db.Column(db.String(300))  # "24,24,18" or single value
 
-    # 👤 Assigned Property Manager
-    assigned_pm_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    # 👤 Assigned Users
+    assigned_pm_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
     assigned_pm = db.relationship('User', backref='assigned_clients', foreign_keys=[assigned_pm_id])
+
+    assigned_fc_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
+    assigned_fc = db.relationship('User', backref='assigned_fc_clients', foreign_keys=[assigned_fc_id])
+
+    assigned_assistant_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
+    assigned_assistant = db.relationship('User', backref='assigned_assistant_clients', foreign_keys=[assigned_assistant_id])
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -65,6 +91,7 @@ class Client(db.Model):
     ai_insurance_trend_flag = db.Column(db.Text)
 
     # 📎 Contract & Document Parsing (AI Phase 1)
+    # (Uploads live in Document via linked_client_id; keeping filename for legacy compatibility)
     document_filename = db.Column(db.String(255))
     ai_parsed_contract_terms = db.Column(db.Text)
     ai_governance_summary = db.Column(db.Text)
@@ -93,12 +120,13 @@ class Client(db.Model):
     gar_resolution_status = db.Column(db.String(50), default='Open')  # Open, Resolved, Escalated
 
     # 🧩 JSON-Compatible Fields (API & AI)
-    ownership_types = db.Column(db.JSON, nullable=True)              # e.g., ['Freehold', 'Leasehold']
-    ai_key_clauses = db.Column(db.JSON, nullable=True)               # e.g., {"break_clause": "...", "notice": "90 days"}
+    ownership_types = db.Column(db.JSON, nullable=True)
+    ai_key_clauses = db.Column(db.JSON, nullable=True)
 
     # 🏷️ Tags / Classification
     tags = db.Column(db.String(255), nullable=True)
-    capex_profile = db.Column(db.String(100), nullable=True)
+    capex_profile = db.Column(JSONB, nullable=True)
+    capex_status = db.Column(db.String(50), nullable=False, default='not_created', server_default='not_created')
 
     # 📝 Review/Audit Trail
     ai_last_reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
@@ -110,6 +138,9 @@ class Client(db.Model):
     # 🔗 Governance Config Reference
     country_config_id = db.Column(db.Integer, db.ForeignKey('country_client_config.id'), nullable=True)
     country_config = db.relationship('CountryClientConfig', backref='linked_clients')
+
+    # Optional: client code (used by UI preview/generator)
+    client_code = db.Column(db.String(50), unique=True, index=True)
 
     def __repr__(self):
         return f"<Client {self.name} ({self.client_type})>"

@@ -12,7 +12,7 @@ class HRProfile(db.Model):
     manager_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 
     user = db.relationship("User", foreign_keys=[user_id], backref=db.backref("hr_profile", uselist=False))
-    department = db.relationship("Department", backref="employees")
+    department = db.relationship('Department', back_populates='employees')
     manager = db.relationship("User", foreign_keys=[manager_id], backref="managed_profiles")
 
     # 📋 Employment Metadata

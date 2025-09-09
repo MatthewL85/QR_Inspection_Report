@@ -1,0 +1,115 @@
+{% extends 'layouts/super_admin_base.html' %}
+{% block title %}Manage Users | LogixPM{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid">
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">👥 Manage Users</h5>
+          <a href="{{ url_for('super_admin.add_user') }}" class="btn btn-success btn-sm">
+            <i class="material-icons">person_add</i> Add New User
+          </a>
+        </div>
+
+        <div class="card-body px-3 pt-3 pb-2">
+
+          <!-- 🔍 Search and Filter Form -->
+          <form method="GET" class="row g-3 align-items-end mb-4">
+            <div class="col-md-3">
+              <label for="search" class="form-label">Search by Email or Name</label>
+              <input type="text" class="form-control" name="search" id="search" placeholder="e.g. jdoe@example.com"
+                     value="{{ request.args.get('search', '') }}">
+            </div>
+            <div class="col-md-2">
+              <label for="role_filter" class="form-label">Filter by Role</label>
+              <select class="form-select" name="role_filter" id="role_filter">
+                <option value="">All Roles</option>
+                {% for role in roles %}
+                <option value="{{ role.name }}" {% if request.args.get('role_filter') == role.name %}selected{% endif %}>{{ role.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="company_filter" class="form-label">Filter by Company</label>
+              <select class="form-select" name="company_filter" id="company_filter">
+                <option value="">All Companies</option>
+                {% for company in companies %}
+                <option value="{{ company.name }}" {% if request.args.get('company_filter') == company.name %}selected{% endif %}>
+                  {{ company.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-1">
+              <button type="submit" class="btn btn-outline-primary w-100" title="Apply filters">
+                <i class="fas fa-filter"></i>
+              </button>
+            </div>
+            <div class="col-md-1">
+              <a href="{{ url_for('super_admin.manage_users') }}" class="btn btn-outline-secondary w-100" title="Clear filters">
+                <i class="fas fa-times-circle"></i>
+              </a>
+            </div>
+
+            <!-- ⬇️ Export split-button: Active / Inactive / All -->
+            <div class="col-md-2">
+              <div class="btn-group w-100">
+                <a
+                  href="{{ url_for('super_admin.export_users',
+                                   search=request.args.get('search'),
+                                   role_filter=request.args.get('role_filter'),
+                                   company_filter=request.args.get('company_filter'),
+                                   sort_by=sort_by, sort_dir=sort_dir,
+                                   status='active') }}"
+                  class="btn btn-outline-success"
+                  title="Export active users as CSV">
+                  <i class="fas fa-file-csv"></i> Export Active
+                </a>
+                <button type="button" class="btn btn-outline-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                  <span class="visually-hidden">Toggle export options</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li>
+                    <a class="dropdown-item"
+                       href="{{ url_for('super_admin.export_users',
+                                        search=request.args.get('search'),
+                                        role_filter=request.args.get('role_filter'),
+                                        company_filter=request.args.get('company_filter'),
+                                        sort_by=sort_by, sort_dir=sort_dir,
+                                        status='inactive') }}">
+                      Export Inactive
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item"
+                       href="{{ url_for('super_admin.export_users',
+                                        search=request.args.get('search'),
+                                        role_filter=request.args.get('role_filter'),
+                                        company_filter=request.args.get('company_filter'),
+                                        sort_by=sort_by, sort_dir=sort_dir,
+                                        status='all') }}">
+                      Export All
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </form>
+
+          {% include 'super_admin/users/partials/active_users_table.html' %}
+          {% include 'super_admin/users/partials/inactive_users_table.html' %}
+
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <a href="{{ url_for('super_admin.dashboard') }}" class="btn btn-secondary">
+          <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

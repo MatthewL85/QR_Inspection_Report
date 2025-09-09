@@ -1,0 +1,28 @@
+{% if client.capex_status %}
+  <span class="badge bg-secondary">CAPEX: {{ client.capex_status.replace('_',' ')|title }}</span>
+{% endif %}
+
+{% if client.capex_profile %}
+<div class="card mt-3">
+  <div class="card-header"><strong>CAPEX Snapshot</strong></div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-4">
+        <div class="text-muted small">Planned Budget</div>
+        <div>{{ client.capex_profile.planned_budget or '—' }}</div>
+      </div>
+      <div class="col-md-4">
+        <div class="text-muted small">This Year Allocation</div>
+        <div>{{ client.capex_profile.current_year_allocation or '—' }}</div>
+      </div>
+      <div class="col-md-4">
+        <div class="text-muted small">Next Major Works</div>
+        <div>{{ client.capex_profile.next_major_works or '—' }}</div>
+      </div>
+    </div>
+    <div class="mt-2 text-muted small">
+      Priority Areas: {{ (client.capex_profile.priority_areas or []) | join(', ') or '—' }}
+    </div>
+  </div>
+</div>
+{% endif %}

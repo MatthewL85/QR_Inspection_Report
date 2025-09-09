@@ -1,0 +1,227 @@
+{% extends 'layouts/super_admin_base.html' %}
+{% block page_content %}
+<div class="container-fluid py-4">
+
+  {# ───────────────────────────────────────────────────────────────────────────
+     Resolve latest contract once for the whole page
+  ──────────────────────────────────────────────────────────────────────────── #}
+  {% set contracts_sorted = client.contracts | sort(attribute='end_date') if client.contracts else [] %}
+  {% set latest_contract = contracts_sorted[-1] if contracts_sorted|length else None %}
+  {% set dte = latest_contract.days_to_expiry() if latest_contract else None %}
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">🏢 Client Profile: {{ client.name }}</h4>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('super_admin.edit_client', client_id=client.id) }}" class="btn btn-sm btn-primary">✏️ Edit</a>
+      <a href="{{ url_for('super_admin.edit_client', client_id=client.id) }}#assignments" class="btn btn-sm btn-outline-secondary">👤 Assign PM</a>
+      <a href="{{ url_for('super_admin.edit_client', client_id=client.id) }}#assignments" class="btn btn-sm btn-outline-dark">💰 Assign FC</a>
+      <a href="{{ url_for('super_admin.edit_client', client_id=client.id) }}#assignments" class="btn btn-sm btn-outline-secondary">🧰 Assign Assistant</a>
+      <a href="{{ url_for('super_admin_contracts.renew', client_id=client.id) }}" class="btn btn-sm btn-outline-primary">📄 Renew Contract</a>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Core Information -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header pb-0"><strong>Core Information</strong></div>
+        <div class="card-body">
+          <p><strong>Name:</strong> {{ client.name }}</p>
+          <p><strong>Client Code:</strong> {{ client.client_code or '—' }}</p>
+          <p><strong>Type:</strong> {{ client.client_type or '—' }}</p>
+
+          <p class="mb-1"><strong>Address:</strong></p>
+          <div class="ms-2">
+            {% if client.address_line1 %}
+              {{ client.address_line1 }}{% if client.address_line2 %}, {{ client.address_line2 }}{% endif %}{% if client.city %}, {{ client.city }}{% endif %}
+            {% elif client.address %}
+              {{ client.address }}
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+            <div class="text-muted small">
+              {{ client.country or '' }}{% if client.region %} • {{ client.region }}{% endif %}
+            </div>
+          </div>
+
+          <p class="mt-3"><strong>Postal Code:</strong> {{ client.postal_code or '—' }}</p>
+          <p><strong>Registration Number:</strong> {{ client.registration_number or '—' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contract & Assignments (driven by latest ClientContract) -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header pb-0 d-flex justify-content-between align-items-center">
+          <strong>Contract & Assignments</strong>
+          {% if latest_contract %}
+            {% if dte is not none %}
+              {% if dte < 0 %}
+                <span class="badge bg-gradient-danger">Expired {{ (dte * -1) }} days ago</span>
+              {% elif dte <= 60 %}
+                <span class="badge bg-gradient-warning text-dark">{{ dte }} days to expiry</span>
+              {% else %}
+                <span class="badge bg-gradient-success">{{ dte }} days to expiry</span>
+              {% endif %}
+            {% endif %}
+          {% else %}
+            <span class="badge bg-secondary">No contract</span>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <p><strong>Assigned PM:</strong> {{ client.assigned_pm.full_name if client.assigned_pm else '—' }}</p>
+          <p><strong>Financial Controller:</strong> {{ client.assigned_fc.full_name if client.assigned_fc else '—' }}</p>
+          <p><strong>Assistant:</strong> {{ client.assigned_assistant.full_name if client.assigned_assistant else '—' }}</p>
+          <hr>
+
+          <p><strong>Contract Value:</strong>
+            {% if latest_contract %}
+              {{ latest_contract.currency or '€' }}{{ "{:,.2f}".format(latest_contract.contract_value or 0) }}
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </p>
+
+          <p><strong>Contract Period:</strong>
+            {% if latest_contract %}
+              {{ latest_contract.start_date }} → {{ latest_contract.end_date }}
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </p>
+
+          <p><strong>Days to Expiry:</strong>
+            {% if latest_contract and dte is not none %}
+              {% if dte <= 0 %}
+                <span class="badge bg-danger">Expired</span>
+              {% elif dte <= 60 %}
+                <span class="badge bg-warning text-dark">{{ dte }} days</span>
+              {% else %}
+                <span class="badge bg-success">{{ dte }} days</span>
+              {% endif %}
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </p>
+
+          <p><strong>Next Fee Increase:</strong> {{ latest_contract.next_fee_increase_date if latest_contract else '—' }}</p>
+          <p><strong>Currency:</strong> {{ (latest_contract.currency if latest_contract else client.currency) or '—' }}</p>
+          <p><strong>Language:</strong> {{ client.preferred_language or '—' }}</p>
+
+          {% if latest_contract and (latest_contract.generated_pdf_path or latest_contract.generated_html_path) %}
+            <div class="mt-3 d-flex gap-2">
+              {% if latest_contract.generated_pdf_path %}
+                <a class="btn btn-outline-secondary btn-sm"
+                   href="{{ url_for('static', filename=latest_contract.generated_pdf_path) }}"
+                   target="_blank">Open PDF</a>
+              {% endif %}
+              {% if latest_contract.generated_html_path %}
+                <a class="btn btn-outline-secondary btn-sm"
+                   href="{{ url_for('static', filename=latest_contract.generated_html_path) }}"
+                   target="_blank">Open HTML</a>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Contacts -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header pb-0"><strong>Contacts</strong></div>
+        <div class="card-body">
+          {% if client.contacts %}
+            <ul class="mb-0 ps-3">
+              {% for contact in client.contacts %}
+                <li class="mb-2">
+                  <strong>{{ contact.name or 'Contact' }}</strong><br>
+                  {% if contact.email %}📧 <a href="mailto:{{ contact.email }}">{{ contact.email }}</a><br>{% endif %}
+                  {% if contact.phone %}📞 {{ contact.phone }}{% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <span class="text-muted">No contacts added.</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Governance -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header pb-0"><strong>Governance & Compliance</strong></div>
+        <div class="card-body">
+          <p><strong>Financial Year End:</strong> {{ client.financial_year_end or '—' }}</p>
+          <p><strong>Last AGM Date:</strong> {{ client.last_agm_date or '—' }}</p>
+          <p><strong>AGM Completed:</strong> {{ '✅ Yes' if client.agm_completed else '❌ No' }}</p>
+          <p><strong>GDPR Enforced:</strong> {{ '✅' if client.enforce_gdpr else '—' }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Legal & Ownership -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header pb-0"><strong>Legal & Ownership</strong></div>
+        <div class="card-body">
+          <p><strong>Ownership Type:</strong> {{ client.ownership_type or '—' }}</p>
+          <p><strong>Transferred Common Area:</strong> {{ '✅ Yes' if client.transfer_of_common_area else '❌ No' }}</p>
+          <p><strong>Deed of Covenants:</strong> {{ client.deed_of_covenants or '—' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Additional Charges (from latest contract) -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header pb-0 d-flex justify-content-between">
+          <strong>Additional Charges</strong>
+          <a href="{{ url_for('super_admin_contracts.renew', client_id=client.id) }}"
+             class="btn btn-sm btn-outline-primary">Renew/Amend</a>
+        </div>
+        <div class="card-body">
+          {% if latest_contract and latest_contract.additional_fees %}
+            {% set fees = latest_contract.fees_dict() %}
+            {% if fees %}
+              {% for name, amt in fees.items() %}
+                <span class="badge bg-light text-dark border me-1 mb-1">
+                  {{ name }}: {{ latest_contract.currency }} {{ "{:,.2f}".format(amt) }}
+                </span>
+              {% endfor %}
+            {% else %}
+              <span class="text-muted">No additional charges.</span>
+            {% endif %}
+          {% else %}
+            <span class="text-muted">No additional charges.</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- GAR AI Summary -->
+    <div class="col-md-12 mb-4">
+      <div class="card h-100">
+        <div class="card-header pb-0 d-flex justify-content-between">
+          <strong>GAR AI Monitoring</strong>
+          <span class="badge bg-gradient-{{ 'success' if client.is_gar_monitored else 'secondary' }}">
+            {{ 'Monitored' if client.is_gar_monitored else 'Not Monitored' }}
+          </span>
+        </div>
+        <div class="card-body">
+          <p><strong>Governance Score:</strong> {{ client.ai_governance_score or '—' }}</p>
+          <p><strong>Health Index:</strong> {{ client.ai_health_index or '—' }}</p>
+          <p><strong>Compliance Index:</strong> {{ client.ai_compliance_index or '—' }}</p>
+          <p><strong>Advice Summary:</strong> {{ client.ai_advice_summary or '—' }}</p>
+          <p><strong>Risk Level:</strong> {{ client.ai_risk_level or '—' }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <a href="{{ url_for('super_admin.manage_clients') }}" class="btn btn-outline-secondary mt-3">⬅ Back to Clients</a>
+</div>
+{% endblock %}

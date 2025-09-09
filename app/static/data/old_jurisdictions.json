@@ -1,0 +1,151 @@
+{
+  "version": "2025-08-23",
+  "schema": "v1",
+  "countries": {
+    "IE": {
+      "name": "Ireland",
+      "currency": "EUR",
+      "timezone": "Europe/Dublin",
+      "regionLabel": "County",
+      "gdpr": true,
+      "regions": {
+        "*": {
+          "entity": "Owners’ Management Company (OMC)",
+          "clientTypes": ["Owner Management Company (OMC)"],
+          "statutes": [
+            {"title":"Multi-Unit Developments Act 2011","url":"https://www.irishstatutebook.ie/"},
+            {"title":"Companies Act 2014","url":"https://www.irishstatutebook.ie/"}
+          ],
+          "notes": ["OMCs manage common areas; property agents must hold PSRA licences."],
+          "tax": {"vatLabel":"VAT Number (IE)","vatHelp":"Irish VAT — if registered.","localLabel":"Tax Reference","localHelp":""}
+        }
+      }
+    },
+    "GB": {
+      "name":"United Kingdom",
+      "currency":"GBP",
+      "timezone":"Europe/London",
+      "regionLabel":"County/Region",
+      "gdpr": true,
+      "regions": {
+        "scotland": {
+          "entity":"Owners / Owners’ Association (Factor required)",
+          "clientTypes":["Property Factor","Owners’ Association"],
+          "statutes":[
+            {"title":"Title Conditions (Scotland) Act 2003","url":"https://www.legislation.gov.uk/"},
+            {"title":"Tenements (Scotland) Act 2004","url":"https://www.legislation.gov.uk/"},
+            {"title":"Property Factors (Scotland) Act 2011","url":"https://www.legislation.gov.uk/"}
+          ],
+          "notes":["Residential factors must be registered and follow a statutory code."],
+          "tax":{"vatLabel":"UK VAT Number","vatHelp":"UK VAT — if registered.","localLabel":"Company UTR (optional)","localHelp":""}
+        },
+        "*": {
+          "entity":"Residents’ Management Company (RMC) / Right‑to‑Manage (RTM)",
+          "clientTypes":["Resident Management Company (RMC)","Right to Manage (RTM)"],
+          "statutes":[
+            {"title":"Commonhold & Leasehold Reform Act 2002","url":"https://www.legislation.gov.uk/"},
+            {"title":"Landlord & Tenant Act 1985 (s.20)","url":"https://www.legislation.gov.uk/"}
+          ],
+          "notes":["RTM lets leaseholders take management; service‑charge consultation rules (s.20)."],
+          "tax":{"vatLabel":"UK VAT Number","vatHelp":"UK VAT — if registered.","localLabel":"Company UTR (optional)","localHelp":""}
+        }
+      }
+    },
+    "US": {
+      "name":"United States",
+      "currency":"USD",
+      "timezone":"America/New_York",
+      "regionLabel":"State",
+      "gdpr": false,
+      "regions": {
+        "new york": {
+          "entity":"Board of Managers (Condominium)",
+          "clientTypes":["Homeowners Association (HOA)","Condominium Association","Co‑op Board"],
+          "statutes":[{"title":"NY Real Property Law, Art. 9‑B","url":"https://www.nysenate.gov/"}],
+          "notes":["Statewide condo governance framework."],
+          "tax":{"vatLabel":"Federal Tax ID (EIN)","vatHelp":"9‑digit EIN.","localLabel":"NYS Sales Tax ID (if applicable)","localHelp":"State/City registrations if required."},
+          "timezone":"America/New_York"
+        },
+        "california": {
+          "entity":"Homeowners’ Association / Condo Association",
+          "clientTypes":["Homeowners Association (HOA)","Condominium Association"],
+          "statutes":[{"title":"Davis‑Stirling Act (Civ. Code §§4000–6150)","url":"https://www.davis-stirling.com/"}],
+          "notes":["Governs CIDs (condo/HOA/mixed‑use)."],
+          "tax":{"vatLabel":"Federal Tax ID (EIN)","vatHelp":"9‑digit EIN.","localLabel":"State Tax ID (optional)","localHelp":"Varies by state."},
+          "timezone":"America/Los_Angeles"
+        },
+        "florida": {
+          "entity":"Condominium Association; HOA",
+          "clientTypes":["Condominium Association","HOA"],
+          "statutes":[
+            {"title":"Florida Statutes Ch. 718 (Condos)","url":"https://www.leg.state.fl.us/"},
+            {"title":"Florida Statutes Ch. 720 (HOAs)","url":"https://www.leg.state.fl.us/"}
+          ],
+          "notes":["Detailed board/assessment rules; statewide condo regime."],
+          "tax":{"vatLabel":"Federal Tax ID (EIN)","vatHelp":"9‑digit EIN.","localLabel":"State Tax ID (optional)","localHelp":"Varies by state."}
+        },
+        "texas": {
+          "entity":"Unit Owners’ Association (condominium)",
+          "clientTypes":["Condominium Association"],
+          "statutes":[{"title":"Texas Property Code Ch. 82 (Uniform Condominium Act)","url":"https://statutes.capitol.texas.gov/"}],
+          "notes":["Applies to residential and commercial/industrial condos."],
+          "tax":{"vatLabel":"Federal Tax ID (EIN)","vatHelp":"9‑digit EIN.","localLabel":"State Tax ID (optional)","localHelp":"Varies by state."},
+          "timezone":"America/Chicago"
+        },
+        "*": {
+          "entity":"Homeowners Association (HOA) / Condominium Association",
+          "clientTypes":["Homeowners Association (HOA)","Condominium Association"],
+          "statutes":[{"title":"Uniform/common state statutes (varies)","url":""}],
+          "notes":["Exact rules differ by state; see state‑specific law."],
+          "tax":{"vatLabel":"Federal Tax ID (EIN)","vatHelp":"9‑digit EIN.","localLabel":"State Tax ID (optional)","localHelp":"Varies by state."}
+        }
+      }
+    },
+    "CA": {
+      "name":"Canada",
+      "currency":"CAD",
+      "timezone":"America/Toronto",
+      "regionLabel":"Province",
+      "gdpr": false,
+      "regions": {
+        "ontario": {
+          "entity":"Condominium Corporation",
+          "clientTypes":["Condominium Corporation","HOA"],
+          "statutes":[{"title":"Condominium Act, 1998","url":"https://www.ontario.ca/laws"}],
+          "notes":["Condo managers are licensed by CMRAO."],
+          "tax":{"vatLabel":"GST/HST Number (Canada)","vatHelp":"Federal GST/HST.","localLabel":"—","localHelp":""}
+        },
+        "british columbia": {
+          "entity":"Strata Corporation",
+          "clientTypes":["Strata Corporation","HOA"],
+          "statutes":[{"title":"Strata Property Act","url":"https://www.bclaws.gov.bc.ca/"}],
+          "notes":["Strata managers licensed under Real Estate Services Act (BCFSA)."],
+          "tax":{"vatLabel":"GST/HST Number (Canada)","vatHelp":"Federal GST/HST.","localLabel":"PST Number","localHelp":"Provincial Sales Tax (if registered)."},
+          "timezone":"America/Vancouver"
+        },
+        "quebec": {
+          "entity":"Syndicate of co‑owners (syndicat)",
+          "clientTypes":["Syndicate of Co‑ownership (Syndicat de copropriété)","HOA"],
+          "statutes":[{"title":"Civil Code of Québec (divided co‑ownership)","url":"https://www.legisquebec.gouv.qc.ca/"}],
+          "notes":["Syndicate has legal personality; duties set by C.c.Q."],
+          "tax":{"vatLabel":"GST/HST Number (Canada)","vatHelp":"Federal GST/HST.","localLabel":"QST Number","localHelp":"Québec Sales Tax (if registered)."}
+        },
+        "alberta": {
+          "entity":"Condominium Corporation",
+          "clientTypes":["Condominium Corporation","HOA"],
+          "statutes":[{"title":"Condominium Property Act","url":"https://kings-printer.alberta.ca/"}],
+          "notes":["Condo managers require RECA licensing."],
+          "tax":{"vatLabel":"GST/HST Number (Canada)","vatHelp":"Federal GST/HST.","localLabel":"—","localHelp":"No provincial sales tax."},
+          "timezone":"America/Edmonton"
+        },
+        "*": {
+          "entity":"Condominium Corporation (Strata) / HOA",
+          "clientTypes":["Condominium Corporation (Strata)","HOA"],
+          "statutes":[{"title":"Provincial condo/strata statutes","url":""}],
+          "notes":["Details vary by province; see provincial law."],
+          "tax":{"vatLabel":"GST/HST Number (Canada)","vatHelp":"Federal GST/HST.","localLabel":"Provincial Tax (PST/QST) Number","localHelp":"Depends on province."}
+        }
+      }
+    }
+  }
+}

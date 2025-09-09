@@ -37,7 +37,7 @@ class MemberApproval(db.Model):
     gar_feedback = db.Column(db.Text, nullable=True)
 
     # 🔁 Relationships
-    member = db.relationship('member', backref='approvals')
+    member = db.relationship('Member', back_populates='approvals')
     resident_request = db.relationship('ResidentRequest', backref='member_approvals')
 
     def __repr__(self):

@@ -34,6 +34,10 @@ class WorkOrder(db.Model):
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'))
     client = db.relationship('Client', backref='work_orders')
 
+    # 👔 Company Reference (Fix for Company.work_orders relationship)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id', ondelete='SET NULL'), nullable=True)
+    company = db.relationship('Company', back_populates='work_orders')
+
     unit_id = db.Column(db.Integer, db.ForeignKey('units.id'), nullable=True)
     unit = db.relationship('Unit', backref='work_orders')
 
@@ -63,7 +67,13 @@ class WorkOrder(db.Model):
 
     # 🔄 Optional Linked Tables
     maintenance_request_id = db.Column(db.Integer, db.ForeignKey('maintenance_requests.id'), nullable=True)
-    maintenance_request = db.relationship('MaintenanceRequest', backref='work_order', uselist=False)
+
+    maintenance_request = db.relationship(
+        'MaintenanceRequest',
+        back_populates='work_order',
+        foreign_keys=[maintenance_request_id],
+        uselist=False
+        )
 
     alert_id = db.Column(db.Integer, db.ForeignKey('alerts.id'), nullable=True)
     alert = db.relationship('Alert', backref='work_orders')
@@ -71,8 +81,9 @@ class WorkOrder(db.Model):
     escalated_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     escalated_by = db.relationship('User', foreign_keys=[escalated_by_id], backref='escalated_work_orders')
 
-    completion = db.relationship('WorkOrderCompletion', backref='work_order', uselist=False)
-    feedback = db.relationship('ContractorFeedback', backref='work_order', uselist=False)
+    completion = db.relationship('WorkOrderCompletion', back_populates='work_order', uselist=False)
+    feedback = db.relationship('ContractorFeedback', back_populates='work_order', uselist=False)
+
 
     # 📎 External/API Fields
     external_reference = db.Column(db.String(100), nullable=True)

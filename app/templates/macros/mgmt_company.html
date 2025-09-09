@@ -1,0 +1,65 @@
+{# app/templates/macros/mgmt_company.html #}
+{% macro _norm(x) -%}{{ (x or '')|lower|trim }}{%- endmacro %}
+
+{# Region‑aware list for governance client types. Returns a list. #}
+{% macro client_types_for(country, region) -%}
+  {%- set c = _norm(country) -%}
+  {%- set r = _norm(region) -%}
+
+  {# Ireland #}
+  {%- if c in ['ireland','ie','republic of ireland'] -%}
+    {{- ['Owner Management Company (OMC)'] -}}
+
+  {# United Kingdom (override for Scotland) #}
+  {%- elif c in ['united kingdom','uk','great britain','england','wales','northern ireland'] -%}
+    {%- if r == 'scotland' -%}
+      {{- ['Property Factor','Owners’ Association'] -}}
+    {%- else -%}
+      {{- ['Resident Management Company (RMC)','Right to Manage (RTM)'] -}}
+    {%- endif -%}
+
+  {# United States (override for New York) #}
+  {%- elif c in ['united states','united states of america','usa','us'] -%}
+    {%- if r in ['new york','ny'] -%}
+      {{- ['Homeowners Association (HOA)','Condominium Association','Co‑op Board'] -}}
+    {%- else -%}
+      {{- ['Homeowners Association (HOA)','Condominium Association'] -}}
+    {%- endif -%}
+
+  {# Canada: province‑specific naming #}
+  {%- elif c in ['canada','ca'] -%}
+    {%- if r in ['ontario','on'] -%}
+      {{- ['Condominium Corporation','HOA'] -}}
+    {%- elif r in ['british columbia','bc'] -%}
+      {{- ['Strata Corporation','HOA'] -}}
+    {%- elif r in ['quebec','qc'] -%}
+      {{- ['Syndicate of Co‑ownership (Syndicat de copropriété)','HOA'] -}}
+    {%- elif r in ['alberta','ab'] -%}
+      {{- ['Condominium Corporation','HOA'] -}}
+    {%- else -%}
+      {{- ['Condominium Corporation (Strata)','HOA'] -}}
+    {%- endif -%}
+
+  {# AU / NZ / SG / HK / UAE #}
+  {%- elif c in ['australia','au'] -%}
+    {{- ['Owners Corporation','Strata Scheme','Community Title Scheme'] -}}
+  {%- elif c in ['new zealand','nz'] -%}
+    {{- ['Body Corporate','Incorporated Society'] -}}
+  {%- elif c in ['singapore','sg'] -%}
+    {{- ['Management Corporation Strata Title (MCST)'] -}}
+  {%- elif c in ['hong kong','hk','hong kong sar'] -%}
+    {{- ['Owners’ Corporation'] -}}
+  {%- elif c in ['united arab emirates','uae','u.a.e','dubai','abu dhabi','sharjah','ajman','umm al-quwain','ras al khaimah','fujairah'] -%}
+    {{- ['Jointly Owned Property (JOP) Association','Owners’ Association'] -}}
+
+  {# Default #}
+  {%- else -%}
+    {{- ['Management Company','Owners’ Association'] -}}
+  {%- endif -%}
+{%- endmacro %}
+
+{# Legacy compatibility: comma‑separated string for older templates. #}
+{% macro mgmt_company_types_for(country, region='') -%}
+  {%- set types = client_types_for(country, region) -%}
+  {{- types|join(', ') -}}
+{%- endmacro %}

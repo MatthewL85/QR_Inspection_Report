@@ -1,0 +1,241 @@
+{% extends 'layouts/super_admin_base.html' %}
+{% import 'macros/jurisdiction.html' as J %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">🏢 Manage Clients</h4>
+    <div>
+      <a href="{{ url_for('super_admin.add_client') }}"
+         class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1">
+        <i class="material-icons" style="font-size:16px; line-height:1">add</i>
+        <span>Add New Client</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body px-0 pt-0 pb-2">
+      <div class="table-responsive p-3">
+        <table class="table align-items-center mb-0">
+          <thead>
+            <tr>
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Client</th>
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Address / Location</th>
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Client Type</th>
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Units</th>
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Property Manager</th>
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Financial Controller</th>
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Assistant</th>
+
+              <!-- New business columns -->
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Contract Value</th>
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Contract (Start—End)</th>
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Days to Expiry</th>
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Next Fee Increase</th>
+              <th class="text-uppercase text-secondary text-xs font-weight-bolder">Extras</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for client in clients %}
+            <tr>
+              <!-- Client / Property Name -->
+              <td>
+                <div class="d-flex flex-column">
+                  <a class="fw-semibold text-decoration-none"
+                     href="{{ url_for('super_admin.view_client', client_id=client.id) }}">
+                    {{ client.name }}
+                  </a>
+                  {% if client.property_name %}
+                    <small class="text-muted">Property: {{ client.property_name }}</small>
+                  {% endif %}
+                </div>
+              </td>
+
+              <!-- Address / Location -->
+              <td>
+                <div class="d-flex flex-column">
+                  {% if client.address_line1 %}
+                    <span>
+                      {{ client.address_line1 }}
+                      {% if client.address_line2 %}, {{ client.address_line2 }}{% endif %}
+                      {% if client.city %}, {{ client.city }}{% endif %}
+                    </span>
+                  {% elif client.address %}
+                    <span>{{ client.address }}</span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                  <small class="text-muted">
+                    {% set country = client.country or '' %}
+                    {% set region  = client.region  or '' %}
+                    {{ country }}{% if region %} • {{ J.region_label(country) }}: {{ region }}{% endif %}
+                  </small>
+                </div>
+              </td>
+
+              <!-- Client Type -->
+              <td>{{ client.client_type or '—' }}</td>
+
+              <!-- Units -->
+              <td>
+                {% set total_units = client.number_of_units %}
+                {% set parts = [] %}
+                {% if client.units_apartments %}{% set _ = parts.append('Apt: ' ~ client.units_apartments) %}{% endif %}
+                {% if client.units_houses %}{% set _ = parts.append('House: ' ~ client.units_houses) %}{% endif %}
+                {% if client.units_duplexes %}{% set _ = parts.append('Duplex: ' ~ client.units_duplexes) %}{% endif %}
+                {% if client.units_commercial %}{% set _ = parts.append('Comm: ' ~ client.units_commercial) %}{% endif %}
+
+                {% if total_units %}
+                  <div><strong>{{ total_units }}</strong></div>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+                {% if parts|length %}
+                  <small class="text-muted d-block">{{ parts|join(', ') }}</small>
+                {% endif %}
+              </td>
+
+              <!-- Property Manager -->
+              <td>
+                {% if client.assigned_pm %}
+                  {{ client.assigned_pm.full_name or ((client.assigned_pm.first_name or '') ~ ' ' ~ (client.assigned_pm.last_name or '')) | trim }}
+                {% elif client.assigned_pm_id %}
+                  #{{ client.assigned_pm_id }}
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+
+              <!-- Financial Controller -->
+              <td>
+                {% if client.assigned_fc %}
+                  {{ client.assigned_fc.full_name or ((client.assigned_fc.first_name or '') ~ ' ' ~ (client.assigned_fc.last_name or '')) | trim }}
+                {% elif client.assigned_fc_id %}
+                  #{{ client.assigned_fc_id }}
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+
+              <!-- Assistant -->
+              <td>
+                {% if client.assigned_assistant %}
+                  {{ client.assigned_assistant.full_name or ((client.assigned_assistant.first_name or '') ~ ' ' ~ (client.assigned_assistant.last_name or '')) | trim }}
+                {% elif client.assigned_assistant_id %}
+                  #{{ client.assigned_assistant_id }}
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+
+              <!-- Contract Value -->
+              <td>
+                {% if client.contract_value %}
+                  {% set cur = client.currency or '€' %}
+                  <strong>{{ cur }}{{ "{:,.2f}".format(client.contract_value) }}</strong>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+
+              <!-- Contract (Start—End) -->
+              <td>
+                {% if client.contract_start_date or client.contract_end_date %}
+                  <div>
+                    <span>{{ client.contract_start_date or '—' }}</span>
+                    <span class="text-muted">—</span>
+                    <span>{{ client.contract_end_date or '—' }}</span>
+                  </div>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+
+              <!-- Days to Expiry -->
+              <td>
+                {% if client.contract_end_date %}
+                  {% set days_left = (client.contract_end_date - today).days %}
+                  {% if days_left <= 0 %}
+                    <span class="badge bg-danger">Expired</span>
+                  {% elif days_left <= 60 %}
+                    <span class="badge bg-warning text-dark">{{ days_left }} days</span>
+                  {% else %}
+                    <span class="badge bg-success">{{ days_left }} days</span>
+                  {% endif %}
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+
+              <!-- Next Fee Increase -->
+              <td>
+                {% if client.next_fee_increase_date %}
+                  <span>{{ client.next_fee_increase_date }}</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+
+              <!-- Extras -->
+              <td>
+                {% if client.fees is defined and client.fees %}
+                  {% set enabled = client.fees | selectattr('is_enabled') | list %}
+                  {% if enabled|length %}
+                    <small>
+                      {% for f in enabled %}
+                        <span class="badge bg-light text-dark border me-1 mb-1">
+                          {{ f.name }}: {{ client.currency or '€' }}{{ "{:,.2f}".format(f.amount) }}
+                        </span>
+                      {% endfor %}
+                    </small>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                {% else %}
+                  {# fallback if extras are simple boolean+amount fields #}
+                  {% set parts = [] %}
+                  {% if client.company_office_fee_enabled and client.company_office_fee_amount %}
+                    {% set _ = parts.append('Company Office: ' ~ (client.currency or '€') ~ '{:,.2f}'.format(client.company_office_fee_amount)) %}
+                  {% endif %}
+                  {% if client.out_of_hours_fee_enabled and client.out_of_hours_fee_amount %}
+                    {% set _ = parts.append('Out of Hours: ' ~ (client.currency or '€') ~ '{:,.2f}'.format(client.out_of_hours_fee_amount)) %}
+                  {% endif %}
+                  {% if client.company_secretary_fee_enabled and client.company_secretary_fee_amount %}
+                    {% set _ = parts.append('Company Secretary: ' ~ (client.currency or '€') ~ '{:,.2f}'.format(client.company_secretary_fee_amount)) %}
+                  {% endif %}
+                  {% if client.file_storage_fee_enabled and client.file_storage_fee_amount %}
+                    {% set _ = parts.append('File Storage: ' ~ (client.currency or '€') ~ '{:,.2f}'.format(client.file_storage_fee_amount)) %}
+                  {% endif %}
+                  {% if parts|length %}
+                    <small class="d-block text-wrap">
+                      {% for p in parts %}
+                        <span class="badge bg-light text-dark border me-1 mb-1">{{ p }}</span>
+                      {% endfor %}
+                    </small>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="12" class="text-center text-muted">No clients found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <a href="{{ url_for('super_admin.dashboard') }}" class="btn btn-secondary">
+      ⬅ Back to Dashboard
+    </a>
+  </div>
+
+</div>
+{% endblock %}

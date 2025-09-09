@@ -1,5 +1,4 @@
 # app/models/inspection.py
-
 from datetime import datetime
 from app.extensions import db
 
@@ -21,9 +20,6 @@ class Inspection(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     reviewed_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    reviewed_by = db.relationship('User', foreign_keys=[reviewed_by_id])
-    reviewed_at = db.Column(db.DateTime, nullable=True)
-    review_notes = db.Column(db.Text, nullable=True)
 
     # 📎 File Metadata
     document_filename = db.Column(db.String(255))
@@ -69,10 +65,20 @@ class Inspection(db.Model):
     gar_chat_ready = db.Column(db.Boolean, default=False)
     gar_feedback = db.Column(db.Text, nullable=True)
 
-
     # 🔁 Relationships
     equipment = db.relationship('Equipment', backref='inspections')
-    inspector = db.relationship('User', backref='inspections')
+    
+    inspector = db.relationship(
+        'User',
+        foreign_keys=[inspector_id],
+        backref='inspections_as_inspector'
+    )
+
+    reviewed_by = db.relationship(
+        'User',
+        foreign_keys=[reviewed_by_id],
+        backref='inspections_reviewed'
+    )
 
     def __repr__(self):
         return f"<Inspection id={self.id} equipment_id={self.equipment_id} status={self.status}>"

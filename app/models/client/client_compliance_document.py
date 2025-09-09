@@ -27,6 +27,7 @@ class ClientComplianceDocument(db.Model):
     reviewed_by_ai = db.Column(db.Boolean, default=False)
     ai_parsed_at = db.Column(db.DateTime, nullable=True)
     ai_source_type = db.Column(db.String(50), nullable=True)         # e.g., 'PDF', 'Scan', 'Email'
+    ai_status = db.Column(db.String(50))  # Draft, Parsed, Needs Review
 
     # 🧠 GAR Chat & Feedback Loop
     gar_chat_ready = db.Column(db.Boolean, default=False)

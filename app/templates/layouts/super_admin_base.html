@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- 🔐 Meta + Page Setup -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#2152ff" />
+  <title>{% block title %}Super Admin | LogixPM{% endblock %}</title>
+
+  <!-- 🌐 Google Fonts + Icons -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- 🎨 Core CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/material-dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+  <!-- 📎 Sidebar collapse styles -->
+  <style>
+    /* Fully collapse the MD sidenav and give the content the full width */
+    body.sidebar-collapsed .sidenav {
+      transform: translateX(-100%) !important;
+      width: 0 !important;
+      min-width: 0 !important;
+      overflow: hidden !important;
+      box-shadow: none !important;
+    }
+    body.sidebar-collapsed .main-content {
+      margin-left: 0 !important;
+    }
+
+    /* Smoothness */
+    .sidenav { transition: transform .2s ease, width .2s ease; }
+    .main-content { transition: margin .2s ease; }
+  </style>
+
+  <!-- 📦 Extensible Styles -->
+  {% block styles %}{% endblock %}
+</head>
+
+<body class="g-sidenav-show bg-gray-100">
+  <!-- 🧭 Sidebar -->
+  {% include 'partials/super_admin_sidebar.html' %}
+
+  <!-- 🧩 Main Content -->
+  <main class="main-content position-relative border-radius-lg ps">
+
+    <!-- 🔝 Top Navbar -->
+    {% include 'partials/navbar.html' %}
+
+    <!-- 📦 Content Container -->
+    <div class="container-fluid py-4">
+
+      <!-- ✅ Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+              <strong>{{ category.title() }}:</strong> {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- 📄 Page Content -->
+      {% block page_content %}{% endblock %}
+
+    </div>
+
+    <!-- ⚓ Footer -->
+    <footer class="footer py-4">
+      <div class="container-fluid">
+        <div class="row align-items-center justify-content-between">
+          <div class="col-lg-6 mb-lg-0 mb-4 text-muted text-sm text-center text-lg-start">
+            © <script>document.write(new Date().getFullYear())</script>
+            LogixPM. All rights reserved.
+          </div>
+          <div class="col-lg-6 text-sm text-end">
+            <a href="#" class="text-muted me-3">Terms</a>
+            <a href="#" class="text-muted me-3">Privacy</a>
+            <a href="#" class="text-muted">Help</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+  </main>
+
+  <!-- 🧠 JS Dependencies -->
+  <script src="{{ url_for('static', filename='assets/js/core/bootstrap.bundle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/js/material-dashboard.min.js') }}"></script>
+
+  <!-- 🧲 Sidebar toggle + persistence
+       Works with ANY button on the page with id="sidebarToggle" (e.g., in your page header).
+  -->
+  <script>
+    (function () {
+      const KEY = 'logixpm_sidebar_collapsed';
+      const body = document.body;
+
+      // Restore saved state
+      if (localStorage.getItem(KEY) === '1') {
+        body.classList.add('sidebar-collapsed');
+      }
+
+      // Bind once the DOM is ready
+      function bindToggle() {
+        const btn = document.getElementById('sidebarToggle');
+        if (!btn) return;
+        btn.addEventListener('click', function () {
+          body.classList.toggle('sidebar-collapsed');
+          localStorage.setItem(KEY, body.classList.contains('sidebar-collapsed') ? '1' : '0');
+        });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindToggle);
+      } else {
+        bindToggle();
+      }
+    })();
+  </script>
+
+  <!-- 🔄 Page-level scripts -->
+  {% block scripts %}{% endblock %}
+</body>
+</html>

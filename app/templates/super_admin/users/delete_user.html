@@ -1,0 +1,25 @@
+{% extends 'layouts/super_admin_base.html' %}
+
+{% block page_content %}
+<div class="container py-4">
+  <h4 class="mb-4 text-danger">🗑️ Delete User</h4>
+
+  <div class="card">
+    <div class="card-body">
+      <p>Are you sure you want to permanently delete the following user?</p>
+      <ul>
+        <li><strong>Name:</strong> {{ user.full_name }}</li>
+        <li><strong>Email:</strong> {{ user.email }}</li>
+        <li><strong>Role:</strong> {{ user.role.name }}</li>
+        <li><strong>Company:</strong> {{ user.company.name if user.company else '—' }}</li>
+      </ul>
+
+      <form method="POST">
+        <input type="hidden" name="confirm" value="yes">
+        <a href="{{ url_for('super_admin.manage_users') }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-danger">Confirm Delete</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

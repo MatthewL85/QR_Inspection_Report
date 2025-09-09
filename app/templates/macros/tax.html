@@ -1,0 +1,80 @@
+{# app/templates/macros/tax.html #}
+{% macro _norm(x) -%}{{ (x or '')|lower|trim }}{%- endmacro %}
+
+{% macro _hints(country, region) -%}
+  {%- set c = _norm(country) -%}
+  {%- set r = _norm(region) -%}
+
+  {# Defaults #}
+  {%- set vatLabel = 'VAT / Tax Number' -%}
+  {%- set vatHelp  = '' -%}
+  {%- set locLabel = 'Secondary Tax / Local Tax' -%}
+  {%- set locHelp  = '' -%}
+
+  {%- if c in ['ireland','ie'] -%}
+    {%- set vatLabel = 'VAT Number (IE)' -%}
+    {%- set vatHelp  = 'Irish VAT (IE) — if registered.' -%}
+    {%- set locLabel = 'Tax Reference' -%}
+
+  {%- elif c in ['united kingdom','uk','england','scotland','wales','northern ireland'] -%}
+    {%- set vatLabel = 'UK VAT Number' -%}
+    {%- set vatHelp  = 'UK VAT — if registered.' -%}
+    {%- set locLabel = 'Company UTR (optional)' -%}
+
+  {%- elif c in ['united states','united states of america','usa','us'] -%}
+    {%- set vatLabel = 'Federal Tax ID (EIN)' -%}
+    {%- set vatHelp  = '9‑digit EIN for the entity.' -%}
+    {%- set locLabel = 'State Tax ID (optional)' -%}
+    {%- set locHelp  = 'Varies by state (sales/use tax etc.).' -%}
+    {%- if r in ['new york','ny'] -%}
+      {%- set locLabel = 'NYS Sales Tax ID (if applicable)' -%}
+      {%- set locHelp  = 'New York State/City registrations where applicable.' -%}
+    {%- endif -%}
+
+  {%- elif c in ['canada','ca'] -%}
+    {%- set vatLabel = 'GST/HST Number (Canada)' -%}
+    {%- set vatHelp  = 'Federal GST/HST account number.' -%}
+    {%- set locLabel = 'Provincial Tax (PST/QST) Number' -%}
+    {%- set locHelp  = 'Depends on province.' -%}
+    {%- if r in ['ontario','on'] -%}
+      {%- set vatHelp  = 'HST in Ontario.' -%}
+      {%- set locLabel = '—' -%}
+      {%- set locHelp  = '' -%}
+    {%- elif r in ['british columbia','bc'] -%}
+      {%- set locLabel = 'PST Number' -%}
+      {%- set locHelp  = 'Provincial Sales Tax (if registered).' -%}
+    {%- elif r in ['quebec','qc'] -%}
+      {%- set locLabel = 'QST Number' -%}
+      {%- set locHelp  = 'Québec Sales Tax (if registered).' -%}
+    {%- elif r in ['alberta','ab'] -%}
+      {%- set locLabel = '—' -%}
+      {%- set locHelp  = 'No provincial sales tax.' -%}
+    {%- endif -%}
+
+  {%- elif c in ['australia','au'] -%}
+    {%- set vatLabel = 'ABN / GST (Australia)' -%}
+    {%- set vatHelp  = 'ABN; GST if registered.' -%}
+    {%- set locLabel = 'ACN (optional)' -%}
+
+  {%- elif c in ['new zealand','nz'] -%}
+    {%- set vatLabel = 'GST Number (NZ)' -%}
+    {%- set locLabel = 'IRD Number (optional)' -%}
+
+  {%- elif c in ['united arab emirates','uae','u.a.e'] -%}
+    {%- set vatLabel = 'TRN (UAE VAT)' -%}
+    {%- set vatHelp  = 'Tax Registration Number (if registered).' -%}
+    {%- set locLabel = 'Local Emirate Tax (if any)' -%}
+  {%- endif -%}
+
+  {{- {
+    'vatLabel': vatLabel,
+    'vatHelp': vatHelp,
+    'localLabel': locLabel,
+    'localHelp': locHelp
+  } -}}
+{%- endmacro %}
+
+{% macro vat_label(country, region) -%}{{ (_hints(country, region)).vatLabel }}{%- endmacro %}
+{% macro vat_help(country, region)  -%}{{ (_hints(country, region)).vatHelp  }}{%- endmacro %}
+{% macro local_label(country, region) -%}{{ (_hints(country, region)).localLabel }}{%- endmacro %}
+{% macro local_help(country, region)  -%}{{ (_hints(country, region)).localHelp  }}{%- endmacro %}

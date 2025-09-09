@@ -51,8 +51,8 @@ class LateFeeTransactionLog(db.Model):
 
     # 🔁 Relationships
     policy = db.relationship('LateFeeAndInterestPolicy', backref='fee_logs')
-    invoice = db.relationship('Invoice', backref='late_fee_logs')
-    arrears = db.relationship('Arrears', backref='late_fee_logs')
+    invoice = db.relationship('Invoice', back_populates='late_fee_logs')
+    arrears = db.relationship("Arrears", back_populates="late_fee_logs")
     unit = db.relationship('Unit', backref='late_fee_logs')
     client = db.relationship('Client', backref='late_fee_logs')
     created_by = db.relationship('User', backref='created_late_fee_logs')

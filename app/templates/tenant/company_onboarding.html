@@ -1,0 +1,186 @@
+{% extends 'layouts/super_admin_base.html' %}
+{% block page_content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+      <div class="card shadow-sm rounded-4 p-4">
+        <h3 class="mb-3">Company Onboarding</h3>
+        <p class="text-muted mb-4">Tell us about your property management company.</p>
+
+        {# Flash messages #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST" enctype="multipart/form-data" action="{{ url_for('tenant.company_onboarding') }}">
+          {{ form.hidden_tag() }}
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              {{ form.name.label(class="form-label") }}
+              {{ form.name(class="form-control") }}
+              {% for e in form.name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              {{ form.company_type.label(class="form-label") }}
+              {{ form.company_type(class="form-select") }}
+              {% for e in form.company_type.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-6">
+              {{ form.registration_number.label(class="form-label") }}
+              {{ form.registration_number(class="form-control") }}
+              {% for e in form.registration_number.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              {{ form.vat_number.label(class="form-label") }}
+              {{ form.vat_number(class="form-control") }}
+              {% for e in form.vat_number.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-6">
+              {{ form.tax_identifier.label(class="form-label") }}
+              {{ form.tax_identifier(class="form-control") }}
+              {% for e in form.tax_identifier.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              {{ form.industry.label(class="form-label") }}
+              {{ form.industry(class="form-control") }}
+              {% for e in form.industry.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-4">
+              {{ form.country.label(class="form-label") }}
+              {{ form.country(class="form-control") }}
+              {% for e in form.country.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-4">
+              {{ form.region.label(class="form-label") }}
+              {{ form.region(class="form-control") }}
+              {% for e in form.region.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-4">
+              {{ form.city.label(class="form-label") }}
+              {{ form.city(class="form-control") }}
+              {% for e in form.city.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-6">
+              {{ form.address_line1.label(class="form-label") }}
+              {{ form.address_line1(class="form-control") }}
+              {% for e in form.address_line1.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              {{ form.address_line2.label(class="form-label") }}
+              {{ form.address_line2(class="form-control") }}
+              {% for e in form.address_line2.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-4">
+              {{ form.state.label(class="form-label") }}
+              {{ form.state(class="form-control") }}
+              {% for e in form.state.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-4">
+              {{ form.postal_code.label(class="form-label") }}
+              {{ form.postal_code(class="form-control") }}
+              {% for e in form.postal_code.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-4">
+              {{ form.preferred_language.label(class="form-label") }}
+              {{ form.preferred_language(class="form-control") }}
+              {% for e in form.preferred_language.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-4">
+              {{ form.currency.label(class="form-label") }}
+              {{ form.currency(class="form-control") }}
+              {% for e in form.currency.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-4">
+              {{ form.timezone.label(class="form-label") }}
+              {{ form.timezone(class="form-control") }}
+              {% for e in form.timezone.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-6">
+              {{ form.email.label(class="form-label") }}
+              {{ form.email(class="form-control") }}
+              {% for e in form.email.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-3">
+              {{ form.phone.label(class="form-label") }}
+              {{ form.phone(class="form-control") }}
+              {% for e in form.phone.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-3">
+              {{ form.website.label(class="form-label") }}
+              {{ form.website(class="form-control") }}
+              {% for e in form.website.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-6">
+              {{ form.logo.label(class="form-label") }} {# FileField #}
+              {{ form.logo(class="form-control") }}
+              {% for e in form.logo.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              {{ form.brand_color.label(class="form-label") }}
+              {{ form.brand_color(class="form-control", placeholder="#0052cc") }}
+              {% for e in form.brand_color.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            {# Optional: subdomain + plan if present in your form/model #}
+            {% if form.subdomain is defined %}
+            <div class="col-md-6">
+              {{ form.subdomain.label(class="form-label") }}
+              <div class="input-group">
+                {{ form.subdomain(class="form-control", placeholder="yourteam") }}
+                <span class="input-group-text">.logixpm.app</span>
+              </div>
+              {% for e in form.subdomain.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            {% endif %}
+
+            {% if form.plan is defined %}
+            <div class="col-md-6">
+              {{ form.plan.label(class="form-label") }}
+              {{ form.plan(class="form-select") }}
+              {% for e in form.plan.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="col-md-12">
+              <div class="form-check">
+                {{ form.data_protection_compliant(class="form-check-input", id="gdpr_ok") }}
+                <label class="form-check-label" for="gdpr_ok">Data protection compliant (GDPR)</label>
+              </div>
+              <div class="form-check">
+                {{ form.consent_to_communicate(class="form-check-input", id="consent") }}
+                <label class="form-check-label" for="consent">Consent to receive communications</label>
+              </div>
+              <div class="form-check">
+                {{ form.terms_agreed(class="form-check-input", id="terms") }}
+                <label class="form-check-label" for="terms">I agree to the Terms of Service</label>
+                {% for e in form.terms_agreed.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 d-flex justify-content-end">
+            {{ form.submit(class="btn btn-primary px-4") }}
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

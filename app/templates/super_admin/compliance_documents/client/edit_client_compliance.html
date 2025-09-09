@@ -1,0 +1,97 @@
+{% extends 'layouts/super_admin_base.html' %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+
+  <!-- 📝 Edit Form Card -->
+  <div class="card shadow-sm border-0">
+    <div class="card-header d-flex justify-content-between align-items-center bg-white">
+      <h5 class="mb-0">✏️ Edit Client Compliance Document</h5>
+      <a href="{{ url_for('super_admin.client_compliance_documents') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="material-icons me-1">arrow_back</i> Back to Client Documents
+      </a>
+    </div>
+
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+        {{ csrf_token() }}
+
+        <!-- 🏢 Client & Document Type -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label for="client_id" class="form-label">Client</label>
+            <select id="client_id" name="client_id" class="form-select" required>
+              <option value="" disabled>Select a client</option>
+              {% for client in clients %}
+              <option value="{{ client.id }}" {% if doc.client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
+              {% endfor %}
+            </select>
+            <div class="invalid-feedback">Client is required.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="document_type" class="form-label">Document Type</label>
+            <select id="document_type" name="document_type" class="form-select" required>
+              <option value="" disabled>Select document type</option>
+              {% for option in ['Fire Cert', 'Lift Inspection', 'Insurance', 'Other'] %}
+              <option value="{{ option }}" {% if doc.document_type == option %}selected{% endif %}>{{ option }}</option>
+              {% endfor %}
+            </select>
+            <div class="invalid-feedback">Document type is required.</div>
+          </div>
+        </div>
+
+        <!-- 📅 Expiry Date & Replace File -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label for="expires_at" class="form-label">Expiry Date</label>
+            <input type="date" id="expires_at" name="expires_at" class="form-control"
+              value="{{ doc.expires_at.strftime('%Y-%m-%d') if doc.expires_at else '' }}" required>
+            <div class="invalid-feedback">Expiry date is required.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="files" class="form-label">Replace File(s)</label>
+            <input type="file" id="files" name="files[]" class="form-control" accept=".pdf,.doc,.docx" multiple>
+            <div class="form-text">Leave this blank to keep current uploaded files.</div>
+          </div>
+        </div>
+
+        <!-- ✅ Toggles -->
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="is_required" name="is_required" {% if doc.is_required %}checked{% endif %}>
+          <label class="form-check-label" for="is_required">Required for Work Orders</label>
+        </div>
+
+        <div class="form-check form-switch mb-4">
+          <input class="form-check-input" type="checkbox" id="ai_reviewed" name="ai_reviewed" {% if doc.reviewed_by_ai %}checked{% endif %}>
+          <label class="form-check-label" for="ai_reviewed">Mark as AI Reviewed</label>
+        </div>
+
+        <!-- ✅ Submit -->
+        <button type="submit" class="btn btn-success">
+          <i class="material-icons me-1">save</i> Save Changes
+        </button>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<!-- ✅ JS: Bootstrap Validation -->
+<script>
+  (() => {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+</script>
+{% endblock %}

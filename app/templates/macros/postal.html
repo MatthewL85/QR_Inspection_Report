@@ -1,0 +1,45 @@
+{# app/templates/macros/postal.html #}
+{% macro _norm(country) -%}{{ (country or '')|lower|trim }}{%- endmacro %}
+
+{% macro postal_label(country) -%}
+  {%- set c = _norm(country) -%}
+
+  {# Ireland #}
+  {%- if c in ['ireland','ie','republic of ireland'] -%}Eircode
+
+  {# United Kingdom #}
+  {%- elif c in ['united kingdom','uk','great britain','england','scotland','wales','northern ireland'] -%}Postcode
+
+  {# United States #}
+  {%- elif c in ['united states','united states of america','usa','us'] -%}ZIP Code
+
+  {# Canada #}
+  {%- elif c in ['canada','ca'] -%}Postal Code
+
+  {# Australia #}
+  {%- elif c in ['australia','au'] -%}Postcode
+
+  {# New Zealand #}
+  {%- elif c in ['new zealand','nz'] -%}Postcode
+
+  {# Singapore #}
+  {%- elif c in ['singapore','sg'] -%}Postal Code
+
+  {# Hong Kong #}
+  {%- elif c in ['hong kong','hk','hong kong sar'] -%}Postal Code
+
+  {# UAE (addresses frequently rely on PO Boxes) #}
+  {%- elif c in ['united arab emirates','uae','u.a.e','dubai','abu dhabi','sharjah','ajman','umm al-quwain','ras al khaimah','fujairah'] -%}PO Box
+
+  {# Broad European set → "Postal Code" (IE/UK already handled) #}
+  {%- elif c in [
+      'austria','belgium','bulgaria','croatia','cyprus','czech republic','czechia',
+      'denmark','estonia','finland','france','germany','greece','hungary','iceland',
+      'italy','latvia','lithuania','luxembourg','malta','netherlands','norway',
+      'poland','portugal','romania','slovakia','slovenia','spain','sweden','switzerland'
+    ] -%}Postal Code
+
+  {# Fallback #}
+  {%- else -%}Postal Code
+  {%- endif -%}
+{%- endmacro %}

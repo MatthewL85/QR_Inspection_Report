@@ -40,7 +40,7 @@ class TaxRate(db.Model):
     updated_by = db.relationship('User', foreign_keys=[updated_by_id])
 
     # 🔁 Relationships
-    transactions = db.relationship('TaxTransactionLog', backref='tax_rate_ref', lazy='dynamic')
+    tax_transaction_logs = db.relationship('TaxTransactionLog', back_populates='tax_rate', lazy=True)
 
     def __repr__(self):
         return f"<TaxRate {self.name} | {self.rate}% ({self.country})>"

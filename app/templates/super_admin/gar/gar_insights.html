@@ -1,0 +1,26 @@
+{% extends 'layouts/super_admin_base.html' %}
+
+{% block title %}GAR Insights | LogixPM{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+  <div class="card shadow-sm">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="material-icons text-danger me-2">smart_toy</i> GAR Insights</h5>
+    </div>
+    <div class="card-body">
+      <p>This section will show AI-flagged compliance documents or recommendations.</p>
+
+      {% if gar_flagged_documents %}
+        <ul>
+          {% for doc in gar_flagged_documents %}
+            <li>{{ doc.file_name }} — {{ doc.parsed_summary }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="alert alert-info">No GAR insights available yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

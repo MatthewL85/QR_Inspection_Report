@@ -1,0 +1,39 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+
+# Flask/instance & uploads
+instance/
+app/static/uploads/
+app/static/contracts/
+*.sqlite*
+*.db
+
+# Env & secrets
+.env
+.env.*
+*.key
+*.pem
+
+# VS Code / OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+
+# Local data
+*.csv
+*.log
+# Nested copy (ignore)
+QR_Inspection_App/
+# Git/VSCode
+*.code-workspace
+

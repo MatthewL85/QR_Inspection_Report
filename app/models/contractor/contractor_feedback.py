@@ -13,7 +13,7 @@ class ContractorFeedback(db.Model):
     contractor_id = db.Column(db.Integer, db.ForeignKey('contractors.id'), nullable=False)
     given_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
-    work_order = db.relationship('WorkOrder', backref='contractor_feedback')
+    work_order = db.relationship('WorkOrder', back_populates='feedback', uselist=False)
     contractor = db.relationship('Contractor', backref='feedback_entries')
     given_by = db.relationship('User', backref='submitted_feedback')
 

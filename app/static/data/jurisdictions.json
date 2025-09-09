@@ -1,0 +1,968 @@
+{
+  "schemaVersion": "1.0",
+  "lastReviewed": "2025-08-26",
+  "countries": {
+    "IE": {
+      "name": "Ireland",
+      "currency": "EUR",
+      "timezone": "Europe/Dublin",
+      "regionLabel": "County",
+      "gdpr": true,
+      "clientTypes": ["OMC", "Commercial Management Company", "Mixed-Use"],
+      "tax": { "vatLabel": "VAT Number (IE)", "vatHelp": "Irish VAT — if registered.", "localLabel": "Tax Reference", "localHelp": "CRO No. if company." },
+      "regions": {
+        "*": {
+          "entity": "Owners’ Management Company (OMC)",
+          "clientTypes": ["OMC"],
+          "statutes": [
+            { "title": "Multi-Unit Developments Act 2011", "url": "https://www.irishstatutebook.ie/eli/2011/act/2/enacted/en/html" },
+            { "title": "Companies Act 2014", "url": "https://www.irishstatutebook.ie/eli/2014/act/38/enacted/en/html" }
+          ],
+          "notes": ["OMCs manage common areas; property agents must hold PSRA licences."],
+          "tax": { "vatLabel": "VAT Number (IE)", "vatHelp": "Irish VAT — if registered.", "localLabel": "Tax Reference", "localHelp": "" }
+        },
+        "dublin": { "clientTypes": ["OMC", "Commercial Management Company", "Mixed-Use"] }
+      }
+    },
+
+    "GB": {
+      "name": "United Kingdom",
+      "currency": "GBP",
+      "timezone": "Europe/London",
+      "regionLabel": "County/Region",
+      "gdpr": true,
+      "clientTypes": ["RMC", "RTM Company", "Commonhold Association", "Freeholder/Managing Agent"],
+      "tax": { "vatLabel": "VAT Registration Number", "vatHelp": "9 digits, often GB prefix.", "localLabel": "Company Tax UTR", "localHelp": "10-digit UTR (HMRC)." },
+      "regions": {
+        "*": {
+          "entity": "Residents’ Management Company (RMC) / Right to Manage (RTM)",
+          "clientTypes": ["RMC", "RTM Company", "Commonhold Association"],
+          "statutes": [
+            { "title": "Commonhold and Leasehold Reform Act 2002", "url": "https://www.legislation.gov.uk/ukpga/2002/15/contents" },
+            { "title": "Data Protection Act 2018 (UK GDPR)", "url": "https://www.legislation.gov.uk/ukpga/2018/12/contents" }
+          ],
+          "notes": ["Leasehold flats common in E&W; RTM is available subject to conditions."],
+          "tax": { "vatLabel": "VAT Registration Number", "vatHelp": "9 digits (GB…).", "localLabel": "Company Number", "localHelp": "Companies House number." }
+        },
+        "scotland": {
+          "entity": "Owners / Owners’ Association (managed by Property Factor)",
+          "clientTypes": ["Owners’ Association", "Property Factor"],
+          "statutes": [
+            { "title": "Property Factors (Scotland) Act 2011", "url": "https://www.legislation.gov.uk/asp/2011/8/contents" },
+            { "title": "Tenements (Scotland) Act 2004", "url": "https://www.legislation.gov.uk/asp/2004/11/contents" }
+          ],
+          "notes": ["Factors must be registered and comply with a statutory Code of Conduct."]
+        },
+        "england": {
+          "entity": "Residents’ Management Company (RMC) / Right to Manage (RTM)",
+          "clientTypes": ["RMC", "RTM Company", "Commonhold Association"],
+          "notes": ["Commonhold exists but is rare; service charge consultation (LTA 1985 s.20)."]
+        },
+        "wales": {
+          "entity": "Residents’ Management Company (RMC) / Right to Manage (RTM)",
+          "clientTypes": ["RMC", "RTM Company", "Commonhold Association"],
+          "notes": ["Housing/building regulation is devolved; service charge guidance may differ."]
+        },
+        "northern-ireland": {
+          "entity": "Residents’ Management Company (RMC) / Right to Manage (RTM)",
+          "clientTypes": ["RMC", "RTM Company", "Commonhold Association"],
+          "notes": ["Distinct land registration/leasehold forms from E&W."]
+        }
+      }
+    },
+
+    "FR": {
+      "name": "France",
+      "currency": "EUR",
+      "timezone": "Europe/Paris",
+      "regionLabel": "Region",
+      "gdpr": true,
+      "clientTypes": ["Syndicat de copropriété", "Gestionnaire", "Bailleur social"],
+      "tax": { "vatLabel": "Numéro de TVA intracommunautaire", "vatHelp": "FR + key + 9 digits (SIREN).", "localLabel": "SIREN / SIRET", "localHelp": "Company identifiers." },
+      "regions": {
+        "*": {
+          "entity": "Syndicat des copropriétaires (via Syndic)",
+          "clientTypes": ["Syndicat de copropriété"],
+          "statutes": [
+            { "title": "Loi du 10 juillet 1965 (copropriété)", "url": "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000000880200" },
+            { "title": "Décret du 17 mars 1967 (syndic)", "url": "https://www.legifrance.gouv.fr/codes/section_lc/JORFTEXT000000305770/LEGISCTA000006093855/" }
+          ],
+          "notes": ["Standard form syndic contract; ELAN & later reforms updated rules."]
+        },
+        "ile-de-france": { "clientTypes": ["Syndicat de copropriété", "Gestionnaire", "Bailleur social"] }
+      }
+    },
+
+    "DE": {
+      "name": "Germany",
+      "currency": "EUR",
+      "timezone": "Europe/Berlin",
+      "regionLabel": "State (Bundesland)",
+      "gdpr": true,
+      "clientTypes": ["WEG-Verwaltung", "Mietverwaltung", "Gewerbeverwaltung"],
+      "tax": { "vatLabel": "USt-IdNr.", "vatHelp": "DE + 9 digits.", "localLabel": "Steuernummer", "localHelp": "State tax number." },
+      "regions": {
+        "*": {
+          "entity": "Wohnungseigentümergemeinschaft (WEG)",
+          "clientTypes": ["WEG-Verwaltung", "Mietverwaltung"],
+          "statutes": [
+            { "title": "Wohnungseigentumsgesetz (WEG)", "url": "https://www.gesetze-im-internet.de/woeigg/" },
+            { "title": "BGB – relevant provisions", "url": "https://www.gesetze-im-internet.de/bgb/" }
+          ],
+          "notes": ["WEG reform (2020) modernised governance."]
+        }
+      }
+    },
+
+    "ES": {
+      "name": "Spain",
+      "currency": "EUR",
+      "timezone": "Europe/Madrid",
+      "regionLabel": "Autonomous Community",
+      "gdpr": true,
+      "clientTypes": ["Comunidad de Propietarios", "Gestora"],
+      "tax": { "vatLabel": "NIF-IVA", "vatHelp": "Intra-EU VAT if registered.", "localLabel": "NIF", "localHelp": "Tax ID." },
+      "regions": {
+        "*": {
+          "entity": "Comunidad de Propietarios",
+          "clientTypes": ["Comunidad de Propietarios"],
+          "statutes": [
+            { "title": "Ley de Propiedad Horizontal (49/1960)", "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1960-10906" }
+          ],
+          "notes": ["Tourist lets may be limited via reinforced majority where applicable."]
+        },
+        "canary islands": {
+          "timezone": "Atlantic/Canary",
+          "notes": ["Indirect tax is IGIC (not mainland IVA)."],
+          "tax": { "vatLabel": "IGIC Number", "vatHelp": "Canary Islands IGIC — if registered.", "localLabel": "NIF", "localHelp": "" }
+        }
+      }
+    },
+
+    "PT": {
+      "name": "Portugal",
+      "currency": "EUR",
+      "timezone": "Europe/Lisbon",
+      "regionLabel": "District/Region",
+      "gdpr": true,
+      "clientTypes": ["Condomínio", "Gestora"],
+      "tax": { "vatLabel": "NIF / VAT", "vatHelp": "9 digits (NIF).", "localLabel": "NIF", "localHelp": "Tax number." },
+      "regions": {
+        "*": {
+          "entity": "Condomínio (Condominium)",
+          "clientTypes": ["Condomínio", "Gestora"],
+          "statutes": [
+            { "title": "Civil Code — Horizontal Property (Arts 1414–1438-A)", "url": "https://diariodarepublica.pt/" },
+            { "title": "Decree-Law 268/94 & Law 8/2022 updates", "url": "https://diariodarepublica.pt/" }
+          ],
+          "notes": ["Reserve fund required; 2022 reforms updated administration rules."]
+        },
+        "azores": { "timezone": "Atlantic/Azores" },
+        "madeira": { "timezone": "Atlantic/Madeira" }
+      }
+    },
+
+    "NL": {
+      "name": "Netherlands",
+      "currency": "EUR",
+      "timezone": "Europe/Amsterdam",
+      "regionLabel": "Province",
+      "gdpr": true,
+      "clientTypes": ["VvE", "Beheerder"],
+      "tax": { "vatLabel": "BTW-nummer", "vatHelp": "NL + 9 digits + Bxx.", "localLabel": "KvK/RSIN", "localHelp": "Business identifiers." },
+      "regions": {
+        "*": {
+          "entity": "Vereniging van Eigenaars (VvE)",
+          "clientTypes": ["VvE", "Beheerder"],
+          "statutes": [
+            { "title": "BW Book 5 — Appartementsrechten", "url": "https://wetten.overheid.nl/" }
+          ],
+          "notes": ["VvE is a legal person; reserve fund requirements strengthened."]
+        }
+      }
+    },
+
+    "BE": {
+      "name": "Belgium",
+      "currency": "EUR",
+      "timezone": "Europe/Brussels",
+      "regionLabel": "Province/Region",
+      "gdpr": true,
+      "clientTypes": ["ACP/VME", "Gestionnaire"],
+      "tax": { "vatLabel": "TVA / BTW-nummer", "vatHelp": "BE + 10 digits.", "localLabel": "BCE/KBO", "localHelp": "Enterprise number." },
+      "regions": {
+        "*": {
+          "entity": "Association des copropriétaires / VME",
+          "clientTypes": ["ACP/VME"],
+          "statutes": [
+            { "title": "Civil Code — Co-ownership (Arts 577-3 to 577-14)", "url": "https://www.ejustice.just.fgov.be/" }
+          ],
+          "notes": ["Significant reforms in 2018; recodification of property law relevant."]
+        }
+      }
+    },
+
+    "IT": {
+      "name": "Italy",
+      "currency": "EUR",
+      "timezone": "Europe/Rome",
+      "regionLabel": "Region",
+      "gdpr": true,
+      "clientTypes": ["Condominio", "Gestore"],
+      "tax": { "vatLabel": "Partita IVA", "vatHelp": "11 digits.", "localLabel": "Codice Fiscale", "localHelp": "Tax code." },
+      "regions": {
+        "*": {
+          "entity": "Condominio (via Amministratore)",
+          "clientTypes": ["Condominio"],
+          "statutes": [
+            { "title": "Civil Code arts. 1117–1139 & Law 220/2012", "url": "https://www.normattiva.it/" }
+          ],
+          "notes": ["2012 reform modernised administrator duties."]
+        }
+      }
+    },
+
+    "PL": {
+      "name": "Poland",
+      "currency": "PLN",
+      "timezone": "Europe/Warsaw",
+      "regionLabel": "Voivodeship",
+      "gdpr": true,
+      "clientTypes": ["Wspólnota mieszkaniowa", "Zarządca"],
+      "tax": { "vatLabel": "NIP (VAT)", "vatHelp": "10 digits.", "localLabel": "REGON/KRS", "localHelp": "Identifiers." },
+      "regions": {
+        "*": {
+          "entity": "Wspólnota mieszkaniowa",
+          "clientTypes": ["Wspólnota mieszkaniowa", "Zarządca"],
+          "statutes": [
+            { "title": "Act on Ownership of Premises (1994)", "url": "https://isap.sejm.gov.pl/" }
+          ],
+          "notes": ["Professional zarządca often appointed."]
+        }
+      }
+    },
+
+    "SE": {
+      "name": "Sweden",
+      "currency": "SEK",
+      "timezone": "Europe/Stockholm",
+      "regionLabel": "County",
+      "gdpr": true,
+      "clientTypes": ["Bostadsrättsförening (BRF)", "Förvaltare"],
+      "tax": { "vatLabel": "Moms/VAT", "vatHelp": "SE + 12 digits.", "localLabel": "Organisationsnummer", "localHelp": "10 digits." },
+      "regions": {
+        "*": {
+          "entity": "Bostadsrättsförening (BRF)",
+          "clientTypes": ["BRF", "Förvaltare"],
+          "statutes": [
+            { "title": "Bostadsrättslag (1991:614)", "url": "https://www.riksdagen.se/" }
+          ],
+          "notes": ["Cooperative form widely used."]
+        }
+      }
+    },
+
+    "FI": {
+      "name": "Finland",
+      "currency": "EUR",
+      "timezone": "Europe/Helsinki",
+      "regionLabel": "Region",
+      "gdpr": true,
+      "clientTypes": ["Housing Company (As Oy)", "Isännöinti"],
+      "tax": { "vatLabel": "ALV/VAT", "vatHelp": "FI + 8 digits.", "localLabel": "Y-tunnus", "localHelp": "Business ID." },
+      "regions": {
+        "*": {
+          "entity": "Asunto-osakeyhtiö (As Oy)",
+          "clientTypes": ["Housing Company (As Oy)", "Isännöinti"],
+          "statutes": [
+            { "title": "Limited Liability Housing Companies Act (1599/2009)", "url": "https://finlex.fi/" }
+          ],
+          "notes": ["Apartments tied to company shares."]
+        }
+      }
+    },
+
+    "DK": {
+      "name": "Denmark",
+      "currency": "DKK",
+      "timezone": "Europe/Copenhagen",
+      "regionLabel": "Region",
+      "gdpr": true,
+      "clientTypes": ["Ejerforening", "Administrator"],
+      "tax": { "vatLabel": "CVR/VAT", "vatHelp": "DK + 8 digits.", "localLabel": "CVR", "localHelp": "Business reg. number." },
+      "regions": {
+        "*": {
+          "entity": "Ejerforening",
+          "clientTypes": ["Ejerforening", "Administrator"],
+          "statutes": [
+            { "title": "Ejerlejlighedsloven (Condominium Act)", "url": "https://www.retsinformation.dk/" }
+          ],
+          "notes": ["Condominium regime; foreign purchase restrictions exist for non-EEA."]
+        }
+      }
+    },
+
+    "NO": {
+      "name": "Norway",
+      "currency": "NOK",
+      "timezone": "Europe/Oslo",
+      "regionLabel": "County",
+      "gdpr": true,
+      "clientTypes": ["Borettslag", "Eierseksjonssameie", "Forvalter"],
+      "tax": { "vatLabel": "MVA-nummer", "vatHelp": "9 digits + MVA.", "localLabel": "Organisasjonsnummer", "localHelp": "Brønnøysundregisteret ID." },
+      "regions": {
+        "*": {
+          "entity": "Borettslag / Eierseksjonssameie",
+          "clientTypes": ["Borettslag", "Eierseksjonssameie"],
+          "statutes": [
+            { "title": "Borettslagsloven (2003)", "url": "https://lovdata.no/lov/2003-06-06-39" },
+            { "title": "Eierseksjonsloven (2017)", "url": "https://lovdata.no/lov/2017-06-16-65" }
+          ],
+          "notes": ["EEA GDPR via Norwegian law."]
+        }
+      }
+    },
+
+    "IS": {
+      "name": "Iceland",
+      "currency": "ISK",
+      "timezone": "Atlantic/Reykjavik",
+      "regionLabel": "Region",
+      "gdpr": true,
+      "clientTypes": ["Húsfélag", "Umsýsla"],
+      "tax": { "vatLabel": "VSK/VAT", "vatHelp": "Pattern varies.", "localLabel": "Kennitala", "localHelp": "10 digits." },
+      "regions": {
+        "*": {
+          "entity": "Húsfélag (multi-owner building association)",
+          "clientTypes": ["Húsfélag", "Umsýsla"],
+          "statutes": [
+            { "title": "Multi-Owner Buildings Act No. 26/1994", "url": "https://www.government.is/" }
+          ],
+          "notes": ["EEA GDPR applies via Icelandic law."]
+        }
+      }
+    },
+
+    "CH": {
+      "name": "Switzerland",
+      "currency": "CHF",
+      "timezone": "Europe/Zurich",
+      "regionLabel": "Canton",
+      "gdpr": false,
+      "clientTypes": ["Stockwerkeigentümergemeinschaft", "Verwalter"],
+      "tax": { "vatLabel": "MWST-Nr.", "vatHelp": "CHE-###.###.### MWST.", "localLabel": "UID", "localHelp": "Swiss business identifier." },
+      "regions": {
+        "*": {
+          "entity": "Stockwerkeigentümergemeinschaft",
+          "clientTypes": ["Stockwerkeigentümergemeinschaft", "Verwalter"],
+          "statutes": [
+            { "title": "Swiss Civil Code (ZGB) — Art. 712a–712t", "url": "https://www.fedlex.admin.ch/" },
+            { "title": "Federal Act on Data Protection (2023)", "url": "https://www.fedlex.admin.ch/" }
+          ],
+          "notes": ["FADP (2023) governs privacy; GDPR-like but not GDPR."]
+        }
+      }
+    },
+
+    "AT": {
+      "name": "Austria",
+      "currency": "EUR",
+      "timezone": "Europe/Vienna",
+      "regionLabel": "State (Bundesland)",
+      "gdpr": true,
+      "clientTypes": ["WEG", "Hausverwaltung"],
+      "tax": { "vatLabel": "UID (USt-IdNr.)", "vatHelp": "ATU + 8 digits.", "localLabel": "Steuernummer", "localHelp": "Tax number." },
+      "regions": {
+        "*": {
+          "entity": "Wohnungseigentumsgemeinschaft (WEG)",
+          "clientTypes": ["WEG", "Hausverwaltung"],
+          "statutes": [
+            { "title": "Wohnungseigentumsgesetz 2002 (WEG)", "url": "https://www.ris.bka.gv.at/" }
+          ],
+          "notes": ["Professional Hausverwaltung is common."]
+        }
+      }
+    },
+
+    "CZ": {
+      "name": "Czech Republic",
+      "currency": "CZK",
+      "timezone": "Europe/Prague",
+      "regionLabel": "Region",
+      "gdpr": true,
+      "clientTypes": ["SVJ", "Správce"],
+      "tax": { "vatLabel": "DIČ", "vatHelp": "CZ + 8–10 digits.", "localLabel": "IČO", "localHelp": "8 digits." },
+      "regions": {
+        "*": {
+          "entity": "Společenství vlastníků jednotek (SVJ)",
+          "clientTypes": ["SVJ", "Správce"],
+          "statutes": [
+            { "title": "Civil Code No. 89/2012 (SVJ)", "url": "https://obcanskyzakonik.justice.cz/" }
+          ],
+          "notes": ["SVJ is a legal person managing common parts."]
+        }
+      }
+    },
+
+    "SK": {
+      "name": "Slovakia",
+      "currency": "EUR",
+      "timezone": "Europe/Bratislava",
+      "regionLabel": "Region",
+      "gdpr": true,
+      "clientTypes": ["SVB", "Správa"],
+      "tax": { "vatLabel": "IČ DPH", "vatHelp": "SK + 10 digits.", "localLabel": "IČO/DIČ", "localHelp": "Company/Tax IDs." },
+      "regions": {
+        "*": {
+          "entity": "Spoločenstvo vlastníkov bytov (SVB)",
+          "clientTypes": ["SVB", "Správa"],
+          "statutes": [
+            { "title": "Act No. 182/1993 Coll.", "url": "https://www.slov-lex.sk" }
+          ],
+          "notes": []
+        }
+      }
+    },
+
+    "HU": {
+      "name": "Hungary",
+      "currency": "HUF",
+      "timezone": "Europe/Budapest",
+      "regionLabel": "County",
+      "gdpr": true,
+      "clientTypes": ["Társasház", "Kezelő"],
+      "tax": { "vatLabel": "ÁFA-szám", "vatHelp": "8-1-2 format.", "localLabel": "Adószám", "localHelp": "Tax number." },
+      "regions": {
+        "*": {
+          "entity": "Társasház (Condominium)",
+          "clientTypes": ["Társasház", "Kezelő"],
+          "statutes": [
+            { "title": "Act CXXXIII of 2003 on Condominiums", "url": "https://njt.hu" }
+          ],
+          "notes": []
+        }
+      }
+    },
+
+    "RO": {
+      "name": "Romania",
+      "currency": "RON",
+      "timezone": "Europe/Bucharest",
+      "regionLabel": "County",
+      "gdpr": true,
+      "clientTypes": ["Asociația de proprietari", "Administrator"],
+      "tax": { "vatLabel": "Cod TVA", "vatHelp": "RO + digits.", "localLabel": "CUI", "localHelp": "Unique registration code." },
+      "regions": {
+        "*": {
+          "entity": "Asociația de proprietari",
+          "clientTypes": ["Asociația de proprietari", "Administrator"],
+          "statutes": [
+            { "title": "Law 196/2018", "url": "https://legislatie.just.ro" }
+          ],
+          "notes": []
+        }
+      }
+    },
+
+    "BG": {
+      "name": "Bulgaria",
+      "currency": "BGN",
+      "timezone": "Europe/Sofia",
+      "regionLabel": "Province",
+      "gdpr": true,
+      "clientTypes": ["Homeowners’ Association", "Управител"],
+      "tax": { "vatLabel": "ДДС номер", "vatHelp": "BG + 9/10 digits.", "localLabel": "Булстат", "localHelp": "Business ID." },
+      "regions": {
+        "*": {
+          "entity": "Етажна собственост (Condominium)",
+          "clientTypes": ["Homeowners’ Association", "Управител"],
+          "statutes": [
+            { "title": "Condominium Management Act (2009)", "url": "https://dv.parliament.bg" }
+          ],
+          "notes": []
+        }
+      }
+    },
+
+    "GR": {
+      "name": "Greece",
+      "currency": "EUR",
+      "timezone": "Europe/Athens",
+      "regionLabel": "Region",
+      "gdpr": true,
+      "clientTypes": ["Co-owners’ Association (Syndikia)", "Manager"],
+      "tax": { "vatLabel": "ΑΦΜ / ΦΠΑ", "vatHelp": "9 digits.", "localLabel": "ΓΕΜΗ", "localHelp": "Business register." },
+      "regions": {
+        "*": {
+          "entity": "Horizontal Property (Syndikia)",
+          "clientTypes": ["Building Co-owners’ Association"],
+          "statutes": [
+            { "title": "Law 3741/1929 + Civil Code arts. 1002 & 1117", "url": "https://www.et.gr/" }
+          ],
+          "notes": []
+        }
+      }
+    },
+
+    "HR": {
+      "name": "Croatia",
+      "currency": "EUR",
+      "timezone": "Europe/Zagreb",
+      "regionLabel": "County",
+      "gdpr": true,
+      "clientTypes": ["Homeowners’ Association", "Upravitelj"],
+      "tax": { "vatLabel": "PDV (VAT)", "vatHelp": "HR + OIB.", "localLabel": "OIB", "localHelp": "ID number." },
+      "regions": {
+        "*": {
+          "entity": "Etažno vlasništvo / HOA",
+          "clientTypes": ["Homeowners’ Association", "Upravitelj"],
+          "statutes": [
+            { "title": "Act on Ownership and Other Real Rights", "url": "https://narodne-novine.nn.hr/" }
+          ],
+          "notes": []
+        }
+      }
+    },
+
+    "SI": {
+      "name": "Slovenia",
+      "currency": "EUR",
+      "timezone": "Europe/Ljubljana",
+      "regionLabel": "Region",
+      "gdpr": true,
+      "clientTypes": ["Etažna lastnina", "Upravnik"],
+      "tax": { "vatLabel": "DDV (VAT)", "vatHelp": "SI + 8 digits.", "localLabel": "Matična/Davčna", "localHelp": "Business IDs." },
+      "regions": {
+        "*": {
+          "entity": "Etažna lastnina (Condominium)",
+          "clientTypes": ["Etažna lastnina", "Upravnik"],
+          "statutes": [
+            { "title": "Stvarnopravni zakonik / Stanovanjski zakon", "url": "https://www.pisrs.si/" }
+          ],
+          "notes": []
+        }
+      }
+    },
+
+    "LV": {
+      "name": "Latvia",
+      "currency": "EUR",
+      "timezone": "Europe/Riga",
+      "regionLabel": "Region",
+      "gdpr": true,
+      "clientTypes": ["Homeowners’ Association", "Pārvaldnieks"],
+      "tax": { "vatLabel": "PVN", "vatHelp": "LV + 11 digits.", "localLabel": "Reģ. Nr.", "localHelp": "Registration number." },
+      "regions": {
+        "*": {
+          "entity": "Dzīvokļu īpašnieku biedrība",
+          "clientTypes": ["Homeowners’ Association", "Pārvaldnieks"],
+          "statutes": [
+            { "title": "Law on Residential Properties", "url": "https://likumi.lv/" }
+          ],
+          "notes": []
+        }
+      }
+    },
+
+    "LT": {
+      "name": "Lithuania",
+      "currency": "EUR",
+      "timezone": "Europe/Vilnius",
+      "regionLabel": "County",
+      "gdpr": true,
+      "clientTypes": ["Bendrija", "Administratorius"],
+      "tax": { "vatLabel": "PVM", "vatHelp": "LT + 9 or 12 digits.", "localLabel": "Įmonės kodas", "localHelp": "Company code." },
+      "regions": {
+        "*": {
+          "entity": "Bendrija (Homeowners’ Association)",
+          "clientTypes": ["Bendrija", "Administratorius"],
+          "statutes": [
+            { "title": "Law on Associations of Multi-apartment Building Owners", "url": "https://e-seimas.lrs.lt/" }
+          ],
+          "notes": []
+        }
+      }
+    },
+
+    "EE": {
+      "name": "Estonia",
+      "currency": "EUR",
+      "timezone": "Europe/Tallinn",
+      "regionLabel": "County",
+      "gdpr": true,
+      "clientTypes": ["Korteriühistu", "Haldur"],
+      "tax": { "vatLabel": "KMKR (VAT)", "vatHelp": "EE + 9 digits.", "localLabel": "Registrikood", "localHelp": "Registry code." },
+      "regions": {
+        "*": {
+          "entity": "Korteriühistu (Apartment Association)",
+          "clientTypes": ["Korteriühistu", "Haldur"],
+          "statutes": [
+            { "title": "Apartment Ownership and Associations Act", "url": "https://www.riigiteataja.ee/en/eli/501022023004/consolide" }
+          ],
+          "notes": []
+        }
+      }
+    },
+
+    "LU": {
+      "name": "Luxembourg",
+      "currency": "EUR",
+      "timezone": "Europe/Luxembourg",
+      "regionLabel": "Canton",
+      "gdpr": true,
+      "clientTypes": ["Syndicat de copropriété", "Gestionnaire"],
+      "tax": { "vatLabel": "TVA (LU)", "vatHelp": "LU + 8 digits.", "localLabel": "RCS", "localHelp": "Company register number." },
+      "regions": {
+        "*": {
+          "entity": "Syndicat de copropriété",
+          "clientTypes": ["Syndicat de copropriété", "Gestionnaire"],
+          "statutes": [
+            { "title": "Loi du 16 mai 1975 (copropriété) — consolidated", "url": "https://legilux.public.lu/" }
+          ],
+          "notes": ["Recent amendments introduced works fund (fonds de travaux)."]
+        }
+      }
+    },
+
+    "MT": {
+      "name": "Malta",
+      "currency": "EUR",
+      "timezone": "Europe/Malta",
+      "regionLabel": "Region",
+      "gdpr": true,
+      "clientTypes": ["Condominium", "Administrator"],
+      "tax": { "vatLabel": "VAT Number (MT)", "vatHelp": "MT + 8 digits.", "localLabel": "Company Number", "localHelp": "" },
+      "regions": {
+        "*": {
+          "entity": "Condominium",
+          "clientTypes": ["Condominium", "Administrator"],
+          "statutes": [
+            { "title": "Condominium Act (Cap. 398)", "url": "https://legislation.mt/eli/cap/398/eng/pdf" }
+          ],
+          "notes": []
+        }
+      }
+    },
+
+    "CY": {
+      "name": "Cyprus",
+      "currency": "EUR",
+      "timezone": "Asia/Nicosia",
+      "regionLabel": "District",
+      "gdpr": true,
+      "clientTypes": ["Management Committee", "Apartment Owners Association"],
+      "tax": { "vatLabel": "VAT Number (CY)", "vatHelp": "CY + 9 characters (last letter).", "localLabel": "Company Number", "localHelp": "" },
+      "regions": {
+        "*": {
+          "entity": "Jointly Owned Building (Management Committee)",
+          "clientTypes": ["Management Committee of Jointly Owned Building"],
+          "statutes": [
+            { "title": "Jointly Owned Buildings Law 1993 (Regs)", "url": "https://www.news.cyprus-property-buyers.com/wp-content/uploads/2018/03/jointly-owned-buildings-law.pdf" },
+            { "title": "Immovable Property Law, Cap. 224", "url": "https://www.cylaw.org/nomoi/arith/CAP224.pdf" }
+          ],
+          "notes": []
+        }
+      }
+    },
+
+    "LI": {
+      "name": "Liechtenstein",
+      "currency": "CHF",
+      "timezone": "Europe/Zurich",
+      "regionLabel": "Municipality",
+      "gdpr": true,
+      "clientTypes": ["Stockwerkeigentümergemeinschaft", "Verwalter"],
+      "tax": { "vatLabel": "MWST-Nr.", "vatHelp": "Aligns closely with CH.", "localLabel": "UID", "localHelp": "" },
+      "regions": {
+        "*": {
+          "entity": "Stockwerkeigentümergemeinschaft",
+          "clientTypes": ["Stockwerkeigentümergemeinschaft", "Verwalter"],
+          "statutes": [
+            { "title": "Sachenrecht — Stockwerkeigentum", "url": "https://www.gesetze.li/konso/1923.004" },
+            { "title": "Gov. guidance: condominium ownership", "url": "https://www.llv.li/en/business/construction-environment-real-estate/land-and-property/establishment-of-condominium-ownership" }
+          ],
+          "notes": []
+        }
+      }
+    },
+
+    "US": {
+      "name": "United States",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "regionLabel": "State",
+      "gdpr": false,
+      "clientTypes": ["HOA", "Condo Association", "Co-op Board"],
+      "tax": { "vatLabel": "Federal EIN", "vatHelp": "9 digits.", "localLabel": "State Tax ID", "localHelp": "Varies by state." },
+      "regions": {
+        "*": {
+          "entity": "Homeowners Association (HOA) / Condominium Association",
+          "clientTypes": ["HOA", "Condo Association", "Co-op Board"],
+          "statutes": [
+            { "title": "State HOA/Condo statutes (varies)", "url": "https://www.usa.gov/state-tribal-governments" }
+          ],
+          "notes": ["State law governs associations; data privacy increasingly state-based."]
+        },
+        "california": {
+          "entity": "Homeowners’ Association / Condo Association",
+          "clientTypes": ["HOA", "Condo Association", "Co-op Board"],
+          "statutes": [
+            { "title": "Davis-Stirling Act", "url": "https://leginfo.legislature.ca.gov/" },
+            { "title": "California Consumer Privacy Act (CCPA/CPRA)", "url": "https://oag.ca.gov/privacy/ccpa" }
+          ],
+          "notes": ["CIDs governed by Davis-Stirling."],
+          "timezone": "America/Los_Angeles"
+        },
+        "new york": {
+          "entity": "Condominium Association / Co-op Board",
+          "clientTypes": ["Condo Association", "Co-op Board", "HOA"],
+          "statutes": [
+            { "title": "NY Real Property Law (Condo)", "url": "https://public.leginfo.state.ny.us/" },
+            { "title": "NY SHIELD Act (privacy)", "url": "https://ag.ny.gov/consumer-frauds/data-breach-law" }
+          ]
+        },
+        "florida": {
+          "entity": "Condominium Association; HOA",
+          "clientTypes": ["Condominium Association", "HOA"],
+          "statutes": [
+            { "title": "Chapter 718 (Condos)", "url": "https://www.leg.state.fl.us/" },
+            { "title": "Chapter 720 (HOAs)", "url": "https://www.leg.state.fl.us/" }
+          ],
+          "timezone": "America/New_York"
+        },
+        "texas": {
+          "entity": "Unit Owners’ Association (condominium)",
+          "clientTypes": ["Condominium Association", "HOA"],
+          "statutes": [
+            { "title": "Property Code Ch. 82 (Uniform Condominium Act)", "url": "https://statutes.capitol.texas.gov/" }
+          ],
+          "timezone": "America/Chicago"
+        }
+      }
+    },
+
+    "CA": {
+      "name": "Canada",
+      "currency": "CAD",
+      "timezone": "America/Toronto",
+      "regionLabel": "Province",
+      "gdpr": false,
+      "regions": {
+        "*": {
+          "entity": "Condominium Corporation / Strata",
+          "clientTypes": ["Condo Corp.", "Strata", "HOA"],
+          "statutes": [
+            { "title": "Provincial condo/strata statutes (varies)", "url": "https://www.canada.ca/" },
+            { "title": "PIPEDA (federal privacy)", "url": "https://laws-lois.justice.gc.ca/" }
+          ],
+          "notes": ["Condo law is provincial/territorial; privacy may be PIPEDA or provincial."],
+          "tax": {
+            "vatLabel": "GST/HST Number",
+            "vatHelp": "9 digits + RT + 4 digits (e.g., …RT0001).",
+            "localLabel": "Provincial/Territorial Tax",
+            "localHelp": "HST in some provinces; PST/QST where applicable."
+          }
+        },
+
+        "alberta": {
+          "timezone": "America/Edmonton",
+          "clientTypes": ["Condominium Corporation", "HOA"],
+          "statutes": [
+            { "title": "Condominium Property Act, RSA 2000, c C-22", "url": "https://www.canlii.org/en/ab/laws/stat/rsa-2000-c-c-22/latest/rsa-2000-c-c-22.html" },
+            { "title": "Condominium Property Regulation, AR 168/2000", "url": "https://www.reca.ca/wp-content/uploads/2021/12/Condominium-Property-Regulation.pdf" }
+          ]
+        },
+
+        "british columbia": {
+          "timezone": "America/Vancouver",
+          "entity": "Strata Corporation",
+          "clientTypes": ["Strata Corporation", "Strata Manager"],
+          "statutes": [
+            { "title": "Strata Property Act, SBC 1998, c 43", "url": "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/98043_00" },
+            { "title": "Real Estate Services Act (RESA) — licensing of strata managers", "url": "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/04042_01" }
+          ],
+          "notes": ["Strata managers must be licensed under RESA (BCFSA)."],
+          "tax": { "localLabel": "Provincial Tax", "localHelp": "GST + (no provincial HST; PST applies to some supplies)." }
+        },
+
+        "manitoba": {
+          "timezone": "America/Winnipeg",
+          "clientTypes": ["Condominium Corporation"],
+          "statutes": [
+            { "title": "The Condominium Act, C.C.S.M. c. C170", "url": "https://web2.gov.mb.ca/laws/statutes/ccsm/c170.php" }
+          ],
+          "tax": { "localLabel": "Provincial Tax", "localHelp": "GST + PST (if applicable)." }
+        },
+
+        "new brunswick": {
+          "timezone": "America/Moncton",
+          "clientTypes": ["Condominium Corporation"],
+          "statutes": [
+            { "title": "Condominium Property Act, SNB 2009, c C-16.05", "url": "https://laws.gnb.ca/en/tdm/cs/C-16.05?mode=detail" },
+            { "title": "Regulation 2009-169 (Condominium Property Act)", "url": "https://laws.gnb.ca/en/showdoc/cr/2009-169" }
+          ],
+          "tax": { "localLabel": "Provincial Tax", "localHelp": "HST province." }
+        },
+
+        "newfoundland and labrador": {
+          "timezone": "America/St_Johns",
+          "clientTypes": ["Condominium Corporation"],
+          "statutes": [
+            { "title": "Condominium Act, 2009, SNL 2009, c C-29.1", "url": "https://assembly.nl.ca/legislation/sr/statutes/c29-1.htm" }
+          ],
+          "tax": { "localLabel": "Provincial Tax", "localHelp": "HST province." }
+        },
+
+        "nova scotia": {
+          "timezone": "America/Halifax",
+          "clientTypes": ["Condominium Corporation"],
+          "statutes": [
+            { "title": "Condominium Act, RSNS 1989, c 85", "url": "https://nslegislature.ca/sites/default/files/legc/statutes/condominium.pdf" },
+            { "title": "Condominium Regulations (NS Reg. 60/1971, as amended)", "url": "https://novascotia.ca/just/regulations/regs/conregs.htm" }
+          ],
+          "tax": { "localLabel": "Provincial Tax", "localHelp": "HST province." }
+        },
+
+        "ontario": {
+          "timezone": "America/Toronto",
+          "clientTypes": ["Condo Corp.", "Property Manager"],
+          "statutes": [
+            { "title": "Condominium Act, 1998, S.O. 1998, c 19", "url": "https://www.ontario.ca/laws/statute/98c19" },
+            { "title": "Condominium Management Services Act, 2015", "url": "https://www.ontario.ca/laws/statute/15c28" }
+          ],
+          "notes": ["Condominium managers/providers must be licensed by CMRAO."],
+          "tax": { "localLabel": "Provincial Tax", "localHelp": "HST province." }
+        },
+
+        "prince edward island": {
+          "timezone": "America/Halifax",
+          "clientTypes": ["Condominium Corporation"],
+          "statutes": [
+            { "title": "Condominium Act, RSPEI 1988, c C-16", "url": "https://www.canlii.org/en/pe/laws/stat/rspei-1988-c-c-16/latest/rspei-1988-c-c-16.html" },
+            { "title": "Condominium Act Regulations, EC431/97", "url": "https://www.canlii.org/en/pe/laws/regu/pei-reg-ec431-97/latest/pei-reg-ec431-97.html" }
+          ],
+          "tax": { "localLabel": "Provincial Tax", "localHelp": "HST province." }
+        },
+
+        "quebec": {
+          "timezone": "America/Toronto",
+          "entity": "Syndicat de copropriété",
+          "clientTypes": ["Syndicat de copropriété", "Gestionnaire"],
+          "statutes": [
+            { "title": "Civil Code of Québec — Divided co-ownership (arts. 1038–1109)", "url": "https://www.legisquebec.gouv.qc.ca/en/document/cs/ccq-1991" }
+          ],
+          "notes": ["Co-ownership in Québec is governed by the Civil Code; the syndicat is the legal person managing common parts."],
+          "tax": { "localLabel": "QST Number", "localHelp": "Québec Sales Tax (TVQ)." }
+        },
+
+        "saskatchewan": {
+          "timezone": "America/Regina",
+          "clientTypes": ["Condominium Corporation"],
+          "statutes": [
+            { "title": "The Condominium Property Act, 1993, SS 1993, c C-26.1", "url": "https://www.canlii.org/en/sk/laws/stat/ss-1993-c-c-26.1/latest/ss-1993-c-c-26.1.html" }
+          ],
+          "tax": { "localLabel": "Provincial Tax", "localHelp": "GST + PST (if applicable)." }
+        },
+
+        "northwest territories": {
+          "timezone": "America/Yellowknife",
+          "clientTypes": ["Condominium Corporation"],
+          "statutes": [
+            { "title": "Condominium Act, RSNWT 1988, c C-15 (as amended)", "url": "https://www.justice.gov.nt.ca/en/files/legislation/condominium/condominium.a.pdf" }
+          ],
+          "notes": ["No territorial sales tax."],
+          "tax": { "localLabel": "Territorial Tax", "localHelp": "No territorial sales tax; GST applies." }
+        },
+
+        "nunavut": {
+          "timezone": "America/Iqaluit",
+          "clientTypes": ["Condominium Corporation"],
+          "statutes": [
+            { "title": "Condominium Act (Nunavut consolidation)", "url": "https://www.nunavutlegislation.ca/en/consolidated-law/condominium-act-consolidation" }
+          ],
+          "tax": { "localLabel": "Territorial Tax", "localHelp": "No territorial sales tax; GST applies." }
+        },
+
+        "yukon": {
+          "timezone": "America/Whitehorse",
+          "clientTypes": ["Condominium Corporation"],
+          "statutes": [
+            { "title": "Condominium Act, 2015 (and transitional materials)", "url": "https://yukon.ca/en/condominium-act-and-regulations" }
+          ],
+          "tax": { "localLabel": "Territorial Tax", "localHelp": "No territorial sales tax; GST applies." }
+        }
+      }
+    },
+
+    "AU": {
+      "name": "Australia",
+      "currency": "AUD",
+      "timezone": "Australia/Sydney",
+      "regionLabel": "State/Territory",
+      "gdpr": false,
+      "regions": {
+        "*": {
+          "entity": "Owners Corporation / Strata",
+          "clientTypes": ["Owners Corporation", "Strata", "Community Association"],
+          "statutes": [
+            { "title": "State/Territory strata titles acts", "url": "https://www.australia.gov.au/" },
+            { "title": "Privacy Act 1988 (AUS)", "url": "https://www.legislation.gov.au/" }
+          ],
+          "notes": ["Regulated at state level; privacy under federal Privacy Act."],
+          "tax": { "vatLabel": "ABN / GST", "vatHelp": "ABN 11 digits; GST if registered.", "localLabel": "ACN (if company)", "localHelp": "9 digits." }
+        },
+        "new south wales": {
+          "statutes": [{ "title": "Strata Schemes Management Act 2015 (NSW)", "url": "https://legislation.nsw.gov.au/" }]
+        },
+        "victoria": {
+          "statutes": [{ "title": "Owners Corporations Act 2006 (VIC)", "url": "https://www.legislation.vic.gov.au/" }]
+        }
+      }
+    },
+
+    "NZ": {
+      "name": "New Zealand",
+      "currency": "NZD",
+      "timezone": "Pacific/Auckland",
+      "regionLabel": "Region",
+      "gdpr": false,
+      "regions": {
+        "*": {
+          "entity": "Body Corporate",
+          "clientTypes": ["Body Corporate", "Strata", "Manager"],
+          "statutes": [
+            { "title": "Unit Titles Act 2010", "url": "https://www.legislation.govt.nz/" },
+            { "title": "Privacy Act 2020 (NZ)", "url": "https://www.legislation.govt.nz/" }
+          ],
+          "notes": [],
+          "tax": { "vatLabel": "GST Number", "vatHelp": "Generally 9 digits.", "localLabel": "NZBN", "localHelp": "Business number." }
+        }
+      }
+    },
+
+    "AE": {
+      "name": "United Arab Emirates",
+      "currency": "AED",
+      "timezone": "Asia/Dubai",
+      "regionLabel": "Emirate",
+      "gdpr": false,
+      "regions": {
+        "*": {
+          "entity": "Owners Association / Master Community",
+          "clientTypes": ["Owners Association", "Master Community"],
+          "statutes": [
+            { "title": "Federal VAT Law & Exec. Regs", "url": "https://tax.gov.ae/" },
+            { "title": "Data protection (federal/emirate, varies)", "url": "https://www.dataprotection.gov.ae/" }
+          ],
+          "notes": ["Strata regimes vary by emirate/free zone."],
+          "tax": { "vatLabel": "TRN (VAT)", "vatHelp": "15 digits (Tax Registration Number).", "localLabel": "Company Number", "localHelp": "" }
+        },
+        "dubai": {
+          "clientTypes": ["Owners Association", "Master Community", "Strata Manager"],
+          "statutes": [{ "title": "JOP Law & regs (Dubai RERA)", "url": "https://www.dubailand.gov.ae/" }]
+        },
+        "abu dhabi": {}
+      }
+    }
+  }
+}

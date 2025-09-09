@@ -1,0 +1,135 @@
+{# app/templates/macros/labels.html #}
+{# -----------------------------------------------------------
+   Country-aware helpers for consistent UI defaults/labels.
+   - postal_label(country): returns Eircode/Postcode/ZIP Code/etc.
+   - currency_for(country): sane default currency by jurisdiction
+   - timezone_for(country): sane default timezone by jurisdiction
+   - language_for(country): default preferred language
+   - ownership_types_for(country): suggested ownership types
+   ----------------------------------------------------------- #}
+
+{% macro _norm(country) -%}
+  {{ (country or '')|lower|trim }}
+{%- endmacro %}
+
+{% macro postal_label(country) -%}
+  {%- set c = _norm(country) -%}
+
+  {# Ireland #}
+  {%- if c in ['ireland','ie','republic of ireland'] -%}Eircode
+
+  {# United Kingdom #}
+  {%- elif c in ['united kingdom','uk','great britain','england','scotland','wales','northern ireland'] -%}Postcode
+
+  {# United States #}
+  {%- elif c in ['united states','united states of america','usa','us'] -%}ZIP Code
+
+  {# Canada #}
+  {%- elif c in ['canada','ca'] -%}Postal Code
+
+  {# Australia #}
+  {%- elif c in ['australia','au'] -%}Postcode
+
+  {# New Zealand #}
+  {%- elif c in ['new zealand','nz'] -%}Postcode
+
+  {# Singapore #}
+  {%- elif c in ['singapore','sg'] -%}Postal Code
+
+  {# Hong Kong #}
+  {%- elif c in ['hong kong','hk','hong kong sar'] -%}Postal Code
+
+  {# United Arab Emirates — most addresses use PO Boxes #}
+  {%- elif c in ['united arab emirates','uae','u.a.e','dubai','abu dhabi','sharjah','ajman','umm al-quwain','ras al khaimah','fujairah'] -%}PO Box
+
+  {# Broad European set defaults to "Postal Code" (UK & IE already handled above) #}
+  {%- elif c in [
+      'austria','belgium','bulgaria','croatia','cyprus','czech republic','czechia',
+      'denmark','estonia','finland','france','germany','greece','hungary','iceland',
+      'italy','latvia','lithuania','luxembourg','malta','netherlands','norway',
+      'poland','portugal','romania','slovakia','slovenia','spain','sweden','switzerland'
+    ] -%}Postal Code
+
+  {# Fallback #}
+  {%- else -%}Postal Code
+  {%- endif -%}
+{%- endmacro %}
+
+
+{# ------------- Optional defaults helpers (use if needed) ------------- #}
+
+{% macro currency_for(country) -%}
+  {%- set c = _norm(country) -%}
+  {%- if c in ['ireland','ie','republic of ireland'] -%}EUR
+  {%- elif c in ['united kingdom','uk','great britain','england','scotland','wales','northern ireland'] -%}GBP
+  {%- elif c in ['united states','united states of america','usa','us'] -%}USD
+  {%- elif c in ['canada','ca'] -%}CAD
+  {%- elif c in ['australia','au'] -%}AUD
+  {%- elif c in ['new zealand','nz'] -%}NZD
+  {%- elif c in ['singapore','sg'] -%}SGD
+  {%- elif c in ['hong kong','hk','hong kong sar'] -%}HKD
+  {%- elif c in ['united arab emirates','uae','u.a.e','dubai','abu dhabi','sharjah','ajman','umm al-quwain','ras al khaimah','fujairah'] -%}AED
+  {# Common European defaults #}
+  {%- elif c in ['austria','belgium','croatia','cyprus','estonia','finland','france','germany','greece','ireland','italy','latvia','lithuania','luxembourg','malta','netherlands','portugal','slovakia','slovenia','spain'] -%}EUR
+  {%- elif c in ['denmark'] -%}DKK
+  {%- elif c in ['norway'] -%}NOK
+  {%- elif c in ['sweden'] -%}SEK
+  {%- elif c in ['switzerland'] -%}CHF
+  {%- elif c in ['poland'] -%}PLN
+  {%- elif c in ['czech republic','czechia'] -%}CZK
+  {%- elif c in ['hungary'] -%}HUF
+  {%- elif c in ['romania'] -%}RON
+  {%- elif c in ['bulgaria'] -%}BGN
+  {%- else -%}EUR
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro timezone_for(country) -%}
+  {%- set c = _norm(country) -%}
+  {%- if c in ['ireland','ie','republic of ireland'] -%}Europe/Dublin
+  {%- elif c in ['united kingdom','uk','great britain','england','scotland','wales','northern ireland'] -%}Europe/London
+  {%- elif c in ['united states','united states of america','usa','us'] -%}America/New_York
+  {%- elif c in ['canada','ca'] -%}America/Toronto
+  {%- elif c in ['australia','au'] -%}Australia/Sydney
+  {%- elif c in ['new zealand','nz'] -%}Pacific/Auckland
+  {%- elif c in ['singapore','sg'] -%}Asia/Singapore
+  {%- elif c in ['hong kong','hk','hong kong sar'] -%}Asia/Hong_Kong
+  {%- elif c in ['united arab emirates','uae','u.a.e','dubai','abu dhabi','sharjah','ajman','umm al-quwain','ras al khaimah','fujairah'] -%}Asia/Dubai
+  {# European default #}
+  {%- elif c in [
+      'austria','belgium','bulgaria','croatia','cyprus','czech republic','czechia',
+      'denmark','estonia','finland','france','germany','greece','hungary','iceland',
+      'italy','latvia','lithuania','luxembourg','malta','netherlands','norway',
+      'poland','portugal','romania','slovakia','slovenia','spain','sweden','switzerland'
+    ] -%}Europe/Paris
+  {%- else -%}Europe/Paris
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro language_for(country) -%}
+  {# Default to English as requested #}
+  English
+{%- endmacro %}
+
+{% macro ownership_types_for(country) -%}
+  {%- set c = _norm(country) -%}
+  {%- if c in ['ireland','ie','republic of ireland','united kingdom','uk','great britain','england','scotland','wales','northern ireland'] -%}
+    Freehold, Leasehold, Share of Freehold
+  {%- elif c in ['united states','united states of america','usa','us'] -%}
+    Freehold, Condominium, Co-op
+  {%- elif c in ['canada','ca'] -%}
+    Freehold, Condominium (Strata), Leasehold
+  {%- elif c in ['australia','au'] -%}
+    Freehold, Strata Title, Community Title
+  {%- elif c in ['new zealand','nz'] -%}
+    Freehold, Unit Title, Leasehold
+  {%- elif c in ['singapore','sg'] -%}
+    Freehold, Leasehold, Strata
+  {%- elif c in ['hong kong','hk','hong kong sar'] -%}
+    Leasehold, Strata
+  {%- elif c in ['united arab emirates','uae','u.a.e','dubai','abu dhabi','sharjah','ajman','umm al-quwain','ras al khaimah','fujairah'] -%}
+    Freehold, Leasehold, Strata
+  {%- else -%}
+    Freehold, Leasehold
+  {%- endif -%}
+{%- endmacro %}

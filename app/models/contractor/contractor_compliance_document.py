@@ -10,7 +10,7 @@ class ContractorComplianceDocument(db.Model):
 
     # 🔗 Core Relationships
     contractor_id = db.Column(db.Integer, db.ForeignKey('contractors.id'), nullable=False)
-    contractor = db.relationship('Contractor', backref='compliance_documents')
+    contractor = db.relationship('Contractor', back_populates='compliance_documents')  # 💡 back_populates replaces backref
 
     uploaded_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     reviewed_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
@@ -19,8 +19,8 @@ class ContractorComplianceDocument(db.Model):
     reviewed_by = db.relationship('User', foreign_keys=[reviewed_by_id])
 
     # 📁 Document Metadata
-    document_type = db.Column(db.String(100), nullable=False)     # e.g., insurance, H&S cert
-    document_category = db.Column(db.String(100), nullable=True)  # Certificate, Policy, Report
+    document_type = db.Column(db.String(100), nullable=False)
+    document_category = db.Column(db.String(100), nullable=True)
     file_name = db.Column(db.String(255), nullable=False)
     file_path = db.Column(db.String(255), nullable=False)
     expiry_date = db.Column(db.Date, nullable=True)
@@ -36,7 +36,7 @@ class ContractorComplianceDocument(db.Model):
     is_ai_processed = db.Column(db.Boolean, default=False)
     ai_profile_locked = db.Column(db.Boolean, default=False)
     ai_quality_score = db.Column(db.Float, nullable=True)
-    flagged_sections = db.Column(db.JSON, nullable=True)  # e.g., {"terms": "missing", "limits": "low"}
+    flagged_sections = db.Column(db.JSON, nullable=True)
 
     # ✅ GAR Governance
     is_compliant = db.Column(db.Boolean, default=True)
@@ -60,15 +60,15 @@ class ContractorComplianceDocument(db.Model):
     # 🧾 Review & Governance Tracking
     reviewed_at = db.Column(db.DateTime, nullable=True)
     review_comment = db.Column(db.Text, nullable=True)
-    is_governing_doc = db.Column(db.Boolean, default=False)            # Required for operational eligibility
+    is_governing_doc = db.Column(db.Boolean, default=False)
     audit_trail_linked = db.Column(db.Boolean, default=False)
-    linked_policy_id = db.Column(db.Integer, nullable=True)            # Optional: link to InsurancePolicy or LegalDoc
+    linked_policy_id = db.Column(db.Integer, nullable=True)
 
     # 🔌 API / External Support
     external_reference = db.Column(db.String(100), nullable=True)
     source_system = db.Column(db.String(100), nullable=True)
     is_external = db.Column(db.Boolean, default=False)
-    sync_status = db.Column(db.String(50), default='Pending')  # Synced, Pending, Failed
+    sync_status = db.Column(db.String(50), default='Pending')
 
     def __repr__(self):
         return f"<ContractorComplianceDocument type={self.document_type} contractor_id={self.contractor_id}>"

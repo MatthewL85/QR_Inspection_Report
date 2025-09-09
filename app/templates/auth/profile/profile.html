@@ -1,0 +1,49 @@
+{% if current_user.role.name == 'Super Admin' %}
+  {% extends 'layouts/super_admin_base.html' %}
+{% elif current_user.role.name == 'Contractor' %}
+  {% extends 'layouts/contractor_base.html' %}
+{% else %}
+  {% extends 'base.html' %}
+{% endif %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+  <h3 class="mb-4">👤 My Profile</h3>
+
+  <!-- Tabs -->
+  <ul class="nav nav-tabs mb-3" id="profileTabs" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link active" id="overview-tab" data-bs-toggle="tab" href="#overview" role="tab">Overview</a>
+    </li>
+    {% if user.hr_profile and user.role.name not in ['Member', 'Resident'] %}
+    <li class="nav-item">
+      <a class="nav-link" id="hr-tab" data-bs-toggle="tab" href="#hr" role="tab">HR Profile</a>
+    </li>
+    {% endif %}
+    {% if user.leave_summary and user.role.name not in ['Member', 'Resident'] %}
+    <li class="nav-item">
+      <a class="nav-link" id="leave-tab" data-bs-toggle="tab" href="#leave" role="tab">Leave</a>
+    </li>
+    {% endif %}
+    {% if user.documents and user.role.name not in ['Member', 'Resident'] %}
+    <li class="nav-item">
+      <a class="nav-link" id="docs-tab" data-bs-toggle="tab" href="#documents" role="tab">Documents</a>
+    </li>
+    {% endif %}
+    <li class="nav-item">
+      <a class="nav-link" id="settings-tab" data-bs-toggle="tab" href="#settings" role="tab">Settings</a>
+    </li>
+  </ul>
+
+  <!-- Tab Content -->
+  <div class="tab-content" id="profileTabsContent">
+
+    {% include 'auth/profile_tabs/overview_tab.html' %}
+    {% include 'auth/profile_tabs/hr_tab.html' %}
+    {% include 'auth/profile_tabs/leave_tab.html' %}
+    {% include 'auth/profile_tabs/documents_tab.html' %}
+    {% include 'auth/profile_tabs/settings_tab.html' %}
+
+  </div>
+</div>
+{% endblock %}

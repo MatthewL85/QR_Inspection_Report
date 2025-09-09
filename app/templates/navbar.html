@@ -1,40 +1,97 @@
 <!-- navbar.html -->
 <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-4 py-2">
   <div class="container-fluid">
+
+    <!-- 🧠 Role-based Branding -->
     <span class="navbar-brand fw-bold 
       {% if session.get('user', {}).get('role') == 'Director' %}
         text-success
       {% elif session.get('user', {}).get('role') in ['Contractor', 'Admin Contractor'] %}
         text-warning
-      {% else %}
+      {% elif session.get('user', {}).get('role') == 'Super Admin' %}
         text-primary
+      {% else %}
+        text-dark
       {% endif %}">
       {% if session.get('user', {}).get('role') == 'Director' %}
         Director Logix
       {% elif session.get('user', {}).get('role') in ['Contractor', 'Admin Contractor'] %}
         Contractor Logix
+      {% elif session.get('user', {}).get('role') == 'Super Admin' %}
+        LogixPM Admin
       {% else %}
         LogixPM
       {% endif %}
     </span>
 
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+    <!-- ☰ Mobile Toggle -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+      data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+      aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
 
+    <!-- 👤 Right Menu -->
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+
         {% if session.get('user') %}
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="fas fa-user-circle"></i>
-            {{ session.get('user', {}).get('full_name') or 'Guest' }}
-            <span class="badge bg-secondary text-uppercase">{{ session.get('user', {}).get('role') }}</span>
+          <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button"
+            data-bs-toggle="dropdown" aria-expanded="false">
+
+            <!-- 👤 Avatar or Fallback Icon -->
+            {% if session['user'].get('profile_photo') %}
+              <img src="{{ url_for('static', filename=session['user']['profile_photo']) }}"
+                   class="rounded-circle me-2" alt="Avatar" width="32" height="32">
+            {% else %}
+              <i class="fas fa-user-circle fa-lg me-2"></i>
+            {% endif %}
+
+            <!-- Name -->
+            <span class="me-1">{{ session['user'].get('name', 'Guest') }}</span>
+
+            <!-- 🎨 Role Badge -->
+            {% set role = session['user'].get('role', 'Unknown') %}
+            <span class="badge 
+              {% if role == 'Super Admin' %} bg-primary
+              {% elif role in ['Contractor', 'Admin Contractor'] %} bg-warning text-dark
+              {% elif role == 'Director' %} bg-success
+              {% elif role == 'Finance' %} bg-purple
+              {% elif role in ['Member', 'Resident'] %} bg-info text-dark
+              {% else %} bg-secondary
+              {% endif %}
+              text-uppercase">
+              {{ role }}
+            </span>
           </a>
+
+          <!-- 🔽 Dropdown Menu -->
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-            <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">Profile / Settings</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">👤 Profile / Settings</a></li>
+
+            {% if role == 'Super Admin' %}
+              <li><a class="dropdown-item" href="{{ url_for('super_admin.dashboard') }}">🧭 Admin Dashboard</a></li>
+            {% elif role == 'Property Manager' %}
+              <li><a class="dropdown-item" href="{{ url_for('property_manager.dashboard') }}">🏢 My Clients</a></li>
+            {% elif role in ['Contractor', 'Admin Contractor'] %}
+              <li><a class="dropdown-item" href="{{ url_for('contractor.dashboard') }}">🛠️ My Work Orders</a></li>
+            {% elif role == 'Director' %}
+              <li><a class="dropdown-item" href="{{ url_for('director.dashboard') }}">🗳️ Director Panel</a></li>
+            {% elif role == 'Finance' %}
+              <li><a class="dropdown-item" href="{{ url_for('finance.dashboard') }}">💰 Finance Portal</a></li>
+            {% elif role in ['Member', 'Resident'] %}
+              <li><a class="dropdown-item" href="{{ url_for('members.dashboard') }}">🏠 My Unit</a></li>
+            {% endif %}
+
+            {% if session['user'].get('can_switch_company') %}
+              <li><a class="dropdown-item text-muted" href="#">🏢 Switch Company (Coming Soon)</a></li>
+            {% endif %}
+
+            <li><a class="dropdown-item" href="#" onclick="toggleDarkMode()">🌙 Toggle Dark Mode</a></li>
+
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+            <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">🚪 Logout</a></li>
           </ul>
         </li>
         {% else %}

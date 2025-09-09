@@ -38,7 +38,7 @@ class TaxTransactionLog(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # 🔁 Relationships
-    tax_rate = db.relationship('TaxRate', backref='transactions')
+    tax_rate = db.relationship('TaxRate', back_populates='tax_transaction_logs')
     invoice = db.relationship('Invoice', backref='tax_logs')
     service_charge = db.relationship('ServiceCharge', backref='tax_logs')
     levy = db.relationship('Levy', backref='tax_logs')

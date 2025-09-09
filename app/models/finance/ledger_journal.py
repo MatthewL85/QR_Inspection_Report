@@ -34,7 +34,12 @@ class LedgerJournal(db.Model):
     created_by = db.relationship('User', foreign_keys=[created_by_id])
 
     # 🔗 Relationships
-    ledger_entries = db.relationship('LedgerEntry', backref='journal', lazy=True, cascade="all, delete")
+    ledger_entries = db.relationship(
+        'LedgerEntry',
+        back_populates='ledger_journal',
+        lazy='dynamic',
+        cascade='all, delete-orphan'
+    )
 
     # 🤖 AI & GAR Integration
     gar_context_reference = db.Column(db.String(100), nullable=True)

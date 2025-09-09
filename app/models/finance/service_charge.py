@@ -52,9 +52,10 @@ class ServiceCharge(db.Model):
     # 🧾 Invoice Integration
     invoice = db.relationship(
         'Invoice',
-        backref='service_charge_ref',
+        back_populates='service_charge',
         uselist=False,
-        primaryjoin="ServiceCharge.id==Invoice.service_charge_id"
+        primaryjoin="ServiceCharge.id==Invoice.service_charge_id",
+        overlaps="service_charge_ref"
     )
 
     # 🔍 Status / Reconciliation

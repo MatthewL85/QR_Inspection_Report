@@ -1,4 +1,3 @@
-from .audit import ProfileChangeLog
 from .document import Document
 from .media_file import MediaFile
 from .notification import Notification

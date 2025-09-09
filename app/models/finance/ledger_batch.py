@@ -35,7 +35,13 @@ class LedgerBatch(db.Model):
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
     # 🔗 Relationships
-    ledger_entries = db.relationship('LedgerEntry', backref='batch', lazy=True, cascade="all, delete")
+    ledger_entries = db.relationship(
+        'LedgerEntry',
+        backref='ledger_batch',
+        lazy=True,
+        cascade="all, delete",
+        foreign_keys='LedgerEntry.ledger_batch_id'
+    )
 
     # 🤖 AI / GAR Integration
     gar_context_reference = db.Column(db.String(100), nullable=True)

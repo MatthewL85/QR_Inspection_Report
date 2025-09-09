@@ -1,0 +1,63 @@
+{% extends 'layouts/super_admin_base.html' %}
+{% block page_content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">Contractors ({{ total }})</h5>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table mb-0 align-items-center">
+          <thead class="bg-light">
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Contractor Company</th>
+              <th>Status</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for u in users.items %}
+            <tr>
+              <td>{{ u.full_name }}</td>
+              <td>{{ u.email }}</td>
+              <td>{{ u.contractor.company_name if u.contractor else '—' }}</td>
+              <td>
+                {% if u.is_active %}
+                  <span class="badge bg-success">Active</span>
+                {% else %}
+                  <span class="badge bg-secondary">Inactive</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <a href="{{ url_for('super_admin.edit_user', user_id=u.id) }}" class="text-primary">Edit</a>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5" class="text-center text-muted py-4">No contractors yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if users.pages > 1 %}
+    <div class="card-footer d-flex justify-content-between align-items-center">
+      <span class="text-muted small">Page {{ users.page }} of {{ users.pages }}</span>
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item {% if not users.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('super_admin.manage_contractors', page=users.prev_num) }}">Prev</a>
+          </li>
+          <li class="page-item {% if not users.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('super_admin.manage_contractors', page=users.next_num) }}">Next</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

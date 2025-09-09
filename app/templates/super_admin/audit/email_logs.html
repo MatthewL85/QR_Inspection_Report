@@ -1,0 +1,88 @@
+{% extends 'layouts/super_admin_base.html' %}
+{% block title %}Email Logs | LogixPM{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+  <h4 class="mb-4">📧 Email Logs</h4>
+
+  <!-- 🔍 Filters -->
+  <form method="GET" class="row g-3 align-items-end mb-4">
+    <div class="col-md-3">
+      <label class="form-label">User</label>
+      <select name="user_id" class="form-select">
+        <option value="">All Users</option>
+        {% for user in users %}
+          <option value="{{ user.id }}" {% if filters.user_id == user.id %}selected{% endif %}>{{ user.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Email Type</label>
+      <input type="text" name="email_type" value="{{ filters.email_type or '' }}" class="form-control" placeholder="e.g., password_change_alert">
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Delivery Status</label>
+      <select name="delivery_status" class="form-select">
+        <option value="">All</option>
+        <option value="sent" {% if filters.delivery_status == 'sent' %}selected{% endif %}>Sent</option>
+        <option value="failed" {% if filters.delivery_status == 'failed' %}selected{% endif %}>Failed</option>
+        <option value="pending" {% if filters.delivery_status == 'pending' %}selected{% endif %}>Pending</option>
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <button type="submit" class="btn btn-dark w-100">🔎 Filter Logs</button>
+    </div>
+  </form>
+
+  <!-- 📄 Table -->
+  <div class="card">
+    <div class="card-body px-0 pt-0 pb-2">
+      <div class="table-responsive p-0">
+        <table class="table table-hover align-items-center mb-0">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email Type</th>
+              <th>Recipient</th>
+              <th>Subject</th>
+              <th>Status</th>
+              <th>IP</th>
+              <th>User Agent</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in logs %}
+              <tr>
+                <td>{{ log.user.full_name if log.user else '—' }}</td>
+                <td>{{ log.email_type }}</td>
+                <td>{{ log.recipient }}</td>
+                <td>{{ log.subject }}</td>
+                <td>
+                  <span class="badge bg-{{ 'success' if log.delivery_status == 'sent' else 'danger' if log.delivery_status == 'failed' else 'warning' }}">
+                    {{ log.delivery_status|capitalize }}
+                  </span>
+                </td>
+                <td>{{ log.ip_address or '—' }}</td>
+                <td>
+                  {% if log.user_agent %}
+                    <span title="{{ log.user_agent }}">{{ log.user_agent[:30] }}{% if log.user_agent|length > 30 %}…{% endif %}</span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td>{{ log.timestamp.strftime('%d-%b-%Y %H:%M') }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="8" class="text-center text-muted">No email logs found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
