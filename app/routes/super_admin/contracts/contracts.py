@@ -13,9 +13,9 @@ from app.decorators import super_admin_required
 from app.extensions import db
 from app.models.client.client import Client
 from app.models.contracts import ContractTemplate, ContractTemplateVersion, ClientContract
-from app.services.contract.contracts import generate_contract_artifacts
+from app.services.contract.contracts import generate_contract_artifacts, contract_snapshot, log_contract_audit
 from app.services.contract.contract_upgrades import build_upgrade_preview, apply_upgrade
-from app.services.contract.contract_audits import create_contract_audit  # ✅ unified audit helper
+from app.services.contract.contract_audits import create_contract_audit  # ✅ unified audit helper (kept)
 
 super_admin_contracts_bp = Blueprint(
     "super_admin_contracts", __name__, url_prefix="/super-admin/contracts"
@@ -229,14 +229,18 @@ def _validate_against_schema(schema: dict, data: dict) -> dict[str, str]:
 def _set_sign_status_and_audit(contract: ClientContract, new_status: str, *, notes: str = "", extra_after: dict | None = None):
     """
     Centralised setter for signature status + audit trail.
+    (D) Status change audit (now logs full before/after snapshots)
     """
+    # full before/after snapshots for richer history
+    before_snap = contract_snapshot(contract)
+
     before_status = contract.sign_status or "Draft"
     contract.sign_status = new_status
     db.session.commit()
 
-    after_payload = {"sign_status": contract.sign_status}
+    after_snap = contract_snapshot(contract)
     if extra_after:
-        after_payload.update(extra_after)
+        after_snap.update(extra_after)
 
     action_map = {
         "Sent": "send_for_signature",
@@ -246,12 +250,12 @@ def _set_sign_status_and_audit(contract: ClientContract, new_status: str, *, not
     }
     action = action_map.get(new_status, "signature_status_change")
 
-    create_contract_audit(
-        db.session,
-        contract_id=contract.id,
+    # switched to the unified logger (kept old helper import intact)
+    log_contract_audit(
+        contract,
         action=action,
-        before={"sign_status": before_status},
-        after=after_payload,
+        before=before_snap,
+        after=after_snap,
         notes=notes,
     )
     db.session.commit()
@@ -400,17 +404,12 @@ def renew(client_id: int):
             db.session.add(contract)
             db.session.commit()
 
-            # ✅ AUDIT: create draft
-            create_contract_audit(
-                db.session,
-                contract_id=contract.id,
+            # ✅ (A) AUDIT: create draft (use snapshot-based logger)
+            log_contract_audit(
+                contract,
                 action="create_draft",
-                after={
-                    "template_version_id": tv.id,
-                    "term": {"start": sd.isoformat() if sd else None, "end": ed.isoformat() if ed else None},
-                    "base_fee": base_fee,
-                    "currency": currency,
-                },
+                before=None,
+                after=contract_snapshot(contract),
                 notes="Draft contract created via renewal wizard",
             )
             db.session.commit()
@@ -451,7 +450,7 @@ def renew(client_id: int):
         db.session.commit()
 
         if request.method == "POST":
-            # ✅ Send for e-signature
+            # ✅ (D) Send for e-signature (status change audited inside helper)
             _set_sign_status_and_audit(
                 contract,
                 "Sent",
@@ -496,8 +495,9 @@ def contracts_inline_update(contract_id: int):
     if not contract.data_json:
         _ensure_minimal_data_json(contract)
 
-    # previous for audit
+    # previous for audit (B) — field-level diff
     old_value = _get_by_path(contract.data_json, json_path)
+    before_snap = contract_snapshot(contract)
 
     # Best-effort casting for common cases
     casted: Any = value
@@ -528,14 +528,14 @@ def contracts_inline_update(contract_id: int):
 
     db.session.commit()
 
-    # ✅ AUDIT: inline update
-    create_contract_audit(
-        db.session,
-        contract_id=contract.id,
+    # ✅ (B) AUDIT: update/edit (snapshot + focused before/after for the field)
+    after_snap = contract_snapshot(contract)
+    log_contract_audit(
+        contract,
         action="inline_update",
-        before={json_path: old_value},
-        after={json_path: casted},
-        notes="Inline update from preview step",
+        before=before_snap,
+        after=after_snap,
+        notes=f"Inline update: {json_path}: {old_value} -> {casted}",
     )
     db.session.commit()
 
@@ -618,9 +618,10 @@ def contracts_apply_update(contract_id: int):
     archive_removed = request.form.get("archive_removed") == "on"
     removed_paths = request.form.getlist("removed_paths")
 
-    # previous for audit
+    # previous for audit (C)
     before_version = current_tv.version_label
     before_data = contract.data_json or {}
+    before_snap = contract_snapshot(contract)
 
     # Build new data_json
     new_data = apply_upgrade(
@@ -637,13 +638,13 @@ def contracts_apply_update(contract_id: int):
     contract.data_json = new_data
     db.session.commit()
 
-    # ✅ AUDIT: apply update
-    create_contract_audit(
-        db.session,
-        contract_id=contract.id,
+    # ✅ (C) AUDIT: apply update (snapshot-based)
+    after_snap = contract_snapshot(contract)
+    log_contract_audit(
+        contract,
         action="apply_update",
-        before={"version": before_version, "data": before_data},
-        after={"version": latest.version_label, "data": new_data},
+        before=before_snap,
+        after=after_snap,
         notes=f"Applied update; accepted_sections={accepted_sections}, archive_removed={archive_removed}",
     )
     db.session.commit()

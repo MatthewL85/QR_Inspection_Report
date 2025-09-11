@@ -1,4 +1,4 @@
-# app/services/contracts.py
+# app/services/contract/contracts.py
 from __future__ import annotations
 
 import os
@@ -163,3 +163,84 @@ def render_html_for_version(template_version, data: dict, contract=None) -> str:
     html_template = template_version.html_template or ""
     # give template access to "data" (preferred) and "contract" (optional)
     return render_template_string(html_template, data=data or {}, contract=contract)
+
+
+# ----------------------- SNAPSHOT & AUDIT HELPERS (added) -----------------------
+from datetime import datetime, date  # added
+from decimal import Decimal          # added
+from flask_login import current_user # added
+from app import db                   # added
+# use your actual helper location (you confirmed this path earlier)
+from app.services.contract.contract_audits import create_contract_audit  # added
+
+_JSON_SAFE_TYPES = (str, int, float, bool, type(None))  # added
+
+
+def _to_json_safe(value):  # added
+    """Convert common non-JSON types to JSON-safe primitives."""
+    if isinstance(value, _JSON_SAFE_TYPES):
+        return value
+    if isinstance(value, Decimal):
+        try:
+            return float(value)
+        except Exception:
+            return str(value)
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    if isinstance(value, dict):
+        return {k: _to_json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple, set)):
+        return [_to_json_safe(v) for v in value]
+    # Fallback
+    return str(value)
+
+
+def contract_snapshot(contract) -> dict:  # added
+    """
+    Return a JSON-safe dict of key fields we care about in audits.
+    Adjust the field list to match your ClientContract schema.
+    """
+    fields = [
+        "id",
+        "name",
+        "sign_status",
+        "contract_value",
+        "currency",
+        "start_date",
+        "end_date",
+        "next_fee_increase_date",
+        "template_version_id",
+    ]
+    snap = {}
+    for f in fields:
+        snap[f] = _to_json_safe(getattr(contract, f, None))
+    return snap
+
+
+def log_contract_audit(  # added
+    contract: ClientContract,
+    action: str,
+    before: dict | None,
+    after: dict | None,
+    notes: str | None = None,
+    actor_id: int | None = None,
+):
+    """
+    Convenience wrapper to stage a ContractAudit row for this contract.
+    Does not commit — let the caller control the transaction boundary.
+    """
+    if actor_id is None:
+        try:
+            actor_id = current_user.id  # if in request context
+        except Exception:
+            actor_id = None
+
+    create_contract_audit(
+        db.session,
+        contract_id=contract.id,
+        action=action,
+        before=before,
+        after=after,
+        notes=notes,
+        actor_id=actor_id,
+    )
