@@ -1,0 +1,76 @@
+<nav class="navbar navbar-main navbar-expand-lg px-4 shadow-none border-radius-xl bg-white"
+     id="navbarBlur" navbar-scroll="true">
+  <div class="container-fluid py-1">
+
+    <!-- Brand row: toggle + PLATFORM LOGO + " / Super Admin" -->
+    <div class="d-flex align-items-center">
+      <button id="sidebarToggleTop"
+              class="btn btn-outline-secondary me-3"
+              type="button"
+              title="Toggle sidebar"
+              aria-label="Toggle sidebar"
+              data-sidebar-toggle
+              style="height:34px;width:34px;display:flex;align-items:center;justify-content:center;border-radius:.5rem;">
+        <i class="material-icons" style="font-size:18px;line-height:1;">menu</i>
+      </button>
+
+      <span class="ms-0 d-inline-flex align-items-center brand-lockup" style="height:34px;font-size:18px;line-height:1;">
+        <!-- 👇 No fixed inline height; CSS controls size via --logo-navbar-height -->
+        <img
+          src="{{ PLATFORM_LOGO_URL or url_for('static', filename='assets/img/logixpm-logo.png') }}"
+          srcset="
+            {{ (PLATFORM_LOGO_URL or url_for('static', filename='assets/img/logixpm-logo.png')) }} 1x,
+            {{ (PLATFORM_LOGO_URL or url_for('static', filename='assets/img/logixpm-logo@2x.png')) }} 2x
+          "
+          alt="LogixPM"
+          class="me-2 navbar-brand-img brand-logo--navbar"
+          loading="eager"
+          decoding="async"
+          style="display:block;width:auto;"
+        >
+        <span class="text-muted">/ Super Admin</span>
+      </span>
+    </div>
+
+    <!-- Keep original breadcrumb for a11y (visually hidden) -->
+    <nav aria-label="breadcrumb" class="visually-hidden">
+      <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0">
+        <li class="breadcrumb-item text-sm">
+          <a class="text-dark" href="{{ url_for('super_admin.dashboard') }}">Super Admin</a>
+        </li>
+        {% if request.endpoint != 'super_admin.dashboard' %}
+        <li class="breadcrumb-item text-sm text-dark active" aria-current="page">
+          {{ request.endpoint.split('.')[-1]|replace('_', ' ')|capitalize }}
+        </li>
+        {% endif %}
+      </ol>
+    </nav>
+
+    <ul class="navbar-nav justify-content-end ms-auto align-items-center">
+      <!-- 🔔 Notifications -->
+      <li class="nav-item dropdown px-3">
+        <a href="#" class="nav-link text-body p-0" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="material-icons">notifications</i>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end px-2 py-3" aria-labelledby="dropdownMenuButton" style="min-width: 250px;">
+          <li><a class="dropdown-item border-radius-md" href="#">No new notifications</a></li>
+        </ul>
+      </li>
+
+      <!-- 👤 User Profile -->
+      <li class="nav-item dropdown pe-3">
+        <a href="#" class="nav-link text-body p-0 d-flex align-items-center" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+          <img src="{{ current_user.profile_photo or url_for('static', filename='img/default-avatar.png') }}"
+               alt="User avatar"
+               class="avatar avatar-sm rounded-circle me-2">
+          <span class="d-none d-md-inline text-sm">{{ current_user.full_name or current_user.email }}</span>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+          <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">My Profile</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">Logout</a></li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+</nav>

@@ -1,0 +1,44 @@
+{# templates/super_admin/contracts/_signed_table.html #}
+<table class="table table-sm table-hover align-middle">
+  <thead>
+    <tr>
+      <th>Client</th>
+      <th>Contract</th>
+      <th>Signed At</th>
+      <th>Start</th>
+      <th>End</th>
+      <th class="text-center">Files</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% set since = (now() - timedelta(days=30)).date() if now is defined else None %}
+    {% for c in expired + expiring_30 + expiring_90 if c.sign_status == 'Signed' %}
+      {% set signed_at = c.signed_at or c.updated_at or c.created_at %}
+      {% if not since or (signed_at and signed_at.date() >= since) %}
+        <tr>
+          <td>{{ c.client.name }}</td>
+          <td class="fw-semibold">{{ c.title or '—' }}</td>
+          <td>{{ signed_at.strftime("%d-%m-%Y %H:%M") if signed_at else '—' }}</td>
+          <td>{{ c.start_date.strftime("%d-%m-%Y") if c.start_date else '—' }}</td>
+          <td>{{ c.end_date.strftime("%d-%m-%Y") if c.end_date else '—' }}</td>
+          <td class="text-center">
+            <div class="btn-group btn-group-sm" role="group">
+              {% if c.generated_pdf_path %}
+                <a class="btn btn-outline-primary" href="{{ c.generated_pdf_path }}" target="_blank">PDF</a>
+              {% endif %}
+              {% if c.generated_html_path %}
+                <a class="btn btn-outline-secondary" href="{{ c.generated_html_path }}" target="_blank">HTML</a>
+              {% endif %}
+              <a class="btn btn-outline-dark"
+                 href="{{ url_for('super_admin_contracts.renew', client_id=c.client_id, step=3, contract_id=c.id) }}">
+                View
+              </a>
+            </div>
+          </td>
+        </tr>
+      {% endif %}
+    {% else %}
+      <tr><td colspan="6" class="text-muted">No contracts signed in the last 30 days.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>

@@ -1,7 +1,7 @@
 # app/routes/super_admin/utils/company_filter.py
 
 from flask import Blueprint, jsonify, request
-from app.models.company import Company
+from app.models.onboarding.company import Company
 from app.decorators.role import super_admin_required
 from flask_login import login_required
 

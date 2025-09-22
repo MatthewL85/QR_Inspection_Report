@@ -1,0 +1,30 @@
+{# templates/super_admin/contracts/_declined_table.html #}
+<table class="table table-sm table-hover align-middle">
+  <thead>
+    <tr>
+      <th>Client</th>
+      <th>Contract</th>
+      <th>Start</th>
+      <th>End</th>
+      <th class="text-center">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in expired + expiring_30 + expiring_90 if c.sign_status == 'Declined' %}
+      <tr>
+        <td>{{ c.client.name }}</td>
+        <td class="fw-semibold">{{ c.title or '—' }}</td>
+        <td>{{ c.start_date.strftime("%d-%m-%Y") if c.start_date else '—' }}</td>
+        <td>{{ c.end_date.strftime("%d-%m-%Y") if c.end_date else '—' }}</td>
+        <td class="text-center">
+          <a class="btn btn-sm btn-outline-primary"
+             href="{{ url_for('super_admin_contracts.renew', client_id=c.client_id, step=3, contract_id=c.id) }}">
+            Review / Resend
+          </a>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="text-muted">No declined contracts.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>

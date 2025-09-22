@@ -5,6 +5,8 @@ import json
 import re
 from datetime import date, timedelta, datetime as _dt
 from typing import Any, Dict, List
+from sqlalchemy.orm import selectinload
+from flask import current_app
 
 from flask import Blueprint, request, render_template, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
@@ -82,12 +84,14 @@ def _ensure_minimal_data_json(contract: ClientContract):
         payload["fees"]["invoice"] = {"frequency": "Monthly", "due_days": 30, "method": "Standing Order"}
     payload["fees"]["base_ex_vat"] = float(contract.contract_value or 0)
 
-    if "additional" not in payload["fees"]:
+    if "additional" not in payload["fees"] and contract.additional_fees:
         try:
-            extras_map = json.loads(contract.additional_fees) if contract.additional_fees else {}
+            extras_map = json.loads(contract.additional_fees)
         except Exception:
             extras_map = {}
         payload["fees"]["additional"] = [{"label": k, "amount": float(v or 0)} for k, v in extras_map.items()]
+    elif "additional" not in payload["fees"]:
+        payload["fees"]["additional"] = []
 
     contract.data_json = payload
     db.session.commit()
@@ -223,6 +227,18 @@ def _validate_against_schema(schema: dict, data: dict) -> dict[str, str]:
                 _check_one(f"{tbl}[{i}].{col}", value, rule)
 
     return errors
+
+# ---------- scoped query helper for multi-tenant isolation ----------
+
+def _scoped_contracts_query():
+    """
+    Base query for ClientContract, scoped by current_user.company_id if present.
+    """
+    q = ClientContract.query
+    company_id = getattr(current_user, "company_id", None)
+    if company_id:
+        q = q.join(Client, Client.id == ClientContract.client_id).filter(Client.company_id == company_id)
+    return q
 
 # -------------------- status/audit helper --------------------
 
@@ -728,3 +744,160 @@ def signature_webhook():
         return ("ignored", 202)
 
     return ("ok", 200)
+
+# -------------------- Contracts Overview (dashboard drill-down) --------------------
+
+@super_admin_contracts_bp.get("/overview", endpoint="contracts_overview")
+@super_admin_required
+@login_required
+def contracts_overview():
+    """
+    Drill-down page for contracts with expiry rollups (Expired, ≤30d, ≤60d, ≤90d)
+    and signature-status breakdowns (Pending/Signed/Declined/Drafts/Expired Sig).
+    Scoped by current_user.company_id (if present).
+    """
+
+    # 1) If a previous DB error occurred in this request, clear aborted txn state now.
+    try:
+        db.session.rollback()
+    except Exception:
+        pass
+
+    today = date.today()
+    in_30 = today + timedelta(days=30)
+    in_60 = today + timedelta(days=60)
+    in_90 = today + timedelta(days=90)
+    since_30 = today - timedelta(days=30)
+
+    # 2) Base scoped query + eager loading to avoid lazy-load during template render.
+    base = _scoped_contracts_query()
+
+    eager_opts = [selectinload(ClientContract.client)]
+    # Add optional relations only if they exist on the model
+    if hasattr(ClientContract, "preferred_contractor"):
+        eager_opts.append(selectinload(ClientContract.preferred_contractor))
+    if hasattr(ClientContract, "second_preferred_contractor"):
+        eager_opts.append(selectinload(ClientContract.second_preferred_contractor))
+    base = base.options(*eager_opts)
+
+    # 3) Helper to safely execute .all() and keep the request alive if a subquery fails
+    def _safe_all(q, label: str):
+        try:
+            return q.all()
+        except Exception:
+            current_app.logger.exception(f"contracts_overview: query failed in '{label}'")
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+            return []
+
+    # ----- Expiry lists -----
+    expired = _safe_all(
+        base.filter(
+            ClientContract.end_date.isnot(None),
+            ClientContract.end_date < today
+        ).order_by(ClientContract.end_date.asc()),
+        "expired",
+    )
+
+    expiring_30 = _safe_all(
+        base.filter(
+            ClientContract.end_date.isnot(None),
+            ClientContract.end_date >= today,
+            ClientContract.end_date <= in_30
+        ).order_by(ClientContract.end_date.asc()),
+        "expiring_30",
+    )
+
+    expiring_60 = _safe_all(
+        base.filter(
+            ClientContract.end_date.isnot(None),
+            ClientContract.end_date > in_30,
+            ClientContract.end_date <= in_60
+        ).order_by(ClientContract.end_date.asc()),
+        "expiring_60",
+    )
+
+    expiring_90 = _safe_all(
+        base.filter(
+            ClientContract.end_date.isnot(None),
+            ClientContract.end_date > in_60,
+            ClientContract.end_date <= in_90
+        ).order_by(ClientContract.end_date.asc()),
+        "expiring_90",
+    )
+
+    # ----- Choose safe timestamp cols (fallbacks if attrs not present) -----
+    updated_col = getattr(ClientContract, "updated_at", None) or ClientContract.created_at
+    created_col = ClientContract.created_at
+    signed_col = (
+        getattr(ClientContract, "signed_at", None)
+        or getattr(ClientContract, "updated_at", None)
+        or ClientContract.created_at
+    )
+
+    # ----- Signature status breakdown lists -----
+    pending = _safe_all(
+        base.filter(ClientContract.sign_status == "Sent")
+            .order_by(updated_col.desc()),
+        "pending",
+    )
+
+    if signed_col is not None:
+        signed = _safe_all(
+            base.filter(
+                ClientContract.sign_status == "Signed",
+                signed_col >= since_30
+            ).order_by(signed_col.desc()),
+            "signed",
+        )
+    else:
+        signed = _safe_all(
+            base.filter(ClientContract.sign_status == "Signed")
+                .order_by(created_col.desc()),
+            "signed_no_col",
+        )
+
+    declined = _safe_all(
+        base.filter(ClientContract.sign_status == "Declined")
+            .order_by(updated_col.desc()),
+        "declined",
+    )
+
+    drafts = _safe_all(
+        base.filter(ClientContract.sign_status == "Draft")
+            .order_by(created_col.desc()),
+        "drafts",
+    )
+
+    expired_sig = _safe_all(
+        base.filter(ClientContract.sign_status == "Expired")
+            .order_by(updated_col.desc()),
+        "expired_sig",
+    )
+
+    return render_template(
+        "super_admin/contracts/contracts_overview.html",
+        counts={
+            "expired": len(expired),
+            "exp_30": len(expiring_30),
+            "exp_60": len(expiring_60),
+            "exp_90": len(expiring_90),
+            "pending": len(pending),
+            "signed": len(signed),
+            "declined": len(declined),
+            "drafts": len(drafts),
+            "expired_sig": len(expired_sig),
+        },
+        expired=expired,
+        expiring_30=expiring_30,
+        expiring_60=expiring_60,
+        expiring_90=expiring_90,
+        pending=pending,
+        signed=signed,
+        declined=declined,
+        drafts=drafts,
+        expired_sig=expired_sig,
+        today=today,  # handy for the template
+    )

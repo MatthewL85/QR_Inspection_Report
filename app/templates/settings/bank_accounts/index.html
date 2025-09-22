@@ -1,0 +1,112 @@
+{% extends "layouts/super_admin_base.html" %}
+
+{% block title %}Bank Accounts | LogixPM{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid pt-0">
+
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h5 class="mb-1">Bank Accounts</h5>
+      <div class="text-muted small">Manage the bank accounts used across your organization.</div>
+    </div>
+    <div class="d-flex gap-2">
+      <a class="btn btn-primary btn-sm" href="{{ url_for('settings.bank_new') }}">
+        <i class="material-icons me-1" style="font-size:16px;">add</i> New Account
+      </a>
+    </div>
+  </div>
+
+  {% if items and items|length %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table align-items-center mb-0">
+            <thead class="bg-light">
+              <tr>
+                <th class="text-secondary text-xs font-weight-bolder opacity-7 ps-4">Bank</th>
+                <th class="text-secondary text-xs font-weight-bolder opacity-7">Account</th>
+                <th class="text-secondary text-xs font-weight-bolder opacity-7">IBAN / Number</th>
+                <th class="text-secondary text-xs font-weight-bolder opacity-7">Sort Code</th>
+                <th class="text-secondary text-xs font-weight-bolder opacity-7">Currency</th>
+                <th class="text-secondary text-xs font-weight-bolder opacity-7">Default</th>
+                <th class="text-secondary text-xs font-weight-bolder opacity-7 text-end pe-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for acc in items %}
+              <tr>
+                <td class="ps-4">
+                  <div class="fw-medium">
+                    {{ acc.bank_name or acc.name or "—" }}
+                  </div>
+                </td>
+                <td>
+                  {{ acc.account_name or acc.holder_name or "—" }}
+                </td>
+                <td>
+                  {{ acc.iban or acc.account_number or "—" }}
+                </td>
+                <td>
+                  {{ acc.sort_code or "—" }}
+                </td>
+                <td>
+                  {{ acc.currency or "—" }}
+                </td>
+                <td>
+                  {% if acc.is_default %}
+                    <span class="badge bg-success">Default</span>
+                  {% else %}
+                    <span class="badge bg-secondary">—</span>
+                  {% endif %}
+                </td>
+                <td class="text-end pe-4">
+                  <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
+                    <a class="btn btn-outline-secondary"
+                       href="{{ url_for('settings.bank_edit', account_id=acc.id) }}">
+                      Edit
+                    </a>
+
+                    {% if not acc.is_default %}
+                      <form method="post"
+                            action="{{ url_for('settings.bank_make_default', account_id=acc.id) }}"
+                            onsubmit="return confirm('Make this the default account?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-outline-primary">Make Default</button>
+                      </form>
+                    {% endif %}
+
+                    <form method="post"
+                          action="{{ url_for('settings.bank_delete', account_id=acc.id) }}"
+                          onsubmit="return confirm('Delete this bank account? This cannot be undone.');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn btn-outline-danger">Delete</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-body text-center py-5">
+        <div class="mb-2">
+          <i class="material-icons text-muted" style="font-size:42px;">account_balance</i>
+        </div>
+        <h6 class="mb-1">No bank accounts yet</h6>
+        <p class="text-muted small mb-3">
+          Add your first bank account to start using it across the app.
+        </p>
+        <a class="btn btn-primary btn-sm" href="{{ url_for('settings.bank_new') }}">
+          <i class="material-icons me-1" style="font-size:16px;">add</i> New Account
+        </a>
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

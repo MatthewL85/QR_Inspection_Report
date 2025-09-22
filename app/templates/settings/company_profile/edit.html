@@ -1,0 +1,163 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block page_content %}
+<div class="container-fluid py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h5 class="mb-1">Edit Company Profile</h5>
+      <div class="text-muted small">Update your organisation details.</div>
+    </div>
+    <div class="d-flex gap-2">
+      <a class="btn btn-light btn-sm" href="{{ url_for('settings.profile_index', id=company.id) }}">Cancel</a>
+      <button form="companyProfileForm" type="submit" class="btn btn-primary btn-sm">Save changes</button>
+    </div>
+  </div>
+
+  {% with msgs = get_flashed_messages(with_categories=True) %}
+    {% if msgs %}
+      <div class="mb-3">
+        {% for category, message in msgs %}
+          <div class="alert alert-{{ 'warning' if category=='message' else category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  {% if form and form.errors %}
+    <div class="alert alert-danger">Please correct the highlighted errors below.</div>
+  {% endif %}
+
+  <form id="companyProfileForm" method="post" action="{{ url_for('settings.profile_edit', id=company.id) }}">
+    {% if form %}
+      {{ form.hidden_tag() }}
+    {% else %}
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% endif %}
+
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Company Name</label>
+            {% if form %} {{ form.name(class="form-control", required=True) }}
+            {% else %} <input name="name" class="form-control" value="{{ company.name or '' }}" required>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Company Type</label>
+            {% if form %} {{ form.company_type(class="form-select") }}
+            {% else %}
+              <select name="company_type" class="form-select">
+                <option value="" {{ 'selected' if not company.company_type else '' }}>Select…</option>
+                <option value="management" {{ 'selected' if company.company_type=='management' else '' }}>Management</option>
+                <option value="contractor" {{ 'selected' if company.company_type=='contractor' else '' }}>Contractor</option>
+                <option value="omc" {{ 'selected' if company.company_type=='omc' else '' }}>OMC / Director</option>
+              </select>
+            {% endif %}
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Registration Number</label>
+            {% if form %} {{ form.registration_number(class="form-control") }}
+            {% else %} <input name="registration_number" class="form-control" value="{{ company.registration_number or '' }}">
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">VAT Number</label>
+            {% if form %} {{ form.vat_number(class="form-control") }}
+            {% else %} <input name="vat_number" class="form-control" value="{{ company.vat_number or '' }}">
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Tax Identifier</label>
+            {% if form %} {{ form.tax_identifier(class="form-control") }}
+            {% else %} <input name="tax_identifier" class="form-control" value="{{ company.tax_identifier or '' }}">
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Email</label>
+            {% if form %} {{ form.email(class="form-control") }}
+            {% else %} <input name="email" type="email" class="form-control" value="{{ company.email or '' }}">
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Phone</label>
+            {% if form %} {{ form.phone(class="form-control") }}
+            {% else %} <input name="phone" class="form-control" value="{{ company.phone or '' }}">
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Website</label>
+            {% if form %} {{ form.website(class="form-control") }}
+            {% else %} <input name="website" class="form-control" value="{{ company.website or '' }}">
+            {% endif %}
+          </div>
+
+          <div class="col-12"><hr></div>
+
+          <div class="col-md-6">
+            <label class="form-label">Address line 1</label>
+            {% if form %} {{ form.address_line1(class="form-control") }}
+            {% else %} <input name="address_line1" class="form-control" value="{{ company.address_line1 or '' }}">
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Address line 2</label>
+            {% if form %} {{ form.address_line2(class="form-control") }}
+            {% else %} <input name="address_line2" class="form-control" value="{{ company.address_line2 or '' }}">
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">City</label>
+            {% if form %} {{ form.city(class="form-control") }}
+            {% else %} <input name="city" class="form-control" value="{{ company.city or '' }}">
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">State/County</label>
+            {% if form %} {{ form.state(class="form-control") }}
+            {% else %} <input name="state" class="form-control" value="{{ company.state or '' }}">
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Postal Code</label>
+            {% if form %} {{ form.postal_code(class="form-control") }}
+            {% else %} <input name="postal_code" class="form-control" value="{{ company.postal_code or '' }}">
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Country</label>
+            {% if form %} {{ form.country(class="form-control") }}
+            {% else %} <input name="country" class="form-control" value="{{ company.country or '' }}">
+            {% endif %}
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Currency</label>
+            {% if form %} {{ form.currency(class="form-control") }}
+            {% else %} <input name="currency" class="form-control" value="{{ company.currency or '' }}">
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Timezone</label>
+            {% if form %} {{ form.timezone(class="form-control") }}
+            {% else %} <input name="timezone" class="form-control" value="{{ company.timezone or '' }}">
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Preferred Language</label>
+            {% if form %} {{ form.preferred_language(class="form-control") }}
+            {% else %} <input name="preferred_language" class="form-control" value="{{ company.preferred_language or '' }}">
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

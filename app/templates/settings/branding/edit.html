@@ -1,0 +1,164 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block page_content %}
+<div class="container-fluid py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h5 class="mb-1">Edit Branding</h5>
+      <div class="text-muted small">Update your logo and brand colors.</div>
+    </div>
+    <div class="d-flex gap-2">
+      <a class="btn btn-light btn-sm" href="{{ url_for('settings.branding_view', id=company.id) }}">Cancel</a>
+      <button form="brandingForm" type="submit" class="btn btn-primary btn-sm">Save</button>
+    </div>
+  </div>
+
+  {% with msgs = get_flashed_messages(with_categories=True) %}
+    {% if msgs %}
+      <div class="mb-3">
+        {% for category, message in msgs %}
+          <div class="alert alert-{{ 'warning' if category=='message' else category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <form id="brandingForm" method="post" action="{{ url_for('settings.branding_edit', id=company.id) }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="mb-3">
+              <label class="form-label">Company Logo (SVG/PNG/JPG)</label>
+              <input type="file" name="logo_file" class="form-control" accept=".svg,.png,.jpg,.jpeg,.gif">
+              <div class="form-text">Upload a logo image (PNG/SVG recommended).</div>
+              {% if company and company.logo_path %}
+                <div class="mt-2">
+                  <img src="{{ company.logo_path }}" alt="Logo" style="height:56px;">
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Primary Color</label>
+                <input type="color" class="form-control form-control-color" name="brand_primary_color"
+                       value="{{ (company and company.brand_primary_color) or '#1976d2' }}">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Secondary Color</label>
+                <input type="color" class="form-control form-control-color" name="brand_secondary_color"
+                       value="{{ (company and company.brand_secondary_color) or '#26a69a' }}">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Legacy Color</label>
+                <input type="color" class="form-control form-control-color" name="brand_color"
+                       value="{{ (company and company.brand_color) or '#e91e63' }}">
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Preview -->
+    <div class="col-lg-5">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h6 class="mb-3">Live Preview</h6>
+
+          <div class="p-3 rounded border">
+            <div class="d-flex align-items-center mb-3">
+              <div id="logoPreview" class="me-3"
+                   style="width:48px;height:48px;border-radius:8px;background:#f1f3f5;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                {% if company and company.logo_path %}
+                  <img src="{{ company.logo_path }}" alt="Logo" style="max-width:100%;max-height:100%;">
+                {% else %}
+                  <span class="text-muted small">Logo</span>
+                {% endif %}
+              </div>
+              <div>
+                <div class="fw-semibold">{{ company.name or 'Your Company' }}</div>
+                <div class="small text-muted">Material Dashboard preview</div>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm" id="btnPrimary">Primary</button>
+              <button type="button" class="btn btn-sm" id="btnSecondary">Secondary</button>
+              <span class="badge" id="badgeLegacy">Legacy</span>
+            </div>
+          </div>
+
+          <div class="form-text mt-2">Visual guide only; the app uses your base/layout styles.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  const el = {
+    prim: document.querySelector('input[name="brand_primary_color"]'),
+    sec:  document.querySelector('input[name="brand_secondary_color"]'),
+    leg:  document.querySelector('input[name="brand_color"]'),
+    btnP: document.getElementById('btnPrimary'),
+    btnS: document.getElementById('btnSecondary'),
+    badge:document.getElementById('badgeLegacy'),
+    logo: document.querySelector('input[name="logo_file"]'),
+    logoPreview: document.getElementById('logoPreview')
+  };
+
+  function setStyleSafe(node, prop, val){ if(node && val){ node.style[prop] = val; } }
+
+  function apply(){
+    const prim = (el.prim && el.prim.value) || '#1976d2';
+    const sec  = (el.sec  && el.sec.value)  || '#26a69a';
+    const leg  = (el.leg  && el.leg.value)  || '#e91e63';
+
+    setStyleSafe(el.btnP, 'backgroundColor', prim);
+    setStyleSafe(el.btnP, 'borderColor',     prim);
+    setStyleSafe(el.btnP, 'color',           '#fff');
+
+    setStyleSafe(el.btnS, 'backgroundColor', sec);
+    setStyleSafe(el.btnS, 'borderColor',     sec);
+    setStyleSafe(el.btnS, 'color',           '#fff');
+
+    setStyleSafe(el.badge, 'backgroundColor', leg);
+    setStyleSafe(el.badge, 'color',           '#fff');
+  }
+
+  if (el.logo && el.logoPreview) {
+    el.logo.addEventListener('change', function(){
+      if (!el.logo.files || !el.logo.files[0]) return;
+      const reader = new FileReader();
+      reader.onload = function(e){
+        el.logoPreview.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.alt = 'Logo';
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        el.logoPreview.appendChild(img);
+      };
+      reader.readAsDataURL(el.logo.files[0]);
+    });
+  }
+
+  ['input','change'].forEach(evt => {
+    if (el.prim) el.prim.addEventListener(evt, apply);
+    if (el.sec)  el.sec.addEventListener(evt, apply);
+    if (el.leg)  el.leg.addEventListener(evt, apply);
+  });
+
+  apply();
+})();
+</script>
+{% endblock %}

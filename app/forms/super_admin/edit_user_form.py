@@ -6,7 +6,7 @@ from wtforms import (
 )
 from wtforms.validators import DataRequired, Email, Optional, Length
 from app.models.core.role import Role
-from app.models.company import Company
+from app.models.onboarding.company import Company
 
 class EditUserForm(FlaskForm):
     """👤 Form for editing an existing user within LogixPM."""

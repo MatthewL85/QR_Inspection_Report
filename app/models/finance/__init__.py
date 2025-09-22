@@ -8,7 +8,7 @@ from .annual_service_charge_statements import AnnualServiceChargeStatement
 from .area_type import AreaType
 from .arrears import Arrears
 from .balance_sheet import BalanceSheet
-from .bank_account import BankAccount
+from app.models.onboarding.bank_account import BankAccount
 from .bank_reconciliation import BankReconciliation
 from .bank_transaction import BankTransaction
 from .budget import Budget

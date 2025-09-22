@@ -1,0 +1,155 @@
+{% extends 'layouts/super_admin_base.html' %}
+
+{% import 'macros/common_macros.html' as common_macros %}
+{% import 'macros/compliance_macros.html' as compliance_macros %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+
+  <!-- ✅ Quick Actions -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0 d-flex align-items-center">
+      <button id="sidebarToggle" class="btn btn-sm btn-outline-secondary me-2" title="Toggle sidebar">
+        <i class="material-icons" style="font-size:18px">menu</i>
+      </button>
+      📊 Super Admin Dashboard
+    </h4>
+    <div>
+      <a href="{{ url_for('super_admin.add_client') }}" class="btn btn-sm btn-primary me-2">
+        <i class="material-icons me-1">group_add</i> Add Client
+      </a>
+      <a href="{{ url_for('super_admin.add_user') }}" class="btn btn-sm btn-info">
+        <i class="material-icons me-1">person_add</i> Add User
+      </a>
+    </div>
+  </div>
+
+  <!-- 📦 Row: Summary Tiles -->
+  <div class="row g-4">
+    {% set contractor_users = users | selectattr("role", "equalto", "Contractor") | list %}
+
+    {{ common_macros.metric_tile(title="Total Clients", value=clients|length, icon_name="groups", color="primary", view_endpoint="super_admin.manage_clients") }}
+    {{ common_macros.metric_tile(title="Total PMs", value=managers|length, icon_name="supervisor_account", color="info", view_endpoint="super_admin.manage_users", view_params={'role_filter': 'Property Manager'}) }}
+    {{ common_macros.metric_tile(title="Total Contractors", value=contractor_users|length, icon_name="engineering", color="warning", view_endpoint="super_admin.manage_users", view_params={'role_filter': 'Contractor'}) }}
+    {{ common_macros.metric_tile(title="Managed Portfolio", value="€" ~ (total_portfolio_value|default(0)), icon_name="folder_shared", color="secondary", view_endpoint="super_admin.manage_clients") }}
+  </div>
+
+  <!-- ✍️ Row: Signature Status -->
+  <div class="row g-4 mt-2">
+    {{ common_macros.metric_tile(
+        title="Pending Signatures",
+        value=(sign_metrics['Sent'] if sign_metrics is defined else 0),
+        icon_name="pending_actions",
+        color="warning",
+        view_endpoint="super_admin.contract_audits_list",
+        view_params={'action': 'send_for_signature'}
+    ) }}
+    {{ common_macros.metric_tile(
+        title="Signed",
+        value=(sign_metrics['Signed'] if sign_metrics is defined else 0),
+        icon_name="task_alt",
+        color="success",
+        view_endpoint="super_admin.contract_audits_list",
+        view_params={'action': 'signature_signed'}
+    ) }}
+    {{ common_macros.metric_tile(
+        title="Declined",
+        value=(sign_metrics['Declined'] if sign_metrics is defined else 0),
+        icon_name="thumb_down_off_alt",
+        color="danger",
+        view_endpoint="super_admin.contract_audits_list",
+        view_params={'action': 'signature_declined'}
+    ) }}
+    {{ common_macros.metric_tile(
+        title="Expired",
+        value=(sign_metrics['Expired'] if sign_metrics is defined else 0),
+        icon_name="hourglass_disabled",
+        color="secondary",
+        view_endpoint="super_admin.contract_audits_list",
+        view_params={'action': 'signature_expired'}
+    ) }}
+    {{ common_macros.metric_tile(
+        title="Drafts",
+        value=(sign_metrics['Draft'] if sign_metrics is defined else 0),
+        icon_name="description",
+        color="info",
+        view_endpoint="super_admin.contract_audits_list",
+        view_params={'action': 'create_draft'}
+    ) }}
+  </div>
+
+  <!-- 📋 Row: Compliance & Insights -->
+  <div class="row g-4 mt-2">
+    {{ common_macros.metric_tile("Upcoming AGMs", upcoming_agm_count, "calendar_month", "success", "super_admin.upcoming_agms") }}
+    {{ compliance_macros.compliance_tile("Client Compliance Docs", client_compliance_docs, "file-contract", "primary", "super_admin.compliance_documents_index") }}
+    {{ compliance_macros.compliance_tile("Contractor Compliance Docs", contractor_compliance_docs, "file-shield", "secondary", "super_admin.contractor_compliance_documents") }}
+    {{ common_macros.metric_tile("Expiring Docs", expiring_docs_count, "hourglass_empty", "warning", "super_admin.client_expiring_documents") }}
+    {{ common_macros.metric_tile("Missing Client Docs", clients_missing_docs, "report_problem", "danger", "super_admin.compliance_documents_index") }}
+    {{ common_macros.metric_tile("Missing Contractor Docs", contractors_missing_docs, "warning_amber", "danger", "super_admin.contractor_compliance_documents") }}
+    {{ common_macros.metric_tile("GAR Insights", gar_flagged_count or 0, "smart_toy", "info", "super_admin.gar_insights") }}
+  </div>
+
+  <!-- 🚧 Logix Modules Row -->
+  <div class="row g-4 mt-2">
+    <div class="col-md-4">
+      <div class="card h-100 text-center shadow-sm border">
+        <div class="card-body">
+          <i class="fas fa-tools fa-2x mb-2 text-warning"></i>
+          <h5 class="card-title">Works Logix</h5>
+          <p class="card-text">Manage Work Orders & Contractor Assignments</p>
+          {% if 'super_admin.work_orders' in current_app.view_functions %}
+            <a href="{{ url_for('super_admin.work_orders') }}" class="btn btn-outline-primary btn-sm">Open</a>
+          {% else %}
+            <a href="#" class="btn btn-outline-primary btn-sm disabled">Coming Soon</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100 text-center shadow-sm border">
+        <div class="card-body">
+          <i class="fas fa-coins fa-2x mb-2 text-success"></i>
+          <h5 class="card-title">Finance Logix</h5>
+          <p class="card-text">Service Charge Oversight & Payment Tracking</p>
+          <a href="#" class="btn btn-outline-secondary btn-sm disabled">Planned</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100 text-center shadow-sm border">
+        <div class="card-body">
+          <i class="fas fa-users-cog fa-2x mb-2 text-info"></i>
+          <h5 class="card-title">HR Logix</h5>
+          <p class="card-text">Manage Internal & Contractor Staff Records</p>
+          <a href="#" class="btn btn-outline-info btn-sm disabled">Pending</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔍 Audit Log Preview -->
+  {% if audit_logs %}
+  <div class="card mt-5 shadow-sm">
+    <div class="card-header pb-0">
+      <h6 class="mb-0">🕵️ Recent Audit Logs</h6>
+    </div>
+    <div class="card-body px-4 pt-3 pb-3">
+      <ul class="list-group list-group-flush">
+        {% for log in audit_logs[:5] %}
+        <li class="list-group-item px-0 d-flex justify-content-between">
+          <span><strong>{{ log.user_name }}</strong> — {{ log.change_type }} on <em>{{ log.target_model }}</em></span>
+          <span class="text-muted text-xs">{{ log.timestamp.strftime('%d %b %Y %H:%M') }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      <div class="text-end mt-2">
+        <a href="{{ url_for('super_admin.audit_logs') }}" class="btn btn-link text-sm">View Full Log →</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

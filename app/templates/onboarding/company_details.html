@@ -1,0 +1,120 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block page_content %}
+<div class="container-fluid py-4">
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Onboarding • Step 1 of 3 — Company Details</h5>
+      </div>
+      <hr class="my-3">
+
+      {# 🔔 Flash messages (success/error/info) #}
+      {% with msgs = get_flashed_messages(with_categories=True) %}
+        {% if msgs %}
+          <div class="mb-3" aria-live="polite" aria-atomic="true">
+            {% for category, message in msgs %}
+              <div class="alert alert-{{ 'warning' if category=='message' else category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {# 🔎 If WTForms is active, show a summary when validation fails #}
+      {% if form and form.errors %}
+        <div class="alert alert-danger">
+          Please correct the highlighted errors below.
+        </div>
+      {% endif %}
+
+      <!-- ✅ POSTs to the combined GET/POST route -->
+      <form method="post" action="{{ url_for('onboarding.company_get') }}">
+        {# ✅ CSRF: prefer the form's own token when WTForms is used #}
+        {% if form %}
+          {{ form.hidden_tag() }}
+        {% else %}
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% endif %}
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Company Name <span class="text-danger">*</span></label>
+            <input name="name" class="form-control" value="{{ company.name if company else '' }}" required>
+            {% if form and form.errors.get('name') %}
+              <div class="text-danger small mt-1">{{ form.errors.get('name')|join(', ') }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Registration Number</label>
+            <input name="registration_number" class="form-control" value="{{ company.registration_number if company else '' }}">
+            {% if form and form.errors.get('registration_number') %}
+              <div class="text-danger small mt-1">{{ form.errors.get('registration_number')|join(', ') }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">VAT Number</label>
+            <input name="vat_number" class="form-control" value="{{ company.vat_number if company else '' }}">
+            {% if form and form.errors.get('vat_number') %}
+              <div class="text-danger small mt-1">{{ form.errors.get('vat_number')|join(', ') }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Tax Identifier</label>
+            <input name="tax_identifier" class="form-control" value="{{ company.tax_identifier if company else '' }}">
+            {% if form and form.errors.get('tax_identifier') %}
+              <div class="text-danger small mt-1">{{ form.errors.get('tax_identifier')|join(', ') }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <input name="email" type="email" class="form-control" value="{{ company.email if company else '' }}">
+            {% if form and form.errors.get('email') %}
+              <div class="text-danger small mt-1">{{ form.errors.get('email')|join(', ') }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Phone</label>
+            <input name="phone" class="form-control" value="{{ company.phone if company else '' }}">
+            {% if form and form.errors.get('phone') %}
+              <div class="text-danger small mt-1">{{ form.errors.get('phone')|join(', ') }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Website</label>
+            <input name="website" class="form-control" value="{{ company.website if company else '' }}">
+            {% if form and form.errors.get('website') %}
+              <div class="text-danger small mt-1">{{ form.errors.get('website')|join(', ') }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Company Type</label>
+            <select name="company_type" class="form-select">
+              <option value="" {{ '' if company else 'selected' }}>Select…</option>
+              <option value="management" {{ 'selected' if company and company.company_type=='management' else '' }}>Management</option>
+              <option value="contractor" {{ 'selected' if company and company.company_type=='contractor' else '' }}>Contractor</option>
+              <option value="omc" {{ 'selected' if company and company.company_type=='omc' else '' }}>OMC / Director</option>
+            </select>
+            {% if form and form.errors.get('company_type') %}
+              <div class="text-danger small mt-1">{{ form.errors.get('company_type')|join(', ') }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <a href="{{ url_for('onboarding.company_get') }}" class="btn btn-light">Cancel</a>
+          <button type="submit" class="btn btn-primary">Save & Continue</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

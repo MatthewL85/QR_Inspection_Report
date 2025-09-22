@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Email, Length, Optional
 from app.models.core.role import Role
-from app.models.company import Company
+from app.models.onboarding.company import Company
 
 class AddUserForm(FlaskForm):
     """👤 Form for adding new users by Super Admin."""

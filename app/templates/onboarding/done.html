@@ -1,0 +1,19 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block page_content %}
+<div class="container-fluid py-4">
+  <div class="card border-0 shadow-sm">
+    <div class="card-body text-center py-5">
+      <h4 class="mb-2">All set!</h4>
+      <p class="text-muted mb-4">{{ company.name if company else "Your company" }} has been configured.</p>
+      <div class="d-flex gap-2 justify-content-center">
+        <a class="btn btn-primary" href="{{ url_for('onboarding.company_get') }}">Add Another Company</a>
+        {% if company %}
+          <a class="btn btn-outline-secondary" href="{{ url_for('onboarding.company_get', id=company.id) }}">
+            Review Details
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

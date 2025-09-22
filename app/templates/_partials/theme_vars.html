@@ -1,0 +1,89 @@
+    @app.context_processor
+    def _inject_theme_vars():
+        """
+        Make theme variables, platform logo, and tenant logo available to ALL templates.
+
+        Priority for tenant branding:
+          1) CompanySettings (production settings)
+          2) Onboarding Company fallback
+          3) Defaults
+
+        Exposes:
+          - THEME_* (unchanged)
+          - BRAND_* (back-compat aliases for tenant theme)
+          - PLATFORM_LOGO_URL  -> LogixPM logo (platform brand)
+          - TENANT_LOGO_URL    -> Company logo (tenant brand; falls back to platform if none)
+        """
+        S = getattr(g, "company_settings", None)
+        C = getattr(g, "branding_fallback", None)
+
+        def _norm_hex(h, default_hex):
+            if not h:
+                return default_hex
+            s = str(h).strip()
+            if not s.startswith("#"):
+                s = "#" + s
+            return s
+
+        # Colors (tenant theme)
+        primary   = _norm_hex(getattr(S, "primary_hex", None) if S else None,
+                              _norm_hex(getattr(C, "brand_primary_color", None) if C else None, "#2152ff"))
+        secondary = _norm_hex(getattr(S, "secondary_hex", None) if S else None,
+                              _norm_hex(getattr(C, "brand_secondary_color", None) if C else None, "#2dce89"))
+        accent    = _norm_hex(getattr(S, "accent_hex", None) if S else None,
+                              _norm_hex(getattr(C, "brand_color", None) if C else None, "#f5365c"))
+        sidebar   = getattr(S, "sidebar_hex", None) if S and getattr(S, "sidebar_hex", None) else "#1f283e"
+        rounded   = bool(getattr(S, "rounded", True)) if S else True
+
+        # PLATFORM (LogixPM) logo path
+        platform_path = app.config.get("PLATFORM_LOGO_PATH") or app.config.get("BRAND_LOGO_PATH") or "assets/img/logo-ct-dark.png"
+        platform_file = str(platform_path).lstrip("/")
+        if platform_file.startswith("static/"):
+            platform_file = platform_file[len("static/"):]
+        try:
+            PLATFORM_LOGO_URL = url_for("static", filename=platform_file)
+        except Exception:
+            PLATFORM_LOGO_URL = f"/static/{platform_file}".replace("//", "/")
+
+        # TENANT (company) logo path
+        if S and getattr(S, "logo_path", None):
+            tenant_path = S.logo_path
+        elif C and getattr(C, "logo_path", None):
+            tenant_path = C.logo_path
+        else:
+            tenant_path = platform_path  # fallback to platform if tenant missing
+
+        tenant_file = str(tenant_path).lstrip("/")
+        if tenant_file.startswith("static/"):
+            tenant_file = tenant_file[len("static/"):]
+        try:
+            TENANT_LOGO_URL = url_for("static", filename=tenant_file)
+        except Exception:
+            TENANT_LOGO_URL = f"/static/{tenant_file}".replace("//", "/")
+
+        company_name = (getattr(C, "name", None)
+                        or getattr(S, "company_name", None)
+                        or app.config.get("BRAND_COMPANY_NAME", "LogixPM"))
+
+        return dict(
+            # Theme vars (tenant)
+            THEME_PRIMARY=primary,
+            THEME_SECONDARY=secondary,
+            THEME_ACCENT=accent,
+            THEME_SIDEBAR=sidebar,
+            THEME_ROUNDED=rounded,
+
+            # Back-compat aliases (tenant)
+            BRAND_PRIMARY_COLOR=primary,
+            BRAND_SECONDARY_COLOR=secondary,
+            BRAND_ACCENT_COLOR=accent,
+            BRAND_LOGO_URL=TENANT_LOGO_URL,   # kept for compatibility with existing templates
+            BRAND_COMPANY_NAME=company_name,
+
+            # New explicit logo URLs
+            PLATFORM_LOGO_URL=PLATFORM_LOGO_URL,  # always LogixPM
+            TENANT_LOGO_URL=TENANT_LOGO_URL,      # mgmt company / contractor
+
+            COMPANY_SETTINGS=S,
+            COMPANY_BRANDING=C,
+        )

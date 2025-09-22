@@ -1,23 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- 🔐 Meta + Page Setup -->
+  {% set S = g.company_settings if g.company_settings else None %}
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#2152ff" />
+  <meta name="theme-color" content="{{ (S.primary_hex if S and S.primary_hex else '#2152ff') }}" />
   <title>{% block title %}Super Admin | LogixPM{% endblock %}</title>
 
-  <!-- 🌐 Google Fonts + Icons -->
+  <!-- Fonts & Icons -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-  <!-- 🎨 Core CSS -->
+  {# Favicon — resolves to /static/<path> regardless of how logo_path is stored #}
+  {% if S and S.logo_path %}
+    {% set _fav = S.logo_path.lstrip('/') %}
+    {% if _fav.startswith('static/') %}
+      {% set _fav = _fav[7:] %}
+    {% endif %}
+    <link rel="icon" href="{{ url_for('static', filename=_fav) }}" type="image/png" />
+  {% endif %}
+
+  <!-- Core CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/material-dashboard.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 
-  <!-- 📎 Sidebar collapse styles -->
+  <!-- Tenant Theme (no color-mix; validator-safe) -->
+  <style id="tenant-theme">
+    :root{
+      --brand-primary:  {{ S.primary_hex  if S and S.primary_hex  else '#2152ff' }};
+      --brand-secondary:{{ S.secondary_hex if S and S.secondary_hex else '#00C853' }}; /* vibrant green accent */
+      --brand-accent:   {{ S.accent_hex    if S and S.accent_hex    else '#f5365c' }};
+      --sidebar-bg:     {{ S.sidebar_hex   if S and S.sidebar_hex   else '#1f283e' }};
+      --radius-xl:      {{ '1rem' if (S and S.rounded) else '0.5rem' }};
+
+      /* Safe, editor-friendly soft variants (approximate tints) */
+      --brand-primary-soft: #eef2ff;               /* gentle bg for primary */
+      --sidebar-active-bg: rgba(255,255,255,0.10); /* highlight active link */
+      --table-head-border: rgba(0,0,0,0.06);       /* subtle divider */
+
+      /* 🔰 Logo sizing + colors (you can tweak these values) */
+      --logo-sidebar-height: 72px;
+      --logo-navbar-height:  48px;
+      --logo-login-width:    280px;
+
+      /* Wordmark coloring on dark/navy headers */
+      --logo-text-contrast:  #ffffff;             /* LOGIX */
+      --logo-pm-accent:      var(--brand-secondary); /* PM */
+    }
+
+    .card, .navbar, .dropdown-menu, .modal-content { border-radius: var(--radius-xl); }
+
+    .btn-primary {
+      background-color: var(--brand-primary) !important;
+      border-color: var(--brand-primary) !important;
+    }
+    .btn-outline-primary {
+      color: var(--brand-primary) !important;
+      border-color: var(--brand-primary) !important;
+    }
+
+    .text-brand { color: var(--brand-primary) !important; }
+    .bg-brand-soft { background: var(--brand-primary-soft) !important; }
+    .badge-accent { background: var(--brand-accent) !important; }
+
+    /* Sidenav theming */
+    .sidenav { background: var(--sidebar-bg) !important; }
+    .sidenav .nav-link,
+    .sidenav .nav-link .material-icons,
+    .sidenav .nav-link .fa { color: rgba(255,255,255,.85) !important; }
+    .sidenav .nav-link.active {
+      background: var(--sidebar-active-bg) !important;
+      color: #fff !important;
+    }
+    .sidenav .nav-link:hover { color: #fff !important; }
+
+    /* Links */
+    a { color: var(--brand-primary); }
+    a:hover { filter: brightness(0.9); }
+
+    /* Tables + chips */
+    .table thead th { border-bottom-color: var(--table-head-border); }
+    .chip-brand {
+      background: var(--brand-primary-soft);
+      color: var(--brand-primary);
+    }
+
+    /* Form controls */
+    .form-check-input:checked {
+      background-color: var(--brand-primary);
+      border-color: var(--brand-primary);
+    }
+
+    /* =========================================================
+       🔧 Logo sizing & contrast (works with PNG or inline SVG)
+       ========================================================= */
+
+    /* Sidebar brand image (PNG/SVG <img>) */
+    .sidenav .navbar-brand img,
+    .sidenav .brand-logo,
+    .sidenav .navbar-brand-img {
+      max-height: var(--logo-sidebar-height);
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      /* Subtle edge pop on dark bg */
+      filter: drop-shadow(0 0 1px rgba(0,0,0,.25));
+    }
+
+    /* Top navbar brand image (PNG/SVG <img>) */
+    .navbar .navbar-brand img,
+    .navbar-brand-img {
+      max-height: var(--logo-navbar-height);
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 0 1px rgba(0,0,0,.25));
+    }
+
+    /* Login/Logout page logo if used in content */
+    .login-logo,
+    .auth-logo {
+      width: var(--logo-login-width);
+      max-width: 90vw;
+      height: auto;
+    }
+
+    /* If your navbar is dark, color inline SVG wordmarks:
+       Example structure:
+       <svg class="logo-wordmark"> <text class="word-logix">LOGIX</text><text class="word-pm">PM</text> </svg>
+    */
+    .navbar,
+    .navbar.navbar-dark,
+    .navbar.bg-dark,
+    .navbar.bg-gradient-dark {
+      /* ensure good contrast for inline SVG text spans */
+    }
+    .navbar .logo-wordmark .word-logix { fill: var(--logo-text-contrast); color: var(--logo-text-contrast); }
+    .navbar .logo-wordmark .word-pm    { fill: var(--logo-pm-accent);    color: var(--logo-pm-accent); }
+
+    /* Responsive downsizing */
+    @media (max-width: 1199.98px) {
+      :root {
+        --logo-sidebar-height: 64px;
+        --logo-navbar-height:  44px;
+      }
+    }
+    @media (max-width: 991.98px) {
+      :root {
+        --logo-sidebar-height: 56px;
+        --logo-navbar-height:  40px;
+      }
+    }
+  </style>
+
+  <!-- Sidebar collapse styles (unchanged, but validator-safe) -->
   <style>
-    /* Fully collapse the MD sidenav and give the content the full width */
     body.sidebar-collapsed .sidenav {
       transform: translateX(-100%) !important;
       width: 0 !important;
@@ -25,56 +162,31 @@
       overflow: hidden !important;
       box-shadow: none !important;
     }
-    body.sidebar-collapsed .main-content {
-      margin-left: 0 !important;
-    }
+    body.sidebar-collapsed .main-content { margin-left: 0 !important; }
 
-    /* Smoothness */
     .sidenav { transition: transform .2s ease, width .2s ease; }
     .main-content { transition: margin .2s ease; }
   </style>
 
-  <!-- 📦 Extensible Styles -->
   {% block styles %}{% endblock %}
 </head>
 
 <body class="g-sidenav-show bg-gray-100">
-  <!-- 🧭 Sidebar -->
-  {% include 'partials/super_admin_sidebar.html' %}
+  {% include '_partials/super_admin_sidebar.html' %}
 
-  <!-- 🧩 Main Content -->
   <main class="main-content position-relative border-radius-lg ps">
+    {% include '_partials/navbar.html' %}
 
-    <!-- 🔝 Top Navbar -->
-    {% include 'partials/navbar.html' %}
-
-    <!-- 📦 Content Container -->
     <div class="container-fluid py-4">
-
-      <!-- ✅ Flash Messages -->
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
-              <strong>{{ category.title() }}:</strong> {{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
-
-      <!-- 📄 Page Content -->
+      {% include "_partials/flash.html" %}
       {% block page_content %}{% endblock %}
-
     </div>
 
-    <!-- ⚓ Footer -->
     <footer class="footer py-4">
       <div class="container-fluid">
         <div class="row align-items-center justify-content-between">
           <div class="col-lg-6 mb-lg-0 mb-4 text-muted text-sm text-center text-lg-start">
-            © <script>document.write(new Date().getFullYear())</script>
-            LogixPM. All rights reserved.
+            © <script>document.write(new Date().getFullYear())</script> LogixPM. All rights reserved.
           </div>
           <div class="col-lg-6 text-sm text-end">
             <a href="#" class="text-muted me-3">Terms</a>
@@ -84,45 +196,54 @@
         </div>
       </div>
     </footer>
-
   </main>
 
-  <!-- 🧠 JS Dependencies -->
   <script src="{{ url_for('static', filename='assets/js/core/bootstrap.bundle.min.js') }}"></script>
   <script src="{{ url_for('static', filename='assets/js/material-dashboard.min.js') }}"></script>
 
-  <!-- 🧲 Sidebar toggle + persistence
-       Works with ANY button on the page with id="sidebarToggle" (e.g., in your page header).
-  -->
   <script>
     (function () {
-      const KEY = 'logixpm_sidebar_collapsed';
-      const body = document.body;
+      var KEY = 'logixpm_sidebar_collapsed';
+      var body = document.body;
 
-      // Restore saved state
-      if (localStorage.getItem(KEY) === '1') {
-        body.classList.add('sidebar-collapsed');
+      try {
+        if (localStorage.getItem(KEY) === '1') body.classList.add('sidebar-collapsed');
+      } catch (e) { /* noop */ }
+
+      function toggleSidebar(e) {
+        if (e) e.preventDefault();
+        body.classList.toggle('sidebar-collapsed');
+        try {
+          localStorage.setItem(KEY, body.classList.contains('sidebar-collapsed') ? '1' : '0');
+        } catch (e) { /* noop */ }
       }
 
-      // Bind once the DOM is ready
-      function bindToggle() {
-        const btn = document.getElementById('sidebarToggle');
-        if (!btn) return;
-        btn.addEventListener('click', function () {
-          body.classList.toggle('sidebar-collapsed');
-          localStorage.setItem(KEY, body.classList.contains('sidebar-collapsed') ? '1' : '0');
+      function bindById(id) {
+        var el = document.getElementById(id);
+        if (el) { el.addEventListener('click', toggleSidebar); return true; }
+        return false;
+      }
+
+      function bindAll() {
+        var any = false;
+        any = bindById('sidebarToggle') || any;     // legacy page-level button
+        any = bindById('sidebarToggleTop') || any;  // navbar-level button
+        // Attribute-based fallback (e.g., <button data-sidebar-toggle>)
+        document.querySelectorAll('[data-sidebar-toggle]').forEach(function (el) {
+          el.addEventListener('click', toggleSidebar);
+          any = true;
         });
+        return any;
       }
 
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', bindToggle);
+        document.addEventListener('DOMContentLoaded', bindAll);
       } else {
-        bindToggle();
+        bindAll();
       }
     })();
   </script>
 
-  <!-- 🔄 Page-level scripts -->
   {% block scripts %}{% endblock %}
 </body>
 </html>

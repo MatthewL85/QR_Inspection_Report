@@ -124,7 +124,6 @@ from app.utils.finance.apportionment_engine import ApportionmentEngine
 from app.models.finance.apportionment_audit_log import ApportionmentAuditLog
 from app.models.finance.area_type import AreaType
 from app.models.finance.balance_sheet import BalanceSheet
-from app.models.finance.bank_account import BankAccount
 from app.models.finance.bank_reconciliation import BankReconciliation
 from app.models.finance.bank_transaction import BankTransaction
 from app.models.finance.budget import Budget
@@ -200,7 +199,10 @@ from app.models.capex.capex_response import CapexResponse
 # ----------------------------
 # Company
 # ----------------------------
-from .company import Company
+from app.models.onboarding.company import Company
+from app.models.onboarding.bank_account import BankAccount
+from app.models.onboarding.insurance_policy import InsurancePolicy
+from app.models.onboarding.emergency_contact import EmergencyContact
 from app.models.occupancy_log import OccupancyLog
 
 # ----------------------------

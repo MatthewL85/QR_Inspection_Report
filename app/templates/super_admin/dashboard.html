@@ -4,88 +4,77 @@
 {% import 'macros/compliance_macros.html' as compliance_macros %}
 
 {% block page_content %}
-<div class="container-fluid py-4">
+<div class="container-fluid pt-0">  {# was: py-4 — avoid double top padding #}
 
-  <!-- ✅ Quick Actions -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="mb-0 d-flex align-items-center">
-      <button id="sidebarToggle" class="btn btn-sm btn-outline-secondary me-2" title="Toggle sidebar">
-        <i class="material-icons" style="font-size:18px">menu</i>
-      </button>
-      📊 Super Admin Dashboard
-    </h4>
-    <div>
-      <a href="{{ url_for('super_admin.add_client') }}" class="btn btn-sm btn-primary me-2">
-        <i class="material-icons me-1">group_add</i> Add Client
-      </a>
-      <a href="{{ url_for('super_admin.add_user') }}" class="btn btn-sm btn-info">
-        <i class="material-icons me-1">person_add</i> Add User
-      </a>
+  {# 🚀 Onboarding banner (kept; shows only when needed) #}
+  {% if SHOW_ONBOARDING_BANNER %}
+    <div class="alert alert-info d-flex align-items-center justify-content-between shadow-sm" role="alert">
+      <div class="d-flex align-items-center">
+        <i class="material-icons me-2">rocket_launch</i>
+        <div>
+          <strong>Finish setting up your organization.</strong>
+          <div class="small">
+            Start the onboarding wizard to add company details and branding. You can customize everything later in Settings.
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  {# 🔝 Unified Contracts KPI #}
+  <div class="row g-4 mt-1">
+    <div class="col-12">
+      <div class="card shadow-sm border">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <h6 class="mb-0">Contracts</h6>
+            </div>
+            <a class="btn btn-sm btn-outline-primary"
+               href="{{ url_for('super_admin_contracts.contracts_overview') }}">
+              Open Overview
+            </a>
+          </div>
+
+          <div class="row text-center mt-3">
+            <div class="col-12 col-sm-3">
+              <div class="fw-semibold fs-3 text-danger">{{ contracts_expired or 0 }}</div>
+              <div class="small text-secondary">Expired</div>
+            </div>
+            <div class="col-12 col-sm-3">
+              <div class="fw-semibold fs-3 text-warning">{{ contracts_expiring_30 or 0 }}</div>
+              <div class="small text-secondary">Expiring ≤ 30d</div>
+            </div>
+            <div class="col-12 col-sm-3">
+              <div class="fw-semibold fs-3 text-primary">{{ contracts_expiring_60 or 0 }}</div>
+              <div class="small text-secondary">Expiring ≤ 60d</div>
+            </div>
+            <div class="col-12 col-sm-3">
+              <div class="fw-semibold fs-3 text-info">{{ contracts_expiring_90 or 0 }}</div>
+              <div class="small text-secondary">Expiring ≤ 90d</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- 📦 Row: Summary Tiles -->
-  <div class="row g-4">
-    {% set contractor_users = users | selectattr("role", "equalto", "Contractor") | list %}
-
-    {{ common_macros.metric_tile(title="Total Clients", value=clients|length, icon_name="groups", color="primary", view_endpoint="super_admin.manage_clients") }}
-    {{ common_macros.metric_tile(title="Total PMs", value=managers|length, icon_name="supervisor_account", color="info", view_endpoint="super_admin.manage_users", view_params={'role_filter': 'Property Manager'}) }}
-    {{ common_macros.metric_tile(title="Total Contractors", value=contractor_users|length, icon_name="engineering", color="warning", view_endpoint="super_admin.manage_users", view_params={'role_filter': 'Contractor'}) }}
-    {{ common_macros.metric_tile(title="Managed Portfolio", value="€" ~ (total_portfolio_value|default(0)), icon_name="folder_shared", color="secondary", view_endpoint="super_admin.manage_clients") }}
-  </div>
-
-  <!-- ✍️ Row: Signature Status -->
   <div class="row g-4 mt-2">
-    {{ common_macros.metric_tile(
-        title="Pending Signatures",
-        value=(sign_metrics['Sent'] if sign_metrics is defined else 0),
-        icon_name="pending_actions",
-        color="warning",
-        view_endpoint="super_admin.contract_audits_list",
-        view_params={'action': 'send_for_signature'}
-    ) }}
-    {{ common_macros.metric_tile(
-        title="Signed",
-        value=(sign_metrics['Signed'] if sign_metrics is defined else 0),
-        icon_name="task_alt",
-        color="success",
-        view_endpoint="super_admin.contract_audits_list",
-        view_params={'action': 'signature_signed'}
-    ) }}
-    {{ common_macros.metric_tile(
-        title="Declined",
-        value=(sign_metrics['Declined'] if sign_metrics is defined else 0),
-        icon_name="thumb_down_off_alt",
-        color="danger",
-        view_endpoint="super_admin.contract_audits_list",
-        view_params={'action': 'signature_declined'}
-    ) }}
-    {{ common_macros.metric_tile(
-        title="Expired",
-        value=(sign_metrics['Expired'] if sign_metrics is defined else 0),
-        icon_name="hourglass_disabled",
-        color="secondary",
-        view_endpoint="super_admin.contract_audits_list",
-        view_params={'action': 'signature_expired'}
-    ) }}
-    {{ common_macros.metric_tile(
-        title="Drafts",
-        value=(sign_metrics['Draft'] if sign_metrics is defined else 0),
-        icon_name="description",
-        color="info",
-        view_endpoint="super_admin.contract_audits_list",
-        view_params={'action': 'create_draft'}
-    ) }}
+    {{ common_macros.metric_tile("Total Clients",       total_clients or 0,      "groups",            "primary",   "super_admin.manage_clients") }}
+    {{ common_macros.metric_tile("Total PMs",           total_pms or 0,          "supervisor_account","info",      "super_admin.manage_users", {'role_filter': 'Property Manager'}) }}
+    {{ common_macros.metric_tile("Total Contractors",   total_contractors or 0,  "engineering",       "warning",   "super_admin.manage_users", {'role_filter': 'Contractor'}) }}
+    {{ common_macros.metric_tile("Managed Portfolio",   (managed_portfolio_value or 0) | currency(currency_code|default('EUR')), "folder_shared", "secondary", "super_admin.manage_clients") }}
   </div>
 
   <!-- 📋 Row: Compliance & Insights -->
   <div class="row g-4 mt-2">
-    {{ common_macros.metric_tile("Upcoming AGMs", upcoming_agm_count, "calendar_month", "success", "super_admin.upcoming_agms") }}
-    {{ compliance_macros.compliance_tile("Client Compliance Docs", client_compliance_docs, "file-contract", "primary", "super_admin.compliance_documents_index") }}
-    {{ compliance_macros.compliance_tile("Contractor Compliance Docs", contractor_compliance_docs, "file-shield", "secondary", "super_admin.contractor_compliance_documents") }}
-    {{ common_macros.metric_tile("Expiring Docs", expiring_docs_count, "hourglass_empty", "warning", "super_admin.client_expiring_documents") }}
-    {{ common_macros.metric_tile("Missing Client Docs", clients_missing_docs, "report_problem", "danger", "super_admin.compliance_documents_index") }}
-    {{ common_macros.metric_tile("Missing Contractor Docs", contractors_missing_docs, "warning_amber", "danger", "super_admin.contractor_compliance_documents") }}
+    {{ common_macros.metric_tile("Upcoming AGMs", upcoming_agm_count or 0, "calendar_month", "success", "super_admin.upcoming_agms") }}
+    {{ compliance_macros.compliance_tile("Client Compliance Docs", client_compliance_docs or [], "file-contract", "primary", "super_admin.compliance_documents_index") }}
+    {{ compliance_macros.compliance_tile("Contractor Compliance Docs", contractor_compliance_docs or [], "file-shield", "secondary", "super_admin.contractor_compliance_documents") }}
+    {{ common_macros.metric_tile("Expiring Docs", expiring_docs_count or 0, "hourglass_empty", "warning", "super_admin.client_expiring_documents") }}
+    {{ common_macros.metric_tile("Missing Client Docs", clients_missing_docs or 0, "report_problem", "danger", "super_admin.compliance_documents_index") }}
+    {{ common_macros.metric_tile("Missing Contractor Docs", contractors_missing_docs or 0, "warning_amber", "danger", "super_admin.contractor_compliance_documents") }}
     {{ common_macros.metric_tile("GAR Insights", gar_flagged_count or 0, "smart_toy", "info", "super_admin.gar_insights") }}
   </div>
 

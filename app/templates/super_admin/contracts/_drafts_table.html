@@ -1,0 +1,42 @@
+{# templates/super_admin/contracts/_drafts_table.html #}
+<table class="table table-sm table-hover align-middle">
+  <thead>
+    <tr>
+      <th>Client</th>
+      <th>Contract</th>
+      <th>Created</th>
+      <th>Start</th>
+      <th>End</th>
+      <th class="text-center">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {# If the view didn’t pass a dedicated drafts list, gather from all lists #}
+    {% set all_contracts = (expired or []) + (expiring_30 or []) + (expiring_90 or []) %}
+    {% set the_drafts = drafts if drafts is defined else all_contracts | selectattr('sign_status','equalto','Draft') | list %}
+
+    {% for c in the_drafts %}
+      <tr>
+        <td>{{ c.client.name }}</td>
+        <td class="fw-semibold">{{ c.title or '—' }}</td>
+        <td>{{ (c.created_at.strftime("%d-%m-%Y %H:%M") if c.created_at else '—') }}</td>
+        <td>{{ c.start_date.strftime("%d-%m-%Y") if c.start_date else '—' }}</td>
+        <td>{{ c.end_date.strftime("%d-%m-%Y") if c.end_date else '—' }}</td>
+        <td class="text-center">
+          <div class="btn-group btn-group-sm" role="group">
+            <a class="btn btn-outline-primary"
+               href="{{ url_for('super_admin_contracts.renew', client_id=c.client_id, step=3, contract_id=c.id) }}">
+              Resume
+            </a>
+            <a class="btn btn-outline-secondary"
+               href="{{ url_for('super_admin.view_client', client_id=c.client_id) }}">
+              Client
+            </a>
+          </div>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="text-muted">No drafts available.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>

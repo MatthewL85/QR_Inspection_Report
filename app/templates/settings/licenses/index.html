@@ -1,0 +1,66 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block title %}Licences | Settings{% endblock %}
+{% block page_content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <button id="sidebarToggle" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Toggle sidebar">
+        <i class="fas fa-bars"></i>
+      </button>
+      <h5 class="mb-0">Licences / Governing Bodies</h5>
+    </div>
+    <a href="{{ url_for('settings.licenses_new') }}" class="btn btn-primary btn-sm">Add Licence</a>
+  </div>
+
+  {% include "_partials/flash.html" %}
+
+  <div class="card">
+    <div class="card-body table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>Default</th>
+            <th>Regulator</th>
+            <th>Licence #</th>
+            <th>Type</th>
+            <th>Jurisdiction</th>
+            <th>Status</th>
+            <th>Validity</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for l in items %}
+          <tr>
+            <td>{% if l.is_default %}<span class="badge bg-secondary">Default</span>{% endif %}</td>
+            <td>{{ l.regulator_name }}</td>
+            <td>{{ l.license_number }}</td>
+            <td>{{ l.license_type or "—" }}</td>
+            <td>{{ [l.city, l.region, l.country]|select|string|join(", ") }}</td>
+            <td class="text-capitalize">{{ l.status }}</td>
+            <td>
+              {% if l.valid_from or l.expiry_date %}
+                {{ l.valid_from or "—" }} → {{ l.expiry_date or "—" }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <div class="btn-group">
+                <a href="{{ url_for('settings.licenses_edit', license_id=l.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                <form method="post" action="{{ url_for('settings.licenses_delete', license_id=l.id) }}"
+                      onsubmit="return confirm('Delete this licence?');">
+                  <button class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8" class="text-center text-muted py-4">No licences yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

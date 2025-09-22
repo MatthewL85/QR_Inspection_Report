@@ -1,0 +1,62 @@
+{# expects: contacts = list of dicts from build_emergency_block(company_id) #}
+{% if contacts and contacts|length %}
+<section class="mb-3">
+  <h6 class="text-uppercase" style="letter-spacing:.06em;">Out-of-Hours / Emergency Contacts</h6>
+
+  {# group by service_type #}
+  {% set grouped = {} %}
+  {% for c in contacts %}
+    {% set _ = grouped.setdefault(c.service_type or "General", []).append(c) %}
+  {% endfor %}
+
+  {% for service, rows in grouped.items() %}
+    <div class="mt-2">
+      <div class="fw-semibold small mb-1">{{ service }}</div>
+      <table class="table table-sm table-bordered align-middle" style="font-size:.9rem;">
+        <thead class="table-light">
+          <tr>
+            <th style="width:28%;">Contact</th>
+            <th style="width:24%;">Phone</th>
+            <th style="width:24%;">Alt / Email</th>
+            <th style="width:24%;">Coverage</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows|sort(attribute='priority') %}
+          <tr>
+            <td>
+              <div class="fw-semibold">{{ r.label }}</div>
+              {% if r.provider %}<div class="text-muted small">{{ r.provider }}</div>{% endif %}
+              {% if r.notes %}<div class="small">{{ r.notes }}</div>{% endif %}
+            </td>
+            <td>{{ r.phone }}</td>
+            <td>
+              {% if r.alt_phone %}<div>{{ r.alt_phone }}</div>{% endif %}
+              {% if r.email %}<div class="small">{{ r.email }}</div>{% endif %}
+            </td>
+            <td>
+              <div class="small">
+                {{ r.coverage }}
+                {% if r.coverage == 'custom' %}
+                  {% if r.days_of_week %}<div>Days: {{ r.days_of_week }}</div>{% endif %}
+                  {% if r.start_time or r.end_time %}
+                    <div>Hours: {{ r.start_time or '—' }}–{{ r.end_time or '—' }}</div>
+                  {% endif %}
+                {% elif r.coverage == 'weeknights' %}
+                  <div>Mon–Fri 18:00–08:00 (typ.)</div>
+                {% elif r.coverage == 'weekends' %}
+                  <div>Sat–Sun (24h)</div>
+                {% elif r.coverage == 'holidays' %}
+                  <div>Public holidays</div>
+                {% endif %}
+              </div>
+              {% if r.is_default %}<span class="badge bg-secondary">Default</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endfor %}
+</section>
+{% endif %}

@@ -1,5 +1,5 @@
 from app.extensions import db
-from app.models.company import Company  # Needed for FK reflection
+from app.models.onboarding.company import Company  # Needed for FK reflection
 from app.models.core.user import User
 from app.models.client.client import Client
 from app.models.members.unit import Unit

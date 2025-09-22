@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login | LogixPM</title>
+  <title>Login | {{ BRAND_COMPANY_NAME or 'LogixPM' }}</title>
 
   <!-- Material Dashboard 2 + Fonts -->
   <link href="https://cdn.jsdelivr.net/npm/@material-dashboard/bootstrap@latest/css/material-dashboard.min.css" rel="stylesheet" />
@@ -11,25 +11,56 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
 
   <style>
+  :root{
+    --brand-primary:  {{ BRAND_PRIMARY_COLOR|default('#3a416f') }};
+    --brand-secondary:{{ BRAND_SECONDARY_COLOR|default('#17c1e8') }};
+    --brand-accent:   {{ BRAND_ACCENT_COLOR|default('#e91e63') }};
+  }
+
   body {
     font-family: 'Public Sans', sans-serif;
     background: linear-gradient(135deg, #f5f7fa, #e8edf3);
   }
   .login-wrapper { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
   .login-card { background-color: #fff; border-radius: 1rem; padding: 2.5rem 2rem; box-shadow: 0 12px 32px rgba(0,0,0,.06); width: 100%; max-width: 450px; }
-  .auth-logo { width: 50px; height: auto; }
+
+  /* logos */
+  .brand-logos{ display:flex; align-items:center; justify-content:center; gap:14px; }
+  .brand-logos img{ display:block; height:40px; width:auto; }
+  .brand-logos .platform{ height:42px; }  /* LogixPM slightly larger */
+  .brand-logos .divider{ width:1px; height:26px; background:#e4e8ee; }
+  .brand-logos .tenant{ height:34px; opacity:.98; }
+
+  .auth-logo { width: 56px; height: auto; } /* (kept from your original, not used now but harmless) */
   .welcome-title { font-size: 1.75rem; font-weight: 600; color: #344767; }
   .text-muted-small { font-size: .95rem; color: #8392ab; }
   .form-label { font-weight: 500; color: #344767; }
   .form-control { border-radius: .4rem; height: 45px; font-size: 1rem; padding: .6rem .75rem; border: 1px solid #d2d6da; }
-  .form-control:focus { border-color: #3a416f; box-shadow: 0 0 0 .15rem rgba(58,65,111,.25); }
+  .form-control:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 .15rem rgba(58,65,111,.25); }
   .form-check-label { font-size: .9rem; color: #7b809a; }
-  .btn-login { background-color: #3a416f; color: #fff; font-weight: 600; font-size: 1rem; padding: .75rem; border-radius: .5rem; border: none; }
-  .btn-login:hover { background-color: #2c3355; }
+
+  .btn-login {
+    background-color: var(--brand-primary);
+    color: #fff;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: .75rem;
+    border-radius: .5rem;
+    border: none;
+  }
+  .btn-login:hover { filter: brightness(.92); color:#fff; }
+
+  .link-brand { color: var(--brand-primary); text-decoration: none; }
+  .link-brand:hover { color: var(--brand-accent); text-decoration: underline; }
+
   .error-text { font-size: .875rem; color: #dc3545; margin-top: .25rem; }
+
   @media (max-width: 576px) {
     .welcome-title { font-size: 1.4rem; }
     .login-card { padding: 2rem 1.25rem; }
+    .brand-logos img{ height:34px; }
+    .brand-logos .platform{ height:36px; }
+    .brand-logos .tenant{ height:30px; }
   }
   </style>
 </head>
@@ -38,9 +69,22 @@
   <div class="login-wrapper">
     <div class="login-card">
 
-      <!-- Logo & Welcome -->
+      <!-- Logos & Welcome (platform + tenant) -->
       <div class="text-center mb-4">
-        <img src="{{ url_for('static', filename='assets/img/logo.png') }}" alt="LogixPM Logo" class="auth-logo mb-2">
+        <div class="brand-logos mb-2">
+          <!-- Platform (LogixPM) -->
+          <img src="{{ PLATFORM_LOGO_URL or url_for('static', filename='assets/img/logo-ct-dark.png') }}"
+               alt="LogixPM"
+               class="platform">
+
+          <span class="divider" aria-hidden="true"></span>
+
+          <!-- Tenant (management company / contractor). Falls back to platform if missing -->
+          <img src="{{ TENANT_LOGO_URL or BRAND_LOGO_URL or PLATFORM_LOGO_URL }}"
+               alt="{{ BRAND_COMPANY_NAME or 'Your Company' }}"
+               class="tenant">
+        </div>
+
         <div class="welcome-title">Welcome Back</div>
         <p class="text-muted-small">Please sign in to continue</p>
       </div>
@@ -49,7 +93,7 @@
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            <div class="alert alert-{{ 'warning' if category=='message' else category }} alert-dismissible fade show" role="alert">
               {{ message }}
               <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
@@ -83,13 +127,6 @@
           {% endif %}
         </div>
 
-        {# 2FA (future)
-        <div class="mb-3 w-100">
-          <label for="two_factor_code" class="form-label">2FA Code</label>
-          <input type="text" name="two_factor_code" class="form-control form-control-lg w-100" placeholder="Enter 2FA Code (if enabled)">
-        </div>
-        #}
-
         <!-- Remember me -->
         <div class="form-check mb-3">
           {{ form.remember_me(class="form-check-input", id="remember_me") }}
@@ -102,7 +139,7 @@
         </div>
 
         <div class="text-center">
-          <a href="{{ url_for('auth.forgot_password') }}" class="text-decoration-none text-secondary small">
+          <a href="{{ url_for('auth.forgot_password') }}" class="link-brand small">
             Forgot your password?
           </a>
         </div>

@@ -1,7 +1,7 @@
 # app/routes/__init__.py
 
 from app.routes.super_admin.dashboard import super_admin_bp
-from app.routes.onboarding.company_onboarding import onboarding_bp
+from app.routes.onboarding import onboarding_bp
 
 def register_routes(app):
     app.register_blueprint(super_admin_bp)

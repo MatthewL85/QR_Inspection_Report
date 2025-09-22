@@ -1,0 +1,60 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block title %}Insurance Policies | Settings{% endblock %}
+{% block page_content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <button id="sidebarToggle" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Toggle sidebar">
+        <i class="fas fa-bars"></i>
+      </button>
+      <h5 class="mb-0">Insurance Policies</h5>
+    </div>
+    <a href="{{ url_for('settings.insurance_new') }}" class="btn btn-primary btn-sm">Add Policy</a>
+  </div>
+
+  {% include "_partials/flash.html" %}
+
+  <div class="card">
+    <div class="card-body table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>Default</th>
+            <th>Type</th>
+            <th>Provider</th>
+            <th>Policy #</th>
+            <th>Coverage</th>
+            <th>Expiry</th>
+            <th>Active</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in items %}
+          <tr class="{% if p.expiry_date and soon and p.expiry_date <= soon %}table-warning{% endif %}">
+            <td>{% if p.is_default %}<span class="badge bg-secondary">Default</span>{% endif %}</td>
+            <td>{{ p.policy_type }}</td>
+            <td>{{ p.provider or "—" }}</td>
+            <td>{{ p.policy_number or "—" }}</td>
+            <td>{% if p.coverage_amount %}{{ p.coverage_amount }} {{ p.currency or "" }}{% else %}—{% endif %}</td>
+            <td>{{ p.expiry_date or "—" }}</td>
+            <td>{% if p.active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
+            <td class="text-end">
+              <div class="btn-group">
+                <a href="{{ url_for('settings.insurance_edit', policy_id=p.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                <form method="post" action="{{ url_for('settings.insurance_delete', policy_id=p.id) }}"
+                      onsubmit="return confirm('Delete this policy?');">
+                  <button class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8" class="text-center text-muted py-4">No policies yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

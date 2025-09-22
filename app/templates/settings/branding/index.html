@@ -1,0 +1,75 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block page_content %}
+<div class="container-fluid py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h5 class="mb-1">Branding & Theme</h5>
+      <div class="text-muted small">Your logo and brand colors.</div>
+    </div>
+    <div class="d-flex gap-2">
+      {% if 'settings.profile_index' in current_app.view_functions %}
+        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('settings.profile_index') }}">Company Profile</a>
+      {% elif 'settings.profile_view' in current_app.view_functions %}
+        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('settings.profile_view') }}">Company Profile</a>
+      {% endif %}
+      <a class="btn btn-primary btn-sm" href="{{ url_for('settings.branding_edit', id=company.id) }}">Edit</a>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h6 class="text-uppercase text-muted small mb-3">Logo</h6>
+          <div class="d-flex align-items-center gap-3">
+            <div class="rounded border d-flex align-items-center justify-content-center"
+                 style="width:72px;height:72px;background:#fff;overflow:hidden;">
+              {% if company and company.logo_path %}
+                <img src="{{ company.logo_path }}" alt="Logo" style="max-width:64px;max-height:64px;">
+              {% else %}
+                <span class="text-muted small">No logo</span>
+              {% endif %}
+            </div>
+            <div class="small text-muted">{{ (company and company.logo_path) or "—" }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h6 class="text-uppercase text-muted small mb-3">Colors</h6>
+
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="rounded shadow-sm border" style="width:36px;height:36px;background: {{ (company and company.brand_primary_color) or '#eee' }}"></div>
+            <div>
+              <div class="text-muted small">Primary</div>
+              <div class="fw-medium">{{ (company and company.brand_primary_color) or "—" }}</div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="rounded shadow-sm border" style="width:36px;height:36px;background: {{ (company and company.brand_secondary_color) or '#eee' }}"></div>
+            <div>
+              <div class="text-muted small">Secondary</div>
+              <div class="fw-medium">{{ (company and company.brand_secondary_color) or "—" }}</div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-3">
+            <div class="rounded shadow-sm border" style="width:36px;height:36px;background: {{ (company and company.brand_color) or '#eee' }}"></div>
+            <div>
+              <div class="text-muted small">Legacy</div>
+              <div class="fw-medium">{{ (company and company.brand_color) or "—" }}</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

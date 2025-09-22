@@ -1,0 +1,244 @@
+{# templates/_partials/super_admin_sidebar.html #}
+<aside class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start shadow"
+       id="sidenav-main">
+  <div class="sidenav-header position-relative">
+    <i class="fas fa-times p-3 cursor-pointer text-secondary opacity-5 position-absolute end-0 top-0 d-xl-none"
+       id="iconSidenav" aria-label="Close sidebar"></i>
+
+    <a class="navbar-brand m-0 d-flex align-items-center text-decoration-none"
+       href="{{ url_for('super_admin.dashboard') if 'super_admin.dashboard' in current_app.view_functions else '#' }}">
+            <img src="{{ PLATFORM_LOGO_URL or url_for('static', filename='assets/img/logixpm-logo.png') }}"
+           class="navbar-brand-img h-100" alt="LogixPM" style="max-height: 28px; width:auto;">
+      <span class="ms-2 fw-bold fs-6">
+        <span class="text-muted">/ Super Admin</span>
+      </span>
+    </a>
+  </div>
+
+  <hr class="horizontal dark mt-0 mb-2">
+
+  <div class="collapse navbar-collapse w-auto sidebar-scroll" id="sidenav-collapse-main">
+    <ul class="navbar-nav">
+      {% set _items = [
+        ('super_admin.dashboard',       'Dashboard',  'dashboard',     'text-primary'),
+        ('super_admin.clients_index',    'Clients',    'business',      'text-dark'),
+        ('super_admin.users_index',      'Users',      'people',        'text-info'),
+        ('super_admin.contracts_index',  'Contracts',  'receipt_long',  'text-secondary'),
+        ('super_admin.compliance_index', 'Compliance', 'verified_user', 'text-success'),
+        ('super_admin.agm_index',        'AGMs',       'event',         'text-warning')
+      ] %}
+
+      {% for endpoint, label, icon, color in _items if endpoint in current_app.view_functions %}
+        {% set is_active = (request.endpoint == endpoint) %}
+        <li class="nav-item">
+          <a class="nav-link {{ 'active bg-gradient-primary text-white' if is_active else '' }}"
+             href="{{ url_for(endpoint) }}">
+            <div class="icon icon-shape icon-sm text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="material-icons {{ 'text-white' if is_active else color }}">
+                {{ 'check_circle' if is_active else icon }}
+              </i>
+            </div>
+            <span class="nav-link-text ms-1">{{ label }}</span>
+          </a>
+        </li>
+      {% endfor %}
+
+      <li class="nav-item mt-3">
+        <h6 class="ps-4 ms-2 text-uppercase text-xs fw-bolder text-muted">Coming Soon</h6>
+      </li>
+      <li class="nav-item">
+        <span class="nav-link disabled">
+          <div class="icon icon-shape icon-sm text-center me-2 d-flex align-items-center justify-content-center">
+            <i class="material-icons text-muted">build</i>
+          </div>
+          <span class="nav-link-text ms-1">Works Logix</span>
+        </span>
+      </li>
+      <li class="nav-item">
+        <span class="nav-link disabled">
+          <div class="icon icon-shape icon-sm text-center me-2 d-flex align-items-center justify-content-center">
+            <i class="material-icons text-muted">group</i>
+          </div>
+          <span class="nav-link-text ms-1">Members Logix</span>
+        </span>
+      </li>
+
+      <li class="nav-item flex-grow-1"></li>
+    </ul>
+  </div>
+
+  {# ===== Bottom: Settings trigger + OVERLAY sheet (opens UP) ===== #}
+
+  {# Settings entries defined with endpoint candidates.
+     The first existing endpoint will be used (prevents "missing" items). #}
+  {% set SETTINGS_ITEMS = [
+    ('Company Profile',  'business',        ['settings.profile_index', 'settings.profile_view', 'super_admin.settings_company_profile']),
+    ('Branding & Theme', 'palette',         ['settings.branding_view', 'super_admin.settings_branding_theme']),
+    ('Bank Accounts',    'account_balance', ['settings.bank_index',    'super_admin.bank_accounts_list']),
+    ('Insurance',        'verified_user',   ['settings.insurance_index']),
+    ('Licences',         'assignment_turned_in', ['settings.licenses_index']),
+    ('Emergency',        'call',            ['settings.emergency_index'])
+  ] %}
+
+  {# Quick actions moved into the overlay #}
+  {% set ACTIONS_ITEMS = [
+    ('Add Client', 'group_add', ['super_admin.add_client']),
+    ('Add User',   'person_add', ['super_admin.add_user'])
+  ] %}
+
+  {# Resolve items to first-existing endpoints #}
+  {% set resolved = [] %}
+  {% for label, icon, candidates in SETTINGS_ITEMS %}
+    {% set epns = namespace(found=None) %}
+    {% for ep in candidates %}
+      {% if ep in current_app.view_functions and not epns.found %}
+        {% set epns.found = ep %}
+      {% endif %}
+    {% endfor %}
+    {% if epns.found %}
+      {% set _ = resolved.append((epns.found, label, icon)) %}
+    {% endif %}
+  {% endfor %}
+
+  {# Resolve quick actions #}
+  {% set actions_resolved = [] %}
+  {% for label, icon, candidates in ACTIONS_ITEMS %}
+    {% set epns = namespace(found=None) %}
+    {% for ep in candidates %}
+      {% if ep in current_app.view_functions and not epns.found %}
+        {% set epns.found = ep %}
+      {% endif %}
+    {% endfor %}
+    {% if epns.found %}
+      {% set _ = actions_resolved.append((epns.found, label, icon)) %}
+    {% endif %}
+  {% endfor %}
+
+  {% set is_settings_active = request.endpoint and (request.endpoint.startswith('settings.') or request.endpoint.startswith('super_admin.bank_accounts')) %}
+
+  <div class="sidebar-bottombar">
+    <button id="settingsTrigger"
+            class="btn w-100 d-flex align-items-center justify-content-center sidebar-settings-btn
+                   {{ 'btn-primary text-white' if is_settings_active else 'btn-outline-secondary' }}"
+            type="button"
+            aria-expanded="{{ 'true' if is_settings_active else 'false' }}"
+            aria-controls="settingsOverlay">
+      <i class="material-icons me-2 chevron">{{ 'expand_more' if is_settings_active else 'settings' }}</i>
+      <span>Settings</span>
+    </button>
+  </div>
+
+  {% if resolved|length > 0 or actions_resolved|length > 0 %}
+    <div id="settingsOverlay" class="settings-overlay {{ 'open' if is_settings_active else '' }}"
+         role="menu" aria-hidden="{{ 'false' if is_settings_active else 'true' }}">
+      <div class="settings-card">
+        <ul class="list-unstyled mb-0">
+          {% for ep, label, ico in resolved %}
+            {% set active = (request.endpoint == ep) %}
+            <li>
+              <a class="settings-link d-flex align-items-center py-2 px-2 rounded text-decoration-none
+                        {{ 'bg-gradient-primary text-white' if active else 'text-dark' }}"
+                 href="{{ url_for(ep) }}">
+                <i class="material-icons me-2 {{ 'text-white' if active else 'text-muted' }}">
+                  {{ 'check_circle' if active else ico }}
+                </i>
+                <span class="small">{{ label }}</span>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+
+        {% if actions_resolved|length > 0 %}
+          <hr class="my-2">
+          <h6 class="px-2 text-uppercase text-xxs text-muted mb-1">Quick actions</h6>
+          <ul class="list-unstyled mb-0">
+            {% for ep, label, ico in actions_resolved %}
+              <li>
+                <a class="settings-link d-flex align-items-center py-2 px-2 rounded text-decoration-none text-dark"
+                   href="{{ url_for(ep) }}">
+                  <i class="material-icons me-2 text-muted">{{ ico }}</i>
+                  <span class="small">{{ label }}</span>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+</aside>
+
+<style>
+  /* keep sidenav fixed & overlay-friendly */
+  #sidenav-main.sidenav { position: fixed !important; top: 0; left: 0; height: 100vh; z-index: 1030; overflow: visible; }
+  #sidenav-main .sidebar-scroll { max-height: calc(100vh - 170px); padding-bottom: 5.5rem; overflow: auto; }
+
+  .sidebar-bottombar{ position: absolute; left: .75rem; right: .75rem; bottom: .75rem; z-index: 1040; }
+  .sidebar-settings-btn { border-radius: .5rem; }
+
+  .settings-overlay{
+    position: absolute; left: .75rem; right: .75rem; bottom: 3.25rem; z-index: 1040;
+    pointer-events: none; transform-origin: bottom center; transform: scaleY(0); opacity: 0;
+    transition: transform .18s ease, opacity .18s ease;
+  }
+  .settings-overlay.open{ pointer-events: auto; transform: scaleY(1); opacity: 1; }
+
+  .settings-card{
+    max-height: 60vh; overflow: auto; border-radius: .75rem;
+    border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(1px); box-shadow: 0 10px 24px rgba(0,0,0,.25); padding: .5rem;
+  }
+
+  #sidenav-main{ background: var(--sidebar-bg, #1f283e) !important; color: #cfd8e3; }
+  #sidenav-main .nav-link, #sidenav-main .nav-link .material-icons { color: rgba(255,255,255,.85) !important; }
+  #sidenav-main .nav-link.active { color:#fff !important; }
+  .settings-card a.text-dark { color: #e6e9ef !important; }
+</style>
+
+<script>
+  (function () {
+    var sidenav  = document.getElementById('sidenav-main');
+    var closer   = document.getElementById('iconSidenav');
+    var trigger  = document.getElementById('settingsTrigger');
+    var overlay  = document.getElementById('settingsOverlay');
+    var chevron  = trigger ? trigger.querySelector('.chevron') : null;
+
+    function toggleNav(){ document.body.classList.toggle('g-sidenav-hidden'); }
+    if (closer) closer.addEventListener('click', toggleNav);
+
+    function openOverlay(){
+      if (!overlay) return;
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+      trigger.setAttribute('aria-expanded', 'true');
+      if (chevron) chevron.textContent = 'expand_more';
+    }
+    function closeOverlay(){
+      if (!overlay) return;
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+      trigger.setAttribute('aria-expanded', 'false');
+      if (chevron) chevron.textContent = 'settings';
+    }
+
+    if (trigger && overlay){
+      trigger.addEventListener('click', function(e){
+        e.stopPropagation();
+        overlay.classList.contains('open') ? closeOverlay() : openOverlay();
+      });
+      document.addEventListener('click', function(e){
+        if (!overlay.classList.contains('open')) return;
+        if (!sidenav.contains(e.target)) closeOverlay();
+      });
+
+      // ✅ Auto-close when clicking a settings link (nicer UX)
+      overlay.addEventListener('click', function(e){
+        var a = e.target.closest('a.settings-link');
+        if (a) { closeOverlay(); }
+      });
+
+      // Auto-open if current route is in settings
+      if (overlay.classList.contains('open')) openOverlay();
+    }
+  })();
+</script>

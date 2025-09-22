@@ -1,0 +1,267 @@
+{# 📁 templates/super_admin/contracts/contracts_overview.html #}
+{% extends "layouts/super_admin_base.html" %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <h4 class="mb-0">Contracts Overview</h4>
+            {% if 'super_admin.dashboard' in current_app.view_functions %}
+            <a href="{{ url_for('super_admin.dashboard') }}" class="btn btn-sm btn-light">
+              ← Back to Dashboard
+            </a>
+            {% endif %}
+          </div>
+
+          {# ---- Tabs ---- #}
+          <ul class="nav nav-pills mt-3" id="contractsTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active"
+                      id="tab-expiry"
+                      data-bs-toggle="pill"
+                      data-bs-target="#expiry"
+                      type="button"
+                      role="tab"
+                      aria-controls="expiry"
+                      aria-selected="true">
+                Expiry
+                <span class="badge bg-danger ms-1">
+                  {{ (counts.expired if counts is defined else contracts_expired) or 0 }}
+                </span>
+                <span class="badge bg-warning ms-1">
+                  {{ (counts.exp_30 if counts is defined else contracts_expiring_30) or 0 }}
+                </span>
+                <span class="badge bg-primary ms-1">
+                  {{ (counts.exp_60 if counts is defined else contracts_expiring_60) or 0 }}
+                </span>
+                <span class="badge bg-info ms-1">
+                  {{ (counts.exp_90 if counts is defined else contracts_expiring_90) or 0 }}
+                </span>
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link"
+                      id="tab-pending"
+                      data-bs-toggle="pill"
+                      data-bs-target="#pending"
+                      type="button"
+                      role="tab"
+                      aria-controls="pending"
+                      aria-selected="false">
+                Pending Signatures
+                <span class="badge bg-secondary ms-1">
+                  {{ (counts.pending if counts is defined else count_pending) or 0 }}
+                </span>
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link"
+                      id="tab-signed"
+                      data-bs-toggle="pill"
+                      data-bs-target="#signed"
+                      type="button"
+                      role="tab"
+                      aria-controls="signed"
+                      aria-selected="false">
+                Signed (Last 30d)
+                <span class="badge bg-success ms-1">
+                  {{ (counts.signed if counts is defined else count_signed_30d) or 0 }}
+                </span>
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link"
+                      id="tab-declined"
+                      data-bs-toggle="pill"
+                      data-bs-target="#declined"
+                      type="button"
+                      role="tab"
+                      aria-controls="declined"
+                      aria-selected="false">
+                Declined
+                <span class="badge bg-danger ms-1">
+                  {{ (counts.declined if counts is defined else count_declined) or 0 }}
+                </span>
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link"
+                      id="tab-drafts"
+                      data-bs-toggle="pill"
+                      data-bs-target="#drafts"
+                      type="button"
+                      role="tab"
+                      aria-controls="drafts"
+                      aria-selected="false">
+                Drafts
+                <span class="badge bg-info ms-1">
+                  {{ (counts.drafts if counts is defined else count_drafts) or 0 }}
+                </span>
+              </button>
+            </li>
+          </ul>
+
+          {# ---- Tab Content ---- #}
+          <div class="tab-content mt-3">
+
+            {# Expiry Tab #}
+            <div class="tab-pane fade show active" id="expiry" role="tabpanel" aria-labelledby="tab-expiry">
+              <h6 class="fw-bold mb-2">Expired</h6>
+              {% if expired and expired|length %}
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover align-middle">
+                    <thead>
+                      <tr>
+                        <th>Client</th>
+                        <th>Title</th>
+                        <th>End Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for c in expired %}
+                      <tr>
+                        <td>{{ c.client.name if c.client else '—' }}</td>
+                        <td>{{ c.title|default('—') }}</td>
+                        <td class="text-danger">
+                          {{ c.end_date.strftime("%d-%m-%Y") if c.end_date else '—' }}
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <p class="text-muted">No expired contracts.</p>
+              {% endif %}
+
+              <h6 class="fw-bold mt-4 mb-2">Expiring in 30 Days</h6>
+              {% if expiring_30 and expiring_30|length %}
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover align-middle">
+                    <thead>
+                      <tr>
+                        <th>Client</th>
+                        <th>Title</th>
+                        <th>End Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for c in expiring_30 %}
+                      <tr>
+                        <td>{{ c.client.name if c.client else '—' }}</td>
+                        <td>{{ c.title|default('—') }}</td>
+                        <td class="text-warning">
+                          {{ c.end_date.strftime("%d-%m-%Y") if c.end_date else '—' }}
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <p class="text-muted">No contracts expiring within 30 days.</p>
+              {% endif %}
+
+              <h6 class="fw-bold mt-4 mb-2">Expiring in 60 Days</h6>
+              {% if expiring_60 and expiring_60|length %}
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover align-middle">
+                    <thead>
+                      <tr>
+                        <th>Client</th>
+                        <th>Title</th>
+                        <th>End Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for c in expiring_60 %}
+                      <tr>
+                        <td>{{ c.client.name if c.client else '—' }}</td>
+                        <td>{{ c.title|default('—') }}</td>
+                        <td class="text-primary">
+                          {{ c.end_date.strftime("%d-%m-%Y") if c.end_date else '—' }}
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <p class="text-muted">No contracts expiring within 60 days.</p>
+              {% endif %}
+
+              <h6 class="fw-bold mt-4 mb-2">Expiring in 90 Days</h6>
+              {% if expiring_90 and expiring_90|length %}
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover align-middle">
+                    <thead>
+                      <tr>
+                        <th>Client</th>
+                        <th>Title</th>
+                        <th>End Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for c in expiring_90 %}
+                      <tr>
+                        <td>{{ c.client.name if c.client else '—' }}</td>
+                        <td>{{ c.title|default('—') }}</td>
+                        <td class="text-info">
+                          {{ c.end_date.strftime("%d-%m-%Y") if c.end_date else '—' }}
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <p class="text-muted">No contracts expiring within 90 days.</p>
+              {% endif %}
+            </div>
+
+            {# Pending Tab #}
+            <div class="tab-pane fade" id="pending" role="tabpanel" aria-labelledby="tab-pending">
+              {% if (counts.pending if counts is defined else count_pending) > 0 %}
+                {% include "super_admin/contracts/_pending_table.html" %}
+              {% else %}
+                <p class="text-muted">No pending signatures.</p>
+              {% endif %}
+            </div>
+
+            {# Signed Tab #}
+            <div class="tab-pane fade" id="signed" role="tabpanel" aria-labelledby="tab-signed">
+              {% if (counts.signed if counts is defined else count_signed_30d) > 0 %}
+                {% include "super_admin/contracts/_signed_table.html" %}
+              {% else %}
+                <p class="text-muted">No contracts signed in the last 30 days.</p>
+              {% endif %}
+            </div>
+
+            {# Declined Tab #}
+            <div class="tab-pane fade" id="declined" role="tabpanel" aria-labelledby="tab-declined">
+              {% if (counts.declined if counts is defined else count_declined) > 0 %}
+                {% include "super_admin/contracts/_declined_table.html" %}
+              {% else %}
+                <p class="text-muted">No declined contracts.</p>
+              {% endif %}
+            </div>
+
+            {# Drafts Tab #}
+            <div class="tab-pane fade" id="drafts" role="tabpanel" aria-labelledby="tab-drafts">
+              {% if (counts.drafts if counts is defined else count_drafts) > 0 %}
+                {% include "super_admin/contracts/_drafts_table.html" %}
+              {% else %}
+                <p class="text-muted">No drafts available.</p>
+              {% endif %}
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

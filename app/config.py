@@ -111,6 +111,14 @@ class BaseConfig:
     PAGINATION_PAGE_SIZE = env_int("PAGINATION_PAGE_SIZE", 25)
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
+    # ---------- Branding defaults (paths are relative to app/static) ----------
+    # Platform (LogixPM) logo displayed in platform-level areas and alongside tenant on login/logout.
+    PLATFORM_LOGO_PATH = os.getenv("PLATFORM_LOGO_PATH", "static/assets/img/logixpm-logo.png")
+    # Tenant/brand fallback used in older places that reference BRAND_LOGO_PATH.
+    BRAND_LOGO_PATH = os.getenv("BRAND_LOGO_PATH", PLATFORM_LOGO_PATH)
+    # Company name fallback (used in titles where needed).
+    BRAND_COMPANY_NAME = os.getenv("BRAND_COMPANY_NAME", "LogixPM")
+
 # ---------- Environments ----------
 class DevelopmentConfig(BaseConfig):
     DEBUG = True

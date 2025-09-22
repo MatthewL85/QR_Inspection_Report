@@ -3,7 +3,7 @@ from datetime import datetime
 from werkzeug.security import generate_password_hash
 from flask import current_app
 from app.extensions import db
-from app.models.company import Company
+from app.models.onboarding.company import Company
 from app.models.core.role import Role
 from app.models.core.user import User
 

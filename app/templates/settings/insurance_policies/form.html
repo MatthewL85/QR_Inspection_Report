@@ -1,0 +1,39 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block title %}{{ title }} | Insurance{% endblock %}
+{% block page_content %}
+<div class="container-fluid">
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <button id="sidebarToggle" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Toggle sidebar">
+      <i class="fas fa-bars"></i>
+    </button>
+    <h5 class="mb-0">{{ title }}</h5>
+  </div>
+  {% include "_partials/flash.html" %}
+  <div class="card">
+    <div class="card-body">
+      <form method="post">
+        {{ form.csrf_token }}
+        <div class="row g-3">
+          <div class="col-md-4">{{ form.policy_type.label }} {{ form.policy_type(class="form-select") }}</div>
+          <div class="col-md-4">{{ form.provider.label }} {{ form.provider(class="form-control") }}</div>
+          <div class="col-md-4">{{ form.policy_number.label }} {{ form.policy_number(class="form-control") }}</div>
+
+          <div class="col-md-3">{{ form.coverage_amount.label }} {{ form.coverage_amount(class="form-control") }}</div>
+          <div class="col-md-2">{{ form.currency.label }} {{ form.currency(class="form-control") }}</div>
+          <div class="col-md-3">{{ form.start_date.label }} {{ form.start_date(class="form-control") }}</div>
+          <div class="col-md-3">{{ form.expiry_date.label }} {{ form.expiry_date(class="form-control") }}</div>
+
+          <div class="col-md-2 form-check mt-4">{{ form.active(class="form-check-input", id="active") }} <label for="active" class="form-check-label">Active</label></div>
+          <div class="col-md-4 form-check mt-4">{{ form.is_default(class="form-check-input", id="is_default") }} <label for="is_default" class="form-check-label">Default for this type</label></div>
+          <div class="col-md-12">{{ form.document_path.label }} {{ form.document_path(class="form-control") }}</div>
+        </div>
+
+        <div class="mt-3">
+          <button class="btn btn-primary">Save</button>
+          <a href="{{ url_for('settings.insurance_index') }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

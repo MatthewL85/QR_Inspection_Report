@@ -1,0 +1,245 @@
+{# templates/settings/branding.html #}
+{% extends "layouts/super_admin_base.html" %}
+{% block title %}Branding & Theme | LogixPM{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Branding & Theme</h5>
+            {% if 'super_admin.dashboard' in current_app.view_functions %}
+              <a href="{{ url_for('super_admin.dashboard') }}" class="btn btn-light btn-sm">← Dashboard</a>
+            {% endif %}
+          </div>
+
+          {# Resolve which logo-like field exists: logo | logo_file | logo_path #}
+          {% set _logo_field =
+              (form.logo if form.logo is defined else
+               (form.logo_file if form.logo_file is defined else
+                (form.logo_path if form.logo_path is defined else None))) %}
+
+          {# Form enctype only if a file input exists #}
+          {% set _has_file = (form.logo is defined) or (form.logo_file is defined) %}
+
+          <form method="post" {% if _has_file %}enctype="multipart/form-data"{% endif %} novalidate>
+            {{ form.csrf_token if form.csrf_token is defined }}
+
+            <div class="row g-3">
+              {% if _logo_field %}
+                <div class="col-md-12">
+                  {{ _logo_field.label }} {{ _logo_field(class="form-control") }}
+                  <div class="form-text">
+                    {% if form.logo_path is defined and _logo_field.name == 'logo_path' %}
+                      Enter a static path under /static (e.g. <code>assets/img/logo.png</code>).
+                    {% else %}
+                      Upload a logo image (PNG/SVG recommended).
+                    {% endif %}
+                  </div>
+                </div>
+              {% endif %}
+
+              {# Color fields (render only if present) #}
+              {% if form.primary_hex is defined %}
+                <div class="col-md-3">
+                  {{ form.primary_hex.label }}
+                  {{ form.primary_hex(class="form-control", type="color") }}
+                </div>
+              {% endif %}
+              {% if form.secondary_hex is defined %}
+                <div class="col-md-3">
+                  {{ form.secondary_hex.label }}
+                  {{ form.secondary_hex(class="form-control", type="color") }}
+                </div>
+              {% endif %}
+              {% if form.sidebar_hex is defined %}
+                <div class="col-md-3">
+                  {{ form.sidebar_hex.label }}
+                  {{ form.sidebar_hex(class="form-control", type="color") }}
+                </div>
+              {% endif %}
+              {% if form.accent_hex is defined %}
+                <div class="col-md-3">
+                  {{ form.accent_hex.label }}
+                  {{ form.accent_hex(class="form-control", type="color") }}
+                </div>
+              {% endif %}
+
+              {# Toggles (render only if present) #}
+              {% if form.use_material_cards is defined %}
+                <div class="col-md-3 form-check mt-2">
+                  {{ form.use_material_cards(class="form-check-input") }}
+                  {{ form.use_material_cards.label(class="form-check-label") }}
+                </div>
+              {% endif %}
+              {% if form.rounded is defined %}
+                <div class="col-md-3 form-check mt-2">
+                  {{ form.rounded(class="form-check-input") }}
+                  {{ form.rounded.label(class="form-check-label") }}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="mt-3 d-flex gap-2">
+              {% if form.submit is defined %}
+                {{ form.submit(class="btn btn-primary") }}
+              {% else %}
+                <button type="submit" class="btn btn-primary">Save</button>
+              {% endif %}
+              {% if 'settings.profile_view' in current_app.view_functions %}
+                <a href="{{ url_for('settings.profile_view') }}" class="btn btn-outline-secondary">Company Profile</a>
+              {% endif %}
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Preview -->
+    <div class="col-lg-5">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h6 class="mb-3">Live Preview</h6>
+          <div id="brandPreview" class="p-3 rounded" style="border:1px solid #e9ecef;">
+            <div class="d-flex align-items-center mb-3">
+              <div id="logoPreview" class="me-3"
+                   style="width:48px;height:48px;border-radius:8px;background:#f1f3f5;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                {% if BRAND_LOGO_URL %}
+                  <img src="{{ BRAND_LOGO_URL }}" alt="Logo" style="max-width:100%;max-height:100%;">
+                {% else %}
+                  <span class="text-muted small">Logo</span>
+                {% endif %}
+              </div>
+              <div>
+                <div class="fw-semibold">Your Company</div>
+                <div class="small text-muted">Material Dashboard preview</div>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm" id="btnPrimary">Primary</button>
+              <button type="button" class="btn btn-sm" id="btnSecondary">Secondary</button>
+              <span class="badge" id="badgeAccent">Accent</span>
+            </div>
+
+            <div class="mt-3 small">
+              <div>Sidebar color sample:</div>
+              <div id="sidebarSwatch" class="rounded mt-1" style="height:28px; border:1px solid #dee2e6;"></div>
+            </div>
+          </div>
+          <div class="form-text mt-2">Visual guide only; the app uses your base/layout styles.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  // Resolve logo field id for preview (logo | logo_file | logo_path or none)
+  const logoId = "{{ (form.logo.id if form.logo is defined else (form.logo_file.id if form.logo_file is defined else (form.logo_path.id if form.logo_path is defined else ''))) }}";
+
+  // Defaults come from the active theme (context processor)
+  const DEF = {
+    prim: "{{ THEME_PRIMARY }}",
+    sec:  "{{ THEME_SECONDARY }}",
+    acc:  "{{ THEME_ACCENT }}",
+    side: "{{ THEME_SIDEBAR }}"
+  };
+
+  const el = {
+    prim: document.getElementById("{{ form.primary_hex.id if form.primary_hex is defined }}"),
+    sec:  document.getElementById("{{ form.secondary_hex.id if form.secondary_hex is defined }}"),
+    acc:  document.getElementById("{{ form.accent_hex.id if form.accent_hex is defined }}"),
+    side: document.getElementById("{{ form.sidebar_hex.id if form.sidebar_hex is defined }}"),
+    logo: logoId ? document.getElementById(logoId) : null,
+    btnP: document.getElementById("btnPrimary"),
+    btnS: document.getElementById("btnSecondary"),
+    badge:document.getElementById("badgeAccent"),
+    swatch:document.getElementById("sidebarSwatch"),
+    logoPreview: document.getElementById("logoPreview")
+  };
+
+  function valOrDefault(input, def) {
+    if (!input) return def;
+    const v = (input.value || "").trim();
+    return v || def;
+  }
+
+  function setStyleSafe(node, prop, val){ if(node && val){ node.style[prop] = val; } }
+
+  function apply() {
+    const prim = valOrDefault(el.prim, DEF.prim);
+    const sec  = valOrDefault(el.sec,  DEF.sec);
+    const acc  = valOrDefault(el.acc,  DEF.acc);
+    const side = valOrDefault(el.side, DEF.side);
+
+    setStyleSafe(el.btnP, 'backgroundColor',  prim);
+    setStyleSafe(el.btnP, 'borderColor',      prim);
+    setStyleSafe(el.btnP, 'color', '#fff');
+
+    setStyleSafe(el.btnS, 'backgroundColor',  sec);
+    setStyleSafe(el.btnS, 'borderColor',      sec);
+    setStyleSafe(el.btnS, 'color', '#fff');
+
+    setStyleSafe(el.badge, 'backgroundColor', acc);
+    setStyleSafe(el.badge, 'color', '#fff');
+
+    setStyleSafe(el.swatch, 'backgroundColor', side);
+  }
+
+  // Show preview when a user selects a new file (logo or upload field)
+  function bindLogoPreview() {
+    if (!el.logo || !el.logoPreview) return;
+
+    // File input selected
+    if (el.logo.type === 'file') {
+      el.logo.addEventListener('change', function () {
+        if (!el.logo.files || !el.logo.files[0]) return;
+        const file = el.logo.files[0];
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          el.logoPreview.innerHTML = '';
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.alt = 'Logo';
+          img.style.maxWidth = '100%';
+          img.style.maxHeight = '100%';
+          el.logoPreview.style.background = '#e9ecef';
+          el.logoPreview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+      return;
+    }
+
+    // Text field (logo_path): just indicate something is set
+    if (el.logo.tagName === 'INPUT' && el.logo.type === 'text') {
+      const updateTextPreview = () => {
+        const hasVal = (el.logo.value && (""+el.logo.value).trim() !== "");
+        el.logoPreview.innerHTML = hasVal
+          ? '<span class="small text-muted">Logo path set</span>'
+          : '<span class="text-muted small">Logo</span>';
+        el.logoPreview.style.background = hasVal ? '#e9ecef' : '#f1f3f5';
+      };
+      el.logo.addEventListener('input', updateTextPreview);
+      updateTextPreview();
+    }
+  }
+
+  ['input','change'].forEach(evt => {
+    if (el.prim) el.prim.addEventListener(evt, apply);
+    if (el.sec)  el.sec.addEventListener(evt, apply);
+    if (el.acc)  el.acc.addEventListener(evt, apply);
+    if (el.side) el.side.addEventListener(evt, apply);
+  });
+
+  apply();
+  bindLogoPreview();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block page_content %}
+<div class="container-fluid py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h5 class="mb-1">Company Profile</h5>
+      <div class="text-muted small">View your organisation details.</div>
+    </div>
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('settings.branding_view') }}">Branding</a>
+      <a class="btn btn-primary btn-sm" href="{{ url_for('settings.profile_edit', id=company.id) }}">Edit</a>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h6 class="text-uppercase text-muted small mb-3">Organisation</h6>
+
+          <div class="row mb-3">
+            <div class="col-sm-6">
+              <div class="text-muted small">Name</div>
+              <div class="fw-medium">{{ company.name or "—" }}</div>
+            </div>
+            <div class="col-sm-6">
+              <div class="text-muted small">Type</div>
+              <div class="fw-medium text-capitalize">{{ company.company_type or "—" }}</div>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-sm-4">
+              <div class="text-muted small">Reg. No.</div>
+              <div class="fw-medium">{{ company.registration_number or "—" }}</div>
+            </div>
+            <div class="col-sm-4">
+              <div class="text-muted small">VAT No.</div>
+              <div class="fw-medium">{{ company.vat_number or "—" }}</div>
+            </div>
+            <div class="col-sm-4">
+              <div class="text-muted small">Tax ID</div>
+              <div class="fw-medium">{{ company.tax_identifier or "—" }}</div>
+            </div>
+          </div>
+
+          <h6 class="text-uppercase text-muted small mt-4 mb-3">Contact</h6>
+          <div class="row mb-3">
+            <div class="col-sm-4">
+              <div class="text-muted small">Email</div>
+              <div class="fw-medium">{{ company.email or "—" }}</div>
+            </div>
+            <div class="col-sm-4">
+              <div class="text-muted small">Phone</div>
+              <div class="fw-medium">{{ company.phone or "—" }}</div>
+            </div>
+            <div class="col-sm-4">
+              <div class="text-muted small">Website</div>
+              <div class="fw-medium">{{ company.website or "—" }}</div>
+            </div>
+          </div>
+
+          <h6 class="text-uppercase text-muted small mt-4 mb-3">Address</h6>
+          <div class="mb-1">{{ company.address_line1 or "—" }}</div>
+          <div class="mb-1">{{ company.address_line2 or "" }}</div>
+          <div class="mb-1">
+            {{ company.city or "—" }}{% if company.state %}, {{ company.state }}{% endif %}
+            {% if company.postal_code %} {{ company.postal_code }}{% endif %}
+          </div>
+          <div class="mb-1">{{ company.country or "—" }}</div>
+
+          <h6 class="text-uppercase text-muted small mt-4 mb-3">Locale</h6>
+          <div class="row">
+            <div class="col-sm-4">
+              <div class="text-muted small">Currency</div>
+              <div class="fw-medium">{{ company.currency or "—" }}</div>
+            </div>
+            <div class="col-sm-4">
+              <div class="text-muted small">Timezone</div>
+              <div class="fw-medium">{{ company.timezone or "—" }}</div>
+            </div>
+            <div class="col-sm-4">
+              <div class="text-muted small">Language</div>
+              <div class="fw-medium">{{ company.preferred_language or "—" }}</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h6 class="text-uppercase text-muted small mb-3">Branding</h6>
+
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="rounded border" style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;background:#fff;">
+              {% if company.logo_path %}
+                {# ✅ Safe static resolver: works for 'uploads/...', 'static/uploads/...', etc. #}
+                {% set _lp = (company.logo_path or '')|trim %}
+                {% set _lp = _lp.lstrip('/') %}
+                {% if _lp.startswith('static/') %}{% set _lp = _lp[7:] %}{% endif %}
+                <img src="{{ url_for('static', filename=_lp) }}" alt="Logo" style="max-width:56px;max-height:56px;">
+              {% else %}
+                <span class="text-muted small">No logo</span>
+              {% endif %}
+            </div>
+            <div>
+              <div class="text-muted small">Logo</div>
+              <div class="small">{{ company.logo_path or "—" }}</div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="rounded shadow-sm border" style="width:36px;height:36px;background: {{ company.brand_primary_color or '#eee' }}"></div>
+            <div>
+              <div class="text-muted small">Primary</div>
+              <div class="fw-medium">{{ company.brand_primary_color or "—" }}</div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="rounded shadow-sm border" style="width:36px;height:36px;background: {{ company.brand_secondary_color or '#eee' }}"></div>
+            <div>
+              <div class="text-muted small">Secondary</div>
+              <div class="fw-medium">{{ company.brand_secondary_color or "—" }}</div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="rounded shadow-sm border" style="width:36px;height:36px;background: {{ company.brand_color or '#eee' }}"></div>
+            <div>
+              <div class="text-muted small">Legacy</div>
+              <div class="fw-medium">{{ company.brand_color or "—" }}</div>
+            </div>
+          </div>
+
+          <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('settings.branding_view') }}">Manage Branding</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

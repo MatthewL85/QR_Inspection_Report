@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from app.routes.tenant import tenant_bp  # create a 'tenant_bp' blueprint with url_prefix='/tenant'
 from app.forms.company.company_onboarding_form import CompanyOnboardingForm
 from app.models import db
-from app.models.company import Company
+from app.models.onboarding.company import Company
 from app.config import Config  # ensure UPLOAD_FOLDER exists
 
 @tenant_bp.route("/company-onboarding", methods=["GET", "POST"], endpoint="company_onboarding")

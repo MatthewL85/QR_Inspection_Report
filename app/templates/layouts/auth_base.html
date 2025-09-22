@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  {# Use your local assets; fallback to defaults if paths differ #}
+  {# Remove these <link>s if your app injects CSS globally #}
+  <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/material-dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/nucleo-icons.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/nucleo-svg.css') }}">
+
+  <style>
+    :root{
+      --brand-primary:  {{ BRAND_PRIMARY_COLOR|default('#344767') }};
+      --brand-secondary:{{ BRAND_SECONDARY_COLOR|default('#17c1e8') }};
+      --brand-accent:   {{ BRAND_ACCENT_COLOR|default('#e91e63') }};
+    }
+    .btn-brand{ background: var(--brand-primary); border-color: var(--brand-primary); color:#fff; }
+    .btn-brand:hover{ filter: brightness(.92); color:#fff; }
+    .link-brand{ color: var(--brand-primary); text-decoration: none; }
+    .link-brand:hover{ color: var(--brand-accent); text-decoration: underline; }
+    body{ min-height:100vh; display:flex; align-items:center; justify-content:center; background:#f8f9fe; }
+    .auth-card{ width:100%; max-width: 420px; }
+  </style>
+
+  {% block styles %}{% endblock %}
+  <title>{{ BRAND_COMPANY_NAME }} • Sign in</title>
+</head>
+<body>
+  <main class="container py-4">
+    <div class="card shadow-sm border-0 auth-card">
+      <div class="card-body p-4">
+
+        {% block auth_brand %}
+          <div class="text-center mb-3">
+            <img src="{{ BRAND_LOGO_URL }}" alt="{{ BRAND_COMPANY_NAME }} logo" style="height:56px;">
+          </div>
+        {% endblock %}
+
+        {% block page_content %}{% endblock %}
+      </div>
+    </div>
+  </main>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,39 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block title %}{{ title }} | Bank Accounts{% endblock %}
+{% block page_content %}
+<div class="container-fluid">
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <button id="sidebarToggle" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Toggle sidebar">
+      <i class="fas fa-bars"></i>
+    </button>
+    <h5 class="mb-0">{{ title }}</h5>
+  </div>
+  {% include "_partials/flash.html" %}
+  <div class="card">
+    <div class="card-body">
+      <form method="post">
+        {{ form.csrf_token }}
+        <div class="row g-3">
+          <div class="col-md-3">{{ form.nickname.label }} {{ form.nickname(class="form-control") }}</div>
+          <div class="col-md-3">{{ form.account_name.label }} {{ form.account_name(class="form-control") }}</div>
+          <div class="col-md-3">{{ form.bank_name.label }} {{ form.bank_name(class="form-control") }}</div>
+          <div class="col-md-3">{{ form.remittance_email.label }} {{ form.remittance_email(class="form-control") }}</div>
+
+          <div class="col-md-4">{{ form.iban.label }} {{ form.iban(class="form-control", placeholder="IE..") }}</div>
+          <div class="col-md-3">{{ form.bic_swift.label }} {{ form.bic_swift(class="form-control") }}</div>
+          <div class="col-md-2">{{ form.currency.label }} {{ form.currency(class="form-select") }}</div>
+          <div class="col-md-3">{{ form.account_type.label }} {{ form.account_type(class="form-control") }}</div>
+
+          <div class="col-md-2 form-check mt-4">{{ form.active(class="form-check-input", id="active") }} <label for="active" class="form-check-label">Active</label></div>
+          <div class="col-md-4 form-check mt-4">{{ form.is_default(class="form-check-input", id="is_default") }} <label for="is_default" class="form-check-label">Default for this company</label></div>
+        </div>
+
+        <div class="mt-3">
+          <button class="btn btn-primary">Save</button>
+          <a href="{{ url_for('settings.bank_index') }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

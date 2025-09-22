@@ -1,0 +1,45 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block title %}{{ title }} | Licences{% endblock %}
+{% block page_content %}
+<div class="container-fluid">
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <button id="sidebarToggle" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Toggle sidebar">
+      <i class="fas fa-bars"></i>
+    </button>
+    <h5 class="mb-0">{{ title }}</h5>
+  </div>
+  {% include "_partials/flash.html" %}
+  <div class="card">
+    <div class="card-body">
+      <form method="post">
+        {{ form.csrf_token }}
+        <div class="row g-3">
+          <div class="col-md-6">{{ form.regulator_name.label }} {{ form.regulator_name(class="form-control") }}</div>
+          <div class="col-md-3">{{ form.license_type.label }} {{ form.license_type(class="form-control") }}</div>
+          <div class="col-md-3">{{ form.license_number.label }} {{ form.license_number(class="form-control") }}</div>
+
+          <div class="col-md-4">{{ form.country.label }} {{ form.country(class="form-control") }}</div>
+          <div class="col-md-4">{{ form.region.label }} {{ form.region(class="form-control") }}</div>
+          <div class="col-md-4">{{ form.city.label }} {{ form.city(class="form-control") }}</div>
+
+          <div class="col-md-3">{{ form.status.label }} {{ form.status(class="form-select") }}</div>
+          <div class="col-md-3">{{ form.valid_from.label }} {{ form.valid_from(class="form-control") }}</div>
+          <div class="col-md-3">{{ form.expiry_date.label }} {{ form.expiry_date(class="form-control") }}</div>
+
+          <div class="col-md-3">{{ form.document_path.label }} {{ form.document_path(class="form-control") }}</div>
+
+          <div class="col-md-3 form-check mt-4">{{ form.active(class="form-check-input", id="active") }} <label for="active" class="form-check-label">Active</label></div>
+          <div class="col-md-5 form-check mt-4">{{ form.is_default(class="form-check-input", id="is_default") }} <label for="is_default" class="form-check-label">Default for this jurisdiction</label></div>
+
+          <div class="col-md-12">{{ form.scope_json.label }} {{ form.scope_json(class="form-control", rows="3", placeholder='["Electrical", "Plumbing"]') }}</div>
+        </div>
+
+        <div class="mt-3">
+          <button class="btn btn-primary">Save</button>
+          <a href="{{ url_for('settings.licenses_index') }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

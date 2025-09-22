@@ -1,0 +1,48 @@
+{# templates/super_admin/contracts/_pending_table.html #}
+<table class="table table-sm table-hover align-middle">
+  <thead>
+    <tr>
+      <th>Client</th>
+      <th>Contract</th>
+      <th>Start</th>
+      <th>End</th>
+      <th class="text-center">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in expired + expiring_30 + expiring_90 if c.sign_status == 'Sent' %}
+      <tr>
+        <td>{{ c.client.name }}</td>
+        <td class="fw-semibold">{{ c.title or '—' }}</td>
+        <td>{{ c.start_date.strftime("%d-%m-%Y") if c.start_date else '—' }}</td>
+        <td>{{ c.end_date.strftime("%d-%m-%Y") if c.end_date else '—' }}</td>
+        <td class="text-center">
+          <div class="btn-group btn-group-sm" role="group">
+            <a class="btn btn-outline-primary"
+               href="{{ url_for('super_admin_contracts.renew', client_id=c.client_id, step=3, contract_id=c.id) }}">
+              Preview
+            </a>
+            <form class="d-inline" method="post"
+                  action="{{ url_for('super_admin_contracts.signature_signed', contract_id=c.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-outline-success" type="submit">Mark Signed</button>
+            </form>
+            <form class="d-inline" method="post"
+                  action="{{ url_for('super_admin_contracts.signature_declined', contract_id=c.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="reason" value="Declined from overview">
+              <button class="btn btn-outline-danger" type="submit">Decline</button>
+            </form>
+            <form class="d-inline" method="post"
+                  action="{{ url_for('super_admin_contracts.signature_expired', contract_id=c.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-outline-secondary" type="submit">Expire</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="text-muted">No pending signatures.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
