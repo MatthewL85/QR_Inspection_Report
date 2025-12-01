@@ -1,0 +1,164 @@
+{# templates/contractor/key_info/list.html #}
+{% extends "layouts/contractor_base.html" %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+
+  {# ───────────────── Flash messages (Material Dashboard friendly) ───────────────── #}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="mb-3">
+        {% for category, msg in messages %}
+          <div class="alert alert-{{ 'info' if category == 'message' else category }} border-0 shadow-sm mb-2" role="alert">
+            {{ msg }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <h6 class="mb-0">Key Site Information — {{ client.name }}</h6>
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#proposeNewModal">
+          Propose New Section
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body">
+
+      {% if sections|length == 0 %}
+        <div class="small text-muted">No sections have been shared with your company yet.</div>
+      {% else %}
+        <div class="accordion" id="keyInfoAccordion">
+          {% for s in sections %}
+          <div class="accordion-item border-0 mb-2">
+            <h2 class="accordion-header" id="h{{ s.id }}">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c{{ s.id }}">
+                <span class="fw-semibold">{{ s.title }}</span>
+              </button>
+            </h2>
+            <div id="c{{ s.id }}" class="accordion-collapse collapse" data-bs-parent="#keyInfoAccordion">
+              <div class="accordion-body">
+                {# Published content (read-only) #}
+                <div class="mb-3">
+                  {{ s.content | safe }}
+                </div>
+
+                {% if s.ai_parsed_summary %}
+                <div class="small text-muted mb-3">
+                  <strong>Summary:</strong> {{ s.ai_parsed_summary }}
+                </div>
+                {% endif %}
+
+                {# ───────── Contractor Proposal/Update with Professional Attestation ───────── #}
+                <div class="p-3 bg-light rounded-3 border">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="fw-semibold small text-uppercase text-secondary">Propose an Update</div>
+                    <span class="badge bg-secondary">Goes to PM for approval</span>
+                  </div>
+
+                  <form method="post" action="{{ url_for('contractor_key_info.propose_change', client_id=client.id) }}" class="needs-validation" novalidate>
+                    <input type="hidden" name="key_info_id" value="{{ s.id }}">
+
+                    <div class="row g-2">
+                      <div class="col-md-5">
+                        <label class="form-label small">Title</label>
+                        <input class="form-control" name="title" value="{{ s.title }}" required>
+                        <div class="invalid-feedback">Please provide a title.</div>
+                      </div>
+
+                      <div class="col-12">
+                        <label class="form-label small">Proposed Content</label>
+                        <textarea class="form-control" name="content" rows="5" placeholder="Describe the correction/update with enough detail for the PM to review…" required>{{ s.content }}</textarea>
+                        <div class="invalid-feedback">Content is required.</div>
+                      </div>
+
+                      <div class="col-12 d-flex align-items-center gap-2">
+                        <div class="form-check">
+                          <input class="form-check-input" type="checkbox" id="attest{{ s.id }}" name="pro_attested_by_contractor">
+                          <label for="attest{{ s.id }}" class="form-check-label small">
+                            I confirm this update is technically accurate (professional attestation)
+                          </label>
+                        </div>
+                      </div>
+
+                      <div class="col-12">
+                        <input class="form-control" name="pro_attestation_note" placeholder="Optional: add a short note, reference or evidence link (cert/spec/standard)">
+                      </div>
+
+                      <div class="col-12">
+                        <button class="btn btn-outline-primary btn-sm">Submit to Property Manager</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+
+              </div> {# /accordion-body #}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+{# ───────────────── Propose New Section (Modal) ───────────────── #}
+<div class="modal fade" id="proposeNewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <form class="modal-content needs-validation" method="post" action="{{ url_for('contractor_key_info.propose_change', client_id=client.id) }}" novalidate>
+      <div class="modal-header">
+        <h6 class="modal-title">Propose New Section</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="mb-2">
+          <label class="form-label small">Section Title</label>
+          <input class="form-control" name="title" placeholder="e.g., LIFTS — Maintenance Access" required>
+          <div class="invalid-feedback">Please provide a title.</div>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label small">Content</label>
+          <textarea class="form-control" name="content" rows="6" placeholder="Provide clear instructions, standards, contacts, access details (avoid overly sensitive data unless necessary)…" required></textarea>
+          <div class="invalid-feedback">Content is required.</div>
+        </div>
+
+        <div class="mb-2 form-check">
+          <input class="form-check-input" type="checkbox" id="attestNew" name="pro_attested_by_contractor">
+          <label class="form-check-label small" for="attestNew">I confirm this is technically accurate (professional attestation)</label>
+        </div>
+
+        <input class="form-control" name="pro_attestation_note" placeholder="Optional: note/evidence link (e.g., certificate, spec)">
+        <div class="form-text">After approval, this section will be shared with your company by default.</div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-primary">Submit to Property Manager</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# ───────────────── Optional: client-side Bootstrap validation (no custom colors) ───────────────── #}
+<script>
+  (function () {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.prototype.slice.call(forms).forEach(function (form) {
+      form.addEventListener('submit', function (event) {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+</script>
+{% endblock %}

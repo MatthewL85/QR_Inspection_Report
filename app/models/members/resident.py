@@ -1,21 +1,41 @@
-# models/members/resident.py
+# app/models/members/resident.py
 
 from datetime import datetime
 from app.extensions import db
 
+
 class Resident(db.Model):
-    __tablename__ = 'residents'
+    """
+    Current or historic occupant of a Unit.
+
+    This model underpins:
+      - Members Logix (resident portal, requests)
+      - Works Logix (who lives in the unit for access / contact)
+      - Director / PM visibility on occupancy vs ownership
+    """
+    __tablename__ = "residents"
 
     id = db.Column(db.Integer, primary_key=True)
 
-    # 🔗 Relationships
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True)
-    unit_id = db.Column(db.Integer, db.ForeignKey('units.id'))
+    # 🔗 Core Relationships
+    # Link to core User account (if they have a login)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True, nullable=True)
 
-    user = db.relationship('User', backref='resident_profile', uselist=False)
-    unit = db.relationship('Unit', backref='residents')
+    # Direct link to the primary Unit they occupy
+    # (If you later want multi-unit residents, we can introduce an association table)
+    unit_id = db.Column(db.Integer, db.ForeignKey("units.id"), nullable=True)
 
-    # 🧾 Residency Approval
+    # 1–1 Resident ↔ User
+    user = db.relationship(
+        "User",
+        backref=db.backref("resident_profile", uselist=False)
+    )
+
+    # Many Residents → One Unit
+    # Backref "residents" gives: unit.residents
+    unit = db.relationship("Unit", backref="residents")
+
+    # 🧾 Residency Approval / Lifecycle
     approved_by_member = db.Column(db.Boolean, default=False)
     approved_at = db.Column(db.DateTime, nullable=True)
     is_current_resident = db.Column(db.Boolean, default=True)
@@ -47,12 +67,16 @@ class Resident(db.Model):
     gar_chat_ready = db.Column(db.Boolean, default=False)
     gar_feedback = db.Column(db.Text, nullable=True)
 
+    # 🕒 Audit
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
 
     def __repr__(self):
         return (
-            f"<Resident user_id={self.user_id} unit_id={self.unit_id} "
-            f"current={self.is_current_resident}>"
+            f"<Resident id={self.id} user_id={self.user_id} "
+            f"unit_id={self.unit_id} current={self.is_current_resident}>"
         )
-

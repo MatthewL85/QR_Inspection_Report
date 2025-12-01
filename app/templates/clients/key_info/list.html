@@ -1,0 +1,383 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block page_content %}
+<div class="container-fluid py-4">
+
+  {% set COMMON_SECTIONS = [
+    "ACCOUNTS","CAPITAL WORKS AND LEVIES","CLEANING","DRAINAGE","ELECTRICAL","FIRE ALARM",
+    "GARDA STATION","GARDENING","GATES","INSURANCE COMPANY & BROKER","KEY/FOB/ZAPPER PRICES",
+    "LAYOUT","LIFTS","LOCKSMITH","METER READINGS","PEST CONTROL","PLUMBING",
+    "PUMPS & WATER TREATMENT","REAR PARKING AREA","REFUSE COLLECTION & STORAGE",
+    "TV SERVICE / COMMUNAL DISH"
+  ] %}
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">Key Site Information — {{ client.name }}</h5>
+
+    <div class="d-flex gap-2">
+      {% if can_propose %}
+      <button class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#newSectionForm">
+        ➕ New Section
+      </button>
+      {% endif %}
+
+      <a href="#pending" class="btn btn-sm btn-outline-dark position-relative">
+        Pending
+        {% if pending and pending|length %}
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+            {{ pending|length }}
+          </span>
+        {% endif %}
+      </a>
+
+      <a
+        href="{% if 'super_admin.view_client' in current_app.view_functions %}{{ url_for('super_admin.view_client', client_id=client.id) }}{% else %}/super-admin/clients/{{ client.id }}{% endif %}"
+        class="btn btn-sm btn-outline-secondary">← Dashboard</a>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+
+      <!-- Published -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h6 class="mb-0">Published Sections</h6>
+        </div>
+
+        <div class="card-body">
+          {% if sections %}
+            <div class="accordion" id="ki-accordion">
+              {% for s in sections %}
+                <div class="accordion-item mb-2 rounded-3 border">
+                  <h2 class="accordion-header" id="hdr-{{ s.id }}">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#col-{{ s.id }}"
+                            aria-expanded="false" aria-controls="col-{{ s.id }}">
+                      {{ s.title }}
+                    </button>
+                  </h2>
+
+                  <div id="col-{{ s.id }}" class="accordion-collapse collapse" aria-labelledby="hdr-{{ s.id }}" data-bs-parent="#ki-accordion">
+                    <div class="accordion-body">
+                      {% set _c = s.content or '' %}
+                      {% if '<' in _c %}
+                        <div class="ki-content prose">{{ _c | safe }}</div>
+                      {% else %}
+                        <div class="ki-content prose" style="white-space: pre-wrap;">{{ _c }}</div>
+                      {% endif %}
+
+                      {% if s.ai_parsed_summary %}
+                        <div class="small text-muted mt-2"><strong>AI Summary:</strong> {{ s.ai_parsed_summary }}</div>
+                      {% endif %}
+
+                      <div class="d-flex gap-2 mt-3">
+                        {% if can_propose %}
+                          <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editModal-{{ s.id }}">
+                            Propose Update
+                          </button>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {% if can_propose %}
+                <!-- Propose update modal -->
+                <div class="modal fade" id="editModal-{{ s.id }}" tabindex="-1" aria-hidden="true">
+                  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                    <div class="modal-content">
+                      <form method="post" action="{% if 'client_key_info.propose_change' in current_app.view_functions %}{{ url_for('client_key_info.propose_change', client_id=client.id) }}{% else %}/clients/{{ client.id }}/key-info/propose{% endif %}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="key_info_id" value="{{ s.id }}">
+                        <div class="modal-header">
+                          <h6 class="modal-title">Propose Update — {{ s.title }}</h6>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                          <div class="mb-3">
+                            <label class="form-label">Section Title</label>
+                            <input type="text" class="form-control" name="title" value="{{ s.title }}"
+                                   list="section-datalist-{{ s.id }}" required>
+                            <datalist id="section-datalist-{{ s.id }}">
+                              {% for name in COMMON_SECTIONS %}<option value="{{ name }}"></option>{% endfor %}
+                            </datalist>
+                          </div>
+
+                          <div class="mb-3">
+                            <label class="form-label">Content</label>
+                            <textarea class="form-control js-wysiwyg" name="content" rows="10"
+                                      placeholder="Add key details (codes, how-to, vendors, hours)…">{{ s.content }}</textarea>
+                            <div class="form-text">Use the toolbar to insert photos/videos or paste a YouTube/Vimeo/MP4 link.</div>
+                          </div>
+
+                          <div class="mb-3">
+                            <label class="form-label">Share with specific contractors (optional)</label>
+                            <select class="form-select" name="contractor_ids" multiple size="6">
+                              {% for c in contractors or [] %}
+                                <option value="{{ c.id }}">{{ c.company_name or c.name or ('Contractor #' ~ c.id) }}</option>
+                              {% endfor %}
+                            </select>
+                            <div class="form-text">Leave empty to keep it internal only.</div>
+                          </div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                          <button type="submit" class="btn btn-primary">Submit for Approval</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-muted">No sections published yet.</div>
+          {% endif %}
+        </div>
+
+        {% if can_propose %}
+        <div id="newSectionForm" class="collapse border-top">
+          <div class="card-body">
+            <form method="post" action="{% if 'client_key_info.propose_change' in current_app.view_functions %}{{ url_for('client_key_info.propose_change', client_id=client.id) }}{% else %}/clients/{{ client.id }}/key-info/propose{% endif %}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Section Title / Category</label>
+                  <input type="text" class="form-control" name="title" list="section-datalist" placeholder="e.g., GATES" required>
+                  <datalist id="section-datalist">
+                    {% for name in COMMON_SECTIONS %}<option value="{{ name }}"></option>{% endfor %}
+                  </datalist>
+                  <div class="mt-2">
+                    {% for name in COMMON_SECTIONS[:10] %}
+                      <button type="button" class="btn btn-light btn-sm me-1 mb-1"
+                              onclick="document.querySelector('input[name=title]').value='{{ name }}'">
+                        {{ name }}
+                      </button>
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">Content</label>
+                  <textarea class="form-control js-wysiwyg" name="content" rows="10"
+                            placeholder="Add the key details here (codes, access routes, vendors, hours, hazards, etc.)" required></textarea>
+                  <div class="form-text">
+                    Drag & drop images/videos or paste a YouTube/Vimeo/MP4 URL. Click the “image” or “media” icon to use a file picker.
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Share with specific contractors (optional)</label>
+                  <select class="form-select" name="contractor_ids" multiple size="8">
+                    {% for c in contractors or [] %}
+                      <option value="{{ c.id }}">{{ c.company_name or c.name or ('Contractor #' ~ c.id) }}</option>
+                    {% endfor %}
+                  </select>
+                  <div class="form-text">Empty = keep internal. Selected contractors will see after approval.</div>
+                </div>
+
+                <div class="col-12">
+                  <button type="submit" class="btn btn-primary">Submit New Section for Approval</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Pending -->
+      <div id="pending" class="card border-0 shadow-sm">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h6 class="mb-0">Pending Changes</h6>
+        </div>
+        <div class="card-body">
+          {% if pending %}
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Submitted</th>
+                    <th>Submitted By</th>
+                    <th>Contractors</th>
+                    <th class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for ch in pending %}
+                    <tr>
+                      <td class="fw-semibold">{{ ch.proposed_title }}</td>
+                      <td class="text-muted small">{{ ch.submitted_at }}</td>
+                      <td class="text-muted small">User #{{ ch.submitted_by_id }}</td>
+                      <td class="small">
+                        {% if ch.proposed_contractor_ids %}
+                          <span class="badge bg-light text-dark border">{{ ch.proposed_contractor_ids|length }} selected</span>
+                        {% else %}
+                          <span class="text-muted">—</span>
+                        {% endif %}
+                      </td>
+                      <td class="text-end">
+                        <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#ch-{{ ch.id }}">Preview</button>
+                        {% if can_approve %}
+                          <form method="post" action="{% if 'client_key_info.approve_change_route' in current_app.view_functions %}{{ url_for('client_key_info.approve_change_route', client_id=client.id, change_id=ch.id) }}{% else %}/clients/{{ client.id }}/key-info/changes/{{ ch.id }}/approve{% endif %}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                          </form>
+                          <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rejectModal-{{ ch.id }}">Reject</button>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    <tr class="collapse" id="ch-{{ ch.id }}">
+                      <td colspan="5">
+                        <div class="p-3 bg-light rounded">
+                          <div class="mb-2"><strong>Proposed Title:</strong> {{ ch.proposed_title }}</div>
+                          <div class="mb-2"><strong>Proposed Content:</strong></div>
+                          <div class="border rounded bg-white p-3">{% if ch.proposed_content %}{{ ch.proposed_content|safe }}{% else %}<span class="text-muted">—</span>{% endif %}</div>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {% if can_approve %}
+                    <div class="modal fade" id="rejectModal-{{ ch.id }}" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <form method="post" action="{% if 'client_key_info.reject_change_route' in current_app.view_functions %}{{ url_for('client_key_info.reject_change_route', client_id=client.id, change_id=ch.id) }}{% else %}/clients/{{ client.id }}/key-info/changes/{{ ch.id }}/reject{% endif %}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="modal-header">
+                              <h6 class="modal-title">Reject Change — {{ ch.proposed_title }}</h6>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                              <label class="form-label">Reason (optional)</label>
+                              <textarea class="form-control" name="reason" rows="3" placeholder="Why is this rejected?"></textarea>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                              <button type="submit" class="btn btn-danger">Reject</button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                    {% endif %}
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="text-muted">No pending changes.</div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TinyMCE (inline so it always loads) -->
+<script src="https://cdn.tiny.cloud/1/aexhg8zg7em9iyk8inv5pa5e3sqw27u8ca9ywdraam5tcgfe/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+(function () {
+  const selector = 'textarea.js-wysiwyg';
+  const csrfToken = '{{ csrf_token() }}';
+  const uploadUrl = '{% if "client_key_info.upload_asset" in current_app.view_functions %}{{ url_for("client_key_info.upload_asset", client_id=client.id) }}{% else %}/clients/{{ client.id }}/key-info/upload{% endif %}';
+
+  function initTiny(sel) {
+    tinymce.init({
+      selector: sel,
+      menubar: false,
+      branding: false,
+      height: 420,
+      plugins: 'lists advlist link table code autoresize image media paste quickbars fullscreen autosave',
+      toolbar:
+        'undo redo | styles | bold italic underline | forecolor backcolor | ' +
+        'alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | ' +
+        'table | link image media | removeformat | fullscreen | code',
+      toolbar_mode: 'sliding',
+      quickbars_selection_toolbar: 'bold italic | forecolor backcolor | bullist numlist | h2 h3 blockquote',
+      content_style:
+        'body{font-family: Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; font-size:14px; line-height:1.5}',
+      contextmenu: false,
+
+      // nicer paste experience
+      paste_data_images: true,  // paste screenshots; Tiny will upload via handler below
+
+      // Drag & drop / paste upload handler
+      automatic_uploads: true,
+      images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', uploadUrl);
+        xhr.setRequestHeader('X-CSRFToken', csrfToken);
+        xhr.onload = function () {
+          if (xhr.status !== 200) { reject('HTTP ' + xhr.status); return; }
+          let json = {};
+          try { json = JSON.parse(xhr.responseText || '{}'); } catch(e) {}
+          if (!json.location) { reject('Invalid server response'); return; }
+          resolve(json.location);
+        };
+        xhr.upload.onprogress = (e) => { if (e.lengthComputable) progress(e.loaded / e.total * 100); };
+        const fd = new FormData();
+        fd.append('file', blobInfo.blob(), blobInfo.filename());
+        xhr.send(fd);
+      }),
+
+      // “Select…” buttons for images/videos
+      file_picker_types: 'image media',
+      file_picker_callback: (cb, value, meta) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        if (meta.filetype === 'image') input.accept = 'image/*';
+        if (meta.filetype === 'media') input.accept = 'video/mp4,video/webm,video/ogg';
+        input.onchange = function () {
+          const file = this.files[0];
+          const xhr = new XMLHttpRequest();
+          const fd = new FormData();
+          xhr.open('POST', uploadUrl);
+          xhr.setRequestHeader('X-CSRFToken', csrfToken);
+          xhr.onload = function () {
+            if (xhr.status !== 200) return cb(null);
+            let json = {};
+            try { json = JSON.parse(xhr.responseText || '{}'); } catch(e) {}
+            if (json.location) cb(json.location, { title: file.name });
+          };
+          fd.append('file', file, file.name);
+          xhr.send(fd);
+        };
+        input.click();
+      },
+
+      // Media (YouTube/Vimeo/MP4) – paste URL to embed
+      media_live_embeds: true,
+
+      // Autosave namespace per client
+      autosave_interval: '15s',
+      autosave_restore_when_empty: true,
+      autosave_prefix: 'ki-{{ client.id }}-'
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    initTiny(selector);
+  });
+
+  // Re-init inside modals
+  document.addEventListener('shown.bs.modal', function (ev) {
+    if (ev.target && ev.target.querySelector && ev.target.querySelector('textarea.js-wysiwyg')) {
+      initTiny('#' + ev.target.id + ' textarea.js-wysiwyg');
+    }
+  });
+})();
+</script>
+
+<style>
+  .prose p { margin-bottom: .5rem; }
+  .prose ul, .prose ol { padding-left: 1.25rem; margin-bottom: .5rem; }
+  .prose table { width: 100%; border-collapse: collapse; margin: .5rem 0; }
+  .prose table th, .prose table td { border: 1px solid #e7e7e7; padding: .35rem .5rem; }
+  .prose table th { background: #fafafa; }
+  .ki-content img, .ki-content video { max-width: 100%; height: auto; border-radius: .25rem; }
+</style>
+{% endblock %}

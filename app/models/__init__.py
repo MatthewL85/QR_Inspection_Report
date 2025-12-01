@@ -42,6 +42,13 @@ from app.models.client.lease import Lease
 from app.models.client.country_client_config import CountryClientConfig
 from app.models.client.board_meeting_attendee import BoardMeetingAttendee
 from app.models.client.meeting_integration import MeetingIntegration
+from app.models.client.key_info import (
+    ClientKeyInfo,
+    ClientKeyInfoChange,
+    ClientKeyInfoShare,
+)
+# Back-compat alias so any legacy code that imports `KeyInfo` still works
+KeyInfo = ClientKeyInfo
 
 # ----------------------------
 # Contracts

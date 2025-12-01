@@ -1,17 +1,105 @@
-# app/services/contract/contracts.py
 from __future__ import annotations
 
 import os
 import re
+import json
 from typing import Optional, Tuple, List
 
 from flask import current_app, url_for
-from flask import render_template_string
+from jinja2 import Environment, BaseLoader, StrictUndefined
 
 from app.models.contracts import ClientContract, ContractTemplateVersion
+from datetime import datetime, date
+from decimal import Decimal
+from flask_login import current_user
+from app import db
+from app.services.contract.contract_audits import create_contract_audit
 
 
-# ---------- small utils ----------
+# -------------------- SAFE, ISOLATED JINJA RENDERER --------------------
+
+def _render_template_string_isolated(template_str: str, **context) -> str:
+    """
+    Render the DB-stored contract body WITHOUT Flask's global context processors.
+    Only variables explicitly passed via **context are available.
+    StrictUndefined makes typos/missing vars fail fast.
+    """
+    env = Environment(
+        loader=BaseLoader(),
+        autoescape=True,
+        undefined=StrictUndefined,
+    )
+    env.filters["tojson"] = lambda v: json.dumps(v, ensure_ascii=False, indent=2)
+    return env.from_string(template_str or "").render(**context)
+
+
+# -------------------- CANONICAL DATA PAYLOAD --------------------
+
+def _build_contract_data(contract: ClientContract) -> dict:
+    """
+    Construct the 'data' object the template should use:
+      - data.company.*  (management company fields)
+      - data.client.*   (client/OMC fields)
+      - data.term.*     (start/end)
+      - data.fees.*     (base_ex_vat, vat_rate)
+    """
+    client = contract.client
+    company = getattr(contract, "company", None) or getattr(client, "management_company", None)
+
+    def g(obj, attr, default=None):
+        try:
+            return getattr(obj, attr, default)
+        except Exception:
+            return default
+
+    return {
+        "company": {
+            "legal_name": g(company, "legal_name"),
+            "trading_name": g(company, "trading_name"),
+            "registration_number": g(company, "registration_number"),
+            "vat_reg_number": g(company, "vat_reg_number"),
+            "email": g(company, "email"),
+            "phone": g(company, "telephone"),
+            "address": {
+                "line1": g(company, "address_line1"),
+                "line2": g(company, "address_line2"),
+                "city": g(company, "city"),
+                "postal_code": g(company, "postal_code"),
+                "country": g(company, "country"),
+            },
+            "branding": {
+                "primary_hex": g(company, "brand_primary_color"),
+                "secondary_hex": g(company, "brand_secondary_color"),
+                "accent_hex": g(company, "brand_color"),
+                "logo_path": g(company, "logo_path"),
+            },
+        },
+        "client": {
+            "name": g(client, "name"),
+            "registration_number": g(client, "registration_number"),
+            "vat_reg_number": g(client, "vat_reg_number"),
+            "email": g(client, "email"),
+            "phone": g(client, "telephone"),
+            "address": {
+                "line1": g(client, "address_line1"),
+                "line2": g(client, "address_line2"),
+                "city": g(client, "city"),
+                "postal_code": g(client, "postal_code"),
+                "country": g(client, "country"),
+            },
+        },
+        "term": {
+            "start": contract.start_date.isoformat() if getattr(contract, "start_date", None) else None,
+            "end":   contract.end_date.isoformat()   if getattr(contract, "end_date",   None) else None,
+        },
+        "fees": {
+            "base_ex_vat": float(getattr(contract, "contract_value", 0) or 0),
+            "vat_rate": (getattr(contract, "data_json", {}) or {}).get("fees", {}).get("vat_rate", 23),
+        },
+    }
+
+
+# -------------------- SMALL UTILS --------------------
 
 def _safe_slug(s: str) -> str:
     s = (s or "").strip().lower()
@@ -45,7 +133,7 @@ def _save_string_as_static_asset(content: str, rel_path: str) -> str:
     return url_for("static", filename=rel_path)
 
 
-# ---------- PDF backends ----------
+# -------------------- PDF BACKENDS --------------------
 
 def _render_pdf_weasy(html: str, base_url: str, css_paths: Optional[List[str]] = None) -> Optional[bytes]:
     """
@@ -75,8 +163,6 @@ def _render_pdf_wkhtml(html: str, out_abs_path: str, base_url: str, css_paths: O
     except Exception:
         return False
 
-    # Option 1: write html to a temp file and render with file path
-    # Option 2: render from string (requires --enable-local-file-access when reading local CSS)
     options = {
         "enable-local-file-access": None,
         "page-size": "A4",
@@ -101,17 +187,16 @@ def _render_pdf_wkhtml(html: str, out_abs_path: str, base_url: str, css_paths: O
         return False
 
 
-# ---------- Public API ----------
+# -------------------- PUBLIC API --------------------
 
 def render_contract_html(contract: ClientContract) -> str:
     """
-    Render HTML using the template version's Jinja template with 'data' + 'contract'.
+    SAFELY render HTML using the template version's Jinja template.
+    Only `data` and `contract` exist inside the template.
     """
     tv: ContractTemplateVersion = contract.template_version
-    data = contract.data_json or {}
-    # Make sure we can resolve relative URLs for images/CSS in template (base_url = static root)
-    html = render_template_string(tv.html_template, data=data, contract=contract)
-    return html
+    data = _build_contract_data(contract)
+    return _render_template_string_isolated(tv.html_template or "", data=data, contract=contract)
 
 
 def generate_contract_artifacts(client, contract: ClientContract) -> Tuple[str, Optional[str]]:
@@ -123,7 +208,7 @@ def generate_contract_artifacts(client, contract: ClientContract) -> Tuple[str, 
     html = render_contract_html(contract)
 
     # 2) Paths
-    folder_rel, folder_abs = _static_rel_and_abs("contracts", str(contract.id))
+    folder_rel, _folder_abs = _static_rel_and_abs("contracts", str(contract.id))
     html_rel = os.path.join(folder_rel, "contract.html").replace("\\", "/")
     pdf_rel  = os.path.join(folder_rel, "contract.pdf").replace("\\", "/")
     html_abs = os.path.join(current_app.static_folder, html_rel)
@@ -137,7 +222,7 @@ def generate_contract_artifacts(client, contract: ClientContract) -> Tuple[str, 
 
     # 4) Try to create PDF (WeasyPrint first)
     base_url = current_app.static_url_path  # for resolving /static/... in CSS/images
-    css_list = ["css/pdf.css"]  # you can add per-tenant CSS later
+    css_list = ["css/pdf.css"]  # per-tenant CSS can be added later
     pdf_bytes = _render_pdf_weasy(html, base_url=base_url, css_paths=css_list)
     pdf_url: Optional[str] = None
 
@@ -148,35 +233,25 @@ def generate_contract_artifacts(client, contract: ClientContract) -> Tuple[str, 
     else:
         # 5) Fallback: wkhtmltopdf/pdfkit
         ok = _render_pdf_wkhtml(html, out_abs_path=pdf_abs, base_url=base_url, css_paths=css_list)
-        if ok:
-            pdf_url = url_for("static", filename=pdf_rel)
-        else:
-            pdf_url = None  # gracefully degrade; UI will show "PDF not available"
+        pdf_url = url_for("static", filename=pdf_rel) if ok else None
 
     return html_url, pdf_url
 
-def render_html_for_version(template_version, data: dict, contract=None) -> str:
+
+def render_html_for_version(template_version: ContractTemplateVersion, data: dict, contract: ClientContract | None = None) -> str:
     """
-    Render HTML string for a given ContractTemplateVersion and data_json-like dict.
-    Does not persist anything.
+    Render HTML string for a given ContractTemplateVersion and a provided `data` dict.
+    Uses the same SAFE isolated renderer to enforce namespacing. Does not persist anything.
     """
     html_template = template_version.html_template or ""
-    # give template access to "data" (preferred) and "contract" (optional)
-    return render_template_string(html_template, data=data or {}, contract=contract)
+    return _render_template_string_isolated(html_template, data=data or {}, contract=contract)
 
 
-# ----------------------- SNAPSHOT & AUDIT HELPERS (added) -----------------------
-from datetime import datetime, date  # added
-from decimal import Decimal          # added
-from flask_login import current_user # added
-from app import db                   # added
-# use your actual helper location (you confirmed this path earlier)
-from app.services.contract.contract_audits import create_contract_audit  # added
+# -------------------- SNAPSHOT & AUDIT HELPERS --------------------
 
-_JSON_SAFE_TYPES = (str, int, float, bool, type(None))  # added
+_JSON_SAFE_TYPES = (str, int, float, bool, type(None))
 
-
-def _to_json_safe(value):  # added
+def _to_json_safe(value):
     """Convert common non-JSON types to JSON-safe primitives."""
     if isinstance(value, _JSON_SAFE_TYPES):
         return value
@@ -191,11 +266,10 @@ def _to_json_safe(value):  # added
         return {k: _to_json_safe(v) for k, v in value.items()}
     if isinstance(value, (list, tuple, set)):
         return [_to_json_safe(v) for v in value]
-    # Fallback
     return str(value)
 
 
-def contract_snapshot(contract) -> dict:  # added
+def contract_snapshot(contract) -> dict:
     """
     Return a JSON-safe dict of key fields we care about in audits.
     Adjust the field list to match your ClientContract schema.
@@ -217,7 +291,7 @@ def contract_snapshot(contract) -> dict:  # added
     return snap
 
 
-def log_contract_audit(  # added
+def log_contract_audit(
     contract: ClientContract,
     action: str,
     before: dict | None,

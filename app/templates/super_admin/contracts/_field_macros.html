@@ -1,0 +1,43 @@
+{# Schema field rendering macros that bind per-path values. #}
+{% macro _value_for(path) -%}
+  {{ request.form.get('fs__' ~ path, (form_values.get(path, ''))) }}
+{%- endmacro %}
+
+{% macro input_field(f) -%}
+  {# f: {path,label,type,placeholder,required} #}
+  {% set name = 'fs__' ~ f.path %}
+  <label class="form-label">{{ f.label }}{% if f.required %} *{% endif %}</label>
+  <input
+    name="{{ name }}"
+    type="{{ f.type or 'text' }}"
+    class="form-control"
+    placeholder="{{ f.placeholder or '' }}"
+    value="{{ _value_for(f.path) }}"
+    {% if f.required %} required {% endif %}
+  />
+{%- endmacro %}
+
+{% macro textarea_field(f) -%}
+  {% set name = 'fs__' ~ f.path %}
+  <label class="form-label">{{ f.label }}{% if f.required %} *{% endif %}</label>
+  <textarea
+    name="{{ name }}"
+    rows="{{ f.rows or 3 }}"
+    class="form-control"
+    placeholder="{{ f.placeholder or '' }}"
+    {% if f.required %} required {% endif %}
+  >{{ _value_for(f.path) }}</textarea>
+{%- endmacro %}
+
+{% macro select_field(f) -%}
+  {% set name = 'fs__' ~ f.path %}
+  <label class="form-label">{{ f.label }}{% if f.required %} *{% endif %}</label>
+  <select name="{{ name }}" class="form-select" {% if f.required %} required {% endif %}>
+    {% for opt in f.options or [] %}
+      {% set ov = (opt.value is defined and opt.value or opt) %}
+      {% set ol = (opt.label is defined and opt.label or opt) %}
+      {% set current = _value_for(f.path) %}
+      <option value="{{ ov }}" {{ 'selected' if (current|string) == (ov|string) else '' }}>{{ ol }}</option>
+    {% endfor %}
+  </select>
+{%- endmacro %}

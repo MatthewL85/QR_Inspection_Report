@@ -1,0 +1,43 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block page_content %}
+<div class="container-fluid py-4">
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <h4 class="mb-3">Start a Contract</h4>
+      <form method="post" class="row g-3">
+        <input type="hidden" name="client_id" value="{{ client.id if client else '' }}">
+
+        <div class="col-12 col-xl-6">
+          <div class="card h-100 border">
+            <div class="card-body">
+              <h5>Governed (Template Wizard)</h5>
+              <p class="text-muted small mb-3">Use policy-controlled templates (e.g., Management Contract). Versioning, schema rules, PSRA checks.</p>
+              <button name="path" value="governed" class="btn btn-primary">Use Wizard</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-xl-6">
+          <div class="card h-100 border">
+            <div class="card-body">
+              <h5>Simple (SOW / PO / Variation)</h5>
+              <p class="text-muted small mb-3">For out-of-scope activities. Fast draft; optionally link to a governed master.</p>
+              {% if masters %}
+              <label class="form-label">Link to Master (optional)</label>
+              <select class="form-select mb-2" name="parent_contract_id">
+                <option value="">— None —</option>
+                {% for m in masters %}
+                  <option value="{{ m.id }}">{{ m.contract_title or ('Master #' ~ m.id) }}</option>
+                {% endfor %}
+              </select>
+              {% endif %}
+              <button name="path" value="simple" class="btn btn-outline-secondary">Use Simple</button>
+            </div>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

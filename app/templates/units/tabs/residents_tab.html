@@ -1,0 +1,48 @@
+<h6 class="text-uppercase text-secondary text-xs font-weight-bolder mb-3">Residents</h6>
+
+{% if residents|length == 0 %}
+    <p class="text-sm text-muted">No residents linked to this unit.</p>
+{% else %}
+
+    <div class="table-responsive">
+        <table class="table table-hover align-items-center">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Primary?</th>
+                    <th>Verified?</th>
+                    <th>Tenancy Start</th>
+                    <th>Tenancy End</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for link in residents %}
+                <tr>
+                    <td>{{ link.resident.full_name }}</td>
+                    <td>
+                        {% if link.is_primary_resident %}
+                            <span class="badge bg-success">Primary</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Secondary</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if link.is_verified %}
+                            <span class="badge bg-info text-dark">Verified</span>
+                        {% else %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% endif %}
+                    </td>
+
+                    <td>{{ link.tenancy_start or 'N/A' }}</td>
+                    <td>{{ link.tenancy_end or 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+
+{% endif %}

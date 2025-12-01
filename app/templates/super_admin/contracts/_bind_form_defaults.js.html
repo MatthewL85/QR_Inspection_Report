@@ -1,0 +1,51 @@
+{# Binds flat form defaults (path -> string) into inputs named fs__<path>. #}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Polyfill CSS.escape when unavailable
+  if (typeof CSS === 'undefined' || typeof CSS.escape !== 'function') {
+    window.CSS = window.CSS || {};
+    CSS.escape = CSS.escape || function (sel) {
+      return (sel + '')
+        .replace(/[\t\n\f\r]/g, ' ')
+        .replace(/(["\\#.:;?+*^$[\](){}/|<>~=])/g, '\\$1');
+    };
+  }
+
+  const defaults = {{ (form_values or {}) | tojson | safe }};
+  if (!defaults || typeof defaults !== 'object') return;
+
+  const setVal = (el, val) => {
+    if (!el) return;
+    const v = (val == null) ? '' : String(val);
+    const tag = el.tagName.toLowerCase();
+
+    if (el.type === 'checkbox') {
+      el.checked = !!val;
+    } else if (tag === 'select') {
+      Array.from(el.options || []).forEach(opt => {
+        opt.selected = (String(opt.value) === v);
+      });
+    } else {
+      el.value = v;
+    }
+
+    try { el.dispatchEvent(new Event('input',  { bubbles: true })); } catch(e) {}
+    try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch(e) {}
+  };
+
+  // Simple fields: inputs / textareas / selects with name="fs__<path>"
+  Object.entries(defaults).forEach(([path, val]) => {
+    const name = 'fs__' + path;
+    const sel  = `[name="${CSS.escape(name)}"]`;
+    document.querySelectorAll(sel).forEach(el => setVal(el, val));
+  });
+
+  // Optional: bind read-only mirrors like <span data-fspath="client.display_name"></span>
+  document.querySelectorAll('[data-fspath]').forEach(span => {
+    const p = span.getAttribute('data-fspath');
+    if (p && Object.prototype.hasOwnProperty.call(defaults, p)) {
+      span.textContent = defaults[p] ?? '';
+    }
+  });
+});
+</script>

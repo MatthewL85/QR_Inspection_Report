@@ -170,6 +170,179 @@ def register_custom_filters(app):
         except Exception:
             return Markup(html.escape(str(text)))
 
+    # ---------- New: safe 'format' override + simple 'money' helper ----------
+
+    def _format_safe(fmt: Any, *args, **kwargs) -> str:
+        """
+        Drop-in replacement for Jinja's built-in `format` filter that won't 500 on None.
+        Behaves like Python %-formatting used by Jinja:
+          {{ '€%.2f' | format(amount) }}
+        If `amount` is None, this returns '€0.00' (or best-effort) instead of raising.
+        """
+        s = str(fmt)
+
+        # Detect whether the format string includes a numeric conversion
+        has_numeric = bool(re.search(r"%[-+ #0-9.]*[dfFeEgG]", s))
+
+        def _coerce(v):
+            if v is None:
+                return 0 if has_numeric else ""
+            return v
+
+        try:
+            if kwargs:
+                return s % {k: _coerce(v) for k, v in kwargs.items()}
+            return s % tuple(_coerce(v) for v in args)
+        except Exception:
+            # As a last resort, return the original format string
+            return s
+
+    @app.template_filter("money")
+    def money(value: Any, symbol: str = "€", decimals: int = 0) -> str:
+        """
+        {{ value | money('€') }}  ->  €12,000  (default no cents)
+        {{ value | money('£', 2) }} -> £12,000.00
+        """
+        try:
+            f = float(_to_decimal(value))
+        except Exception:
+            f = 0.0
+        decimals = int(decimals or 0)
+        if decimals > 0:
+            return f"{symbol}{f:,.{decimals}f}"
+        return f"{symbol}{f:,.0f}"
+
+    # ---------- New: data coercion helpers for forms (to avoid dicts in inputs) ----------
+
+    def _looks_like_address(d: dict) -> bool:
+        keys = set(k.lower() for k in d.keys())
+        return any(
+            k in keys
+            for k in (
+                "line1", "line_1", "address1", "address_1", "street",
+                "line2", "line_2", "address2", "address_2",
+                "city", "town", "county", "state", "region", "province",
+                "postal_code", "postcode", "zip", "country"
+            )
+        )
+
+    def _address_to_str(d: dict) -> str:
+        def take(*names):
+            for n in names:
+                if n in d and d[n]:
+                    return str(d[n])
+            return ""
+        parts = [
+            take("line1", "line_1", "address1", "address_1", "street"),
+            take("line2", "line_2", "address2", "address_2"),
+            take("city", "town"),
+            take("county", "state", "region", "province"),
+            take("postal_code", "postcode", "zip"),
+            take("country"),
+        ]
+        return ", ".join([p for p in parts if p]).strip(", ") or ""
+
+    @app.template_filter("address_join")
+    def address_join(value: Any) -> str:
+        """
+        Formats a dict-like address into a single line string.
+        """
+        if isinstance(value, dict) and _looks_like_address(value):
+            return _address_to_str(value)
+        return "" if value in (None, {}, []) else str(value)
+
+    @app.template_filter("deep_get")
+    def deep_get(value: Any, path: str, default: Any = "") -> Any:
+        """
+        Dot-path extractor: {{ obj | deep_get('issuer.issuer_name') }}
+        Works with dicts and objects (via getattr).
+        """
+        if value is None or not path:
+            return default
+        cur = value
+        for part in str(path).split("."):
+            if isinstance(cur, dict):
+                cur = cur.get(part, default)
+            else:
+                cur = getattr(cur, part, default)
+            if cur is default:
+                break
+        return cur
+
+    @app.template_filter("coerce_text")
+    def coerce_text(value: Any, kind: str = "auto") -> str:
+        """
+        Turn nested values into clean, human-friendly strings for inputs.
+        kind ∈ {'auto','name','address','role','contact'}
+        """
+        if value is None:
+            return ""
+
+        # Simple primitives
+        if isinstance(value, (int, float, Decimal, str)):
+            return "" if value == "null" else str(value)
+
+        # Dict handling
+        if isinstance(value, dict):
+            k = (kind or "auto").lower()
+            lower_keys = {kk.lower(): kk for kk in value.keys()}
+
+            if k in ("address",) or (k == "auto" and _looks_like_address(value)):
+                return _address_to_str(value)
+
+            if k in ("name", "auto"):
+                for key in ("display_name", "legal_name", "name", "issuer_name", "client_name", "agent_name", "full_name", "contact_name"):
+                    if key in lower_keys and value[lower_keys[key]]:
+                        return str(value[lower_keys[key]])
+
+            if k in ("role",) and "role" in lower_keys:
+                return str(value[lower_keys["role"]])
+
+            if k in ("contact",):
+                email = None
+                phone = None
+                for key in ("email", "e_mail"):
+                    if key in lower_keys and value[lower_keys[key]]:
+                        email = value[lower_keys[key]]
+                        break
+                for key in ("phone", "mobile", "tel"):
+                    if key in lower_keys and value[lower_keys[key]]:
+                        phone = value[lower_keys[key]]
+                        break
+                pieces = [p for p in (email, phone) if p]
+                if pieces:
+                    return " • ".join(str(p) for p in pieces)
+
+            # Fallback: best available field
+            for key in ("name", "title", "label", "id"):
+                if key in lower_keys and value[lower_keys[key]]:
+                    return str(value[lower_keys[key]])
+            return ""  # avoid dumping dict repr into input
+
+        # Lists/Tuples — join simple items
+        if isinstance(value, (list, tuple)):
+            items = [coerce_text(v, kind) for v in value]
+            items = [i for i in items if i]
+            return ", ".join(items)
+
+        # Fallback
+        try:
+            return str(value)
+        except Exception:
+            return ""
+
+    @app.template_filter("safe_str")
+    def safe_str(value: Any) -> str:
+        """
+        Safer stringification for inputs — returns '' for dicts/lists rather than
+        dumping Python repr into the UI.
+        """
+        if value is None:
+            return ""
+        if isinstance(value, (dict, list, tuple, set)):
+            return ""
+        return str(value)
+
     # ✅ Final explicit bindings (useful if decorators are bypassed in some contexts)
     app.jinja_env.filters["currency"] = currency
     app.jinja_env.filters["int_comma"] = int_comma
@@ -179,3 +352,11 @@ def register_custom_filters(app):
     app.jinja_env.filters["format_date_human"] = format_date_human
     app.jinja_env.filters["truncate_text"] = truncate_text
     app.jinja_env.filters["highlight_keywords"] = highlight_keywords
+
+    # New explicit bindings
+    app.jinja_env.filters["format"] = _format_safe  # override built-in safely
+    app.jinja_env.filters["money"] = money
+    app.jinja_env.filters["address_join"] = address_join
+    app.jinja_env.filters["deep_get"] = deep_get
+    app.jinja_env.filters["coerce_text"] = coerce_text
+    app.jinja_env.filters["safe_str"] = safe_str

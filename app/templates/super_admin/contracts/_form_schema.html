@@ -6,6 +6,22 @@
    - inline errors: pass a dict `errors` mapping full paths -> message
 #}
 
+{# ---------- Path Aliases (bridge between schema paths and prefill keys) ---------- #}
+{% set _ALIASES = {
+  'agent.phone':        ['agent.contact_phone','agent.contact.phone','issuer_contact.phone','issuer.phone','company.phone'],
+  'agent.email':        ['agent.contact_email','agent.contact.email','issuer_contact.email','issuer.email','company.email'],
+  'agent.website':      ['issuer_contact.website','issuer.website','company.website'],
+  'agent.psra_licence': ['agent.psra','agent.licence','agent.licence_no','agent.psra_number',
+                         'issuer_license.number','issuer_license.psra_number','issuer_license.licence_number','issuer_license.license_number'],
+  'agent.legal_name':   ['issuer_name','company.legal_name','company.name','agent.legal'],
+  'agent.trading_as':   ['agent.trade_name','company.trading_name','issuer_trading_name'],
+  'agent.business_address': ['issuer_address.formatted','issuer_address','company.address.formatted','company.address',
+                             'company.address_line1'],
+
+  'client.display_name':     ['client.name','client.legal_name','client.display'],
+  'client.postal_address':   ['client.address.formatted','client.address','client.address_line1','client.business_address']
+} %}
+
 {%- macro _err(errors, path) -%}
   {%- if errors and errors.get(path) -%}
     <div class="invalid-feedback d-block">{{ errors.get(path) }}</div>
@@ -13,11 +29,45 @@
 {%- endmacro -%}
 
 {%- macro _value_for(values, dotted) -%}
-  {%- set cur = values -%}
-  {%- for seg in dotted.split('.') -%}
-    {%- set cur = (cur.get(seg) if cur) -%}
-  {%- endfor -%}
-  {{- cur -}}
+  {# Prefer posted form value (sticky after validation) #}
+  {%- set _post = request.form.get('fs__' ~ dotted) -%}
+  {%- if _post is not none -%}
+    {{- _post -}}
+  {%- else -%}
+    {# 1) Flat exact match #}
+    {%- if values is mapping and dotted in values and values[dotted] is not none -%}
+      {{- values[dotted] -}}
+    {%- else -%}
+      {# 2) Alias match without using break (compat): pick first non-null via namespace #}
+      {%- set ns = namespace(val=None) -%}
+      {%- set _aliases = _ALIASES.get(dotted, []) -%}
+      {%- for a in _aliases -%}
+        {%- if ns.val is none -%}
+          {# flat alias #}
+          {%- if values is mapping and a in values and values[a] is not none -%}
+            {%- set ns.val = values[a] -%}
+          {%- else -%}
+            {# deep alias traversal a.b.c in nested dict #}
+            {%- set cur = values -%}
+            {%- for seg in a.split('.') -%}
+              {%- set cur = (cur.get(seg) if cur) -%}
+            {%- endfor -%}
+            {%- if cur is not none -%}{%- set ns.val = cur -%}{%- endif -%}
+          {%- endif -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- if ns.val is not none -%}
+        {{- ns.val -}}
+      {%- else -%}
+        {# 3) Deep exact match dotted path #}
+        {%- set cur = values -%}
+        {%- for seg in dotted.split('.') -%}
+          {%- set cur = (cur.get(seg) if cur) -%}
+        {%- endfor -%}
+        {{- cur or '' -}}
+      {%- endif -%}
+    {%- endif -%}
+  {%- endif -%}
 {%- endmacro -%}
 
 {# ---------------- Field ---------------- #}
@@ -44,6 +94,7 @@
 
     {% elif typ == 'select' %}
       {% set opts = f.options or [] %}
+      {% set current = request.form.get(input_name, (val or '')) %}
       <select
         class="form-select{% if errors and errors.get(path) %} is-invalid{% endif %}"
         id="{{ input_name }}"
@@ -51,12 +102,21 @@
         {% if required %}required{% endif %}
       >
         {% for opt in opts %}
-          <option value="{{ opt }}" {% if val == opt %}selected{% endif %}>{{ opt }}</option>
+          {% if opt is mapping %}
+            {% set ov = opt.get('value', '') %}
+            {% set ol = opt.get('label', ov) %}
+          {% else %}
+            {% set ov = opt %}
+            {% set ol = opt %}
+          {% endif %}
+          <option value="{{ ov }}" {{ 'selected' if (current|string) == (ov|string) else '' }}>{{ ol }}</option>
         {% endfor %}
       </select>
 
     {% elif typ == 'checkbox' %}
-      {% set checked = val in [True, 'true', 'on', '1', 1] %}
+      {# On POST, absence in form means unchecked; otherwise use default val #}
+      {% set is_post = (request.method|upper == 'POST') %}
+      {% set checked = (input_name in request.form) if is_post else (val in [True, 'true', 'on', '1', 1]) %}
       <div class="form-check form-switch">
         <input
           class="form-check-input{% if errors and errors.get(path) %} is-invalid{% endif %}"
@@ -77,14 +137,13 @@
         {% if typ == 'money' %}step="0.01"{% elif typ == 'number' %}step="{{ f.step or '1' }}"{% endif %}
         {% if f.min is not none %}min="{{ f.min }}"{% endif %}
         {% if f.max is not none %}max="{{ f.max }}"{% endif %}
-        value="{{ (val or '') | e }}"
+        value="{{ request.form.get(input_name, (val or '')) | e }}"
         {% if required %}required{% endif %}
       >
       {% if f.help %}<div class="form-text">{{ f.help }}</div>{% endif %}
       {{ _err(errors, path) }}
     {% endif %}
 
-    {# for select/checkbox/textarea show error beneath too #}
     {% if typ in ['select','checkbox','textarea'] %}
       {{ _err(errors, path) }}
     {% endif %}
@@ -127,7 +186,8 @@
                 {% set ctyp = (col.type or 'text')|lower %}
                 {% set name = base ~ '__' ~ i ~ '__' ~ col.path %}
                 {% set full = tpath ~ '[' ~ i ~ '].' ~ col.path %}
-                {% set val = row.get(col.path) if row else '' %}
+                {% set posted = request.form.get(name) %}
+                {% set val = (posted if posted is not none else (row.get(col.path) if row else '')) %}
                 <td>
                   {% if ctyp == 'textarea' %}
                     <textarea class="form-control form-control-sm{% if errors and errors.get(full) %} is-invalid{% endif %}"
@@ -210,3 +270,4 @@
     </div>
   {% endfor %}
 {%- endmacro %}
+

@@ -19,8 +19,7 @@ class Client(db.Model):
     
     # 🔧 Core Information
     name = db.Column(db.String(120), nullable=False)
-    property_name = db.Column(db.String(150))  # NEW
-    # ✅ New granular address fields (kept legacy 'address' too)
+    property_name = db.Column(db.String(150))
     address = db.Column(db.String(250))
     address_line1 = db.Column(db.String(250))
     address_line2 = db.Column(db.String(250))
@@ -35,14 +34,14 @@ class Client(db.Model):
     client_type = db.Column(db.String(50))
     contract_value = db.Column(db.Numeric(10, 2), default=0.0)
 
-    # ➕ Units breakdown (auto-summed into number_of_units in the UI)
+    # ➕ Units breakdown
     units_apartments = db.Column(db.Integer, default=0)
     units_houses = db.Column(db.Integer, default=0)
     units_duplexes = db.Column(db.Integer, default=0)
     units_commercial = db.Column(db.Integer, default=0)
 
     # 📅 Governance Dates
-    financial_year_end = db.Column(db.String(5), nullable=True)  # "DD/MM"
+    financial_year_end = db.Column(db.String(5), nullable=True)
     last_agm_date = db.Column(db.Date, nullable=True)
     agm_completed = db.Column(db.Boolean, default=False)
 
@@ -56,7 +55,7 @@ class Client(db.Model):
 
     # 🛡️ Legal & Compliance
     transfer_of_common_area = db.Column(db.Boolean, default=False)
-    transfer_of_common_area_date = db.Column(db.Date)  # NEW
+    transfer_of_common_area_date = db.Column(db.Date)
     deed_of_covenants = db.Column(db.String(250))
     data_protection_compliance = db.Column(db.String(50))
     consent_to_communicate = db.Column(db.Boolean, default=True)
@@ -68,9 +67,25 @@ class Client(db.Model):
     min_directors = db.Column(db.Integer)
     max_directors = db.Column(db.Integer)
     number_of_blocks = db.Column(db.Integer)
-    block_names = db.Column(db.String(300))           # comma-separated, e.g. "A,B,C"
-    cores_per_block = db.Column(db.String(300))       # "2,2,2" or single value
-    apartments_per_block = db.Column(db.String(300))  # "24,24,18" or single value
+    block_names = db.Column(db.String(300))
+    cores_per_block = db.Column(db.String(300))
+    apartments_per_block = db.Column(db.String(300))
+
+    # ⭐ Relationship: Blocks
+    blocks = db.relationship(
+        "Block",
+        back_populates="client",
+        cascade="all, delete-orphan",
+        lazy="dynamic"
+    )
+
+    # ⭐ **REQUIRED FIX — Relationship: Units**
+    units = db.relationship(
+        "Unit",
+        back_populates="client",
+        cascade="all, delete-orphan",
+        lazy="dynamic"
+    )
 
     # 👤 Assigned Users
     assigned_pm_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
@@ -90,8 +105,7 @@ class Client(db.Model):
     ai_valuation_analysis = db.Column(db.Text)
     ai_insurance_trend_flag = db.Column(db.Text)
 
-    # 📎 Contract & Document Parsing (AI Phase 1)
-    # (Uploads live in Document via linked_client_id; keeping filename for legacy compatibility)
+    # 📎 Contract & Document Parsing
     document_filename = db.Column(db.String(255))
     ai_parsed_contract_terms = db.Column(db.Text)
     ai_governance_summary = db.Column(db.Text)
@@ -103,7 +117,7 @@ class Client(db.Model):
     ai_source_type = db.Column(db.String(50))
     is_ai_processed = db.Column(db.Boolean, default=False)
 
-    # 🧠 GAR Intelligence (Phase 2+)
+    # 🧠 GAR Intelligence
     ai_governance_score = db.Column(db.Float, nullable=True)
     ai_compliance_index = db.Column(db.Float, nullable=True)
     ai_health_index = db.Column(db.Float, nullable=True)
@@ -113,17 +127,17 @@ class Client(db.Model):
     ai_risk_level = db.Column(db.String(50), nullable=True)
     is_gar_monitored = db.Column(db.Boolean, default=True)
 
-    # 💬 GAR Chat & Feedback
+    # 💬 GAR Chat
     gar_chat_ready = db.Column(db.Boolean, default=False)
     gar_feedback = db.Column(db.Text, nullable=True)
     gar_last_message_at = db.Column(db.DateTime, nullable=True)
-    gar_resolution_status = db.Column(db.String(50), default='Open')  # Open, Resolved, Escalated
+    gar_resolution_status = db.Column(db.String(50), default='Open')
 
-    # 🧩 JSON-Compatible Fields (API & AI)
+    # 🧩 JSON Fields
     ownership_types = db.Column(db.JSON, nullable=True)
     ai_key_clauses = db.Column(db.JSON, nullable=True)
 
-    # 🏷️ Tags / Classification
+    # 🏷️ CAPEX
     tags = db.Column(db.String(255), nullable=True)
     capex_profile = db.Column(JSONB, nullable=True)
     capex_status = db.Column(db.String(50), nullable=False, default='not_created', server_default='not_created')
@@ -135,11 +149,10 @@ class Client(db.Model):
 
     ai_reviewer = db.relationship('User', foreign_keys=[ai_last_reviewed_by])
 
-    # 🔗 Governance Config Reference
+    # Governance Config
     country_config_id = db.Column(db.Integer, db.ForeignKey('country_client_config.id'), nullable=True)
     country_config = db.relationship('CountryClientConfig', backref='linked_clients')
 
-    # Optional: client code (used by UI preview/generator)
     client_code = db.Column(db.String(50), unique=True, index=True)
 
     def __repr__(self):

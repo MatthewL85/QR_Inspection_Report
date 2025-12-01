@@ -1,0 +1,113 @@
+{% extends "layouts/super_admin_base.html" %}
+{% from "macros/form_macros.html" import render_field %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+  <div class="row">
+    <div class="col-12 col-xl-10">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <h4 class="mb-0">
+              {{ 'New Contract' if mode == 'create' else 'Edit Contract' }}
+            </h4>
+            <div class="d-flex gap-2">
+              <a href="{{ url_for('super_admin_contracts.in_progress') }}" class="btn btn-sm btn-light">← In-Progress</a>
+              <a href="{{ url_for('super_admin.dashboard') }}" class="btn btn-sm btn-light">Dashboard</a>
+            </div>
+          </div>
+
+          <form method="post" class="mt-3">
+            {{ form.csrf_token }}
+            {{ render_field(form.company_id) }}
+
+            {% if contract %}
+              <div class="alert alert-info py-2 px-3 mb-3">
+                <strong>Status:</strong> {{ contract.status.value }}
+                {% if not contract.is_editable %}
+                  <span class="ms-2 text-danger">(Read-only)</span>
+                {% endif %}
+              </div>
+            {% endif %}
+
+            <div class="row g-3">
+              <div class="col-md-8">{{ render_field(form.contract_title) }}</div>
+              <div class="col-md-4">{{ render_field(form.client_id) }}</div>
+
+              <div class="col-md-4">{{ render_field(form.start_date) }}</div>
+              <div class="col-md-4">{{ render_field(form.end_date) }}</div>
+              <div class="col-md-4">{{ render_field(form.currency) }}</div>
+
+              <div class="col-md-4">
+                {{ render_field(form.contract_value) }}
+                <small class="text-muted">Shown as €12,000 (no cents) in UI formatting.</small>
+              </div>
+              <div class="col-md-4">{{ render_field(form.ppm_schedule) }}</div>
+
+              <div class="col-md-4">{{ render_field(form.primary_contact_name) }}</div>
+              <div class="col-md-4">{{ render_field(form.primary_contact_email) }}</div>
+              <div class="col-md-4">{{ render_field(form.primary_contact_phone) }}</div>
+            </div>
+
+            <div class="d-flex justify-content-end mt-4">
+              <button class="btn btn-primary">{{ 'Create Draft' if mode=='create' else 'Save Changes' }}</button>
+            </div>
+          </form>
+
+          {% if mode == 'create' %}
+          <hr class="my-4">
+          <div class="d-flex align-items-center gap-2">
+            <label class="form-label mb-0">Auto-fill from Company</label>
+            <select id="companySelector" class="form-select" style="max-width:420px">
+              <option value="{{ company.id if company else '' }}" selected>
+                {{ company.legal_name if company else 'Select company…' }}
+              </option>
+              <!-- Optionally list others here if needed -->
+            </select>
+            <button id="btnRefill" class="btn btn-outline-secondary">Re-apply</button>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+
+    {% if contract and contract.profile_snapshot %}
+    <div class="col-12 col-xl-2">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h6 class="mb-2">Profile Snapshot</h6>
+          <pre class="small text-muted" style="white-space:pre-wrap">{{ contract.profile_snapshot | tojson(indent=2) }}</pre>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  // Lightweight re-fill: pulls from /api/company/{id}/profile-summary and writes form inputs
+  document.getElementById("btnRefill")?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    const companyId = document.getElementById("companySelector")?.value;
+    if (!companyId) return;
+    const res = await fetch(`/super-admin/contracts/api/company/${companyId}/profile-summary`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const map = {
+      contract_title: "id_contract_title",
+      currency: "id_currency",
+      ppm_schedule: "id_ppm_schedule",
+      primary_contact_name: "id_primary_contact_name",
+      primary_contact_email: "id_primary_contact_email",
+      primary_contact_phone: "id_primary_contact_phone",
+    };
+    Object.entries(map).forEach(([k, id]) => {
+      const el = document.getElementById(id);
+      if (el && data[k] !== undefined && (el.value === "" || el.value === null)) {
+        el.value = data[k];
+      }
+    });
+  });
+</script>
+{% endblock %}

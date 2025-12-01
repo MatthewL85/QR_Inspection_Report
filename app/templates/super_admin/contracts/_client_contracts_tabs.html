@@ -1,0 +1,187 @@
+{# Reusable card showing a client's contracts split by status.
+   Expects: client (with client.contracts relationship)
+   Optional: currency() filter; falls back to no-cents formatting with thousands separator.
+#}
+<div class="card border-0 shadow-sm">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <h6 class="mb-0">Contracts</h6>
+    <div class="d-flex gap-2">
+      {# Prefer start screen; fallbacks won’t 500 if missing #}
+      {% if 'super_admin_contract_start.start' in current_app.view_functions %}
+        <a href="{{ url_for('super_admin_contract_start.start', client_id=client.id) }}"
+           class="btn btn-sm btn-success">➕ Start New</a>
+      {% elif 'super_admin_simple_contracts.new_contract' in current_app.view_functions %}
+        <a href="{{ url_for('super_admin_simple_contracts.new_contract', client_id=client.id) }}"
+           class="btn btn-sm btn-success">➕ Start New</a>
+      {% else %}
+        <a href="{{ url_for('super_admin_contracts.renew', client_id=client.id, step=1) }}"
+           class="btn btn-sm btn-success">➕ Start New</a>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ---- helpers (safe fallback) ---- #}
+  {% macro currency_no_cents(amount, symbol='€') -%}
+    {{ symbol }}{{ '{:,.0f}'.format(amount or 0) }}
+  {%- endmacro %}
+
+  {% set items = client.contracts or [] %}
+
+  {% set drafts = [] %}
+  {% set inprog = [] %}
+  {% set completed = [] %}
+
+  {# Partition by sign_status (safe defaults) #}
+  {% for c in items %}
+    {% set status = (c.sign_status or 'Draft') %}
+    {% if status in ['Draft', 'Sent', 'Viewed', 'In Review'] %}
+      {% if status == 'Draft' %}
+        {% set _ = drafts.append(c) %}
+      {% else %}
+        {% set _ = inprog.append(c) %}
+      {% endif %}
+    {% else %}
+      {% set _ = completed.append(c) %}
+    {% endif %}
+  {% endfor %}
+
+  <div class="card-body pt-2">
+    <ul class="nav nav-pills mb-3" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-{{ client.id }}-working" type="button" role="tab">
+          Working (Draft/In-Progress)
+          <span class="badge bg-secondary ms-1">{{ (drafts|length) + (inprog|length) }}</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-{{ client.id }}-completed" type="button" role="tab">
+          Completed/Archived
+          <span class="badge bg-success ms-1">{{ completed|length }}</span>
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+      <div id="tab-{{ client.id }}-working" class="tab-pane fade show active" role="tabpanel">
+        {% set working = drafts + inprog %}
+        {% if working %}
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Status</th>
+                  <th>Term</th>
+                  <th>Value</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in working %}
+                <tr>
+                  <td>{{ c.contract_title or ('Contract #' ~ c.id) }}</td>
+                  <td>
+                    {% set s = c.sign_status or 'Draft' %}
+                    <span class="badge
+                      {% if s=='Draft' %}bg-secondary
+                      {% elif s in ['Sent','Viewed'] %}bg-info
+                      {% elif s=='Signed' %}bg-success
+                      {% elif s=='Declined' %}bg-danger
+                      {% elif s=='Expired' %}bg-warning text-dark
+                      {% else %}bg-light text-dark{% endif %}">
+                      {{ s }}
+                    </span>
+                  </td>
+                  <td>{{ c.start_date or '—' }} → {{ c.end_date or '—' }}</td>
+                  <td>
+                    {% if c.contract_value %}
+                      {% set sym = (c.currency == 'GBP') and '£' or (c.currency or '€') %}
+                      {% if 'currency' in environment.filters %}
+                        {{ c.contract_value | currency(sym) }}
+                      {% else %}
+                        {{ currency_no_cents(c.contract_value, sym) }}
+                      {% endif %}
+                    {% else %}—{% endif %}
+                  </td>
+                  <td class="text-end">
+                    <div class="btn-group">
+                      <a class="btn btn-sm btn-outline-primary"
+                         href="{{ url_for('super_admin_contracts.renew', client_id=client.id, step=3, contract_id=c.id) }}">
+                        {% if (c.sign_status or 'Draft') == 'Draft' %}Resume Draft{% else %}Open{% endif %}
+                      </a>
+                      {% if c.generated_pdf_path %}
+                        <a class="btn btn-sm btn-outline-secondary"
+                           href="{{ url_for('static', filename=c.generated_pdf_path) }}" target="_blank">PDF</a>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-muted small">No working contracts.</div>
+        {% endif %}
+      </div>
+
+      <div id="tab-{{ client.id }}-completed" class="tab-pane fade" role="tabpanel">
+        {% if completed %}
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Status</th>
+                  <th>Term</th>
+                  <th>Value</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in completed %}
+                <tr>
+                  <td>{{ c.contract_title or ('Contract #' ~ c.id) }}</td>
+                  <td>
+                    {% set s = c.sign_status or 'Signed' %}
+                    <span class="badge
+                      {% if s=='Signed' %}bg-success
+                      {% elif s=='Declined' %}bg-danger
+                      {% elif s=='Expired' %}bg-warning text-dark
+                      {% else %}bg-light text-dark{% endif %}">
+                      {{ s }}
+                    </span>
+                  </td>
+                  <td>{{ c.start_date or '—' }} → {{ c.end_date or '—' }}</td>
+                  <td>
+                    {% if c.contract_value %}
+                      {% set sym = (c.currency == 'GBP') and '£' or (c.currency or '€') %}
+                      {% if 'currency' in environment.filters %}
+                        {{ c.contract_value | currency(sym) }}
+                      {% else %}
+                        {{ currency_no_cents(c.contract_value, sym) }}
+                      {% endif %}
+                    {% else %}—{% endif %}
+                  </td>
+                  <td class="text-end">
+                    <div class="btn-group">
+                      <a class="btn btn-sm btn-outline-primary"
+                         href="{{ url_for('super_admin_contracts.renew', client_id=client.id, step=3, contract_id=c.id) }}">Open</a>
+                      {% if c.generated_pdf_path %}
+                        <a class="btn btn-sm btn-outline-secondary"
+                           href="{{ url_for('static', filename=c.generated_pdf_path) }}" target="_blank">PDF</a>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-muted small">No completed/archived contracts.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>

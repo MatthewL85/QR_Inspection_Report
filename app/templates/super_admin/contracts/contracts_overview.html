@@ -1,19 +1,52 @@
-{# 📁 templates/super_admin/contracts/contracts_overview.html #}
 {% extends "layouts/super_admin_base.html" %}
 
 {% block page_content %}
 <div class="container-fluid py-4">
+
+  {# ---- helpers (safe currency fallback, no cents) ---- #}
+  {% macro currency_no_cents(amount, symbol='€') -%}
+    {{ symbol }}{{ '{:,.0f}'.format(amount or 0) }}
+  {%- endmacro %}
+
   <div class="row">
     <div class="col-12">
       <div class="card shadow-sm border-0">
         <div class="card-body">
           <div class="d-flex align-items-center justify-content-between">
             <h4 class="mb-0">Contracts Overview</h4>
-            {% if 'super_admin.dashboard' in current_app.view_functions %}
-            <a href="{{ url_for('super_admin.dashboard') }}" class="btn btn-sm btn-light">
-              ← Back to Dashboard
-            </a>
-            {% endif %}
+            <div class="d-flex align-items-center">
+              {% if 'super_admin.dashboard' in current_app.view_functions %}
+              <a href="{{ url_for('super_admin.dashboard') }}" class="btn btn-sm btn-light">
+                ← Back to Dashboard
+              </a>
+              {% endif %}
+
+              {# ✅ Start New Contract: prefer start screen if available, else fallback #}
+              {% set filtered_client_id = request.args.get('client_id') %}
+              {% if 'super_admin_contract_start.start' in current_app.view_functions %}
+                {% if filtered_client_id %}
+                  <a href="{{ url_for('super_admin_contract_start.start', client_id=filtered_client_id) }}"
+                     class="btn btn-sm btn-success ms-2">➕ Start New Contract</a>
+                {% else %}
+                  <a href="{{ url_for('super_admin_contract_start.start') }}"
+                     class="btn btn-sm btn-success ms-2">➕ Start New Contract</a>
+                {% endif %}
+              {% elif 'super_admin_simple_contracts.new_contract' in current_app.view_functions %}
+                {# fallback: quick draft flow #}
+                {% if filtered_client_id %}
+                  <a href="{{ url_for('super_admin_simple_contracts.new_contract', client_id=filtered_client_id) }}"
+                     class="btn btn-sm btn-success ms-2">➕ Start New Contract</a>
+                {% else %}
+                  <a href="{{ url_for('super_admin_simple_contracts.new_contract') }}"
+                     class="btn btn-sm btn-success ms-2">➕ Start New Contract</a>
+                {% endif %}
+              {% else %}
+                {# last-resort fallback: wizard step 1 (needs client_id, so omit param here) #}
+                <a href="{{ url_for('super_admin_contracts.renew', step=1, client_id=filtered_client_id) if filtered_client_id else url_for('super_admin_contracts.renew', step=1, client_id=0) }}"
+                   class="btn btn-sm btn-success ms-2">➕ Start New Contract</a>
+              {% endif %}
+              {# ✅ END new button #}
+            </div>
           </div>
 
           {# ---- Tabs ---- #}
@@ -263,5 +296,243 @@
       </div>
     </div>
   </div>
+
+  {# ✅ Unified drill-down table with filters + Archive button on SAME LINE #}
+  <div class="row mt-3">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
+          <h6 class="mb-0">All Contracts</h6>
+
+          <div class="d-flex align-items-center gap-2 flex-wrap flex-md-nowrap">
+            <form method="get" class="d-flex gap-2 contracts-filters flex-wrap flex-md-nowrap">
+              <input type="hidden" name="tab" value="{{ request.args.get('tab', '') }}">
+              <input type="text" class="form-control form-control-sm" name="q"
+                     value="{{ request.args.get('q','') }}" placeholder="Search title/client…">
+              <input type="text" class="form-control form-control-sm" name="client_id"
+                     value="{{ request.args.get('client_id','') }}" placeholder="Client ID">
+              <select class="form-select form-select-sm" name="status" aria-label="Filter by status">
+                {% set s = request.args.get('status','') %}
+                <option value="" {{ s=='' and 'selected' or '' }}>All statuses</option>
+                {% for opt in ['Draft','Sent','Viewed','Signed','Declined','Expired'] %}
+                  <option value="{{ opt }}" {{ s==opt and 'selected' or '' }}>{{ opt }}</option>
+                {% endfor %}
+                <option value="Archived" {{ s=='Archived' and 'selected' or '' }}>Archived</option>
+              </select>
+              {% set inc = request.args.get('include_archived') %}
+              <div class="form-check d-flex align-items-center ms-1">
+                <input class="form-check-input me-1" type="checkbox" id="incArc" name="include_archived" value="1"
+                       {% if inc in ['1','true','True'] %}checked{% endif %}>
+                <label for="incArc" class="small">Include archived</label>
+              </div>
+              <button class="btn btn-sm btn-primary" type="submit">Filter</button>
+              <a class="btn btn-sm btn-outline-secondary"
+                 href="{{ url_for('super_admin_contracts.contracts_overview') }}">Reset</a>
+            </form>
+
+            {# ✅ Moved here: Archive Selected, stays disabled until checkboxes are checked #}
+            <button type="button" id="bulkArchiveBtn"
+                    class="btn btn-outline-danger btn-sm flex-shrink-0"
+                    data-bs-toggle="modal" data-bs-target="#archiveModal"
+                    data-bulk="1" disabled>
+              Archive Selected
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body">
+
+          {# (kept for backwards-compatibility but hidden since button is now in header) #}
+          <div class="d-flex justify-content-end mb-2 d-none">
+            <button type="button" class="btn btn-outline-danger btn-sm">Archive Selected</button>
+          </div>
+
+          {% set dataset = all_contracts if all_contracts is defined and all_contracts is not none else [] %}
+          {% if not dataset %}
+            {% set dataset = [] %}
+            {% for L in [expired, expiring_30, expiring_60, expiring_90, pending, signed, declined, drafts, expired_sig] if L is defined and L %}
+              {% for c in L %}{% set _ = dataset.append(c) %}{% endfor %}
+            {% endfor %}
+          {% endif %}
+
+          {% if dataset %}
+            <form id="bulkArchiveForm" method="post" action="{{ url_for('super_admin_contracts.contracts_archive_bulk') }}">
+              {% if csrf_token is defined %}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              {% endif %}
+
+              <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                  <thead>
+                    <tr>
+                      <th class="text-center" style="width:36px;">
+                        <input type="checkbox" class="form-check-input" id="selectAll">
+                      </th>
+                      <th>Client</th>
+                      <th>Title</th>
+                      <th>Status</th>
+                      <th>Term</th>
+                      <th>Value</th>
+                      <th class="text-end">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for c in dataset %}
+                    {% set srow = c.sign_status or 'Draft' %}
+                    <tr class="{% if srow=='Archived' %}opacity-50{% endif %}">
+                      <td class="text-center">
+                        {% if srow != 'Archived' %}
+                          <input type="checkbox" class="form-check-input row-check" name="ids" value="{{ c.id }}">
+                        {% endif %}
+                      </td>
+                      <td>{{ c.client.name if c.client else '—' }}</td>
+                      <td>{{ c.contract_title or c.title or ('Contract #' ~ c.id) }}</td>
+                      <td>
+                        {% set s = c.sign_status or 'Draft' %}
+                        <span class="badge
+                          {% if s=='Draft' %}bg-secondary
+                          {% elif s in ['Sent','Viewed'] %}bg-info
+                          {% elif s=='Signed' %}bg-success
+                          {% elif s=='Declined' %}bg-danger
+                          {% elif s=='Expired' %}bg-warning text-dark
+                          {% elif s=='Archived' %}bg-light text-dark
+                          {% else %}bg-light text-dark{% endif %}">
+                          {{ s }}
+                        </span>
+                      </td>
+                      <td>{{ c.start_date or '—' }} → {{ c.end_date or '—' }}</td>
+                      <td>
+                        {% if c.contract_value %}
+                          {% set sym = (c.currency == 'GBP') and '£' or (c.currency or '€') %}
+                          {% if environment is defined and 'currency' in environment.filters %}
+                            {{ c.contract_value | currency(sym) }}
+                          {% else %}
+                            {{ currency_no_cents(c.contract_value, sym) }}
+                          {% endif %}
+                        {% else %}—{% endif %}
+                      </td>
+                      <td class="text-end">
+                        <div class="btn-group">
+                          <a class="btn btn-sm btn-outline-primary"
+                             href="{{ url_for('super_admin_contracts.renew', client_id=c.client_id, step=3, contract_id=c.id) }}">Open</a>
+                          {% if c.generated_pdf_path %}
+                            <a class="btn btn-sm btn-outline-secondary"
+                               href="{{ url_for('static', filename=c.generated_pdf_path) }}" target="_blank">PDF</a>
+                          {% endif %}
+                          {% if srow != 'Archived' %}
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#archiveModal"
+                                    data-id="{{ c.id }}"
+                                    data-title="{{ c.contract_title or c.title or ('Contract #' ~ c.id) }}">
+                              Archive
+                            </button>
+                          {% else %}
+                            <span class="text-muted small ms-2">—</span>
+                          {% endif %}
+                        </div>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </form>
+          {% else %}
+            <div class="text-muted">No contracts match the current filters.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ✅ Archive confirmation modal (single & bulk) #}
+  <div class="modal fade" id="archiveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form method="post" id="archiveActionForm">
+        {% if csrf_token is defined %}
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% endif %}
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Archive contract(s)</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-2">This will hide the contract(s) from active lists and write an audit entry.</p>
+            <div class="mb-2">
+              <label class="form-label">Reason (optional)</label>
+              <input type="text" class="form-control" name="reason" placeholder="Duplicate draft">
+            </div>
+            <div class="alert alert-warning mb-0 small">
+              Action is reversible by Super Admin (unarchive). No hard delete is performed.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-danger">Archive</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# JS keeps button enabled/disabled and wires modal #}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const selectAll  = document.getElementById('selectAll');
+      const bulkBtn    = document.getElementById('bulkArchiveBtn');
+      const modalEl    = document.getElementById('archiveModal');
+      const actionForm = document.getElementById('archiveActionForm');
+
+      const rowChecks = () => Array.from(document.querySelectorAll('.row-check'));
+      const anyChecked = () => rowChecks().some(cb => cb.checked);
+
+      if (selectAll) {
+        selectAll.addEventListener('change', () => {
+          rowChecks().forEach(cb => { if (!cb.disabled) cb.checked = selectAll.checked; });
+          if (bulkBtn) bulkBtn.disabled = !anyChecked();
+        });
+      }
+      document.addEventListener('change', (e) => {
+        if (e.target.classList.contains('row-check')) {
+          if (bulkBtn) bulkBtn.disabled = !anyChecked();
+        }
+      });
+
+      if (modalEl) {
+        modalEl.addEventListener('show.bs.modal', function (event) {
+          const btn = event.relatedTarget;
+          const isBulk = btn?.dataset?.bulk === "1";
+
+          Array.from(actionForm.querySelectorAll('input[name="ids"]')).forEach(n => n.remove());
+
+          if (isBulk) {
+            actionForm.action = "{{ url_for('super_admin_contracts.contracts_archive_bulk') }}";
+            rowChecks().filter(cb => cb.checked).forEach(cb => {
+              const input = document.createElement('input');
+              input.type = 'hidden';
+              input.name = 'ids';
+              input.value = cb.value;
+              actionForm.appendChild(input);
+            });
+          } else {
+            const id = btn.getAttribute('data-id');
+            actionForm.action = "{{ url_for('super_admin_contracts.contracts_archive_single', contract_id=0) }}".replace('/0/', '/' + id + '/');
+          }
+        });
+      }
+    });
+  </script>
+
+  {# Scoped CSS keeps controls on one line on md+ #}
+  <style>
+    .contracts-filters .form-control,
+    .contracts-filters .form-select { min-width: 170px; }
+    .contracts-filters .btn { white-space: nowrap; min-width: 84px; }
+    .contracts-filters .form-check { white-space: nowrap; }
+  </style>
+
 </div>
 {% endblock %}

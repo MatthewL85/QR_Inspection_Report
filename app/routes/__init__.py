@@ -2,11 +2,13 @@
 
 from app.routes.super_admin.dashboard import super_admin_bp
 from app.routes.onboarding import onboarding_bp
+from app.routes.unit import unit_bp
 
 def register_routes(app):
     app.register_blueprint(super_admin_bp)
     app.register_blueprint(super_admin_users_bp)
     app.register_blueprint(onboarding_bp)
+    app.register_blueprint(unit_bp)
     
 
     # Later you’ll add:

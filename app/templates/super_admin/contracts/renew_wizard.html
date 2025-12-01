@@ -87,6 +87,9 @@
             </div>
           {% endif %}
         </form>
+
+        {# 🔑 Bind each input named fs__<path> to its value from form_values (path → string). #}
+        {% include "super_admin/contracts/_bind_form_defaults.js.html" %}
       {% endif %}
 
       {# ---------------------- STEP 3: PREVIEW & SEND ----------------------- #}

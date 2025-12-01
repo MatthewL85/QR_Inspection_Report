@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from flask import render_template, abort
+from flask import render_template, abort, current_app
 from flask_login import login_required, current_user
 from sqlalchemy.orm import joinedload
 
@@ -39,10 +39,12 @@ def manage_clients():
     clients = q.order_by(Client.name.asc()).all()
 
     # Pass `today` for Jinja date math on contract_end_date
+    # PLUS: expose the Jinja environment as `env` so legacy templates using `env.filters` won't 500
     return render_template(
         'super_admin/client/manage_clients.html',
         clients=clients,
         today=date.today(),
+        env=current_app.jinja_env,   # ✅ add Jinja env for templates that reference `env.filters`
     )
 
 
@@ -69,4 +71,9 @@ def view_client(client_id: int):
     if getattr(current_user, "company_id", None) and client.company_id != current_user.company_id:
         abort(404)
 
-    return render_template('super_admin/client/view_client.html', client=client)
+    # Also pass `env` for templates that check `env.filters`
+    return render_template(
+        'super_admin/client/view_client.html',
+        client=client,
+        env=current_app.jinja_env,   # ✅ add Jinja env for templates that reference `env.filters`
+    )

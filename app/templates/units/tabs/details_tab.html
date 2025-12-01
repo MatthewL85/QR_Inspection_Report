@@ -1,0 +1,54 @@
+<div class="row">
+
+    <!-- Left Column -->
+    <div class="col-md-6">
+
+        <h6 class="text-uppercase text-secondary text-xs font-weight-bolder mb-3">Unit Information</h6>
+
+        <ul class="list-group mb-4">
+            <li class="list-group-item d-flex justify-content-between">
+                <span>Unit Label</span>
+                <span class="fw-bold">{{ unit.unit_label }}</span>
+            </li>
+
+            <li class="list-group-item d-flex justify-content-between">
+                <span>Category</span>
+                <span class="fw-bold">{{ unit.unit_category|capitalize }}</span>
+            </li>
+
+            <li class="list-group-item d-flex justify-content-between">
+                <span>Unit Type</span>
+                <span class="fw-bold">{{ unit.unit_type or 'N/A' }}</span>
+            </li>
+
+            <li class="list-group-item d-flex justify-content-between">
+                <span>Size (sqm)</span>
+                <span class="fw-bold">{{ unit.square_meters or 'N/A' }}</span>
+            </li>
+
+            <li class="list-group-item d-flex justify-content-between">
+                <span>Floor Number</span>
+                <span class="fw-bold">{{ unit.floor_number or 'N/A' }}</span>
+            </li>
+        </ul>
+
+    </div>
+
+    <!-- Right Column -->
+    <div class="col-md-6">
+
+        <h6 class="text-uppercase text-secondary text-xs font-weight-bolder mb-3">Address</h6>
+
+        <ul class="list-group">
+            <li class="list-group-item">{{ unit.address_line_1 }}</li>
+            {% if unit.address_line_2 %}
+            <li class="list-group-item">{{ unit.address_line_2 }}</li>
+            {% endif %}
+            <li class="list-group-item">{{ unit.town }}</li>
+            <li class="list-group-item">{{ unit.county_region }}</li>
+            <li class="list-group-item">{{ unit.postal_code }}</li>
+            <li class="list-group-item">{{ unit.country }}</li>
+        </ul>
+
+    </div>
+</div>

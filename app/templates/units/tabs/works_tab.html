@@ -1,0 +1,39 @@
+<h6 class="text-uppercase text-secondary text-xs font-weight-bolder mb-3">Work Orders</h6>
+
+{% if work_orders|length == 0 %}
+    <p class="text-sm text-muted">No work orders found for this unit.</p>
+{% else %}
+<div class="table-responsive">
+    <table class="table table-hover align-items-center mb-0">
+        <thead>
+            <tr>
+                <th>Reference</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Contractor</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for wo in work_orders %}
+            <tr>
+                <td>{{ wo.reference }}</td>
+                <td>{{ wo.work_type }}</td>
+
+                <td>
+                    {% if wo.status == "completed" %}
+                        <span class="badge bg-success">Completed</span>
+                    {% elif wo.status == "open" %}
+                        <span class="badge bg-warning text-dark">Open</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ wo.status|capitalize }}</span>
+                    {% endif %}
+                </td>
+
+                <td>{{ wo.contractor.company_name if wo.contractor else 'N/A' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}

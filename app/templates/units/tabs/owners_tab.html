@@ -1,0 +1,38 @@
+<h6 class="text-uppercase text-secondary text-xs font-weight-bolder mb-3">Owners</h6>
+
+{% if owners|length == 0 %}
+    <p class="text-sm text-muted">No owners linked to this unit.</p>
+{% else %}
+
+    <div class="table-responsive">
+        <table class="table table-hover align-items-center mb-0">
+            <thead>
+                <tr>
+                    <th>Owner Name</th>
+                    <th>Primary?</th>
+                    <th>Ownership Start</th>
+                    <th>Share Cert</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for link in owners %}
+                <tr>
+                    <td>{{ link.owner.full_name }}</td>
+                    <td>
+                        {% if link.is_primary_owner %}
+                            <span class="badge bg-success">Primary</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Secondary</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ link.ownership_start or 'N/A' }}</td>
+                    <td>{{ link.share_certificate_number or 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+
+{% endif %}

@@ -1,90 +1,235 @@
-# app/models/unit.py
+# app/models/members/unit.py
 
 from datetime import datetime
+from sqlalchemy.orm import validates
 from app.extensions import db
-from app.models.members.member import member_units
+from app.models.core.document import Document
+
+
+class Block(db.Model):
+    """
+    Physical block / building within a client (estate / development).
+
+    Shared across:
+      - Property Management (LogixPM)
+      - Works Logix (for asset locations)
+      - Members Logix (for owner communications)
+    """
+    __tablename__ = "blocks"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Hierarchy
+    client_id = db.Column(db.Integer, db.ForeignKey("clients.id", ondelete="CASCADE"), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
+
+    # Identity
+    name = db.Column(db.String(128), nullable=False)
+    code = db.Column(db.String(50), nullable=True)          # e.g. "Block A"
+    description = db.Column(db.Text, nullable=True)
+
+    # Meta
+    building_type = db.Column(db.String(50), nullable=True) # apartment, mixed-use, car-park, etc.
+    number_of_cores = db.Column(db.Integer, nullable=True)
+    number_of_floors = db.Column(db.Integer, nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    client = db.relationship("Client", back_populates="blocks")
+    company = db.relationship("Company", back_populates="blocks")
+    cores = db.relationship("Core", back_populates="block", cascade="all, delete-orphan", lazy="dynamic")
+    units = db.relationship("Unit", back_populates="block", lazy="dynamic")
+
+    def __repr__(self) -> str:
+        return f"<Block id={self.id} name={self.name} client_id={self.client_id}>"
+
+
+class Core(db.Model):
+    """
+    Vertical core within a block (stair / lift core).
+    """
+    __tablename__ = "cores"
+
+    id = db.Column(db.Integer, primary_key=True)
+    block_id = db.Column(db.Integer, db.ForeignKey("blocks.id", ondelete="CASCADE"), nullable=False)
+
+    name = db.Column(db.String(128), nullable=False)         # e.g. "Core 1"
+    code = db.Column(db.String(50), nullable=True)           # e.g. "Stair 1"
+    description = db.Column(db.Text, nullable=True)
+
+    lift_count = db.Column(db.Integer, nullable=True)
+    stair_count = db.Column(db.Integer, nullable=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    block = db.relationship("Block", back_populates="cores")
+    units = db.relationship("Unit", back_populates="core", lazy="dynamic")
+
+    def __repr__(self) -> str:
+        return f"<Core id={self.id} name={self.name} block_id={self.block_id}>"
+
 
 class Unit(db.Model):
-    __tablename__ = 'units'
+    """
+    Core Unit / Apartment / Commercial Unit model.
+
+    This is the central anchor for:
+      - Members Logix (owners / communications)
+      - Works Logix (work orders, inspections)
+      - Finance Logix (service charge, arrears)
+      - GAR (AI governance & lease intelligence)
+    """
+    __tablename__ = "units"
 
     id = db.Column(db.Integer, primary_key=True)
 
     # 🔗 Core Relationships
-    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
-    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey("clients.id", ondelete="CASCADE"), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
+
+    block_id = db.Column(db.Integer, db.ForeignKey("blocks.id", ondelete="SET NULL"), nullable=True)
+    core_id = db.Column(db.Integer, db.ForeignKey("cores.id", ondelete="SET NULL"), nullable=True)
+
+    # Optional parent/child, e.g. car-space linked to apartment
+    parent_unit_id = db.Column(db.Integer, db.ForeignKey("units.id", ondelete="SET NULL"), nullable=True)
 
     # 📌 Core Identifiers
-    unit_label = db.Column(db.String(50), nullable=False)  # A101, Apt 3B
-    unit_type = db.Column(db.String(50))                   # Residential, Commercial, Duplex, etc.
-    address_line_1 = db.Column(db.String(200))
-    postal_code = db.Column(db.String(20))
-    block_name = db.Column(db.String(100))
-    floor_number = db.Column(db.String(50))
-    square_meters = db.Column(db.Float)
+    unit_label = db.Column(db.String(50), nullable=False)     # A101, Apt 3B, Unit 4
+    unit_reference = db.Column(db.String(100), nullable=True) # external / legacy reference
+    unit_type = db.Column(db.String(50), nullable=True)       # Residential, Commercial, Duplex, Parking, etc.
+    unit_category = db.Column(db.String(50), nullable=True)   # e.g. "Apartment", "Retail", "Storage"
 
-    # 👥 Ownership & Occupancy
-    members = db.relationship('Member', secondary=member_units, back_populates='units')  # Legal owner(s)
+    address_line_1 = db.Column(db.String(200), nullable=True)
+    address_line_2 = db.Column(db.String(200), nullable=True)
+    town_city = db.Column(db.String(100), nullable=True)
+    county_region = db.Column(db.String(100), nullable=True)
+    postal_code = db.Column(db.String(20), nullable=True)
+    country = db.Column(db.String(100), nullable=True)
 
-    resident_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    resident = db.relationship("User", foreign_keys=[resident_id], backref="units_residing")
+    block_name = db.Column(db.String(100), nullable=True)     # denormalised helper for quick display
+    floor_number = db.Column(db.String(50), nullable=True)
+    square_meters = db.Column(db.Float, nullable=True)
+    bedrooms = db.Column(db.Integer, nullable=True)
+    bathrooms = db.Column(db.Integer, nullable=True)
 
-    tenant_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    tenant = db.relationship("User", foreign_keys=[tenant_id], backref="units_tenanted")
+    # Parking / storage linkage (optional)
+    parking_label = db.Column(db.String(50), nullable=True)
+    storage_label = db.Column(db.String(50), nullable=True)
 
-    occupancy_status = db.Column(db.String(50), default='unknown')  # owned, rented, vacant, under_construction
+    # 🔌 Utilities / meters (for future AI parsing & residents portal)
+    electricity_mprn = db.Column(db.String(50), nullable=True)
+    gas_mprn = db.Column(db.String(50), nullable=True)
+    water_meter_reference = db.Column(db.String(50), nullable=True)
+
+    # 📑 Occupancy & Status
+    occupancy_status = db.Column(db.String(50), default="unknown")  # owned, rented, vacant, under_construction
     is_occupied = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
     last_inspection_date = db.Column(db.DateTime, nullable=True)
-    notes = db.Column(db.Text)
+    notes = db.Column(db.Text, nullable=True)
 
-    # 💰 Financial Info
-    service_charge_scheme = db.Column(db.String(100))
-    service_charge_percent = db.Column(db.Float)
+    # -------------------------------
+    # 💰 Service Charge / Finance
+    # -------------------------------
+    service_charge_scheme = db.Column(db.String(100), nullable=True)
+    service_charge_percent = db.Column(db.Float, nullable=True)
     service_charge_amount = db.Column(db.Numeric(10, 2), default=0.00)
-    billing_frequency = db.Column(db.String(50))  # Monthly, Quarterly, Annually
-    financial_year_start = db.Column(db.Date)
-    financial_year_end = db.Column(db.Date)
+    billing_frequency = db.Column(db.String(50), nullable=True)  # Monthly, Quarterly, Annually
+    financial_year_start = db.Column(db.Date, nullable=True)
+    financial_year_end = db.Column(db.Date, nullable=True)
     currency = db.Column(db.String(10), default="EUR")
     financial_account_ref = db.Column(db.String(100), nullable=True)
 
+    # Optional finance integration hooks
+    finance_ledger_code = db.Column(db.String(100), nullable=True)
+    finance_external_ref = db.Column(db.String(100), nullable=True)
+
+    # -------------------------------
     # 📄 Lease Info
-    lease_start_date = db.Column(db.Date)
-    lease_end_date = db.Column(db.Date)
+    # -------------------------------
+    lease_start_date = db.Column(db.Date, nullable=True)
+    lease_end_date = db.Column(db.Date, nullable=True)
+    lease_term_years = db.Column(db.Float, nullable=True)
+    lease_reference = db.Column(db.String(100), nullable=True)
 
+    # -------------------------------
     # 🤖 AI / GAR Integration
-    document_filename = db.Column(db.String(255))
-    ai_summary = db.Column(db.Text)
-    ai_parsed_lease_terms = db.Column(db.Text)
-    ai_extracted_floorplan_info = db.Column(db.Text)
-    ai_utility_flag = db.Column(db.Text)
-    ai_key_clauses = db.Column(db.JSON)
-    ai_service_charge_risks = db.Column(db.Text)
-    ai_occupancy_type = db.Column(db.String(50))  # member-occupied / rented
-    ai_compliance_notes = db.Column(db.Text)
-    ai_source_type = db.Column(db.String(50))
-    ai_confidence_score = db.Column(db.Float)
-    ai_parsed_at = db.Column(db.DateTime)
-    parsed_by_ai_version = db.Column(db.String(50))
+    # -------------------------------
+    document_filename = db.Column(db.String(255), nullable=True)
+    ai_summary = db.Column(db.Text, nullable=True)
+    ai_parsed_lease_terms = db.Column(db.Text, nullable=True)
+    ai_extracted_floorplan_info = db.Column(db.Text, nullable=True)
+    ai_utility_flag = db.Column(db.Text, nullable=True)
+    ai_key_clauses = db.Column(db.JSON, nullable=True)
+    ai_service_charge_risks = db.Column(db.Text, nullable=True)
+    ai_occupancy_type = db.Column(db.String(50), nullable=True)  # member-occupied / rented
+    ai_compliance_notes = db.Column(db.Text, nullable=True)
+    ai_source_type = db.Column(db.String(50), nullable=True)
+    ai_confidence_score = db.Column(db.Float, nullable=True)
+    ai_parsed_at = db.Column(db.DateTime, nullable=True)
+    parsed_by_ai_version = db.Column(db.String(50), nullable=True)
     is_ai_processed = db.Column(db.Boolean, default=False)
-    ai_lease_term_risk_score = db.Column(db.Float)
+    ai_lease_term_risk_score = db.Column(db.Float, nullable=True)
 
+    # -------------------------------
     # ⚖️ GAR Evaluation
-    gar_recommendations = db.Column(db.Text)
-    gar_flagged_clauses = db.Column(db.JSON)
+    # -------------------------------
+    gar_recommendations = db.Column(db.Text, nullable=True)
+    gar_flagged_clauses = db.Column(db.JSON, nullable=True)
     gar_risk_score = db.Column(db.Float, nullable=True)
     gar_alignment_status = db.Column(db.String(100), nullable=True)
     gar_chat_ready = db.Column(db.Boolean, default=False)
     gar_feedback = db.Column(db.Text, nullable=True)
 
+    # -------------------------------
     # 🕒 Audit Trail
+    # -------------------------------
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # 🔁 Relationships
-    company = db.relationship('Company', back_populates='units')
-    client = db.relationship('Client', backref='units')
+    # -------------------------------
+    # 🔁 ORM Relationships
+    # -------------------------------
+    company = db.relationship("Company", back_populates="units")
+    client = db.relationship("Client", back_populates="units")
 
-    def __repr__(self):
+    block = db.relationship("Block", back_populates="units")
+    core = db.relationship("Core", back_populates="units")
+
+    # Parent/child self-reference (e.g. apt with linked car space)
+    parent_unit = db.relationship("Unit", remote_side=[id], backref="child_units")
+
+    # Legal owners (Members) – via association table defined in member.py
+    members = db.relationship(
+        "Member",
+        secondary="member_units",
+        back_populates="units",
+        lazy="dynamic",
+    )
+
+    # Occupants (Residents) – via Resident.unit relationship backref="residents"
+    # We DO NOT define a 'residents' relationship here to avoid conflicts;
+    # Resident model already has:
+    #   unit = db.relationship("Unit", backref="residents")
+
+    # 📎 Documents linked to this unit (leases, surveys, etc.)
+    documents = db.relationship("Document", back_populates="unit", lazy="dynamic")
+
+    @validates("ai_key_clauses", "gar_flagged_clauses")
+    def validate_json_fields(self, key, value):
+        """
+        Ensure JSON-like fields are either None, dict, or list.
+        This keeps GAR / AI parsing predictable across the platform.
+        """
+        if value is None:
+            return None
+        if not isinstance(value, (dict, list)):
+            raise ValueError(f"{key} must be JSON serializable (dict or list)")
+        return value
+
+    def __repr__(self) -> str:
         return f"<Unit {self.unit_label} | Client {self.client_id}>"
-
-

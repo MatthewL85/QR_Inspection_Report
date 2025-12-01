@@ -3,6 +3,13 @@
 {% import 'macros/common_macros.html' as common_macros %}
 {% import 'macros/compliance_macros.html' as compliance_macros %}
 
+{# 🔹 Local currency helper: prints symbol, no cents #}
+{% macro currency_no_cents(amount, code='EUR') -%}
+  {%- set up = (code or 'EUR')|upper -%}
+  {%- set sym = '€' if up=='EUR' else ('£' if up=='GBP' else ('$' if up=='USD' else '€')) -%}
+  {{ sym }}{{ '{:,.0f}'.format(amount or 0) }}
+{%- endmacro %}
+
 {% block page_content %}
 <div class="container-fluid pt-0">  {# was: py-4 — avoid double top padding #}
 
@@ -21,50 +28,71 @@
     </div>
   {% endif %}
 
-  {# 🔝 Unified Contracts KPI #}
-  <div class="row g-4 mt-1">
-    <div class="col-12">
-      <div class="card shadow-sm border">
-        <div class="card-body">
-          <div class="d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-2">
-              <h6 class="mb-0">Contracts</h6>
+{# 🔝 Unified Contracts KPI (compact) #}
+<div class="row g-4 mt-1">
+  <div class="col-12">
+    <div class="card shadow-sm border h-100">
+      <div class="card-body py-3">  {# tighter vertical padding #}
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <h6 class="mb-0">Contracts</h6>
+        </div>
+
+        <div class="row g-2 text-center align-items-center">  {# tighter grid gap #}
+          <div class="col-6 col-lg-3">
+            <div class="d-flex flex-column align-items-center justify-content-center">
+              <div class="fs-3 fw-bold text-danger lh-1 mb-1">{{ contracts_expired or 0 }}</div>
+              <div class="small text-secondary mb-0">Expired</div>
             </div>
-            <a class="btn btn-sm btn-outline-primary"
-               href="{{ url_for('super_admin_contracts.contracts_overview') }}">
-              Open Overview
-            </a>
           </div>
 
-          <div class="row text-center mt-3">
-            <div class="col-12 col-sm-3">
-              <div class="fw-semibold fs-3 text-danger">{{ contracts_expired or 0 }}</div>
-              <div class="small text-secondary">Expired</div>
+          <div class="col-6 col-lg-3">
+            <div class="d-flex flex-column align-items-center justify-content-center">
+              <div class="fs-3 fw-bold text-warning lh-1 mb-1">{{ contracts_expiring_30 or 0 }}</div>
+              <div class="small text-secondary mb-0">Expiring ≤ 30d</div>
             </div>
-            <div class="col-12 col-sm-3">
-              <div class="fw-semibold fs-3 text-warning">{{ contracts_expiring_30 or 0 }}</div>
-              <div class="small text-secondary">Expiring ≤ 30d</div>
+          </div>
+
+          <div class="col-6 col-lg-3">
+            <div class="d-flex flex-column align-items-center justify-content-center">
+              <div class="fs-3 fw-bold text-primary lh-1 mb-1">{{ contracts_expiring_60 or 0 }}</div>
+              <div class="small text-secondary mb-0">Expiring ≤ 60d</div>
             </div>
-            <div class="col-12 col-sm-3">
-              <div class="fw-semibold fs-3 text-primary">{{ contracts_expiring_60 or 0 }}</div>
-              <div class="small text-secondary">Expiring ≤ 60d</div>
-            </div>
-            <div class="col-12 col-sm-3">
-              <div class="fw-semibold fs-3 text-info">{{ contracts_expiring_90 or 0 }}</div>
-              <div class="small text-secondary">Expiring ≤ 90d</div>
+          </div>
+
+          <div class="col-6 col-lg-3">
+            <div class="d-flex flex-column align-items-center justify-content-center">
+              <div class="fs-3 fw-bold text-info lh-1 mb-1">{{ contracts_expiring_90 or 0 }}</div>
+              <div class="small text-secondary mb-0">Expiring ≤ 90d</div>
             </div>
           </div>
         </div>
       </div>
+
+      {# Consistent CTA like other tiles #}
+      <div class="card-footer bg-transparent py-1">
+        <a class="btn btn-link text-sm float-end"
+           href="{{ url_for('super_admin_contracts.contracts_overview') }}">
+          View
+        </a>
+      </div>
     </div>
   </div>
+</div>
 
   <!-- 📦 Row: Summary Tiles -->
   <div class="row g-4 mt-2">
     {{ common_macros.metric_tile("Total Clients",       total_clients or 0,      "groups",            "primary",   "super_admin.manage_clients") }}
     {{ common_macros.metric_tile("Total PMs",           total_pms or 0,          "supervisor_account","info",      "super_admin.manage_users", {'role_filter': 'Property Manager'}) }}
     {{ common_macros.metric_tile("Total Contractors",   total_contractors or 0,  "engineering",       "warning",   "super_admin.manage_users", {'role_filter': 'Contractor'}) }}
-    {{ common_macros.metric_tile("Managed Portfolio",   (managed_portfolio_value or 0) | currency(currency_code|default('EUR')), "folder_shared", "secondary", "super_admin.manage_clients") }}
+
+    {# ✅ Managed Portfolio: show symbol (€, £, $) and ONLY signed total #}
+    {# Expecting backend to pass managed_portfolio_value_signed; fallback to managed_portfolio_value #}
+    {% set mp_total = managed_portfolio_value_signed if managed_portfolio_value_signed is defined else (managed_portfolio_value or 0) %}
+    {% set ccy = currency_code|default('EUR') %}
+    {{ common_macros.metric_tile("Managed Portfolio",
+                                 currency_no_cents(mp_total, ccy),
+                                 "folder_shared", "secondary",
+                                 "super_admin.manage_clients") }}
   </div>
 
   <!-- 📋 Row: Compliance & Insights -->

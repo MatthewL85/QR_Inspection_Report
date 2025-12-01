@@ -1,0 +1,31 @@
+<h6 class="text-uppercase text-secondary text-xs font-weight-bolder mb-3">AI Insights</h6>
+
+{% if not unit.is_ai_processed %}
+    <p class="text-sm text-muted">No AI analysis available for this unit yet.</p>
+{% else %}
+
+<div class="card">
+    <div class="card-body">
+
+        <h6 class="text-sm text-secondary">Summary</h6>
+        <p>{{ unit.ai_summary or "No summary available." }}</p>
+
+        <hr>
+
+        <h6 class="text-sm text-secondary">Key Clauses</h6>
+        <pre class="bg-light p-3 rounded">{{ unit.ai_key_clauses | tojson(indent=2) }}</pre>
+
+        <hr>
+
+        <h6 class="text-sm text-secondary">Risk Score</h6>
+        <p class="fw-bold">{{ unit.ai_lease_term_risk_score or "N/A" }}</p>
+
+        <hr>
+
+        <h6 class="text-sm text-secondary">GAR Recommendations</h6>
+        <p>{{ unit.gar_recommendations or "None" }}</p>
+
+    </div>
+</div>
+
+{% endif %}
