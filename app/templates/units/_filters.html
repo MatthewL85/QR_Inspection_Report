@@ -1,0 +1,51 @@
+<form method="get" class="card p-3 shadow-sm">
+
+    <div class="row g-3">
+
+        <!-- SEARCH -->
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Search</label>
+            <input name="search"
+                   value="{{ search or '' }}"
+                   class="form-control"
+                   placeholder="Search by unit, owner, resident…">
+        </div>
+
+        <!-- BLOCK FILTER -->
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Block</label>
+            <select name="block" class="form-select">
+                <option value="">All Blocks</option>
+                {% for b in blocks %}
+                    <option value="{{ b.id }}"
+                        {% if selected_block|int == b.id %}selected{% endif %}>
+                        {{ b.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- CORE FILTER -->
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Core</label>
+            <select name="core" class="form-select">
+                <option value="">All Cores</option>
+                {% for c in cores %}
+                    <option value="{{ c.id }}"
+                        {% if selected_core|int == c.id %}selected{% endif %}>
+                        {{ c.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- APPLY -->
+        <div class="col-md-2 d-flex align-items-end">
+            <button class="btn bg-gradient-primary w-100" type="submit">
+                Apply
+            </button>
+        </div>
+
+    </div>
+
+</form>

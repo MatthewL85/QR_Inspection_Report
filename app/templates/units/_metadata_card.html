@@ -1,0 +1,142 @@
+<div class="card h-100 shadow-sm">
+    <div class="card-header pb-0 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">Unit Intelligence Summary</h6>
+
+        {% if unit %}
+        <span class="badge bg-gradient-primary text-uppercase" style="font-size: 0.65rem;">
+            {{ unit.status|replace("_", " ")|title }}
+        </span>
+        {% endif %}
+    </div>
+
+    <div class="card-body">
+
+        <!-- AI Governance Score -->
+        <div class="mb-4">
+            <label class="text-xs text-secondary fw-bold d-block mb-1">AI Governance Score</label>
+
+            {% set score = unit.ai_health_score if unit else 0 %}
+            <div class="d-flex align-items-center">
+                <div class="progress flex-grow-1" style="height: 6px;">
+                    <div class="progress-bar
+                        {% if score >= 80 %} bg-success
+                        {% elif score >= 50 %} bg-warning
+                        {% else %} bg-danger {% endif %}"
+                        role="progressbar"
+                        style="width: {{ score }}%;">
+                    </div>
+                </div>
+                <span class="ms-2 text-sm fw-bold">
+                    {{ score }}%
+                </span>
+            </div>
+
+            <small class="text-xxs text-muted">
+                Evaluated based on data completeness, service-charge accuracy, ownership mapping, and governance compliance.
+            </small>
+        </div>
+
+        <!-- Data Completeness -->
+        <div class="mb-4">
+            <label class="text-xs text-secondary fw-bold d-block mb-1">Metadata Completeness</label>
+
+            {% set completeness = unit.data_completeness if unit else 0 %}
+            <div class="progress" style="height: 4px;">
+                <div class="progress-bar bg-info" role="progressbar" style="width: {{ completeness }}%;"></div>
+            </div>
+            <small class="text-xxs text-muted">{{ completeness }}% Complete</small>
+        </div>
+
+        <!-- Associated Entities -->
+        <div class="mb-4">
+            <label class="text-xs text-secondary fw-bold d-block mb-1">Linked Entities</label>
+            <ul class="text-sm ps-3 mb-0">
+                <li>
+                    <strong>Client:</strong> {{ unit.client.name if unit.client else "—" }}
+                </li>
+                <li>
+                    <strong>Company:</strong> {{ unit.company.name if unit.company else "—" }}
+                </li>
+                <li>
+                    <strong>Block:</strong> {{ unit.block_name if unit.block_name else "—" }}
+                </li>
+                <li>
+                    <strong>Core:</strong> {{ unit.core_name if unit.core_name else "—" }}
+                </li>
+                <li>
+                    <strong>Parent Unit:</strong>
+                    {% if unit.parent_unit %}
+                        {{ unit.parent_unit.unit_label }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </li>
+                <li>
+                    <strong>Child Units:</strong> {{ unit.child_units|length if unit.child_units else 0 }}
+                </li>
+            </ul>
+        </div>
+
+        <!-- Risk Flags -->
+        <div class="mb-4">
+            <label class="text-xs text-secondary fw-bold d-block mb-1">Governance & Risk Flags</label>
+
+            {% if unit.ai_risk_level == "high" %}
+                <div class="alert alert-danger text-xs py-2">
+                    <strong>High Risk:</strong> Missing ownership docs, unclear service-charge metadata, or outdated compliance.
+                </div>
+            {% elif unit.ai_risk_level == "medium" %}
+                <div class="alert alert-warning text-xs py-2">
+                    <strong>Medium Risk:</strong> Data inconsistencies detected. Review recommended.
+                </div>
+            {% else %}
+                <div class="alert alert-success text-xs py-2">
+                    <strong>Healthy:</strong> No risks detected by GAR.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Cross-Module Impact Map -->
+        <div class="mb-4">
+            <label class="text-xs text-secondary fw-bold d-block mb-1">Module Dependencies</label>
+
+            <ul class="text-sm ps-3 mb-0">
+                <li>Feeds <strong>Finance Logix</strong> (service charge allocation, billing, arrears)</li>
+                <li>Feeds <strong>Works Logix</strong> (job routing, contractor access, inspections)</li>
+                <li>Feeds <strong>Members Logix</strong> (owner/resident visibility & communication)</li>
+                <li>Feeds <strong>Director Logix</strong> (AGM data, risk summaries, budgets)</li>
+                <li>Feeds <strong>GAR</strong> (AI scoring, risk alerts, recommendations)</li>
+            </ul>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="mb-4">
+            <label class="text-xs text-secondary fw-bold d-block mb-1">Recent Activity</label>
+            <ul class="text-sm ps-3 mb-0">
+                <li>
+                    <strong>Last Updated:</strong>
+                    {{ unit.updated_at|datetime if unit.updated_at else "—" }}
+                </li>
+                <li>
+                    <strong>Recent Work Orders:</strong>
+                    {{ unit.work_orders|length if unit.work_orders else 0 }}
+                </li>
+                <li>
+                    <strong>Open Balances:</strong>
+                    €{{ unit.open_balance if unit.open_balance else "0.00" }}
+                </li>
+            </ul>
+        </div>
+
+        <!-- AI Suggestions -->
+        {% if unit.ai_suggestions %}
+        <div class="mt-4">
+            <label class="text-xs text-secondary fw-bold d-block mb-1">AI Suggestions</label>
+            <div class="alert alert-info text-xs py-2">
+                {{ unit.ai_suggestions }}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>

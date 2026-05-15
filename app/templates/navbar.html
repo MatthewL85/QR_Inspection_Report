@@ -66,6 +66,10 @@
             </span>
           </a>
 
+          <a class="btn btn-sm btn-outline-danger ms-3" href="{{ url_for('auth.logout') }}">
+            Logout
+          </a>
+
           <!-- 🔽 Dropdown Menu -->
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
             <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">👤 Profile / Settings</a></li>
@@ -73,9 +77,9 @@
             {% if role == 'Super Admin' %}
               <li><a class="dropdown-item" href="{{ url_for('super_admin.dashboard') }}">🧭 Admin Dashboard</a></li>
             {% elif role == 'Property Manager' %}
-              <li><a class="dropdown-item" href="{{ url_for('property_manager.dashboard') }}">🏢 My Clients</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('property_manager.pm_dashboard') }}">🏢 My Clients</a></li>
             {% elif role in ['Contractor', 'Admin Contractor'] %}
-              <li><a class="dropdown-item" href="{{ url_for('contractor.dashboard') }}">🛠️ My Work Orders</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('contractor.contractor_dashboard') }}">🛠️ My Work Orders</a></li>
             {% elif role == 'Director' %}
               <li><a class="dropdown-item" href="{{ url_for('director.dashboard') }}">🗳️ Director Panel</a></li>
             {% elif role == 'Finance' %}

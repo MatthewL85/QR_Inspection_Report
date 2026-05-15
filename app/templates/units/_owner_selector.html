@@ -1,0 +1,41 @@
+<div class="card mb-4">
+  <div class="card-header pb-0">
+    <h6 class="mb-0">Owners</h6>
+    <p class="text-xs text-muted mb-0">
+      Assign legal owners. Owners cannot alter financial or structural data.
+      Forms the backbone for Members Logix & AGM notifications.
+    </p>
+  </div>
+
+  <div class="card-body">
+
+    <div class="mb-3">
+      <input type="text"
+             class="form-control form-control-sm"
+             placeholder="Search owners..."
+             onkeyup="filterOwnerList(this)">
+    </div>
+
+    <select name="owner_ids" id="owner-list" class="form-select" multiple size="6">
+      {% for m in members %}
+        <option value="{{ m.id }}"
+          {% if assigned_owner_ids and m.id in assigned_owner_ids %}selected{% endif %}>
+          {{ m.full_name }}{% if m.email %} – {{ m.email }}{% endif %}
+        </option>
+      {% endfor %}
+    </select>
+
+  </div>
+</div>
+
+<script>
+function filterOwnerList(input) {
+  let filter = input.value.toLowerCase();
+  let list = document.querySelectorAll("#owner-list option");
+
+  list.forEach(opt => {
+    let txt = opt.textContent.toLowerCase();
+    opt.style.display = txt.includes(filter) ? "block" : "none";
+  });
+}
+</script>

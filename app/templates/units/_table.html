@@ -1,0 +1,126 @@
+<div class="card shadow-sm">
+    <div class="card-header pb-0">
+        <h6 class="text-dark">Unit Overview</h6>
+        <p class="text-sm">
+            Showing <strong>{{ pagination.total }}</strong> units
+        </p>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table align-items-center mb-0">
+            <thead>
+                <tr>
+                    <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Label</th>
+                    <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Block</th>
+                    <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Core</th>
+                    <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Floor</th>
+                    <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Status</th>
+                    <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7 text-end">Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% if units|length == 0 %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                        No units found.
+                    </td>
+                </tr>
+                {% endif %}
+
+                {% for unit in units %}
+                <tr>
+                    <td class="text-sm">
+                        <strong>{{ unit.unit_label }}</strong>
+                    </td>
+
+                    <td class="text-sm">
+                        {{ unit.block.name if unit.block else '-' }}
+                    </td>
+
+                    <td class="text-sm">
+                        {{ unit.core.name if unit.core else '-' }}
+                    </td>
+
+                    <td class="text-sm">
+                        {{ unit.floor_level if unit.floor_level else '-' }}
+                    </td>
+
+                    <td class="text-sm">
+                        {% if unit.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
+
+                    <td class="align-middle text-end">
+                        <a href="{{ url_for('unit_bp.view', unit_id=unit.id) }}"
+                           class="btn btn-sm btn-primary">
+                           View
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="card-footer d-flex justify-content-between align-items-center">
+
+        <div class="text-sm text-muted">
+            Page {{ pagination.page }} of {{ pagination.pages }}
+        </div>
+
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+
+                <!-- Prev -->
+                {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="{{ url_for('unit_bp.list', page=pagination.prev_num, search=search, block=selected_block, core=selected_core) }}">
+                        ‹
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">‹</span></li>
+                {% endif %}
+
+                <!-- Pages -->
+                {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if p %}
+                        {% if p == pagination.page %}
+                            <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                   href="{{ url_for('unit_bp.list', page=p, search=search, block=selected_block, core=selected_core) }}">
+                                   {{ p }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- Next -->
+                {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="{{ url_for('unit_bp.list', page=pagination.next_num, search=search, block=selected_block, core=selected_core) }}">
+                        ›
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">›</span></li>
+                {% endif %}
+
+            </ul>
+        </nav>
+
+    </div>
+
+</div>

@@ -60,12 +60,12 @@
         {% include 'finance/sidebar_finance.html' %}
       {% elif session['user']['role'] in ['Member', 'Resident'] %}
         {% include 'members/sidebar_member.html' %}
-      {% elif session['user']['role'] == 'Admin Contractor' %}
-        {% include 'contractor/sidebar_contractor.html' %}
+      {% elif session['user']['role'] in ['Admin Contractor', 'Contractor'] %}
+        {% include 'sidebar_contractor.html' %}
       {% elif session['user']['role'] == 'Director' %}
-        {% include 'director_settings/sidebar_director.html' %}
+        {% include 'sidebar_director.html' %}
       {% elif session['user']['role'] == 'Property Manager' %}
-        {% include 'property_manager/sidebar_property_manager.html' %}
+        {% include 'sidebar_property_manager.html' %}
       {% else %}
         {% include 'admin/sidebar_admin.html' %}
       {% endif %}

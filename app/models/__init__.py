@@ -66,6 +66,8 @@ from app.models.members.member_approval import MemberApproval
 from app.models.members.resident_request import ResidentRequest
 from app.models.members.access_log import AccessLog
 from app.models.members.tenancy import Tenancy
+from app.models.members.unit_membership import UnitMembership
+
 
 # ----------------------------
 # Contractor / Works

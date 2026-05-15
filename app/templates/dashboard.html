@@ -42,6 +42,6 @@
     </div>
 </div>
 {% else %}
-  <p>Please <a href="{{ url_for('login') }}">log in</a> to access the dashboard.</p>
+  <p>Please <a href="{{ url_for('auth.login') }}">log in</a> to access the dashboard.</p>
 {% endif %}
 {% endblock %}

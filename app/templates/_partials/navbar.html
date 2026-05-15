@@ -58,6 +58,12 @@
       </li>
 
       <!-- 👤 User Profile -->
+      <li class="nav-item pe-3">
+        <a class="btn btn-sm btn-outline-danger mb-0" href="{{ url_for('auth.logout') }}">
+          Logout
+        </a>
+      </li>
+
       <li class="nav-item dropdown pe-3">
         <a href="#" class="nav-link text-body p-0 d-flex align-items-center" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
           <img src="{{ current_user.profile_photo or url_for('static', filename='img/default-avatar.png') }}"

@@ -1,5 +1,7 @@
 from flask import Blueprint, render_template, session, request
 from flask import request, redirect, url_for, flash
+from datetime import datetime
+from app.extensions import db
 from app.models import CapexRequest, Client, ManualTask, Inspection, Equipment
 from app.helpers.decorators import login_required
 from flask import jsonify
@@ -13,12 +15,12 @@ def pm_dashboard():
     full_name = session['user']['full_name']
 
     # ✅ Get all clients assigned to this manager
-    assigned_clients = Client.query.filter_by(assigned_manager=full_name).all()
+    assigned_clients = Client.query.filter_by(assigned_pm_id=session.get('user_id')).all()
     client_ids = [c.id for c in assigned_clients]
     client_names = [c.name for c in assigned_clients]
 
     # ✅ CAPEX: Filter by client name (stored as string in CapexRequest)
-    capex_count = CapexRequest.query.filter(CapexRequest.client.in_(client_names)).count()
+    capex_count = CapexRequest.query.filter(CapexRequest.client_id.in_(client_ids)).count()
 
     # ✅ Equipment linked by client_id
     equipment = Equipment.query.filter(Equipment.client_id.in_(client_ids)).all()
@@ -29,11 +31,11 @@ def pm_dashboard():
 
     # ✅ Manual tasks (e.g. missed/scheduled tasks logged by PM)
     missed_tasks = ManualTask.query.filter(
-        ManualTask.client.in_(client_names),
+        ManualTask.client_id.in_(client_ids),
         ManualTask.status == 'Missed'
     ).all()
 
-    return render_template('property_manager_dashboard.html',
+    return render_template('property_manager/property_manager_dashboard.html',
         capex_count=capex_count,
         inspection_count=inspection_count,
         client_count=len(assigned_clients),
@@ -62,11 +64,11 @@ def add_manual_task():
         db.session.add(new_task)
         db.session.commit()
         flash("Manual task created successfully.", "success")
-        return redirect(url_for('property_manager.dashboard'))
+        return redirect(url_for('property_manager.pm_dashboard'))
 
     # For the dropdown list
     full_name = session['user']['full_name']
-    clients = Client.query.filter_by(assigned_manager=full_name).all()
+    clients = Client.query.filter_by(assigned_pm_id=session.get('user_id')).all()
     return render_template('add_manual_task.html', clients=clients)
 
 @property_manager_bp.route('/complete-task', methods=['POST'])
@@ -83,7 +85,7 @@ def complete_task():
     else:
         flash("Task not found.", "danger")
 
-    return redirect(url_for('property_manager.dashboard'))
+    return redirect(url_for('property_manager.pm_dashboard'))
 
 @property_manager_bp.route('/edit-task', methods=['GET', 'POST'])
 @login_required(role='Property Manager')
@@ -93,7 +95,7 @@ def edit_task():
 
     if not task:
         flash('Task not found.', 'danger')
-        return redirect(url_for('property_manager.dashboard'))
+        return redirect(url_for('property_manager.pm_dashboard'))
 
     if request.method == 'POST':
         task.title = request.form['title']
@@ -102,10 +104,10 @@ def edit_task():
         task.status = request.form['status']
         db.session.commit()
         flash('Task updated successfully!', 'success')
-        return redirect(url_for('property_manager.dashboard'))
+        return redirect(url_for('property_manager.pm_dashboard'))
 
     full_name = session['user']['full_name']
-    clients = Client.query.filter_by(assigned_manager=full_name).all()
+    clients = Client.query.filter_by(assigned_pm_id=session.get('user_id')).all()
     return render_template('edit_task.html', task=task, clients=clients)
 
 
@@ -113,7 +115,8 @@ def edit_task():
 @login_required(role='Property Manager')
 def property_manager_maintenance_planner():
     full_name = session['user']['full_name']
-    assigned_clients = Client.query.filter_by(assigned_manager=full_name).all()
+    assigned_clients = Client.query.filter_by(assigned_pm_id=session.get('user_id')).all()
+    client_ids = [c.id for c in assigned_clients]
     client_names = [c.name for c in assigned_clients]
 
     # 🔍 Filters from query params
@@ -121,7 +124,7 @@ def property_manager_maintenance_planner():
     client_filter = request.args.get('client')
 
     # Base task query
-    task_query = ManualTask.query.filter(ManualTask.client.in_(client_names))
+    task_query = ManualTask.query.filter(ManualTask.client_id.in_(client_ids))
 
     if status_filter:
         task_query = task_query.filter_by(status=status_filter)
@@ -135,22 +138,22 @@ def property_manager_maintenance_planner():
     for task in tasks:
         events.append({
             'id': task.id,
-            'title': f"{task.title} ({task.status})",
-            'start': task.date.strftime('%Y-%m-%d'),
+            'title': f"{task.task_name} ({task.status})",
+            'start': task.due_date.strftime('%Y-%m-%d'),
             'color': (
                 '#f44336' if task.status == 'Missed' else
                 '#4caf50' if task.status == 'Complete' else
                 '#ff9800'
             ),
-            'url': url_for('edit_task') + f'?task_id={task.id}'
+            'url': url_for('property_manager.edit_task') + f'?task_id={task.id}'
         })
 
     # 🎯 Summary counts (full month, not filtered)
     now = datetime.now()
     base_filter = [
-        ManualTask.client.in_(client_names),
-        extract('month', ManualTask.date) == now.month,
-        extract('year', ManualTask.date) == now.year
+        ManualTask.client_id.in_(client_ids),
+        extract('month', ManualTask.due_date) == now.month,
+        extract('year', ManualTask.due_date) == now.year
     ]
 
     missed_count = ManualTask.query.filter(*base_filter, ManualTask.status == 'Missed').count()
@@ -177,6 +180,6 @@ def update_task_date():
     return jsonify(success=False)
 
 @property_manager_bp.route('/settings')
-@login_required
+@login_required()
 def pm_settings():
     return render_template('property_manager/settings.html')

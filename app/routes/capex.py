@@ -10,7 +10,7 @@ capex_bp = Blueprint('capex', __name__)
 def capex_decision(capex_id, action):
     if 'user' not in session:
         flash("Login required.", "danger")
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     user_email = session['user']['email']
     user_role = session['user']['role']

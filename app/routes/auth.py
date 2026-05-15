@@ -51,8 +51,8 @@ def login():
             route_map = {
                 'Super Admin': 'super_admin.dashboard',  # ✅ FIXED
                 'Admin': 'admin.dashboard',
-                'Property Manager': 'property_manager.dashboard',
-                'Contractor': 'contractor.dashboard',
+                'Property Manager': 'property_manager.pm_dashboard',
+                'Contractor': 'contractor.contractor_dashboard',
                 'Director': 'director.dashboard',
                 'Financial Controller': 'finance.dashboard',
                 'Member': 'member.dashboard',

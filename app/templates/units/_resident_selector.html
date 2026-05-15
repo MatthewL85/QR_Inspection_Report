@@ -1,0 +1,41 @@
+<div class="card mb-4">
+  <div class="card-header pb-0">
+    <h6 class="mb-0">Residents</h6>
+    <p class="text-xs text-muted mb-0">
+      Track who lives in the unit. Enables Works Logix access coordination,
+      Members Logix resident portal, notices, and emergency contacts.
+    </p>
+  </div>
+
+  <div class="card-body">
+
+    <div class="mb-3">
+      <input type="text"
+             class="form-control form-control-sm"
+             placeholder="Search residents..."
+             onkeyup="filterResidentList(this)">
+    </div>
+
+    <select name="resident_ids" id="resident-list" class="form-select" multiple size="6">
+      {% for r in residents %}
+        <option value="{{ r.id }}"
+          {% if assigned_resident_ids and r.id in assigned_resident_ids %}selected{% endif %}>
+          {{ r.full_name }}{% if r.email %} – {{ r.email }}{% endif %}
+        </option>
+      {% endfor %}
+    </select>
+
+  </div>
+</div>
+
+<script>
+function filterResidentList(input) {
+  let filter = input.value.toLowerCase();
+  let list = document.querySelectorAll("#resident-list option");
+
+  list.forEach(opt => {
+    let txt = opt.textContent.toLowerCase();
+    opt.style.display = txt.includes(filter) ? "block" : "none";
+  });
+}
+</script>

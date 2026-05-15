@@ -211,6 +211,13 @@ class Unit(db.Model):
         lazy="dynamic",
     )
 
+    membership_links = db.relationship(
+        "UnitMembership",
+        back_populates="unit",
+        cascade="all, delete-orphan",
+        lazy="dynamic",
+    )
+
     # Occupants (Residents) – via Resident.unit relationship backref="residents"
     # We DO NOT define a 'residents' relationship here to avoid conflicts;
     # Resident model already has:

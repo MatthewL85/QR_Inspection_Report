@@ -36,13 +36,13 @@ def sa_onboarding_gate():
         "/login",
         "/logout",
         "/static",
-        "/super-admin/onboarding/company",
+        "/onboarding",
     )
     if any(path.startswith(p) for p in safe_prefixes):
         return
 
     # Redirect to onboarding wizard
-    return redirect(url_for("super_admin.company_onboarding"))
+    return redirect(url_for("onboarding.company_get"))
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Import route modules AFTER blueprint declaration to avoid circular imports.

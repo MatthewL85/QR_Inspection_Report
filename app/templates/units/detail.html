@@ -1,181 +1,800 @@
+{# app/templates/units/detail.html #}
 {% extends "layouts/base.html" %}
-{% block title %}Unit Details{% endblock %}
 
+{% block title %}
+  Unit {{ unit.unit_label or ("#" ~ unit.id) }} | Units
+{% endblock %}
 {% block content %}
-
 <div class="container-fluid py-4">
 
-    <!-- ========================================= -->
-    <!-- 🔵 UNIT SUMMARY HEADER -->
-    <!-- ========================================= -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow-lg border-radius-xl">
-                <div class="card-body d-flex justify-content-between align-items-center">
-
-                    <div>
-                        <h4 class="mb-1">{{ unit.unit_label }} — {{ unit.unit_type or "Unit" }}</h4>
-                        <p class="text-sm mb-0 text-secondary">
-                            {{ block.name if block else "" }} 
-                            {% if core %} — {{ core.name }}{% endif %}
-                        </p>
-                    </div>
-
-                    <div class="text-end">
-                        {% if unit.is_active %}
-                        <span class="badge bg-gradient-success px-3 py-2">Active</span>
-                        {% else %}
-                        <span class="badge bg-gradient-danger px-3 py-2">Inactive</span>
-                        {% endif %}
-                    </div>
-
-                </div>
-            </div>
+  <!-- HEADER / SUMMARY STRIP -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+          <div class="mb-3 mb-md-0">
+            <h5 class="mb-1">
+              {{ unit.unit_label or ("Unit #" ~ unit.id) }}
+              {% if unit.block_name %}
+                <span class="text-sm text-secondary">· {{ unit.block_name }}</span>
+              {% endif %}
+              {% if unit.core_name %}
+                <span class="text-sm text-secondary">· {{ unit.core_name }}</span>
+              {% endif %}
+            </h5>
+            <p class="text-sm mb-0 text-muted">
+              {{ client.name if client else "Unassigned client" }} ·
+              {{ company.name if company else "Unassigned company" }}
+              {% if unit.unit_category %} · {{ unit.unit_category }}{% endif %}
+              {% if unit.status %}
+                · <span class="badge bg-gradient-{{ 'success' if unit.status == 'active' else 'secondary' }}">
+                  {{ unit.status|replace("_", " ")|title }}
+                </span>
+              {% endif %}
+            </p>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('unit.list_units') }}" class="btn btn-outline-secondary btn-sm">
+              <i class="material-icons text-sm me-1">arrow_back</i>
+              Back to Units
+            </a>
+            <a href="{{ url_for('unit.edit_unit', unit_id=unit.id) }}" class="btn btn-primary btn-sm">
+              <i class="material-icons text-sm me-1">edit</i>
+              Edit Unit
+            </a>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 
-
-    <!-- ========================================= -->
-    <!-- 🔵 TOP CARDS (STATUS, FINANCE, WORKS) -->
-    <!-- ========================================= -->
-    <div class="row mt-3">
-
-        <!-- Occupancy -->
-        <div class="col-md-4">
-            <div class="card shadow-sm border-radius-xl">
-                <div class="card-body">
-                    <h6 class="text-uppercase text-secondary text-xs font-weight-bolder">Occupancy</h6>
-                    <h5 class="mt-2">
-                        {{ unit.occupancy_status | capitalize }}
-                    </h5>
-
-                    {% if unit.is_occupied %}
-                        <span class="badge bg-success">Occupied</span>
-                    {% else %}
-                        <span class="badge bg-warning">Vacant</span>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Finance Summary -->
-        <div class="col-md-4">
-            <div class="card shadow-sm border-radius-xl">
-                <div class="card-body">
-                    <h6 class="text-uppercase text-secondary text-xs font-weight-bolder">Finance</h6>
-                    <h5 class="mt-2">{{ currency }} {{ unit.service_charge_amount or 0 | round(2) }}</h5>
-                    <p class="text-sm text-secondary mb-0">
-                        Service Charge Scheme: {{ unit.service_charge_scheme or 'N/A' }}
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Work Orders -->
-        <div class="col-md-4">
-            <div class="card shadow-sm border-radius-xl">
-                <div class="card-body">
-                    <h6 class="text-uppercase text-secondary text-xs font-weight-bolder">Work Orders</h6>
-                    <h5 class="mt-2">{{ work_orders|length }}</h5>
-                    <p class="text-sm text-secondary mb-0">
-                        Total linked to this unit
-                    </p>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-
-    <!-- ========================================= -->
-    <!-- 🔵 TABS SECTION -->
-    <!-- ========================================= -->
-    <div class="card mt-4 shadow-lg border-radius-xl">
+  <!-- MAIN LAYOUT -->
+  <div class="row">
+    <!-- LEFT: TABS -->
+    <div class="col-12 col-xl-8">
+      <div class="card">
         <div class="card-header pb-0">
-            <ul class="nav nav-tabs" id="unitTabs" role="tablist">
-
-                <li class="nav-item" role="presentation">
-                    <a class="nav-link active" id="details-tab" data-bs-toggle="tab"
-                       href="#details" role="tab" aria-selected="true">Details</a>
-                </li>
-
-                <li class="nav-item" role="presentation">
-                    <a class="nav-link" id="owners-tab" data-bs-toggle="tab"
-                       href="#owners" role="tab">Owners</a>
-                </li>
-
-                <li class="nav-item" role="presentation">
-                    <a class="nav-link" id="residents-tab" data-bs-toggle="tab"
-                       href="#residents" role="tab">Residents</a>
-                </li>
-
-                <li class="nav-item" role="presentation">
-                    <a class="nav-link" id="finance-tab" data-bs-toggle="tab"
-                       href="#finance" role="tab">Finance</a>
-                </li>
-
-                <li class="nav-item" role="presentation">
-                    <a class="nav-link" id="works-tab" data-bs-toggle="tab"
-                       href="#works" role="tab">Work Orders</a>
-                </li>
-
-                <li class="nav-item" role="presentation">
-                    <a class="nav-link" id="docs-tab" data-bs-toggle="tab"
-                       href="#docs" role="tab">Documents</a>
-                </li>
-
-                <li class="nav-item" role="presentation">
-                    <a class="nav-link" id="ai-tab" data-bs-toggle="tab"
-                       href="#ai" role="tab">AI Insights</a>
-                </li>
-
-            </ul>
+          <ul class="nav nav-pills nav-fill p-1" id="unit-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <a class="nav-link active" id="tab-summary" data-bs-toggle="tab" href="#pane-summary" role="tab">
+                <i class="material-icons text-sm me-1">info</i> Summary
+              </a>
+            </li>
+            <li class="nav-item" role="presentation">
+              <a class="nav-link" id="tab-owners" data-bs-toggle="tab" href="#pane-owners" role="tab">
+                <i class="material-icons text-sm me-1">person</i> Owners
+              </a>
+            </li>
+            <li class="nav-item" role="presentation">
+              <a class="nav-link" id="tab-residents" data-bs-toggle="tab" href="#pane-residents" role="tab">
+                <i class="material-icons text-sm me-1">people</i> Residents
+              </a>
+            </li>
+            <li class="nav-item" role="presentation">
+              <a class="nav-link" id="tab-finance" data-bs-toggle="tab" href="#pane-finance" role="tab">
+                <i class="material-icons text-sm me-1">account_balance</i> Finance
+              </a>
+            </li>
+            <li class="nav-item" role="presentation">
+              <a class="nav-link" id="tab-works" data-bs-toggle="tab" href="#pane-works" role="tab">
+                <i class="material-icons text-sm me-1">build</i> Works
+              </a>
+            </li>
+            <li class="nav-item" role="presentation">
+              <a class="nav-link" id="tab-documents" data-bs-toggle="tab" href="#pane-documents" role="tab">
+                <i class="material-icons text-sm me-1">description</i> Documents
+              </a>
+            </li>
+            <li class="nav-item" role="presentation">
+              <a class="nav-link" id="tab-ai" data-bs-toggle="tab" href="#pane-ai" role="tab">
+                <i class="material-icons text-sm me-1">psychology</i> GAR / AI
+              </a>
+            </li>
+          </ul>
         </div>
 
+        <div class="card-body">
+          <div class="tab-content" id="unit-tab-content">
 
-        <!-- ========================================= -->
-        <!-- 🔵 TAB CONTENTS -->
-        <!-- ========================================= -->
-        <div class="card-body tab-content">
+            {# ---------------------------------------------------
+               SUMMARY TAB
+               --------------------------------------------------- #}
+            <div class="tab-pane fade show active" id="pane-summary" role="tabpanel">
+              <div class="row">
+                <div class="col-md-6">
+                  <h6 class="text-xs text-uppercase text-secondary fw-bold mb-3">
+                    Core Details
+                  </h6>
+                  <ul class="list-group">
+                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
+                      <span class="text-sm text-secondary">Client</span>
+                      <span class="text-sm fw-semibold">{{ client.name if client else "—" }}</span>
+                    </li>
+                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
+                      <span class="text-sm text-secondary">Company</span>
+                      <span class="text-sm fw-semibold">{{ company.name if company else "—" }}</span>
+                    </li>
+                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
+                      <span class="text-sm text-secondary">Label / Door No.</span>
+                      <span class="text-sm fw-semibold">{{ unit.unit_label or "—" }}</span>
+                    </li>
+                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
+                      <span class="text-sm text-secondary">Category</span>
+                      <span class="text-sm">{{ unit.unit_category or "—" }}</span>
+                    </li>
+                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
+                      <span class="text-sm text-secondary">Type</span>
+                      <span class="text-sm">{{ unit.unit_type or "—" }}</span>
+                    </li>
+                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
+                      <span class="text-sm text-secondary">Status</span>
+                      <span class="text-sm">
+                        {% if unit.status %}
+                          <span class="badge bg-gradient-{{ 'success' if unit.status == 'active' else 'secondary' }}">
+                            {{ unit.status|replace("_", " ")|title }}
+                          </span>
+                        {% else %}
+                          —
+                        {% endif %}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
 
-            <!-- DETAILS -->
-            <div class="tab-pane fade show active" id="details" role="tabpanel">
-                {% include "units/tabs/details_tab.html" %}
+                <div class="col-md-6 mt-4 mt-md-0">
+                  <h6 class="text-xs text-uppercase text-secondary fw-bold mb-3">
+                    Building &amp; Service Charge
+                  </h6>
+                  <ul class="list-group">
+                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
+                      <span class="text-sm text-secondary">Block</span>
+                      <span class="text-sm">{{ unit.block_name or "—" }}</span>
+                    </li>
+                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
+                      <span class="text-sm text-secondary">Core / Stairwell</span>
+                      <span class="text-sm">{{ unit.core_name or "—" }}</span>
+                    </li>
+                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
+                      <span class="text-sm text-secondary">Floor</span>
+                      <span class="text-sm">{{ unit.floor_number or "—" }}</span>
+                    </li>
+                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
+                      <span class="text-sm text-secondary">Area (m²)</span>
+                      <span class="text-sm">
+                        {% if unit.square_meters is not none %}
+                          {{ "%.2f"|format(unit.square_meters) }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </span>
+                    </li>
+                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
+                      <span class="text-sm text-secondary">Service Charge Scheme</span>
+                      <span class="text-sm">{{ unit.service_charge_scheme or "—" }}</span>
+                    </li>
+                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
+                      <span class="text-sm text-secondary">Service Charge %</span>
+                      <span class="text-sm">
+                        {% if unit.service_charge_percent is not none %}
+                          {{ "%.4f"|format(unit.service_charge_percent) }}%
+                        {% else %}
+                          —
+                        {% endif %}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {% if child_units and child_units|length %}
+                <hr class="my-4">
+                <h6 class="text-xs text-uppercase text-secondary fw-bold mb-3">
+                  Linked Sub-Units (Parking, Lockers, etc.)
+                </h6>
+                <div class="table-responsive">
+                  <table class="table align-items-center mb-0">
+                    <thead>
+                      <tr>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Label</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Category</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Block/Core</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder text-end">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for cu in child_units %}
+                        <tr>
+                          <td class="text-sm fw-semibold">{{ cu.unit_label }}</td>
+                          <td class="text-sm">{{ cu.unit_category or "—" }}</td>
+                          <td class="text-sm">
+                            {{ cu.block_name or "—" }}
+                            {% if cu.core_name %} / {{ cu.core_name }}{% endif %}
+                          </td>
+                          <td class="text-end">
+                            <a href="{{ url_for('unit.view_unit', unit_id=cu.id) }}"
+                               class="btn btn-outline-primary btn-xs">
+                              View
+                            </a>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% endif %}
+
             </div>
 
-            <!-- OWNERS -->
-            <div class="tab-pane fade" id="owners" role="tabpanel">
-                {% include "units/tabs/owners_tab.html" %}
+            {# ---------------------------------------------------
+               OWNERS TAB – WITH HORIZONTAL TIMELINE
+               --------------------------------------------------- #}
+            <div class="tab-pane fade" id="pane-owners" role="tabpanel">
+
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Ownership History &amp; Current Owners</h6>
+                <span class="badge bg-gradient-info text-xxs">
+                  Members Logix · Legal Ownership
+                </span>
+              </div>
+
+              {% if owner_links and owner_links|length %}
+                <!-- TIMELINE Card -->
+                <div class="card mb-4 border shadow-sm">
+                  <div class="card-header pb-2">
+                    <h6 class="text-sm mb-0">Ownership Timeline</h6>
+                    <p class="text-xs text-muted mb-0">
+                      Visual snapshot of who legally owned the unit and when. Ideal for
+                      disputes, historical queries, and GAR risk analysis.
+                    </p>
+                  </div>
+                  <div class="card-body">
+
+                    <style>
+                      .unit-timeline-row {
+                        border-left: 2px solid rgba(0,0,0,.08);
+                        padding-left: 1rem;
+                        margin-bottom: 1.25rem;
+                        position: relative;
+                      }
+                      .unit-timeline-row::before {
+                        content: "";
+                        width: 10px;
+                        height: 10px;
+                        border-radius: 50%;
+                        background: linear-gradient(135deg, #66bb6a, #26a69a);
+                        position: absolute;
+                        left: -6px;
+                        top: 6px;
+                      }
+                      .unit-timeline-bar {
+                        height: 6px;
+                        border-radius: 999px;
+                        background: linear-gradient(90deg, rgba(76,175,80,0.15), rgba(0,150,136,0.65));
+                        margin: .5rem 0 .25rem;
+                      }
+                      .chip-active {
+                        font-size: 10px;
+                        padding: 0.15rem 0.4rem;
+                        border-radius: 999px;
+                        background: rgba(76,175,80,0.12);
+                        color: #2e7d32;
+                      }
+                    </style>
+
+                    {% for link in owner_links %}
+                      {# Try to resolve the member entity #}
+                      {% set m = (link.member if link.member is defined else
+                                  (link.owner if link.owner is defined else none)) %}
+                      <div class="unit-timeline-row">
+                        <div class="d-flex justify-content-between align-items-center">
+                          <div>
+                            <div class="d-flex align-items-center gap-2">
+                              <span class="fw-semibold text-sm">
+                                {{ m.full_name if m and m.full_name is defined and m.full_name else
+                                   (m.name if m and m.name is defined else "Owner") }}
+                              </span>
+                              {% if link.is_current is defined and link.is_current %}
+                                <span class="chip-active">Current</span>
+                              {% endif %}
+                            </div>
+                            <div class="text-xs text-muted">
+                              {{ link.role|capitalize if link.role is defined else "Owner" }}
+                              {% if m and m.country is defined and m.country %}
+                                · {{ m.country }}
+                              {% endif %}
+                            </div>
+                          </div>
+                          <div class="text-end text-xs text-muted">
+                            <div>
+                              {{ link.start_date.strftime("%d %b %Y") if link.start_date %}
+                              –
+                              {{ link.end_date.strftime("%d %b %Y") if link.end_date else "Present" }}
+                            </div>
+                            {% if link.acquisition_method is defined and link.acquisition_method %}
+                              <div>{{ link.acquisition_method }}</div>
+                            {% endif %}
+                          </div>
+                        </div>
+
+                        <div class="unit-timeline-bar"></div>
+
+                        {% if link.notes is defined and link.notes %}
+                          <div class="text-xs text-muted">
+                            {{ link.notes }}
+                          </div>
+                        {% endif %}
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+
+              {% else %}
+                <div class="alert alert-secondary text-sm">
+                  No ownership data has been captured yet for this unit. Once you
+                  start recording owners with start / end dates, GAR can surface
+                  patterns, risk signals and legal queries instantly.
+                </div>
+              {% endif %}
+
+              {# Simple tabular summary as well – easy export / audit #}
+              {% if owners and owners|length %}
+                <h6 class="text-xs text-uppercase text-secondary fw-bold mb-3">
+                  Owner Summary (Current + Historical)
+                </h6>
+                <div class="table-responsive">
+                  <table class="table align-items-center mb-0">
+                    <thead>
+                      <tr>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Name</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Email</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Phone</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Country</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for o in owners %}
+                        <tr>
+                          <td class="text-sm">
+                            {{ o.full_name if o.full_name is defined and o.full_name else o.name }}
+                          </td>
+                          <td class="text-sm">
+                            {{ o.email if o.email is defined else "—" }}
+                          </td>
+                          <td class="text-sm">
+                            {{ o.phone if o.phone is defined else "—" }}
+                          </td>
+                          <td class="text-sm">
+                            {{ o.country if o.country is defined and o.country else "—" }}
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% endif %}
+
             </div>
 
-            <!-- RESIDENTS -->
-            <div class="tab-pane fade" id="residents" role="tabpanel">
-                {% include "units/tabs/residents_tab.html" %}
+            {# ---------------------------------------------------
+               RESIDENTS TAB – TENANCY / OCCUPANCY TIMELINE
+               --------------------------------------------------- #}
+            <div class="tab-pane fade" id="pane-residents" role="tabpanel">
+
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Residents &amp; Tenancy History</h6>
+                <span class="badge bg-gradient-dark text-xxs">
+                  Members Logix · Occupancy
+                </span>
+              </div>
+
+              {% if resident_links and resident_links|length %}
+                <div class="card mb-4 border shadow-sm">
+                  <div class="card-header pb-2">
+                    <h6 class="text-sm mb-0">Tenancy / Occupancy Timeline</h6>
+                    <p class="text-xs text-muted mb-0">
+                      Distinguish owner-occupiers from tenants, track move-ins and move-outs,
+                      and give Directors instant context during disputes.
+                    </p>
+                  </div>
+                  <div class="card-body">
+                    {% for link in resident_links %}
+                      {% set m = (link.member if link.member is defined else
+                                  (link.resident if link.resident is defined else none)) %}
+                      <div class="unit-timeline-row">
+                        <div class="d-flex justify-content-between align-items-center">
+                          <div>
+                            <div class="d-flex align-items-center gap-2">
+                              <span class="fw-semibold text-sm">
+                                {{ m.full_name if m and m.full_name is defined and m.full_name else
+                                   (m.name if m and m.name is defined else "Resident") }}
+                              </span>
+                              {% if link.is_current is defined and link.is_current %}
+                                <span class="chip-active">Current</span>
+                              {% endif %}
+                            </div>
+                            <div class="text-xs text-muted">
+                              {% if link.occupancy_type is defined and link.occupancy_type %}
+                                {{ link.occupancy_type }}
+                              {% else %}
+                                Resident / Tenant
+                              {% endif %}
+                              {% if m and m.country is defined and m.country %}
+                                · {{ m.country }}
+                              {% endif %}
+                            </div>
+                          </div>
+                          <div class="text-end text-xs text-muted">
+                            <div>
+                              {{ link.start_date.strftime("%d %b %Y") if link.start_date %}
+                              –
+                              {{ link.end_date.strftime("%d %b %Y") if link.end_date else "Present" }}
+                            </div>
+                            {% if link.lease_reference is defined and link.lease_reference %}
+                              <div>Lease: {{ link.lease_reference }}</div>
+                            {% endif %}
+                          </div>
+                        </div>
+
+                        <div class="unit-timeline-bar"></div>
+
+                        {% if link.notes is defined and link.notes %}
+                          <div class="text-xs text-muted">
+                            {{ link.notes }}
+                          </div>
+                        {% endif %}
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              {% else %}
+                <div class="alert alert-secondary text-sm">
+                  No resident / tenancy history captured yet. Once you start logging
+                  occupancies, Members Logix and GAR can highlight arrears-risk,
+                  frequent churn, and governance concerns.
+                </div>
+              {% endif %}
+
+              {% if residents and residents|length %}
+                <h6 class="text-xs text-uppercase text-secondary fw-bold mb-3">
+                  Resident Summary
+                </h6>
+                <div class="table-responsive">
+                  <table class="table align-items-center mb-0">
+                    <thead>
+                      <tr>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Name</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Email</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Phone</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for r in residents %}
+                        <tr>
+                          <td class="text-sm">
+                            {{ r.full_name if r.full_name is defined and r.full_name else r.name }}
+                          </td>
+                          <td class="text-sm">{{ r.email if r.email is defined else "—" }}</td>
+                          <td class="text-sm">{{ r.phone if r.phone is defined else "—" }}</td>
+                          <td class="text-sm text-muted">
+                            {{ r.notes if r.notes is defined and r.notes else "—" }}
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% endif %}
+
             </div>
 
-            <!-- FINANCE -->
-            <div class="tab-pane fade" id="finance" role="tabpanel">
-                {% include "units/tabs/finance_tab.html" %}
+            {# ---------------------------------------------------
+               FINANCE TAB
+               --------------------------------------------------- #}
+            <div class="tab-pane fade" id="pane-finance" role="tabpanel">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Finance Snapshot</h6>
+                <span class="badge bg-gradient-success text-xxs">
+                  Finance Logix · Service Charges &amp; Invoices
+                </span>
+              </div>
+
+              {% if invoices and invoices|length %}
+                <div class="table-responsive">
+                  <table class="table align-items-center mb-0">
+                    <thead>
+                      <tr>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Invoice #</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Date</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Amount</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for inv in invoices %}
+                        <tr>
+                          <td class="text-sm">{{ inv.reference or ("INV-" ~ inv.id) }}</td>
+                          <td class="text-sm">
+                            {{ inv.issue_date.strftime("%d %b %Y") if inv.issue_date else "—" }}
+                          </td>
+                          <td class="text-sm">
+                            {% if inv.amount is not none %}
+                              {{ "%.2f"|format(inv.amount) }}
+                            {% else %}
+                              —
+                            {% endif %}
+                          </td>
+                          <td class="text-sm">
+                            {% if inv.status %}
+                              <span class="badge bg-gradient-{{ 'success' if inv.status=='paid' else 'warning' }}">
+                                {{ inv.status|replace("_"," ")|title }}
+                              </span>
+                            {% else %}
+                              —
+                            {% endif %}
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <p class="text-sm text-muted mb-0">
+                  No Finance Logix invoices recorded for this unit yet.
+                </p>
+              {% endif %}
             </div>
 
-            <!-- WORK ORDERS -->
-            <div class="tab-pane fade" id="works" role="tabpanel">
-                {% include "units/tabs/works_tab.html" %}
+            {# ---------------------------------------------------
+               WORKS TAB
+               --------------------------------------------------- #}
+            <div class="tab-pane fade" id="pane-works" role="tabpanel">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Works &amp; Reactive Maintenance</h6>
+                <span class="badge bg-gradient-warning text-xxs">
+                  Works Logix · Reactive &amp; PPM
+                </span>
+              </div>
+
+              {% if work_orders and work_orders|length %}
+                <div class="table-responsive">
+                  <table class="table align-items-center mb-0">
+                    <thead>
+                      <tr>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Ref</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Type</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Contractor</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Status</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Created</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for wo in work_orders %}
+                        <tr>
+                          <td class="text-sm">{{ wo.reference or ("WO-" ~ wo.id) }}</td>
+                          <td class="text-sm">{{ wo.work_type or "—" }}</td>
+                          <td class="text-sm">
+                            {{ wo.contractor.company_name if wo.contractor is defined and wo.contractor else "—" }}
+                          </td>
+                          <td class="text-sm">
+                            {% if wo.status %}
+                              <span class="badge bg-gradient-{{ 'success' if wo.status=='completed' else 'info' }}">
+                                {{ wo.status|replace("_"," ")|title }}
+                              </span>
+                            {% else %}
+                              —
+                            {% endif %}
+                          </td>
+                          <td class="text-sm">
+                            {{ wo.created_at.strftime("%d %b %Y") if wo.created_at else "—" }}
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <p class="text-sm text-muted mb-0">
+                  No Works Logix records found for this unit yet.
+                </p>
+              {% endif %}
             </div>
 
-            <!-- DOCUMENTS -->
-            <div class="tab-pane fade" id="docs" role="tabpanel">
-                {% include "units/tabs/documents_tab.html" %}
+            {# ---------------------------------------------------
+               DOCUMENTS TAB
+               --------------------------------------------------- #}
+            <div class="tab-pane fade" id="pane-documents" role="tabpanel">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Documents</h6>
+                <span class="badge bg-gradient-secondary text-xxs">
+                  Core Docs · Leases · Reports
+                </span>
+              </div>
+
+              {% if documents and documents|length %}
+                <div class="table-responsive">
+                  <table class="table align-items-center mb-0">
+                    <thead>
+                      <tr>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Name</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Type</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Uploaded</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder text-end">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for doc in documents %}
+                        <tr>
+                          <td class="text-sm">{{ doc.title or doc.filename }}</td>
+                          <td class="text-sm">{{ doc.doc_type or "—" }}</td>
+                          <td class="text-sm">
+                            {{ doc.created_at.strftime("%d %b %Y") if doc.created_at else "—" }}
+                          </td>
+                          <td class="text-end">
+                            {% if doc.download_url %}
+                              <a href="{{ doc.download_url }}" class="btn btn-outline-primary btn-xs">
+                                Download
+                              </a>
+                            {% else %}
+                              <span class="text-xs text-muted">No file</span>
+                            {% endif %}
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <p class="text-sm text-muted mb-0">
+                  No documents linked to this unit yet.
+                </p>
+              {% endif %}
             </div>
 
-            <!-- AI -->
-            <div class="tab-pane fade" id="ai" role="tabpanel">
-                {% include "units/tabs/ai_tab.html" %}
+            {# ---------------------------------------------------
+               AI / GAR TAB – LIGHT PHASE 1
+               --------------------------------------------------- #}
+            <div class="tab-pane fade" id="pane-ai" role="tabpanel">
+              <h6 class="mb-3">GAR / AI Readiness</h6>
+              <p class="text-sm text-muted">
+                This section will evolve into a full AI scorecard for the unit, combining:
+              </p>
+              <ul class="text-sm text-muted ps-3">
+                <li>Ownership &amp; occupancy stability (from the timelines above).</li>
+                <li>Arrears risk and payment patterns (Finance Logix).</li>
+                <li>Works history, repeat faults and lifecycle patterns (Works Logix).</li>
+                <li>Document completeness and governance alignment (Leases, PSRA contracts, etc.).</li>
+              </ul>
+              <p class="text-xs text-muted mb-0">
+                As more data is captured, GAR will be able to surface a clear, explainable
+                recommendation at unit, block and estate level.
+              </p>
             </div>
 
+          </div>
         </div>
+      </div>
     </div>
 
+    <!-- RIGHT: METADATA / SNAPSHOT CARD -->
+    <div class="col-12 col-xl-4 mt-4 mt-xl-0">
+      <div class="card h-100">
+        <div class="card-header pb-2">
+          <h6 class="mb-1">Unit Governance Snapshot</h6>
+          <p class="text-xs text-muted mb-0">
+            High-level view of how well this unit is wired into LogixPM.
+          </p>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <span class="text-xs text-secondary d-block mb-1">Data Completeness</span>
+            <div class="progress" style="height: 6px;">
+              {# Placeholder – we can later drive this from AI / GAR #}
+              <div class="progress-bar" role="progressbar"
+                   style="width: 70%;"
+                   aria-valuenow="70" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <small class="text-xxs text-muted">
+              As more owners, residents, documents and works are logged,
+              this bar will move towards 100%.
+            </small>
+          </div>
+
+          <hr>
+
+          <ul class="list-group mb-3">
+            <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
+              <span class="text-xs text-secondary">Client</span>
+              <span class="text-xs fw-semibold">{{ client.name if client else "—" }}</span>
+            </li>
+            <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
+              <span class="text-xs text-secondary">Company</span>
+              <span class="text-xs fw-semibold">{{ company.name if company else "—" }}</span>
+            </li>
+            <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
+              <span class="text-xs text-secondary">Category</span>
+              <span class="text-xs">{{ unit.unit_category or "—" }}</span>
+            </li>
+            <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
+              <span class="text-xs text-secondary">Common Area</span>
+              <span class="text-xs">
+                {% if unit.is_common_area %}
+                  <span class="badge bg-gradient-info text-xxs">Yes</span>
+                {% else %}
+                  No
+                {% endif %}
+              </span>
+            </li>
+          </ul>
+
+          <p class="text-xs text-muted mb-0">
+            As Director Logix and Members Logix come online, this card can be tailored
+            for each audience – owners see plain-English context, Directors see risk
+            and funding implications, and PMs see workload &amp; lifecycle planning.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
+{% block scripts %}
+{{ super() }}
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    // ----------------------------------------------------------
+    // 1. Open correct tab when URL contains ?tab=xxxx
+    // ----------------------------------------------------------
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab");
+
+    const tabMap = {
+        summary: "tab-summary",
+        owners: "tab-owners",
+        residents: "tab-residents",
+        finance: "tab-finance",
+        works: "tab-works",
+        documents: "tab-documents",
+        ai: "tab-ai"
+    };
+
+    if (tab && tabMap[tab.toLowerCase()]) {
+        const triggerId = tabMap[tab.toLowerCase()];
+        const triggerEl = document.getElementById(triggerId);
+
+        if (triggerEl) {
+            new bootstrap.Tab(triggerEl).show();
+
+            // Smooth scroll into position
+            triggerEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }
+
+    // ----------------------------------------------------------
+    // 2. Update URL automatically when user switches tabs
+    // ----------------------------------------------------------
+    const navTriggers = document.querySelectorAll('[data-bs-toggle="tab"]');
+
+    navTriggers.forEach(trigger => {
+        trigger.addEventListener("shown.bs.tab", function (event) {
+
+            const newTabId = event.target.id; // e.g. "tab-owners"
+            let newTabKey = Object.keys(tabMap).find(
+                key => tabMap[key] === newTabId
+            );
+
+            if (!newTabKey) return;
+
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set("tab", newTabKey);
+
+            // Replace (no page reload)
+            window.history.replaceState({}, "", newUrl);
+        });
+    });
+});
+</script>
 
 {% endblock %}

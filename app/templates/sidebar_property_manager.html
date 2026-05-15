@@ -11,28 +11,28 @@
       <li class="nav-header text-muted ps-3">Main</li>
 
       <li class="nav-item">
-        <a class="nav-link text-dark" href="{{ url_for('property_manager.dashboard') }}">
+        <a class="nav-link text-dark" href="{{ url_for('property_manager.pm_dashboard') }}">
           <i class="fas fa-home text-primary me-2"></i>
           <span class="nav-link-text">Dashboard</span>
         </a>
       </li>
 
       <li class="nav-item">
-        <a class="nav-link text-dark" href="{{ url_for('capex_bp.submit_capex') }}">
+        <a class="nav-link text-dark" href="#">
           <i class="fas fa-euro-sign text-success me-2"></i>
           <span class="nav-link-text">Submit CAPEX</span>
         </a>
       </li>
 
       <li class="nav-item">
-        <a class="nav-link text-dark" href="{{ url_for('pm_alerts') }}">
+        <a class="nav-link text-dark" href="#">
           <i class="fas fa-exclamation-circle text-warning me-2"></i>
           <span class="nav-link-text">Alerts</span>
         </a>
       </li>
 
       <li class="nav-item">
-        <a class="nav-link text-dark" href="{{ url_for('pm_maintenance_planner') }}">
+        <a class="nav-link text-dark" href="{{ url_for('property_manager.property_manager_maintenance_planner') }}">
           <i class="fas fa-calendar-check text-info me-2"></i>
           <span class="nav-link-text">Planner</span>
         </a>
@@ -42,7 +42,7 @@
       <li class="nav-header text-muted ps-3 mt-3">System</li>
 
       <li class="nav-item mt-auto">
-        <a class="nav-link text-dark" href="{{ url_for('pm_settings') }}">
+        <a class="nav-link text-dark" href="{{ url_for('property_manager.pm_settings') }}">
           <i class="fas fa-cog text-secondary me-2"></i>
           <span class="nav-link-text">Settings</span>
         </a>

@@ -1,5 +1,9 @@
 from app.helpers.decorators import login_required
-from flask import Blueprint, render_template, session
+from flask import Blueprint, render_template, session, request, redirect, url_for, flash
+
+from app.extensions import db
+from app.models import User
+
 director_bp = Blueprint('director', __name__)
 
 @director_bp.route('/dashboard')
@@ -10,7 +14,7 @@ def dashboard():
 @director_bp.route('/settings')
 def director_settings():
     if 'user' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     user = User.query.filter_by(email=session['user']['email']).first()
     return render_template('director_settings.html', user=user)
 

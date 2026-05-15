@@ -4,8 +4,8 @@ def role_name_to_dashboard_route(role_name):
     mapping = {
         'Super Admin': 'super_admin.dashboard',
         'Admin': 'super_admin.dashboard',
-        'Property Manager': 'property_manager.dashboard',
-        'Contractor': 'contractor.dashboard',
+        'Property Manager': 'property_manager.pm_dashboard',
+        'Contractor': 'contractor.contractor_dashboard',
         'Director': 'director.dashboard',
     }
     return mapping.get(role_name, 'main.index')

@@ -1,0 +1,46 @@
+{% macro text_input(label, name, value="", placeholder="", required=false, type="text") %}
+<div class="mb-3">
+  <label class="form-label">
+    {{ label }} {% if required %}<span class="text-danger">*</span>{% endif %}
+  </label>
+  <input type="{{ type }}"
+         name="{{ name }}"
+         value="{{ value }}"
+         class="form-control"
+         placeholder="{{ placeholder }}"
+         {% if required %}required{% endif %}>
+</div>
+{% endmacro %}
+
+{% macro select_input(label, name, options, current=None, required=false) %}
+<div class="mb-3">
+  <label class="form-label">
+    {{ label }} {% if required %}<span class="text-danger">*</span>{% endif %}
+  </label>
+
+  <select name="{{ name }}" class="form-select" {% if required %}required{% endif %}>
+    <option value="">-- Select --</option>
+    {% for opt in options %}
+      <option value="{{ opt }}"
+        {% if current == opt %}selected{% endif %}>
+        {{ opt }}
+      </option>
+    {% endfor %}
+  </select>
+</div>
+{% endmacro %}
+
+{% macro numeric_input(label, name, value="", step="0.01") %}
+<div class="mb-3">
+  <label class="form-label">{{ label }}</label>
+  <input type="number" step="{{ step }}" name="{{ name }}" class="form-control"
+         value="{{ value if value is not none else '' }}">
+</div>
+{% endmacro %}
+
+{% macro text_area(label, name, value="", rows=3) %}
+<div class="mb-3">
+  <label class="form-label">{{ label }}</label>
+  <textarea class="form-control" rows="{{ rows }}" name="{{ name }}">{{ value }}</textarea>
+</div>
+{% endmacro %}

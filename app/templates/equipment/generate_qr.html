@@ -105,7 +105,7 @@
 
  }}">⬅ Back to Admin Dashboard</a>
       {% elif session['role'] == 'Property Manager' %}
-        <a href="{{ url_for('property_manager.dashboard') }}">⬅ Back to PM Dashboard</a>
+    <a href="{{ url_for('property_manager.pm_dashboard') }}">⬅ Back to PM Dashboard</a>
       {% endif %}
     </div>
   </div>

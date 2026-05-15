@@ -1,5 +1,12 @@
+import os
+
+from flask import Blueprint, render_template, session, request, current_app, flash, redirect, url_for
+from werkzeug.utils import secure_filename
+
+from app.extensions import db
 from app.helpers.decorators import login_required
-from flask import Blueprint, render_template, session
+from app.models import ContractorComplianceDocument
+
 contractor_bp = Blueprint('contractor', __name__)
 
 @contractor_bp.route('/dashboard')
@@ -8,13 +15,13 @@ def contractor_dashboard():
     return render_template('contractor_dashboard.html')
 
 @contractor_bp.route('/settings')
-@login_required
+@login_required()
 def contractor_settings():
     return render_template('contractor/settings.html')
 
 @contractor_bp.route('/upload-compliance-document', methods=['GET', 'POST'], endpoint='upload_compliance_document')
 
-@login_required
+@login_required()
 def contractor_upload_compliance_document():
     if request.method == 'POST':
         document_type = request.form['document_type']
@@ -39,7 +46,6 @@ def contractor_upload_compliance_document():
             db.session.commit()
 
             flash('Document uploaded successfully!', 'success')
-            return redirect(url_for('contractor.dashboard'))
+            return redirect(url_for('contractor.contractor_dashboard'))
 
     return render_template('contractor/upload_compliance_document.html')
-

@@ -36,14 +36,14 @@
   <!-- Inspection Logs -->
   <div class="dashboard-section mt-5">
     <h4>🧾 Inspection Logs (for your clients)</h4>
-    <a href="{{ url_for('pm_inspections') }}" class="btn btn-primary me-2">📋 View Inspection Logs</a>
-    <a href="{{ url_for('filtered_inspection_export') }}" class="btn btn-warning mt-2 mt-sm-0">📤 Export with Filters</a>
+    <a href="#" class="btn btn-primary me-2">📋 View Inspection Logs</a>
+    <a href="#" class="btn btn-warning mt-2 mt-sm-0">📤 Export with Filters</a>
   </div>
 
   <!-- Missed Inspections -->
   <div class="dashboard-section mt-5">
     <h4>⚠️ Missed Inspections</h4>
-    <a href="{{ url_for('pm_alerts') }}" class="btn btn-warning">View Missed Inspections</a>
+    <a href="#" class="btn btn-warning">View Missed Inspections</a>
   </div>
 
   <!-- Missed Maintenance Tasks -->
@@ -64,7 +64,7 @@
               <button type="submit" class="btn btn-success btn-sm">✔</button>
             </form>
 
-            <form action="{{ url_for('edit_task') }}" method="GET" class="d-inline">
+            <form action="{{ url_for('property_manager.edit_task') }}" method="GET" class="d-inline">
               <input type="hidden" name="task_id" value="{{ task.id }}">
               <button type="submit" class="btn btn-secondary btn-sm ms-1">✏</button>
             </form>
@@ -83,7 +83,7 @@
   <!-- Maintenance Calendar -->
   <div class="dashboard-section mt-5">
     <h4>📅 Maintenance Planner</h4>
-    <a href="{{ url_for('property_manager_maintenance_planner') }}" class="btn btn-info">🗓️ View Maintenance Calendar</a>
+    <a href="{{ url_for('property_manager.property_manager_maintenance_planner') }}" class="btn btn-info">🗓️ View Maintenance Calendar</a>
   </div>
 
   <!-- Row: Works Logix Placeholder -->
