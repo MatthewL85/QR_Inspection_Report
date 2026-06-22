@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}Finance Logix{% endblock %}
+{% block page_content %}
+<div class="container-fluid px-4">
+  {% set digest = gar_operational_digest or {} %}
+  {% set digest_summary = digest.summary if digest else {} %}
+  {% set digest_works = digest_summary.works if digest_summary else {} %}
+  {% set digest_actions = digest.priority_actions if digest else [] %}
+  <section class="card border-0 shadow-sm mb-4">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h1 class="h4 mb-1">Finance Logix</h1>
+        <p class="text-muted mb-0">Service charge, contract value and financial governance command centre.</p>
+      </div>
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('finance.gar_feed') }}">GAR Finance Feed</a>
+    </div>
+  </section>
+
+  {% set dashboard_notification_title = 'Notification Action Queue' %}
+  {% include 'notifications/_dashboard_action_strip.html' %}
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm h-100"><div class="card-body">
+        <div class="text-muted small fw-bold">CLIENTS</div>
+        <div class="h3 mb-0">{{ client_count }}</div>
+      </div></div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm h-100"><div class="card-body">
+        <div class="text-muted small fw-bold">UNITS</div>
+        <div class="h3 mb-0">{{ unit_count }}</div>
+      </div></div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm h-100"><div class="card-body">
+        <div class="text-muted small fw-bold">CONTRACTS</div>
+        <div class="h3 mb-0">{{ contract_count }}</div>
+      </div></div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm h-100"><div class="card-body">
+        <div class="text-muted small fw-bold">PORTFOLIO VALUE</div>
+        <div class="h3 mb-0">EUR {{ "{:,.0f}".format(portfolio_value or 0) }}</div>
+      </div></div>
+    </div>
+  </div>
+
+  {% set gar_ask_action = url_for('finance.dashboard') %}
+  {% set gar_ask_clear_url = url_for('finance.dashboard') %}
+  {% set gar_ask_subtitle = 'Source-backed answers for finance-visible developments. Live debtor and budget answers remain blocked until Finance Logix query services are ready.' %}
+  {% set gar_ask_placeholder = 'Ask about finance readiness, contracts, documents, works or client records' %}
+  {% include 'gar/_ask_panel.html' %}
+
+  <section class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+        <div>
+          <h2 class="h6 mb-1">GAR Finance Digest</h2>
+          <p class="text-muted mb-0">Source-backed finance risk signals for the developments in your view.</p>
+        </div>
+        <span class="badge rounded-pill bg-dark">{{ digest.role_context or 'finance' }}</span>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <div class="border rounded-3 p-3 bg-light h-100">
+            <div class="text-muted small fw-bold">FINANCE READY</div>
+            <div class="h4 mb-0">{{ digest_summary.development_health.finance_ready_units if digest_summary.development_health is defined else 0 }}</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="border rounded-3 p-3 bg-light h-100">
+            <div class="text-muted small fw-bold">GAR ATTENTION</div>
+            <div class="h4 mb-0">{{ digest_summary.gar_attention_total or 0 }}</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="border rounded-3 p-3 bg-light h-100">
+            <div class="text-muted small fw-bold">OPEN WORKS</div>
+            <div class="h4 mb-0">{{ digest_works.open_work_orders or 0 }}</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="border rounded-3 p-3 bg-light h-100">
+            <div class="text-muted small fw-bold">PRIORITY ACTIONS</div>
+            <div class="h4 mb-0">{{ digest_summary.priority_action_count or 0 }}</div>
+          </div>
+        </div>
+      </div>
+      {% if digest_actions %}
+        <div class="border-top mt-3 pt-3">
+          <div class="text-muted small fw-bold mb-2">RECOMMENDED FOCUS</div>
+          <div class="row g-2">
+            {% for action in digest_actions[:3] %}
+              <div class="col-md-4">
+                <div class="border rounded-3 p-3 h-100">
+                  <strong class="d-block">{{ action.source }}</strong>
+                  <small class="text-muted">{{ action.message }}</small>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="card border-0 shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h2 class="h5 mb-1">Finance Client View</h2>
+          <p class="text-muted mb-0">Shared client records are available here without duplicating data.</p>
+        </div>
+        <a class="btn btn-primary" href="{{ url_for('finance.manage_clients') }}">Open Clients</a>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

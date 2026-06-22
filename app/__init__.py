@@ -138,9 +138,16 @@ def create_app():
     _maybe_register("app.routes.property_manager", "property_manager_bp", "/pm")
     _maybe_register("app.routes.contractor", "contractor_bp", "/contractor")
     _maybe_register("app.routes.director", "director_bp", "/director")
+    _maybe_register("app.routes.finance", "finance_bp", None)
+    _maybe_register("app.routes.assistant", "assistant_bp", None)
+    _maybe_register("app.routes.admin_portal", "admin_portal_bp", None)
+    _maybe_register("app.routes.app_home", "app_home_bp", None)
+    _maybe_register("app.routes.members", "members_bp", None)
     _maybe_register("app.routes.equipment", "equipment_bp", None)
     _maybe_register("app.routes.capex", "capex_bp", None)
     _maybe_register("app.routes.tenant", "tenant_bp", "/tenant")
+    _maybe_register("app.routes.unit", "unit_bp", None)
+    _maybe_register("app.routes.notifications", "notifications_bp", None)
     _maybe_register("app.routes.super_admin.contracts", "super_admin_contracts_bp", None)
     _maybe_register("app.routes.super_admin.contracts.start", "start_contracts_bp", None)
     _maybe_register("app.routes.super_admin.contracts.simple_contracts", "simple_contracts_bp", None)
@@ -292,6 +299,33 @@ def create_app():
             "env": flask_current_app.jinja_env,
         }
 
+    @app.context_processor
+    def inject_unread_notifications():
+        try:
+            from flask_login import current_user
+            from app.services.core.notification_feed import build_nav_notification_context
+
+            if not getattr(current_user, "is_authenticated", False):
+                return {
+                    "unread_notification_count": 0,
+                    "unread_notifications": [],
+                    "unread_notification_views": [],
+                    "unread_notification_action_views": [],
+                    "unread_notification_action_count": 0,
+                    "unread_notification_gar_count": 0,
+                }
+
+            return build_nav_notification_context(current_user.id)
+        except Exception:
+            return {
+                "unread_notification_count": 0,
+                "unread_notifications": [],
+                "unread_notification_views": [],
+                "unread_notification_action_views": [],
+                "unread_notification_action_count": 0,
+                "unread_notification_gar_count": 0,
+            }
+
     upload_folder = app.config.get("UPLOAD_FOLDER") or os.path.join(static_path, "uploads")
     app.config["UPLOAD_FOLDER"] = upload_folder
     try:
@@ -307,6 +341,14 @@ def create_app():
     @app.route("/healthz", methods=["GET", "HEAD"])
     def healthz():
         return ("ok", 200)
+
+    @app.route("/app-shell-sw.js", methods=["GET", "HEAD"])
+    def app_shell_service_worker():
+        response = app.send_static_file("app-shell-sw.js")
+        response.headers["Content-Type"] = "application/javascript; charset=utf-8"
+        response.headers["Service-Worker-Allowed"] = "/"
+        response.headers["Cache-Control"] = "no-cache"
+        return response
 
     try:
         from app.cli.seed import seed_all

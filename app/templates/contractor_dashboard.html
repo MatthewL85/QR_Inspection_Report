@@ -1,28 +1,58 @@
 {% extends 'base.html' %}
-{% block content %}
-  <div class="dashboard-container">
-    <h2>🔧 Contractor Dashboard</h2>
-    <p>Welcome, {{ company }}</p>
-    <a href="{{ url_for('auth.logout')
- }}">Logout</a>
+{% block title %}Contractor Logix{% endblock %}
 
-    <div class="dashboard-section">
-      <h4>Your Submitted Logs</h4>
-      {% if logs %}
-        <ul>
-          {% for log in logs %}
-            <li>
-              <strong>{{ log['timestamp'] }}</strong> — {{ log['equipment_id'] }} — {{ log['notes'] }}
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p>No logs submitted yet.</p>
-      {% endif %}
+{% block page_content %}
+<div class="contract-manager">
+  <section class="contract-manager-hero">
+    <div>
+      <h1>Contractor Logix</h1>
+      <p>Assigned work orders, completion updates and future performance evidence.</p>
     </div>
+    <a class="contract-manager-link" href="{{ url_for('contractor.work_orders') }}">Open Work Queue</a>
+  </section>
 
-    <div class="text-center mt-4">
-        <a href="{{ url_for('show_dashboard') }}" class="btn btn-secondary">⬅ Return to Dashboard</a>
+  {% set dashboard_notification_title = 'Notification Action Queue' %}
+  {% include 'notifications/_dashboard_action_strip.html' %}
+
+  <section class="works-command-grid">
+    <article class="works-kpi-card">
+      <span>Assigned</span>
+      <strong>{{ work_data.stats.assigned if work_data else 0 }}</strong>
+    </article>
+    <article class="works-kpi-card">
+      <span>Active</span>
+      <strong class="text-primary">{{ work_data.stats.active if work_data else 0 }}</strong>
+    </article>
+    <article class="works-kpi-card">
+      <span>Submitted</span>
+      <strong>{{ work_data.stats.submitted if work_data else 0 }}</strong>
+    </article>
+    <article class="works-kpi-card">
+      <span>Closed</span>
+      <strong class="text-success">{{ work_data.stats.closed if work_data else 0 }}</strong>
+    </article>
+  </section>
+  {% set gar_ask_title = 'Ask GAR' %}
+  {% set gar_ask_subtitle = 'Source-backed answers from your assigned Contractor Logix queue only.' %}
+  {% set gar_ask_placeholder = 'Ask about assigned jobs, returned work, completion evidence or previous issue history' %}
+  {% set gar_ask_action = url_for('contractor.contractor_dashboard') %}
+  {% set gar_ask_clear_url = url_for('contractor.contractor_dashboard') %}
+  {% include 'gar/_ask_panel.html' %}
+
+  {% if work_data and work_data.next_actions %}
+    <section class="contract-manager-panel mt-3">
+      <div class="contract-manager-section-heading">
+        <div>
+          <h2>Next Actions</h2>
+          <p>Prioritised from your assigned Contractor Logix queue.</p>
+        </div>
       </div>
-  </div>
+      {% set works_next_actions_list = work_data.next_actions %}
+      {% set works_next_actions_title = 'Action Focus' %}
+      {% set works_next_actions_subtitle = 'Contractor queue' %}
+      {% set works_next_actions_prefix = url_for('contractor.work_orders') %}
+      {% include 'works/_next_actions.html' %}
+    </section>
+  {% endif %}
+</div>
 {% endblock %}

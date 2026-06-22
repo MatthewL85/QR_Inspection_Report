@@ -1,800 +1,630 @@
 {# app/templates/units/detail.html #}
-{% extends "layouts/base.html" %}
+{% extends "base.html" %}
 
 {% block title %}
   Unit {{ unit.unit_label or ("#" ~ unit.id) }} | Units
 {% endblock %}
-{% block content %}
-<div class="container-fluid py-4">
 
-  <!-- HEADER / SUMMARY STRIP -->
-  <div class="row mb-3">
-    <div class="col-12">
-      <div class="card border-0 shadow-sm">
-        <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center">
-          <div class="mb-3 mb-md-0">
-            <h5 class="mb-1">
-              {{ unit.unit_label or ("Unit #" ~ unit.id) }}
-              {% if unit.block_name %}
-                <span class="text-sm text-secondary">· {{ unit.block_name }}</span>
-              {% endif %}
-              {% if unit.core_name %}
-                <span class="text-sm text-secondary">· {{ unit.core_name }}</span>
-              {% endif %}
-            </h5>
-            <p class="text-sm mb-0 text-muted">
-              {{ client.name if client else "Unassigned client" }} ·
-              {{ company.name if company else "Unassigned company" }}
-              {% if unit.unit_category %} · {{ unit.unit_category }}{% endif %}
-              {% if unit.status %}
-                · <span class="badge bg-gradient-{{ 'success' if unit.status == 'active' else 'secondary' }}">
-                  {{ unit.status|replace("_", " ")|title }}
-                </span>
-              {% endif %}
-            </p>
-          </div>
-          <div class="d-flex flex-wrap gap-2">
-            <a href="{{ url_for('unit.list_units') }}" class="btn btn-outline-secondary btn-sm">
-              <i class="material-icons text-sm me-1">arrow_back</i>
-              Back to Units
-            </a>
-            <a href="{{ url_for('unit.edit_unit', unit_id=unit.id) }}" class="btn btn-primary btn-sm">
-              <i class="material-icons text-sm me-1">edit</i>
-              Edit Unit
-            </a>
-          </div>
-        </div>
+{% block page_content %}
+{% set current_owner = owners[0].member if owners and owners|length else none %}
+{% set current_tenant = residents[0].member if residents and residents|length else none %}
+{% set active_tab = request.args.get("tab", "summary") %}
+{% set occupancy_label = unit.occupancy_status|replace("_", " ")|title if unit.occupancy_status else "Unknown" %}
+{% set sale_status_visible = unit.sale_status and unit.sale_status != "not_for_sale" %}
+{% set conveyancing_status_visible = unit.conveyancing_status and unit.conveyancing_status != "not_started" %}
+{% set sale_label = unit.sale_status|replace("_", " ")|title if sale_status_visible else "" %}
+{% set conveyancing_label = unit.conveyancing_status|replace("_", " ")|title if conveyancing_status_visible else "" %}
+{% set unit_identity = (unit.block_name ~ " / " ~ (unit.unit_number or unit.unit_label)) if unit.block_name else (unit.unit_number or unit.unit_label or ("Unit #" ~ unit.id)) %}
+{% set unit_directory_url = url_for('super_admin.view_client', client_id=client.id, tab='units') if client else url_for('unit_bp.list') %}
+
+<div class="unit-workspace">
+
+  <div class="unit-command-bar">
+    <div class="unit-breadcrumb">
+      <a href="{{ unit_directory_url }}">Unit Information</a>
+      <span>/</span>
+      <span>{{ client.name if client else "Development" }}</span>
+      <span>/</span>
+      <strong>{{ unit_identity }}</strong>
+    </div>
+    <div class="unit-actions">
+      <a href="{{ url_for('unit_bp.edit', unit_id=unit.id) }}" class="unit-link-action">
+        <i class="material-icons">edit</i> Edit Unit
+      </a>
+      <span class="unit-action-divider"></span>
+      <button type="button" class="unit-link-action" disabled>
+        <i class="material-icons">assignment</i> GDPR Report
+      </button>
+      <span class="unit-action-divider"></span>
+      <a href="{{ url_for('unit_bp.edit', unit_id=unit.id) }}" class="unit-link-action">
+        <i class="material-icons">person_add</i> Add Co-owner
+      </a>
+    </div>
+  </div>
+
+  <div class="unit-search-row">
+    {% if previous_unit %}
+      <a href="{{ url_for('unit_bp.view', unit_id=previous_unit.id, tab=active_tab) }}" class="btn btn-outline-primary btn-sm" title="Previous unit">
+        <i class="material-icons text-sm">arrow_back</i>
+      </a>
+    {% else %}
+      <button type="button" class="btn btn-outline-secondary btn-sm" disabled title="No previous unit">
+        <i class="material-icons text-sm">arrow_back</i>
+      </button>
+    {% endif %}
+    <input class="form-control unit-search-input" value="{{ unit_identity }}" readonly>
+    {% if next_unit %}
+      <a href="{{ url_for('unit_bp.view', unit_id=next_unit.id, tab=active_tab) }}" class="btn btn-outline-primary btn-sm" title="Next unit">
+        <i class="material-icons text-sm">arrow_forward</i>
+      </a>
+    {% else %}
+      <button type="button" class="btn btn-outline-secondary btn-sm" disabled title="No next unit">
+        <i class="material-icons text-sm">arrow_forward</i>
+      </button>
+    {% endif %}
+  </div>
+
+  <div class="unit-info-grid">
+    <div class="unit-info-cell">
+      <div class="unit-info-label">Owner(s) Name</div>
+      <div class="unit-info-value">
+        {% if owners and owners|length %}
+          {% for row in owners %}{{ row.member.full_name }}{% if not loop.last %}, {% endif %}{% endfor %}
+        {% else %}
+          No owner captured
+        {% endif %}
+      </div>
+    </div>
+    <div class="unit-info-cell">
+      <div class="unit-info-label">Owner Phone</div>
+      <div class="unit-info-value">{{ current_owner.phone if current_owner and current_owner.phone else "-" }}</div>
+    </div>
+    <div class="unit-info-cell">
+      <div class="unit-info-label">Owner Email</div>
+      <div class="unit-info-value">{{ current_owner.email if current_owner and current_owner.email else "-" }}</div>
+    </div>
+    <div class="unit-info-cell">
+      <div class="unit-info-label">Development</div>
+      <div class="unit-info-value">{{ client.name if client else "-" }}</div>
+    </div>
+    <div class="unit-info-cell">
+      <div class="unit-info-label">Block / Unit Number</div>
+      <div class="unit-info-value">{{ unit_identity }}</div>
+    </div>
+    <a class="unit-info-cell unit-info-link" href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='works') }}">
+      <div class="unit-info-label">Open Works / Requests</div>
+      <div class="unit-info-value unit-count-value">{{ works_summary.open_total if works_summary else 0 }}</div>
+    </a>
+    <div class="unit-info-cell">
+      <div class="unit-info-label">Service Charge Balance</div>
+      <div class="unit-info-value text-success">Finance Logix pending</div>
+    </div>
+    <div class="unit-info-cell">
+      <div class="unit-info-label">Occupancy</div>
+      <div class="unit-info-value">
+        <span class="unit-status-pill {{ 'is-active' if unit.occupancy_status in ['owner_occupied', 'let'] else '' }}">{{ occupancy_label }}</span>
+      </div>
+    </div>
+    <div class="unit-info-cell">
+      <div class="unit-info-label">Sale & Conveyancing</div>
+      <div class="unit-info-value unit-status-stack">
+        {% if sale_status_visible %}
+          <span class="unit-status-pill {{ 'is-warning' if unit.sale_status in ['preparing_for_sale', 'for_sale', 'sale_agreed'] else '' }}">{{ sale_label }}</span>
+        {% endif %}
+        {% if conveyancing_status_visible %}
+          <span class="unit-status-pill {{ 'is-active' if unit.conveyancing_status == 'complete' else '' }}">{{ conveyancing_label }}</span>
+        {% endif %}
       </div>
     </div>
   </div>
 
-  <!-- MAIN LAYOUT -->
-  <div class="row">
-    <!-- LEFT: TABS -->
-    <div class="col-12 col-xl-8">
-      <div class="card">
-        <div class="card-header pb-0">
-          <ul class="nav nav-pills nav-fill p-1" id="unit-tabs" role="tablist">
-            <li class="nav-item" role="presentation">
-              <a class="nav-link active" id="tab-summary" data-bs-toggle="tab" href="#pane-summary" role="tab">
-                <i class="material-icons text-sm me-1">info</i> Summary
-              </a>
-            </li>
-            <li class="nav-item" role="presentation">
-              <a class="nav-link" id="tab-owners" data-bs-toggle="tab" href="#pane-owners" role="tab">
-                <i class="material-icons text-sm me-1">person</i> Owners
-              </a>
-            </li>
-            <li class="nav-item" role="presentation">
-              <a class="nav-link" id="tab-residents" data-bs-toggle="tab" href="#pane-residents" role="tab">
-                <i class="material-icons text-sm me-1">people</i> Residents
-              </a>
-            </li>
-            <li class="nav-item" role="presentation">
-              <a class="nav-link" id="tab-finance" data-bs-toggle="tab" href="#pane-finance" role="tab">
-                <i class="material-icons text-sm me-1">account_balance</i> Finance
-              </a>
-            </li>
-            <li class="nav-item" role="presentation">
-              <a class="nav-link" id="tab-works" data-bs-toggle="tab" href="#pane-works" role="tab">
-                <i class="material-icons text-sm me-1">build</i> Works
-              </a>
-            </li>
-            <li class="nav-item" role="presentation">
-              <a class="nav-link" id="tab-documents" data-bs-toggle="tab" href="#pane-documents" role="tab">
-                <i class="material-icons text-sm me-1">description</i> Documents
-              </a>
-            </li>
-            <li class="nav-item" role="presentation">
-              <a class="nav-link" id="tab-ai" data-bs-toggle="tab" href="#pane-ai" role="tab">
-                <i class="material-icons text-sm me-1">psychology</i> GAR / AI
-              </a>
-            </li>
-          </ul>
+  <div class="unit-main-grid">
+    <nav class="unit-top-tabs" aria-label="Unit sections">
+      <a class="{{ 'active' if active_tab == 'summary' else '' }}" href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='summary') }}">Unit Details</a>
+      <a class="{{ 'active' if active_tab == 'owners' else '' }}" href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='owners') }}">Owner Details</a>
+      <a class="{{ 'active' if active_tab == 'residents' else '' }}" href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='residents') }}">Residents</a>
+      <a class="{{ 'active' if active_tab == 'letting' else '' }}" href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='letting') }}">Letting Agent</a>
+      <a class="{{ 'active' if active_tab == 'parking' else '' }}" href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='parking') }}">Car Park</a>
+      <a class="{{ 'active' if active_tab == 'finance' else '' }}" href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='finance') }}">S/C History</a>
+      <a class="{{ 'active' if active_tab == 'works' else '' }}" href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='works') }}">Works</a>
+      <a class="{{ 'active' if active_tab == 'documents' else '' }}" href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='documents') }}">Documents</a>
+      <a class="{{ 'active' if active_tab == 'ai' else '' }}" href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='ai') }}">GAR AI</a>
+    </nav>
+
+    <section class="unit-panel">
+      <div class="{{ '' if active_tab == 'summary' else 'd-none' }}" id="unit-overview">
+        <div class="unit-panel-heading">
+          <h5>Unit Details</h5>
+          <a href="{{ url_for('unit_bp.edit', unit_id=unit.id) }}" class="btn btn-primary btn-sm">Edit Details</a>
         </div>
+        <div class="unit-detail-grid">
+          <div>
+            <span>Unit Code</span>
+            <strong>{{ unit.unit_reference or unit.unit_number or "-" }}</strong>
+          </div>
+          <div>
+            <span>Unit Number</span>
+            <strong>{{ unit.unit_number or unit.unit_label or "-" }}</strong>
+          </div>
+          <div>
+            <span>Development</span>
+            <strong>{{ client.name if client else "-" }}</strong>
+          </div>
+          <div>
+            <span>Block</span>
+            <strong>{{ unit.block_name or "-" }}</strong>
+          </div>
+          <div>
+            <span>Core / Stairwell</span>
+            <strong>{{ unit.core_name or "-" }}</strong>
+          </div>
+          <div>
+            <span>Area</span>
+            <strong>{{ unit.area_name or "-" }}</strong>
+          </div>
+          <div>
+            <span>Floor</span>
+            <strong>{{ unit.floor_number or "-" }}</strong>
+          </div>
+          <div>
+            <span>Status</span>
+            <strong>{{ unit.status or "-" }}</strong>
+          </div>
+          <div>
+            <span>Category</span>
+            <strong>{{ unit.unit_category or "-" }}</strong>
+          </div>
+          <div>
+            <span>Type</span>
+            <strong>{{ unit.unit_type or "-" }}</strong>
+          </div>
+          <div>
+            <span>Car Park Space</span>
+            <strong>{{ unit.parking_label or "-" }}</strong>
+          </div>
+          <div>
+            <span>Storage / Locker</span>
+            <strong>{{ unit.storage_label or "-" }}</strong>
+          </div>
+          <div>
+            <span>Service Charge Scheme</span>
+            <strong>{{ unit.service_charge_scheme or "-" }}</strong>
+          </div>
+          <div>
+            <span>Billing Frequency</span>
+            <strong>{{ unit.billing_frequency or "-" }}</strong>
+          </div>
+        </div>
+      </div>
 
-        <div class="card-body">
-          <div class="tab-content" id="unit-tab-content">
+      <div class="{{ '' if active_tab == 'letting' else 'd-none' }}" id="unit-letting">
+        <div class="unit-panel-heading">
+          <h5>Letting Agent Details</h5>
+          <a href="{{ url_for('unit_bp.edit', unit_id=unit.id) }}" class="btn btn-success btn-sm">Update Letting Agent</a>
+        </div>
+        <div class="unit-detail-grid">
+          <div>
+            <span>Agent / Company Name</span>
+            <strong>{{ unit.letting_agent_name or "-" }}</strong>
+          </div>
+          <div>
+            <span>Phone</span>
+            <strong>{{ unit.letting_agent_phone or "-" }}</strong>
+          </div>
+          <div>
+            <span>Email</span>
+            <strong>{{ unit.letting_agent_email or "-" }}</strong>
+          </div>
+          <div>
+            <span>Unit Let Status</span>
+            <strong>{{ unit.occupancy_status|replace("_", " ")|title if unit.occupancy_status else "Unknown" }}</strong>
+          </div>
+          <div class="unit-detail-wide">
+            <span>Notes</span>
+            <strong>{{ unit.letting_agent_notes or "-" }}</strong>
+          </div>
+        </div>
+      </div>
 
-            {# ---------------------------------------------------
-               SUMMARY TAB
-               --------------------------------------------------- #}
-            <div class="tab-pane fade show active" id="pane-summary" role="tabpanel">
-              <div class="row">
-                <div class="col-md-6">
-                  <h6 class="text-xs text-uppercase text-secondary fw-bold mb-3">
-                    Core Details
-                  </h6>
-                  <ul class="list-group">
-                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
-                      <span class="text-sm text-secondary">Client</span>
-                      <span class="text-sm fw-semibold">{{ client.name if client else "—" }}</span>
-                    </li>
-                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
-                      <span class="text-sm text-secondary">Company</span>
-                      <span class="text-sm fw-semibold">{{ company.name if company else "—" }}</span>
-                    </li>
-                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
-                      <span class="text-sm text-secondary">Label / Door No.</span>
-                      <span class="text-sm fw-semibold">{{ unit.unit_label or "—" }}</span>
-                    </li>
-                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
-                      <span class="text-sm text-secondary">Category</span>
-                      <span class="text-sm">{{ unit.unit_category or "—" }}</span>
-                    </li>
-                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
-                      <span class="text-sm text-secondary">Type</span>
-                      <span class="text-sm">{{ unit.unit_type or "—" }}</span>
-                    </li>
-                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
-                      <span class="text-sm text-secondary">Status</span>
-                      <span class="text-sm">
-                        {% if unit.status %}
-                          <span class="badge bg-gradient-{{ 'success' if unit.status == 'active' else 'secondary' }}">
-                            {{ unit.status|replace("_", " ")|title }}
-                          </span>
-                        {% else %}
-                          —
-                        {% endif %}
-                      </span>
-                    </li>
-                  </ul>
-                </div>
+      <div class="{{ '' if active_tab == 'parking' else 'd-none' }}" id="unit-parking">
+        <div class="unit-panel-heading">
+          <h5>Car Park & Storage</h5>
+          <a href="{{ url_for('unit_bp.edit', unit_id=unit.id) }}" class="btn btn-success btn-sm">Update Space Details</a>
+        </div>
+        <div class="unit-detail-grid">
+          <div>
+            <span>Car Park Space Number</span>
+            <strong>{{ unit.parking_label or "-" }}</strong>
+          </div>
+          <div>
+            <span>Storage / Locker Number</span>
+            <strong>{{ unit.storage_label or "-" }}</strong>
+          </div>
+          <div>
+            <span>Parent Unit</span>
+            <strong>{{ unit.parent_unit.unit_label if unit.parent_unit else "-" }}</strong>
+          </div>
+          <div>
+            <span>Unit Category</span>
+            <strong>{{ unit.unit_category or "-" }}</strong>
+          </div>
+        </div>
+      </div>
 
-                <div class="col-md-6 mt-4 mt-md-0">
-                  <h6 class="text-xs text-uppercase text-secondary fw-bold mb-3">
-                    Building &amp; Service Charge
-                  </h6>
-                  <ul class="list-group">
-                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
-                      <span class="text-sm text-secondary">Block</span>
-                      <span class="text-sm">{{ unit.block_name or "—" }}</span>
-                    </li>
-                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
-                      <span class="text-sm text-secondary">Core / Stairwell</span>
-                      <span class="text-sm">{{ unit.core_name or "—" }}</span>
-                    </li>
-                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
-                      <span class="text-sm text-secondary">Floor</span>
-                      <span class="text-sm">{{ unit.floor_number or "—" }}</span>
-                    </li>
-                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
-                      <span class="text-sm text-secondary">Area (m²)</span>
-                      <span class="text-sm">
-                        {% if unit.square_meters is not none %}
-                          {{ "%.2f"|format(unit.square_meters) }}
-                        {% else %}
-                          —
-                        {% endif %}
-                      </span>
-                    </li>
-                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
-                      <span class="text-sm text-secondary">Service Charge Scheme</span>
-                      <span class="text-sm">{{ unit.service_charge_scheme or "—" }}</span>
-                    </li>
-                    <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
-                      <span class="text-sm text-secondary">Service Charge %</span>
-                      <span class="text-sm">
-                        {% if unit.service_charge_percent is not none %}
-                          {{ "%.4f"|format(unit.service_charge_percent) }}%
-                        {% else %}
-                          —
-                        {% endif %}
-                      </span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              {% if child_units and child_units|length %}
-                <hr class="my-4">
-                <h6 class="text-xs text-uppercase text-secondary fw-bold mb-3">
-                  Linked Sub-Units (Parking, Lockers, etc.)
-                </h6>
-                <div class="table-responsive">
-                  <table class="table align-items-center mb-0">
-                    <thead>
-                      <tr>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Label</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Category</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Block/Core</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder text-end">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for cu in child_units %}
-                        <tr>
-                          <td class="text-sm fw-semibold">{{ cu.unit_label }}</td>
-                          <td class="text-sm">{{ cu.unit_category or "—" }}</td>
-                          <td class="text-sm">
-                            {{ cu.block_name or "—" }}
-                            {% if cu.core_name %} / {{ cu.core_name }}{% endif %}
-                          </td>
-                          <td class="text-end">
-                            <a href="{{ url_for('unit.view_unit', unit_id=cu.id) }}"
-                               class="btn btn-outline-primary btn-xs">
-                              View
-                            </a>
-                          </td>
-                        </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              {% endif %}
-
-            </div>
-
-            {# ---------------------------------------------------
-               OWNERS TAB – WITH HORIZONTAL TIMELINE
-               --------------------------------------------------- #}
-            <div class="tab-pane fade" id="pane-owners" role="tabpanel">
-
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="mb-0">Ownership History &amp; Current Owners</h6>
-                <span class="badge bg-gradient-info text-xxs">
-                  Members Logix · Legal Ownership
-                </span>
-              </div>
-
+      <div class="{{ '' if active_tab == 'owners' else 'd-none' }}" id="unit-owners">
+        <div class="unit-panel-heading">
+          <h5>Owner Details</h5>
+          <div class="d-flex flex-wrap gap-2 justify-content-end">
+            <form method="POST" action="{{ url_for('unit_bp.create_access_invite', unit_id=unit.id) }}" class="d-flex flex-wrap gap-2 align-items-center">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <select name="role" class="form-select form-select-sm" aria-label="Invite role" style="width: 130px;">
+                <option value="owner">Owner</option>
+                <option value="co_owner">Co-owner</option>
+                <option value="resident">Resident</option>
+                <option value="tenant">Tenant</option>
+              </select>
+              <input type="email" name="email" class="form-control form-control-sm" placeholder="Optional email" style="width: 190px;">
+              <button type="submit" class="btn btn-outline-primary btn-sm">Create Portal Code</button>
+            </form>
+            <a href="{{ url_for('unit_bp.edit', unit_id=unit.id) }}" class="btn btn-success btn-sm">Add / Update Co-owner</a>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table unit-table align-items-center mb-0">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Correspondence Address</th>
+                <th>Ownership</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
               {% if owner_links and owner_links|length %}
-                <!-- TIMELINE Card -->
-                <div class="card mb-4 border shadow-sm">
-                  <div class="card-header pb-2">
-                    <h6 class="text-sm mb-0">Ownership Timeline</h6>
-                    <p class="text-xs text-muted mb-0">
-                      Visual snapshot of who legally owned the unit and when. Ideal for
-                      disputes, historical queries, and GAR risk analysis.
-                    </p>
-                  </div>
-                  <div class="card-body">
-
-                    <style>
-                      .unit-timeline-row {
-                        border-left: 2px solid rgba(0,0,0,.08);
-                        padding-left: 1rem;
-                        margin-bottom: 1.25rem;
-                        position: relative;
-                      }
-                      .unit-timeline-row::before {
-                        content: "";
-                        width: 10px;
-                        height: 10px;
-                        border-radius: 50%;
-                        background: linear-gradient(135deg, #66bb6a, #26a69a);
-                        position: absolute;
-                        left: -6px;
-                        top: 6px;
-                      }
-                      .unit-timeline-bar {
-                        height: 6px;
-                        border-radius: 999px;
-                        background: linear-gradient(90deg, rgba(76,175,80,0.15), rgba(0,150,136,0.65));
-                        margin: .5rem 0 .25rem;
-                      }
-                      .chip-active {
-                        font-size: 10px;
-                        padding: 0.15rem 0.4rem;
-                        border-radius: 999px;
-                        background: rgba(76,175,80,0.12);
-                        color: #2e7d32;
-                      }
-                    </style>
-
-                    {% for link in owner_links %}
-                      {# Try to resolve the member entity #}
-                      {% set m = (link.member if link.member is defined else
-                                  (link.owner if link.owner is defined else none)) %}
-                      <div class="unit-timeline-row">
-                        <div class="d-flex justify-content-between align-items-center">
-                          <div>
-                            <div class="d-flex align-items-center gap-2">
-                              <span class="fw-semibold text-sm">
-                                {{ m.full_name if m and m.full_name is defined and m.full_name else
-                                   (m.name if m and m.name is defined else "Owner") }}
-                              </span>
-                              {% if link.is_current is defined and link.is_current %}
-                                <span class="chip-active">Current</span>
-                              {% endif %}
-                            </div>
-                            <div class="text-xs text-muted">
-                              {{ link.role|capitalize if link.role is defined else "Owner" }}
-                              {% if m and m.country is defined and m.country %}
-                                · {{ m.country }}
-                              {% endif %}
-                            </div>
-                          </div>
-                          <div class="text-end text-xs text-muted">
-                            <div>
-                              {{ link.start_date.strftime("%d %b %Y") if link.start_date %}
-                              –
-                              {{ link.end_date.strftime("%d %b %Y") if link.end_date else "Present" }}
-                            </div>
-                            {% if link.acquisition_method is defined and link.acquisition_method %}
-                              <div>{{ link.acquisition_method }}</div>
-                            {% endif %}
-                          </div>
-                        </div>
-
-                        <div class="unit-timeline-bar"></div>
-
-                        {% if link.notes is defined and link.notes %}
-                          <div class="text-xs text-muted">
-                            {{ link.notes }}
-                          </div>
-                        {% endif %}
-                      </div>
-                    {% endfor %}
-                  </div>
-                </div>
-
+                {% for row in owner_links %}
+                  {% set owner = row.member %}
+                  {% set link = row.link %}
+                  <tr>
+                    <td>{{ owner.full_name }}</td>
+                    <td>{{ owner.phone or "-" }}</td>
+                    <td>{{ owner.email or "-" }}</td>
+                    <td>{{ owner.correspondence_address or "-" }}</td>
+                    <td>
+                      {{ link.ownership_start_date.strftime("%d %b %Y") if link.ownership_start_date else "Unknown" }}
+                      -
+                      {{ link.ownership_end_date.strftime("%d %b %Y") if link.ownership_end_date else "Present" }}
+                    </td>
+                    <td>
+                      <span class="unit-status-pill {{ 'is-active' if link.is_current else '' }}">
+                        {{ "Current" if link.is_current else "Historic" }}
+                      </span>
+                    </td>
+                  </tr>
+                {% endfor %}
               {% else %}
-                <div class="alert alert-secondary text-sm">
-                  No ownership data has been captured yet for this unit. Once you
-                  start recording owners with start / end dates, GAR can surface
-                  patterns, risk signals and legal queries instantly.
-                </div>
+                <tr><td colspan="6" class="unit-empty">No owner information has been captured for this unit.</td></tr>
               {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-              {# Simple tabular summary as well – easy export / audit #}
-              {% if owners and owners|length %}
-                <h6 class="text-xs text-uppercase text-secondary fw-bold mb-3">
-                  Owner Summary (Current + Historical)
-                </h6>
-                <div class="table-responsive">
-                  <table class="table align-items-center mb-0">
-                    <thead>
-                      <tr>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Name</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Email</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Phone</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Country</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for o in owners %}
-                        <tr>
-                          <td class="text-sm">
-                            {{ o.full_name if o.full_name is defined and o.full_name else o.name }}
-                          </td>
-                          <td class="text-sm">
-                            {{ o.email if o.email is defined else "—" }}
-                          </td>
-                          <td class="text-sm">
-                            {{ o.phone if o.phone is defined else "—" }}
-                          </td>
-                          <td class="text-sm">
-                            {{ o.country if o.country is defined and o.country else "—" }}
-                          </td>
-                        </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              {% endif %}
-
-            </div>
-
-            {# ---------------------------------------------------
-               RESIDENTS TAB – TENANCY / OCCUPANCY TIMELINE
-               --------------------------------------------------- #}
-            <div class="tab-pane fade" id="pane-residents" role="tabpanel">
-
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="mb-0">Residents &amp; Tenancy History</h6>
-                <span class="badge bg-gradient-dark text-xxs">
-                  Members Logix · Occupancy
-                </span>
-              </div>
-
+      <div class="{{ '' if active_tab == 'residents' else 'd-none' }}" id="unit-residents">
+        <div class="unit-panel-heading">
+          <h5>Residents / Tenants</h5>
+          <a href="{{ url_for('unit_bp.edit', unit_id=unit.id, active_form_tab='tenant') }}" class="btn btn-success btn-sm">Add / Update Occupier</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table unit-table align-items-center mb-0">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Tenancy Period</th>
+                <th>Notes</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
               {% if resident_links and resident_links|length %}
-                <div class="card mb-4 border shadow-sm">
-                  <div class="card-header pb-2">
-                    <h6 class="text-sm mb-0">Tenancy / Occupancy Timeline</h6>
-                    <p class="text-xs text-muted mb-0">
-                      Distinguish owner-occupiers from tenants, track move-ins and move-outs,
-                      and give Directors instant context during disputes.
-                    </p>
-                  </div>
-                  <div class="card-body">
-                    {% for link in resident_links %}
-                      {% set m = (link.member if link.member is defined else
-                                  (link.resident if link.resident is defined else none)) %}
-                      <div class="unit-timeline-row">
-                        <div class="d-flex justify-content-between align-items-center">
-                          <div>
-                            <div class="d-flex align-items-center gap-2">
-                              <span class="fw-semibold text-sm">
-                                {{ m.full_name if m and m.full_name is defined and m.full_name else
-                                   (m.name if m and m.name is defined else "Resident") }}
-                              </span>
-                              {% if link.is_current is defined and link.is_current %}
-                                <span class="chip-active">Current</span>
-                              {% endif %}
-                            </div>
-                            <div class="text-xs text-muted">
-                              {% if link.occupancy_type is defined and link.occupancy_type %}
-                                {{ link.occupancy_type }}
-                              {% else %}
-                                Resident / Tenant
-                              {% endif %}
-                              {% if m and m.country is defined and m.country %}
-                                · {{ m.country }}
-                              {% endif %}
-                            </div>
-                          </div>
-                          <div class="text-end text-xs text-muted">
-                            <div>
-                              {{ link.start_date.strftime("%d %b %Y") if link.start_date %}
-                              –
-                              {{ link.end_date.strftime("%d %b %Y") if link.end_date else "Present" }}
-                            </div>
-                            {% if link.lease_reference is defined and link.lease_reference %}
-                              <div>Lease: {{ link.lease_reference }}</div>
-                            {% endif %}
-                          </div>
-                        </div>
-
-                        <div class="unit-timeline-bar"></div>
-
-                        {% if link.notes is defined and link.notes %}
-                          <div class="text-xs text-muted">
-                            {{ link.notes }}
-                          </div>
-                        {% endif %}
-                      </div>
-                    {% endfor %}
-                  </div>
-                </div>
+                {% for row in resident_links %}
+                  {% set resident = row.member %}
+                  {% set link = row.link %}
+                  <tr>
+                    <td>{{ resident.full_name }}</td>
+                    <td>{{ resident.phone or "-" }}</td>
+                    <td>{{ resident.email or "-" }}</td>
+                    <td>
+                      {{ link.tenancy_start_date.strftime("%d %b %Y") if link.tenancy_start_date else "Unknown" }}
+                      -
+                      {{ link.tenancy_end_date.strftime("%d %b %Y") if link.tenancy_end_date else "Present" }}
+                    </td>
+                    <td>{{ link.notes or "-" }}</td>
+                    <td>
+                      <span class="unit-status-pill {{ 'is-active' if link.is_current else '' }}">
+                        {{ "Current" if link.is_current else "Historic" }}
+                      </span>
+                    </td>
+                  </tr>
+                {% endfor %}
               {% else %}
-                <div class="alert alert-secondary text-sm">
-                  No resident / tenancy history captured yet. Once you start logging
-                  occupancies, Members Logix and GAR can highlight arrears-risk,
-                  frequent churn, and governance concerns.
-                </div>
+                <tr><td colspan="6" class="unit-empty">No resident or tenancy information has been captured for this unit.</td></tr>
               {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-              {% if residents and residents|length %}
-                <h6 class="text-xs text-uppercase text-secondary fw-bold mb-3">
-                  Resident Summary
-                </h6>
-                <div class="table-responsive">
-                  <table class="table align-items-center mb-0">
-                    <thead>
-                      <tr>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Name</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Email</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Phone</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Notes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for r in residents %}
-                        <tr>
-                          <td class="text-sm">
-                            {{ r.full_name if r.full_name is defined and r.full_name else r.name }}
-                          </td>
-                          <td class="text-sm">{{ r.email if r.email is defined else "—" }}</td>
-                          <td class="text-sm">{{ r.phone if r.phone is defined else "—" }}</td>
-                          <td class="text-sm text-muted">
-                            {{ r.notes if r.notes is defined and r.notes else "—" }}
-                          </td>
-                        </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              {% endif %}
-
-            </div>
-
-            {# ---------------------------------------------------
-               FINANCE TAB
-               --------------------------------------------------- #}
-            <div class="tab-pane fade" id="pane-finance" role="tabpanel">
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="mb-0">Finance Snapshot</h6>
-                <span class="badge bg-gradient-success text-xxs">
-                  Finance Logix · Service Charges &amp; Invoices
-                </span>
-              </div>
-
-              {% if invoices and invoices|length %}
-                <div class="table-responsive">
-                  <table class="table align-items-center mb-0">
-                    <thead>
-                      <tr>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Invoice #</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Date</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Amount</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for inv in invoices %}
-                        <tr>
-                          <td class="text-sm">{{ inv.reference or ("INV-" ~ inv.id) }}</td>
-                          <td class="text-sm">
-                            {{ inv.issue_date.strftime("%d %b %Y") if inv.issue_date else "—" }}
-                          </td>
-                          <td class="text-sm">
-                            {% if inv.amount is not none %}
-                              {{ "%.2f"|format(inv.amount) }}
-                            {% else %}
-                              —
-                            {% endif %}
-                          </td>
-                          <td class="text-sm">
-                            {% if inv.status %}
-                              <span class="badge bg-gradient-{{ 'success' if inv.status=='paid' else 'warning' }}">
-                                {{ inv.status|replace("_"," ")|title }}
-                              </span>
-                            {% else %}
-                              —
-                            {% endif %}
-                          </td>
-                        </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              {% else %}
-                <p class="text-sm text-muted mb-0">
-                  No Finance Logix invoices recorded for this unit yet.
-                </p>
-              {% endif %}
-            </div>
-
-            {# ---------------------------------------------------
-               WORKS TAB
-               --------------------------------------------------- #}
-            <div class="tab-pane fade" id="pane-works" role="tabpanel">
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="mb-0">Works &amp; Reactive Maintenance</h6>
-                <span class="badge bg-gradient-warning text-xxs">
-                  Works Logix · Reactive &amp; PPM
-                </span>
-              </div>
-
-              {% if work_orders and work_orders|length %}
-                <div class="table-responsive">
-                  <table class="table align-items-center mb-0">
-                    <thead>
-                      <tr>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Ref</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Type</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Contractor</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Status</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Created</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for wo in work_orders %}
-                        <tr>
-                          <td class="text-sm">{{ wo.reference or ("WO-" ~ wo.id) }}</td>
-                          <td class="text-sm">{{ wo.work_type or "—" }}</td>
-                          <td class="text-sm">
-                            {{ wo.contractor.company_name if wo.contractor is defined and wo.contractor else "—" }}
-                          </td>
-                          <td class="text-sm">
-                            {% if wo.status %}
-                              <span class="badge bg-gradient-{{ 'success' if wo.status=='completed' else 'info' }}">
-                                {{ wo.status|replace("_"," ")|title }}
-                              </span>
-                            {% else %}
-                              —
-                            {% endif %}
-                          </td>
-                          <td class="text-sm">
-                            {{ wo.created_at.strftime("%d %b %Y") if wo.created_at else "—" }}
-                          </td>
-                        </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              {% else %}
-                <p class="text-sm text-muted mb-0">
-                  No Works Logix records found for this unit yet.
-                </p>
-              {% endif %}
-            </div>
-
-            {# ---------------------------------------------------
-               DOCUMENTS TAB
-               --------------------------------------------------- #}
-            <div class="tab-pane fade" id="pane-documents" role="tabpanel">
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="mb-0">Documents</h6>
-                <span class="badge bg-gradient-secondary text-xxs">
-                  Core Docs · Leases · Reports
-                </span>
-              </div>
-
-              {% if documents and documents|length %}
-                <div class="table-responsive">
-                  <table class="table align-items-center mb-0">
-                    <thead>
-                      <tr>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Name</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Type</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Uploaded</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder text-end">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for doc in documents %}
-                        <tr>
-                          <td class="text-sm">{{ doc.title or doc.filename }}</td>
-                          <td class="text-sm">{{ doc.doc_type or "—" }}</td>
-                          <td class="text-sm">
-                            {{ doc.created_at.strftime("%d %b %Y") if doc.created_at else "—" }}
-                          </td>
-                          <td class="text-end">
-                            {% if doc.download_url %}
-                              <a href="{{ doc.download_url }}" class="btn btn-outline-primary btn-xs">
-                                Download
-                              </a>
-                            {% else %}
-                              <span class="text-xs text-muted">No file</span>
-                            {% endif %}
-                          </td>
-                        </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              {% else %}
-                <p class="text-sm text-muted mb-0">
-                  No documents linked to this unit yet.
-                </p>
-              {% endif %}
-            </div>
-
-            {# ---------------------------------------------------
-               AI / GAR TAB – LIGHT PHASE 1
-               --------------------------------------------------- #}
-            <div class="tab-pane fade" id="pane-ai" role="tabpanel">
-              <h6 class="mb-3">GAR / AI Readiness</h6>
-              <p class="text-sm text-muted">
-                This section will evolve into a full AI scorecard for the unit, combining:
-              </p>
-              <ul class="text-sm text-muted ps-3">
-                <li>Ownership &amp; occupancy stability (from the timelines above).</li>
-                <li>Arrears risk and payment patterns (Finance Logix).</li>
-                <li>Works history, repeat faults and lifecycle patterns (Works Logix).</li>
-                <li>Document completeness and governance alignment (Leases, PSRA contracts, etc.).</li>
-              </ul>
-              <p class="text-xs text-muted mb-0">
-                As more data is captured, GAR will be able to surface a clear, explainable
-                recommendation at unit, block and estate level.
-              </p>
-            </div>
-
+      <div class="{{ '' if active_tab == 'finance' else 'd-none' }}" id="unit-finance">
+        <div class="unit-panel-heading">
+          <h5>Service Charge History</h5>
+          <span class="unit-module-note">Finance Logix connection point</span>
+        </div>
+        <div class="unit-detail-grid">
+          <div>
+            <span>Service Charge %</span>
+            <strong>{{ "%.4f"|format(unit.service_charge_percent) ~ "%" if unit.service_charge_percent is not none else "-" }}</strong>
+          </div>
+          <div>
+            <span>Service Charge Amount</span>
+            <strong>{{ "%.2f"|format(unit.service_charge_amount) if unit.service_charge_amount is not none else "-" }}</strong>
+          </div>
+          <div>
+            <span>Financial Year Start</span>
+            <strong>{{ unit.financial_year_start.strftime("%d %b %Y") if unit.financial_year_start else "-" }}</strong>
+          </div>
+          <div>
+            <span>Financial Year End</span>
+            <strong>{{ unit.financial_year_end.strftime("%d %b %Y") if unit.financial_year_end else "-" }}</strong>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- RIGHT: METADATA / SNAPSHOT CARD -->
-    <div class="col-12 col-xl-4 mt-4 mt-xl-0">
-      <div class="card h-100">
-        <div class="card-header pb-2">
-          <h6 class="mb-1">Unit Governance Snapshot</h6>
-          <p class="text-xs text-muted mb-0">
-            High-level view of how well this unit is wired into LogixPM.
-          </p>
+      <div class="{{ '' if active_tab == 'works' else 'd-none' }}" id="unit-works">
+        <div class="unit-panel-heading">
+          <h5>Works</h5>
+          <span class="unit-module-note">Works Logix and Members Logix connection point</span>
         </div>
-        <div class="card-body">
-          <div class="mb-3">
-            <span class="text-xs text-secondary d-block mb-1">Data Completeness</span>
-            <div class="progress" style="height: 6px;">
-              {# Placeholder – we can later drive this from AI / GAR #}
-              <div class="progress-bar" role="progressbar"
-                   style="width: 70%;"
-                   aria-valuenow="70" aria-valuemin="0" aria-valuemax="100"></div>
+        <div class="unit-work-summary">
+          <a class="{{ 'active' if work_view == 'open' else '' }}" href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='works', work_view='open') }}">
+            <span>Open Work Orders</span>
+            <strong>{{ works_summary.open_work_order_count if works_summary else 0 }}</strong>
+          </a>
+          <a class="{{ 'active' if work_view == 'closed' else '' }}" href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='works', work_view='closed') }}">
+            <span>Closed Work Orders</span>
+            <strong>{{ works_summary.closed_work_order_count if works_summary else 0 }}</strong>
+          </a>
+          <a class="{{ 'active' if work_view == 'total' else '' }}" href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='works', work_view='total') }}">
+            <span>Total Work Orders</span>
+            <strong>{{ works_summary.total_work_orders if works_summary else 0 }}</strong>
+          </a>
+        </div>
+
+        {% if pending_reopen_requests and pending_reopen_requests|length %}
+          <div class="unit-reopen-review-list">
+            <div class="unit-panel-heading">
+              <h6 class="mb-0">Pending Reopen Requests</h6>
+              <span class="unit-module-note">Members Logix requests awaiting Works Logix review</span>
             </div>
-            <small class="text-xxs text-muted">
-              As more owners, residents, documents and works are logged,
-              this bar will move towards 100%.
-            </small>
+            {% for reopen_request in pending_reopen_requests %}
+              <div class="unit-reopen-request-row">
+                <div>
+                  <strong>WO-{{ reopen_request.work_order_id }}</strong>
+                  <span>{{ reopen_request.reason or "No reason supplied" }}</span>
+                  <p>{{ reopen_request.additional_details or "No additional detail supplied." }}</p>
+                </div>
+                <div class="unit-reopen-actions">
+                  <form method="post" action="{{ url_for('unit_bp.reopen_request_approve', request_id=reopen_request.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-primary btn-sm">Approve</button>
+                  </form>
+                  <form method="post" action="{{ url_for('unit_bp.reopen_request_reject', request_id=reopen_request.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Reject</button>
+                  </form>
+                </div>
+              </div>
+            {% endfor %}
           </div>
+        {% endif %}
 
-          <hr>
-
-          <ul class="list-group mb-3">
-            <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
-              <span class="text-xs text-secondary">Client</span>
-              <span class="text-xs fw-semibold">{{ client.name if client else "—" }}</span>
-            </li>
-            <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
-              <span class="text-xs text-secondary">Company</span>
-              <span class="text-xs fw-semibold">{{ company.name if company else "—" }}</span>
-            </li>
-            <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
-              <span class="text-xs text-secondary">Category</span>
-              <span class="text-xs">{{ unit.unit_category or "—" }}</span>
-            </li>
-            <li class="list-group-item border-0 px-0 py-1 d-flex justify-content-between">
-              <span class="text-xs text-secondary">Common Area</span>
-              <span class="text-xs">
-                {% if unit.is_common_area %}
-                  <span class="badge bg-gradient-info text-xxs">Yes</span>
-                {% else %}
-                  No
+        {% if work_view == "closed" %}
+          <div class="unit-section-heading-row">
+            <h6 class="unit-section-title mb-0">Closed Work Orders</h6>
+            <form method="get" class="unit-inline-search">
+              <input type="hidden" name="tab" value="works">
+              <input type="hidden" name="work_view" value="closed">
+              <input type="search" name="closed_work_search" class="form-control form-control-sm" value="{{ closed_work_search }}" placeholder="Search closed work orders">
+              <button type="submit" class="btn btn-outline-primary btn-sm">Search</button>
+            </form>
+          </div>
+          <div class="table-responsive mb-4">
+            <table class="table unit-table align-items-center mb-0">
+              <thead>
+                <tr>
+                  <th>Reference</th>
+                  <th>Title</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Closed / Created</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% set ns = namespace(matches=0) %}
+                {% if closed_work_orders and closed_work_orders|length %}
+                  {% for wo in closed_work_orders %}
+                    {% set haystack = ('WO-' ~ wo.id ~ ' ' ~ (wo.title or '') ~ ' ' ~ (wo.request_type or '') ~ ' ' ~ (wo.business_type or '') ~ ' ' ~ (wo.status or ''))|lower %}
+                    {% if not closed_work_search or closed_work_search|lower in haystack %}
+                      {% set ns.matches = ns.matches + 1 %}
+                      <tr>
+                        <td>WO-{{ wo.id }}</td>
+                        <td>{{ wo.title or "-" }}</td>
+                        <td>{{ wo.request_type or wo.business_type or "-" }}</td>
+                        <td><span class="unit-status-pill">{{ wo.status or "Closed" }}</span></td>
+                        <td>{{ wo.created_at.strftime("%d %b %Y") if wo.created_at else "-" }}</td>
+                        <td>
+                          <a class="unit-row-action" href="{{ url_for('unit_bp.work_order_review', unit_id=unit.id, work_order_id=wo.id) }}">Review / Reopen</a>
+                        </td>
+                      </tr>
+                    {% endif %}
+                  {% endfor %}
                 {% endif %}
-              </span>
-            </li>
-          </ul>
 
-          <p class="text-xs text-muted mb-0">
-            As Director Logix and Members Logix come online, this card can be tailored
-            for each audience – owners see plain-English context, Directors see risk
-            and funding implications, and PMs see workload &amp; lifecycle planning.
-          </p>
+                {% if ns.matches == 0 %}
+                  <tr>
+                    <td colspan="6" class="unit-empty">
+                      {% if closed_work_search %}
+                        No closed work orders match “{{ closed_work_search }}”.
+                      {% else %}
+                        No closed work orders are linked to this unit.
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        {% elif work_view == "total" %}
+          <h6 class="unit-section-title">All Work Orders</h6>
+          <div class="table-responsive mb-4">
+            <table class="table unit-table align-items-center mb-0">
+              <thead>
+                <tr>
+                  <th>Reference</th>
+                  <th>Title</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% set all_work_orders = (work_orders or []) + (closed_work_orders or []) %}
+                {% if all_work_orders and all_work_orders|length %}
+                  {% for wo in all_work_orders %}
+                    <tr>
+                      <td>WO-{{ wo.id }}</td>
+                      <td>{{ wo.title or "-" }}</td>
+                      <td>{{ wo.request_type or wo.business_type or "-" }}</td>
+                      <td><span class="unit-status-pill {{ 'is-active' if wo in work_orders else '' }}">{{ wo.status or "Open" }}</span></td>
+                      <td>{{ wo.created_at.strftime("%d %b %Y") if wo.created_at else "-" }}</td>
+                      <td>
+                        <a class="unit-row-action" href="{{ url_for('unit_bp.work_order_review', unit_id=unit.id, work_order_id=wo.id) }}">Review</a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr><td colspan="6" class="unit-empty">No work orders are linked to this unit.</td></tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <h6 class="unit-section-title">Open Work Orders</h6>
+          <div class="table-responsive mb-4">
+            <table class="table unit-table align-items-center mb-0">
+              <thead>
+                <tr>
+                  <th>Reference</th>
+                  <th>Title</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if work_orders and work_orders|length %}
+                  {% for wo in work_orders %}
+                    <tr>
+                      <td>WO-{{ wo.id }}</td>
+                      <td>{{ wo.title or "-" }}</td>
+                      <td>{{ wo.request_type or wo.business_type or "-" }}</td>
+                      <td><span class="unit-status-pill is-active">{{ wo.status or "Open" }}</span></td>
+                      <td>{{ wo.created_at.strftime("%d %b %Y") if wo.created_at else "-" }}</td>
+                      <td>
+                        <a class="unit-row-action" href="{{ url_for('unit_bp.work_order_review', unit_id=unit.id, work_order_id=wo.id) }}">Review</a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr><td colspan="6" class="unit-empty">No open Works Logix work orders are linked to this unit.</td></tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+
+          <h6 class="unit-section-title">Open Maintenance Requests</h6>
+          <div class="table-responsive">
+            <table class="table unit-table align-items-center mb-0">
+              <thead>
+                <tr>
+                  <th>Reference</th>
+                  <th>Title</th>
+                  <th>Category</th>
+                  <th>Urgency</th>
+                  <th>Status</th>
+                  <th>Reported</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if maintenance_requests and maintenance_requests|length %}
+                  {% for mr in maintenance_requests %}
+                    <tr>
+                      <td>MR-{{ mr.id }}</td>
+                      <td>{{ mr.title or "-" }}</td>
+                      <td>{{ mr.category or "-" }}</td>
+                      <td>{{ mr.urgency_level or "Normal" }}</td>
+                      <td><span class="unit-status-pill is-active">{{ mr.status or "Pending" }}</span></td>
+                      <td>{{ mr.created_at.strftime("%d %b %Y") if mr.created_at else "-" }}</td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr><td colspan="6" class="unit-empty">No open member maintenance requests are linked to this unit.</td></tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="{{ '' if active_tab == 'documents' else 'd-none' }}" id="unit-documents">
+        <div class="unit-panel-heading">
+          <h5>Documents</h5>
+          <span class="unit-module-note">Lease, compliance and governance files</span>
+        </div>
+        <p class="unit-empty mb-0">No documents are linked to this unit yet.</p>
+      </div>
+
+      <div class="{{ '' if active_tab == 'ai' else 'd-none' }}" id="unit-gar">
+        <div class="unit-panel-heading">
+          <h5>GAR AI Readiness</h5>
+          <span class="unit-module-note">Governance intelligence layer</span>
+        </div>
+        <div class="unit-detail-grid">
+          <div>
+            <span>Owner Captured</span>
+            <strong>{{ "Yes" if current_owner else "No" }}</strong>
+          </div>
+          <div>
+            <span>Occupier Captured</span>
+            <strong>{{ "Yes" if current_tenant else "No" }}</strong>
+          </div>
+          <div>
+            <span>Finance Connected</span>
+            <strong>Pending</strong>
+          </div>
+          <div>
+            <span>Works Connected</span>
+            <strong>Pending</strong>
+          </div>
         </div>
       </div>
-    </div>
-
+    </section>
   </div>
 </div>
-{% block scripts %}
-{{ super() }}
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-
-    // ----------------------------------------------------------
-    // 1. Open correct tab when URL contains ?tab=xxxx
-    // ----------------------------------------------------------
-    const params = new URLSearchParams(window.location.search);
-    const tab = params.get("tab");
-
-    const tabMap = {
-        summary: "tab-summary",
-        owners: "tab-owners",
-        residents: "tab-residents",
-        finance: "tab-finance",
-        works: "tab-works",
-        documents: "tab-documents",
-        ai: "tab-ai"
-    };
-
-    if (tab && tabMap[tab.toLowerCase()]) {
-        const triggerId = tabMap[tab.toLowerCase()];
-        const triggerEl = document.getElementById(triggerId);
-
-        if (triggerEl) {
-            new bootstrap.Tab(triggerEl).show();
-
-            // Smooth scroll into position
-            triggerEl.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-    }
-
-    // ----------------------------------------------------------
-    // 2. Update URL automatically when user switches tabs
-    // ----------------------------------------------------------
-    const navTriggers = document.querySelectorAll('[data-bs-toggle="tab"]');
-
-    navTriggers.forEach(trigger => {
-        trigger.addEventListener("shown.bs.tab", function (event) {
-
-            const newTabId = event.target.id; // e.g. "tab-owners"
-            let newTabKey = Object.keys(tabMap).find(
-                key => tabMap[key] === newTabId
-            );
-
-            if (!newTabKey) return;
-
-            const newUrl = new URL(window.location);
-            newUrl.searchParams.set("tab", newTabKey);
-
-            // Replace (no page reload)
-            window.history.replaceState({}, "", newUrl);
-        });
-    });
-});
-</script>
-
 {% endblock %}

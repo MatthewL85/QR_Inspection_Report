@@ -67,6 +67,7 @@ from app.models.members.resident_request import ResidentRequest
 from app.models.members.access_log import AccessLog
 from app.models.members.tenancy import Tenancy
 from app.models.members.unit_membership import UnitMembership
+from app.models.members.unit_access_invite import UnitAccessInvite
 
 
 # ----------------------------
@@ -82,6 +83,8 @@ from app.models.works.work_order_completion import WorkOrderCompletion
 from app.models.works.work_order_settings import WorkOrderSettings
 from app.models.works.work_order_setting_audit_log import WorkOrderSettingAuditLog
 from app.models.works.work_order_policy import WorkOrderPolicy
+from app.models.works.work_order_reopen_request import WorkOrderReopenRequest
+from app.models.works.work_order_lifecycle_event import WorkOrderLifecycleEvent
 from app.models.works.quote_response import QuoteResponse
 from app.models.works.quote_recipient import QuoteRecipient
 from app.models.works.special_project import ClientSpecialProject

@@ -1,0 +1,27 @@
+{% set quality_records = works_gar_contractor_quality|default([], true) %}
+{% if quality_records %}
+  <div class="works-gar-quality-dashboard">
+    <div class="works-gar-quality-dashboard-heading">
+      <div>
+        <span>GAR Quality Signal</span>
+        <strong>Contractor quality review</strong>
+      </div>
+      {% if works_gar_quality_url is defined and works_gar_quality_url %}
+        <a href="{{ works_gar_quality_url }}">Open Review Queue</a>
+      {% endif %}
+    </div>
+    <div class="works-gar-quality-dashboard-grid">
+      {% for record in quality_records[:3] %}
+        <article>
+          <span>{{ (record.get('severity') or 'medium')|title }}</span>
+          <strong>{{ record.get('label') or record.get('contractor_name') or 'Contractor' }}</strong>
+          <small>
+            {{ record.get('repeated_return_count') or 0 }} repeated return{{ '' if (record.get('repeated_return_count') or 0) == 1 else 's' }}
+            ·
+            {{ record.get('low_feedback_count') or 0 }} low feedback
+          </small>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}

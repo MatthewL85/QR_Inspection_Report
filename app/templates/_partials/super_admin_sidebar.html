@@ -21,11 +21,11 @@
     <ul class="navbar-nav">
       {% set _items = [
         ('super_admin.dashboard',       'Dashboard',  'dashboard',     'text-primary'),
-        ('super_admin.clients_index',    'Clients',    'business',      'text-dark'),
-        ('super_admin.users_index',      'Users',      'people',        'text-info'),
-        ('super_admin.contracts_index',  'Contracts',  'receipt_long',  'text-secondary'),
-        ('super_admin.compliance_index', 'Compliance', 'verified_user', 'text-success'),
-        ('super_admin.agm_index',        'AGMs',       'event',         'text-warning')
+        ('super_admin.manage_clients',   'Clients',    'business',      'text-dark'),
+        ('super_admin.manage_users',     'Users',      'people',        'text-info'),
+        ('super_admin_contracts.contracts_overview', 'Contracts', 'receipt_long', 'text-secondary'),
+        ('super_admin.compliance_documents_index', 'Compliance', 'verified_user', 'text-success'),
+        ('super_admin.upcoming_agms',    'AGMs',       'event',         'text-warning')
       ] %}
 
       {% for endpoint, label, icon, color in _items if endpoint in current_app.view_functions %}

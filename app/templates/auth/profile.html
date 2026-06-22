@@ -104,7 +104,7 @@
             <!-- Share with Directors -->
             {% if user.role.name == 'Property Manager' %}
             <div class="form-check form-switch mb-3">
-              <input class="form-check-input" type="checkbox" id="shareWithDirectors" name="share_with_directors" {% if user.share_with_directors %}checked{% endif %}>
+              <input class="form-check-input" type="checkbox" id="shareWithDirectors" name="share_with_directors" {% if user.share_profile_with_directors %}checked{% endif %}>
               <label class="form-check-label" for="shareWithDirectors">Allow Directors to view my profile on Director Logix</label>
             </div>
             {% endif %}
@@ -175,7 +175,7 @@
           {% if user.role.name == 'Property Manager' %}
           <form method="POST" action="{{ url_for('auth.toggle_sharing') }}" class="mb-4">
             <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="shareWithDirectors" name="share_with_directors" {% if user.share_with_directors %}checked{% endif %}>
+              <input class="form-check-input" type="checkbox" id="shareWithDirectors" name="share_with_directors" {% if user.share_profile_with_directors %}checked{% endif %}>
               <label class="form-check-label" for="shareWithDirectors">Allow Directors to view my profile on Director Logix</label>
             </div>
             <button type="submit" class="btn btn-primary mt-2">Save Preferences</button>

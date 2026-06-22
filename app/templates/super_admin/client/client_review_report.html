@@ -1,0 +1,77 @@
+{% extends 'layouts/super_admin_base.html' %}
+
+{% block page_content %}
+<div class="container-fluid client-manager-workspace">
+
+  <div class="client-manager-command-bar">
+    <div>
+      <h5>Client Review Report</h5>
+      <span>Filter client records for portfolio reviews, contract checks and export reporting.</span>
+    </div>
+    <div class="client-manager-actions">
+      <a href="{{ url_for('super_admin.manage_clients') }}" class="unit-link-action">
+        <i class="material-icons">arrow_back</i> Client Manager
+      </a>
+    </div>
+  </div>
+
+  <section class="client-manager-panel client-review-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Report Filters</h6>
+        <span>{{ clients|length }} records match this review</span>
+      </div>
+    </div>
+
+    <form method="get" action="{{ url_for('super_admin.client_review_report') }}" class="client-review-filter-bar">
+      <div>
+        <label for="clientLocationFilter">Location</label>
+        <input id="clientLocationFilter" type="text" class="form-control" name="location"
+               value="{{ filters.get('location', '') if filters else '' }}"
+               placeholder="City, region, address">
+      </div>
+      <div>
+        <label for="contractStartMonth">Contract Start Month</label>
+        <input id="contractStartMonth" type="month" class="form-control" name="contract_start_month"
+               value="{{ filters.get('contract_start_month', '') if filters else '' }}">
+      </div>
+      <div>
+        <label for="contractEndMonth">Contract End Month</label>
+        <input id="contractEndMonth" type="month" class="form-control" name="contract_end_month"
+               value="{{ filters.get('contract_end_month', '') if filters else '' }}">
+      </div>
+      <div>
+        <label for="nextFeeMonth">Next Fee Increase Month</label>
+        <input id="nextFeeMonth" type="month" class="form-control" name="next_fee_month"
+               value="{{ filters.get('next_fee_month', '') if filters else '' }}">
+      </div>
+      <div>
+        <label for="valueSort">Contract Value</label>
+        <select id="valueSort" class="form-control" name="value_sort">
+          {% set selected_sort = filters.get('value_sort', '') if filters else '' %}
+          <option value="" {% if not selected_sort %}selected{% endif %}>Default order</option>
+          <option value="low_to_high" {% if selected_sort == 'low_to_high' %}selected{% endif %}>Lowest to highest</option>
+          <option value="high_to_low" {% if selected_sort == 'high_to_low' %}selected{% endif %}>Highest to lowest</option>
+        </select>
+      </div>
+      <div class="client-review-filter-actions">
+        <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+        <button type="submit" name="export" value="csv" class="btn btn-sm btn-outline-primary">Export Report</button>
+        <a href="{{ url_for('super_admin.client_review_report') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+      </div>
+    </form>
+  </section>
+
+  <section class="client-manager-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Report Results</h6>
+        <span>Export uses the filters above.</span>
+      </div>
+    </div>
+
+    {% include 'super_admin/client/_client_manager_table.html' %}
+  </section>
+
+</div>
+{% endblock %}

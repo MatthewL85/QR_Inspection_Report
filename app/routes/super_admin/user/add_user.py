@@ -10,6 +10,7 @@ from app.models import db
 from app.models.core.user import User
 from app.models.core.role import Role
 from app.models.contractor.contractor import Contractor
+from app.services.user_profile_service import ensure_hr_profile_for_user
 import re
 
 USERNAME_RE = re.compile(r'^[a-z0-9._-]{3,50}$')
@@ -50,6 +51,9 @@ def add_user():
         full_name = request.form.get("full_name", "").strip()
         email = request.form.get("email", "").strip().lower()
         username = (request.form.get("username") or "").strip().lower() or None
+        mobile_phone = request.form.get("mobile_phone", "").strip() or None
+        direct_phone = request.form.get("direct_phone", "").strip() or None
+        phone_extension = request.form.get("phone_extension", "").strip() or None
         password = request.form.get("password")
         confirm_password = request.form.get("confirm_password")
         role_id = request.form.get("role_id")
@@ -127,6 +131,9 @@ def add_user():
             full_name=full_name,
             email=email,
             username=username,
+            mobile_phone=mobile_phone,
+            direct_phone=direct_phone,
+            phone_extension=phone_extension,
             password_hash=generate_password_hash(password),
             role_id=role.id,
             pin=pin,
@@ -155,8 +162,10 @@ def add_user():
 
         try:
             db.session.add(user)
+            db.session.flush()
+            ensure_hr_profile_for_user(user)
             db.session.commit()
-            flash("✅ User created successfully.", "success")
+            flash("User created successfully.", "success")
             return redirect(url_for("super_admin.manage_users"))
         except Exception as e:
             db.session.rollback()

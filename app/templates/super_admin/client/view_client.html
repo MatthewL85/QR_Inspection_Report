@@ -1,435 +1,843 @@
 {% extends 'layouts/super_admin_base.html' %}
 {% block page_content %}
+{% set active_tab = request.args.get("tab", "units") %}
+{% set contracts_sorted = client.contracts | sort(attribute='end_date') if client.contracts else [] %}
+{% set latest_contract = contracts_sorted[-1] if contracts_sorted|length else None %}
+{% set dte = latest_contract.days_to_expiry() if latest_contract else None %}
+{% set role_name = (current_user.role.name if current_user.is_authenticated and current_user.role else session.get('role', '')) | lower %}
+{% set client_profile_list_url = url_for('super_admin.manage_clients') %}
+{% if role_name in ['admin', 'administrator'] and 'admin.manage_clients' in current_app.view_functions %}
+  {% set client_profile_list_url = url_for('admin.manage_clients') %}
+{% elif role_name in ['property manager', 'pm'] and 'property_manager.manage_clients' in current_app.view_functions %}
+  {% set client_profile_list_url = url_for('property_manager.manage_clients') %}
+{% elif role_name in ['property manager', 'pm'] and 'property_manager.pm_dashboard' in current_app.view_functions %}
+  {% set client_profile_list_url = url_for('property_manager.pm_dashboard') %}
+{% elif role_name in ['financial controller', 'financial', 'finance'] and 'finance.manage_clients' in current_app.view_functions %}
+  {% set client_profile_list_url = url_for('finance.manage_clients') %}
+{% elif role_name in ['financial controller', 'financial', 'finance'] and 'finance.dashboard' in current_app.view_functions %}
+  {% set client_profile_list_url = url_for('finance.dashboard') %}
+{% elif role_name in ['assistant property manager', 'assistant', 'assistant user', 'assistant manager', 'master assistant', 'assistant lead', 'senior assistant'] and 'assistant.manage_clients' in current_app.view_functions %}
+  {% set client_profile_list_url = url_for('assistant.manage_clients') %}
+{% elif role_name in ['assistant property manager', 'assistant', 'assistant user', 'assistant manager', 'master assistant', 'assistant lead', 'senior assistant'] and 'property_manager.pm_dashboard' in current_app.view_functions %}
+  {% set client_profile_list_url = url_for('property_manager.pm_dashboard') %}
+{% endif %}
+
+{% macro currency_no_cents(amount, symbol='EUR') -%}
+  {{ symbol }} {{ '{:,.0f}'.format(amount or 0) }}
+{%- endmacro %}
+
 <div class="container-fluid py-4">
-
-  {# ---- helpers (safe fallback) ---- #}
-  {% macro currency_no_cents(amount, symbol='€') -%}
-    {{ symbol }}{{ '{:,.0f}'.format(amount or 0) }}
-  {%- endmacro %}
-
-  {% set contracts_sorted = client.contracts | sort(attribute='end_date') if client.contracts else [] %}
-  {% set latest_contract = contracts_sorted[-1] if contracts_sorted|length else None %}
-  {% set dte = latest_contract.days_to_expiry() if latest_contract else None %}
-
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0">🏢 Client Profile: {{ client.name }}</h4>
-    <div class="d-flex gap-2">
-      <a href="{{ url_for('super_admin.edit_client', client_id=client.id) }}" class="btn btn-sm btn-primary">✏️ Edit</a>
-      <a href="{{ url_for('super_admin.edit_client', client_id=client.id) }}#assignments" class="btn btn-sm btn-outline-secondary">👤 Assign PM</a>
-      <a href="{{ url_for('super_admin.edit_client', client_id=client.id) }}#assignments" class="btn btn-sm btn-outline-dark">💰 Assign FC</a>
-      <a href="{{ url_for('super_admin.edit_client', client_id=client.id) }}#assignments" class="btn btn-sm btn-outline-secondary">🧰 Assign Assistant</a>
-      <a href="{{ url_for('super_admin_contracts.renew', client_id=client.id) }}" class="btn btn-sm btn-outline-primary">📄 Renew Contract</a>
-
-      {% if 'super_admin_contract_start.start' in current_app.view_functions %}
-        <a href="{{ url_for('super_admin_contract_start.start', client_id=client.id) }}"
-           class="btn btn-sm btn-success">➕ Start New Contract</a>
-      {% elif 'super_admin_simple_contracts.new_contract' in current_app.view_functions %}
-        <a href="{{ url_for('super_admin_simple_contracts.new_contract', client_id=client.id) }}"
-           class="btn btn-sm btn-success">➕ Start New Contract</a>
-      {% else %}
-        <a href="{{ url_for('super_admin_contracts.renew', client_id=client.id, step=1) }}"
-           class="btn btn-sm btn-success">➕ Start New Contract</a>
-      {% endif %}
-
-      {# 🔑 NEW: quick access to Key Site Info (with safe fallback) #}
-      <a
-        href="{% if 'client_key_info.list_sections' in current_app.view_functions %}{{ url_for('client_key_info.list_sections', client_id=client.id) }}{% else %}/clients/{{ client.id }}/key-info/{% endif %}"
-        class="btn btn-sm btn-outline-dark"
-      >🔑 Key Site Info</a>
+  <div class="unit-workspace">
+    <div class="unit-command-bar">
+      <div>
+        <h5 class="mb-1">
+          <a href="{{ client_profile_list_url }}" class="text-dark text-decoration-none">Client Profile</a>:
+          {{ client.name }}
+        </h5>
+        <p class="unit-module-note mb-0">
+          Development record for Property Management Logix, Members Logix, Works Logix, Finance Logix and GAR AI.
+        </p>
+      </div>
+      <div class="unit-actions">
+        <a href="{{ url_for('super_admin.edit_client', client_id=client.id) }}" class="unit-link-action">
+          <i class="material-icons">edit</i> Edit Client
+        </a>
+        <span class="unit-action-divider"></span>
+        <a href="{{ url_for('super_admin.edit_client', client_id=client.id) }}#assignments" class="unit-link-action">Assignments</a>
+        <span class="unit-action-divider"></span>
+        <a href="{% if 'client_key_info.list_sections' in current_app.view_functions %}{{ url_for('client_key_info.list_sections', client_id=client.id) }}{% else %}/clients/{{ client.id }}/key-info/{% endif %}" class="unit-link-action">
+          <i class="material-icons">vpn_key</i> Key Site Info
+        </a>
+      </div>
     </div>
-  </div>
 
-  <div class="row">
-    <div class="col-md-6 mb-4">
-      <div class="card h-100">
-        <div class="card-header pb-0"><strong>Core Information</strong></div>
-        <div class="card-body">
-          <p><strong>Name:</strong> {{ client.name }}</p>
-          <p><strong>Client Code:</strong> {{ client.client_code or '—' }}</p>
-          <p><strong>Type:</strong> {{ client.client_type or '—' }}</p>
+    <section class="unit-panel unit-core-static-panel">
+      <div class="unit-panel-heading">
+        <div>
+          <h5>Core Information</h5>
+          <span class="unit-module-note">Static client identity and Super Admin contract control</span>
+        </div>
+        {% if latest_contract and dte is not none %}
+          {% if dte < 0 %}
+            <span class="badge bg-gradient-danger">Expired {{ (dte * -1) }} days ago</span>
+          {% elif dte <= 60 %}
+            <span class="badge bg-gradient-warning text-dark">{{ dte }} days to expiry</span>
+          {% else %}
+            <span class="badge bg-gradient-success">{{ dte }} days to expiry</span>
+          {% endif %}
+        {% else %}
+          <span class="badge bg-secondary">No contract</span>
+        {% endif %}
+      </div>
 
-          <p class="mb-1"><strong>Address:</strong></p>
-          <div class="ms-2">
+      <div class="unit-core-summary-grid">
+        <div>
+          <span>Client Name</span>
+          <strong>{{ client.name }}</strong>
+        </div>
+        <div>
+          <span>Client Code</span>
+          <strong>{{ client.client_code or "-" }}</strong>
+        </div>
+        <div>
+          <span>Client Type</span>
+          <strong>{{ client.client_type or "-" }}</strong>
+        </div>
+        <div>
+          <span>Registered Number</span>
+          <strong>{{ client.registration_number or "-" }}</strong>
+        </div>
+        <div>
+          <span>Address</span>
+          <strong>
             {% if client.address_line1 %}
               {{ client.address_line1 }}{% if client.address_line2 %}, {{ client.address_line2 }}{% endif %}{% if client.city %}, {{ client.city }}{% endif %}
             {% elif client.address %}
               {{ client.address }}
             {% else %}
-              <span class="text-muted">—</span>
+              -
             {% endif %}
-            <div class="text-muted small">
-              {{ client.country or '' }}{% if client.region %} • {{ client.region }}{% endif %}
+          </strong>
+        </div>
+        <div>
+          <span>Postal Code</span>
+          <strong>{{ client.postal_code or "-" }}</strong>
+        </div>
+        <div>
+          <span>Region / Country</span>
+          <strong>{{ client.region or "-" }}{% if client.country %} / {{ client.country }}{% endif %}</strong>
+        </div>
+        <div>
+          <span>Units</span>
+          <strong>{{ client.number_of_units or 0 }}</strong>
+        </div>
+      </div>
+
+      <div class="unit-form-subcard mt-3 mb-0">
+        <div class="unit-form-subheading">
+          <strong>Contract & Assignments</strong>
+          <div class="d-flex gap-2 flex-wrap justify-content-end">
+            <a href="{{ url_for('super_admin.edit_client', client_id=client.id) }}#assignments" class="btn btn-outline-secondary btn-sm">Assign Team</a>
+            <a href="{{ url_for('super_admin_contracts.renew', client_id=client.id) }}" class="btn btn-outline-primary btn-sm">Renew Contract</a>
+            {% if 'super_admin_contract_start.start' in current_app.view_functions %}
+              <a href="{{ url_for('super_admin_contract_start.start', client_id=client.id) }}" class="btn btn-success btn-sm">Start New Contract</a>
+            {% elif 'super_admin_simple_contracts.new_contract' in current_app.view_functions %}
+              <a href="{{ url_for('super_admin_simple_contracts.new_contract', client_id=client.id) }}" class="btn btn-success btn-sm">Start New Contract</a>
+            {% else %}
+              <a href="{{ url_for('super_admin_contracts.renew', client_id=client.id, step=1) }}" class="btn btn-success btn-sm">Start New Contract</a>
+            {% endif %}
+          </div>
+        </div>
+        <div class="unit-core-summary-grid">
+          <div>
+            <span>Assigned PM</span>
+            <strong>{{ client.assigned_pm.full_name if client.assigned_pm else "-" }}</strong>
+          </div>
+          <div>
+            <span>Financial Controller</span>
+            <strong>{{ client.assigned_fc.full_name if client.assigned_fc else "-" }}</strong>
+          </div>
+          <div>
+            <span>Assistant</span>
+            <strong>{{ client.assigned_assistant.full_name if client.assigned_assistant else "-" }}</strong>
+          </div>
+          <div>
+            <span>Contract Value</span>
+            <strong>
+              {% if latest_contract %}
+                {{ currency_no_cents(latest_contract.contract_value or 0, latest_contract.currency or client.currency or "EUR") }}
+              {% else %}
+                -
+              {% endif %}
+            </strong>
+          </div>
+          <div>
+            <span>Contract Period</span>
+            <strong>
+              {% if latest_contract %}
+                {{ latest_contract.start_date or "-" }} to {{ latest_contract.end_date or "-" }}
+              {% else %}
+                -
+              {% endif %}
+            </strong>
+          </div>
+          <div>
+            <span>Days to Expiry</span>
+            <strong>{{ dte if latest_contract and dte is not none else "-" }}</strong>
+          </div>
+          <div>
+            <span>Next Fee Increase</span>
+            <strong>{{ latest_contract.next_fee_increase_date if latest_contract else "-" }}</strong>
+          </div>
+          <div>
+            <span>Currency / Language</span>
+            <strong>{{ (latest_contract.currency if latest_contract else client.currency) or "-" }} / {{ client.preferred_language or "-" }}</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="unit-main-grid mt-3">
+      <nav class="unit-top-tabs" aria-label="Client sections">
+        <a class="{{ 'active' if active_tab == 'units' else '' }}" href="{{ url_for('super_admin.view_client', client_id=client.id, tab='units') }}">Unit Information</a>
+        <a class="{{ 'active' if active_tab == 'contacts' else '' }}" href="{{ url_for('super_admin.view_client', client_id=client.id, tab='contacts') }}">Contacts</a>
+        <a class="{{ 'active' if active_tab == 'governance' else '' }}" href="{{ url_for('super_admin.view_client', client_id=client.id, tab='governance') }}">Governance</a>
+        <a class="{{ 'active' if active_tab == 'site' else '' }}" href="{{ url_for('super_admin.view_client', client_id=client.id, tab='site') }}">Key Site Info</a>
+        <a class="{{ 'active' if active_tab == 'legal' else '' }}" href="{{ url_for('super_admin.view_client', client_id=client.id, tab='legal') }}">Legal & Ownership</a>
+        <a class="{{ 'active' if active_tab == 'charges' else '' }}" href="{{ url_for('super_admin.view_client', client_id=client.id, tab='charges') }}">Additional Charges</a>
+        <a class="{{ 'active' if active_tab == 'contracts' else '' }}" href="{{ url_for('super_admin.view_client', client_id=client.id, tab='contracts') }}">Contracts</a>
+        <a class="{{ 'active' if active_tab == 'gar' else '' }}" href="{{ url_for('super_admin.view_client', client_id=client.id, tab='gar') }}">GAR AI</a>
+      </nav>
+
+      <section class="unit-panel">
+        <div class="{{ '' if active_tab == 'units' else 'd-none' }}">
+          <div class="unit-panel-heading">
+            <div>
+              <h5>Unit Information</h5>
+              <span class="unit-module-note">
+                Source structure: {{ client.units_apartments or 0 }} apartments,
+                {{ client.units_commercial or 0 }} commercial,
+                {{ (client.units_other or 0) + (client.units_houses or 0) + (client.units_duplexes or 0) }} other
+                {% if client.block_names %} across {{ client.block_names }}{% endif %}
+              </span>
+            </div>
+            <div class="client-unit-actions">
+              <form method="POST" action="{{ url_for('super_admin.bulk_member_invites', client_id=client.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline-primary btn-sm">Bulk Invite Members</button>
+              </form>
+              <form method="POST" action="{{ url_for('super_admin.generate_client_units', client_id=client.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-primary btn-sm">Generate Unit Information</button>
+              </form>
             </div>
           </div>
+          {% if unit_directory and unit_directory.rows %}
+            <div class="unit-form-subcard mb-3">
+              <div class="unit-form-subheading">
+                <strong>Unit Directories</strong>
+                <span class="badge bg-gradient-secondary">{{ unit_directory.rows|length }} units</span>
+              </div>
 
-          <p class="mt-3"><strong>Postal Code:</strong> {{ client.postal_code or '—' }}</p>
-          <p><strong>Registration Number:</strong> {{ client.registration_number or '—' }}</p>
-        </div>
-      </div>
-    </div>
+              <div class="unit-nested-tabs client-directory-type-tabs" aria-label="Unit directory type">
+                <button type="button" class="active" data-client-directory-tab="owners">Owner's Directory</button>
+                <button type="button" data-client-directory-tab="residents">Resident's Directory</button>
+              </div>
 
-    <div class="col-md-6 mb-4">
-      <div class="card h-100">
-        <div class="card-header pb-0 d-flex justify-content-between align-items-center">
-          <strong>Contract & Assignments</strong>
-          {% if latest_contract %}
-            {% if dte is not none %}
-              {% if dte < 0 %}
-                <span class="badge bg-gradient-danger">Expired {{ (dte * -1) }} days ago</span>
-              {% elif dte <= 60 %}
-                <span class="badge bg-gradient-warning text-dark">{{ dte }} days to expiry</span>
-              {% else %}
-                <span class="badge bg-gradient-success">{{ dte }} days to expiry</span>
+              {% if unit_directory.tabs|length > 1 %}
+                <div class="unit-nested-tabs client-unit-filter-tabs" aria-label="Unit block filters">
+                  <button type="button" class="active" data-client-unit-tab="all">All</button>
+                  {% for tab in unit_directory.tabs %}
+                    <button type="button" data-client-unit-tab="{{ tab|lower }}">{{ tab }}</button>
+                  {% endfor %}
+                </div>
               {% endif %}
-            {% endif %}
+
+              <div class="row g-2 align-items-center mb-3">
+                <div class="col-md-8 col-lg-6">
+                  <input type="search" class="form-control" data-client-unit-search placeholder="Search units, owners, residents, block/core, phone or email">
+                </div>
+                <div class="col-md-4 col-lg-6 text-md-end">
+                  <span class="unit-module-note">Sorted by block/core, then unit number</span>
+                </div>
+              </div>
+
+              <div data-client-directory-pane="owners">
+                <div class="unit-module-note mb-2">Legal ownership, contact details, Finance Logix balance and unit state.</div>
+                <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0 client-unit-directory-table">
+                  <thead>
+                    <tr>
+                      <th class="unit-dir-col-unit">Unit</th>
+                      <th class="unit-dir-col-block">Block</th>
+                      <th class="unit-dir-col-core">Core</th>
+                      <th class="unit-dir-col-owner">Owner's Name</th>
+                      <th class="unit-dir-col-phone">Phone No:</th>
+                      <th class="unit-dir-col-email">Email</th>
+                      <th class="unit-dir-col-icon">Portal</th>
+                      <th class="unit-dir-col-balance">Balance</th>
+                      <th class="unit-dir-col-icon">Occupancy</th>
+                      <th class="unit-dir-col-icon">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in unit_directory.rows %}
+                      <tr data-client-unit-row data-client-directory-row="owners" data-unit-tab="{{ row.tab|lower }}" data-unit-search="{{ (row.unit_display ~ ' ' ~ row.block ~ ' ' ~ row.core ~ ' ' ~ row.owner_names ~ ' ' ~ row.owner_phone ~ ' ' ~ row.owner_email ~ ' ' ~ row.balance_display ~ ' ' ~ row.occupancy)|lower }}">
+                        <td class="unit-dir-col-unit">
+                          <a href="{{ url_for('unit_bp.view', unit_id=row.unit.id) }}" class="fw-semibold">{{ row.unit_display }}</a>
+                        </td>
+                        <td class="unit-dir-col-block">{{ row.block }}</td>
+                        <td class="unit-dir-col-core">{{ row.core }}</td>
+                        <td class="unit-dir-col-owner">
+                          {% if row.owner_names != "-" %}
+                            <a href="{{ url_for('unit_bp.view', unit_id=row.unit.id, tab='owners') }}" class="fw-semibold">{{ row.owner_names }}</a>
+                          {% else %}
+                            -
+                          {% endif %}
+                        </td>
+                        <td class="unit-dir-col-phone">{{ row.owner_phone }}</td>
+                        <td class="unit-dir-col-email">
+                          {% if row.owner_email != "-" %}
+                            <a href="mailto:{{ row.owner_email }}">{{ row.owner_email }}</a>
+                          {% else %}
+                            -
+                          {% endif %}
+                        </td>
+                        <td class="unit-dir-col-icon">
+                          {% set access_status = row.member_access_status %}
+                          {% set access_icon = 'person_off' %}
+                          {% if access_status == 'active' %}
+                            {% set access_icon = 'how_to_reg' %}
+                          {% elif access_status == 'pending' %}
+                            {% set access_icon = 'schedule' %}
+                          {% endif %}
+                          <span class="client-unit-icon client-unit-icon-access is-{{ access_status }}" title="{{ row.member_access_label }}" aria-label="{{ row.member_access_label }}">
+                            <i class="material-icons">{{ access_icon }}</i>
+                          </span>
+                        </td>
+                        <td class="unit-dir-col-balance">{{ row.balance_display }}</td>
+                        <td class="unit-dir-col-icon">
+                          {% set occ = row.occupancy_key %}
+                          {% set occ_icon = 'help_outline' %}
+                          {% if occ in ['owner_occupied', 'owner occupied'] %}
+                            {% set occ_icon = 'home' %}
+                          {% elif occ in ['let', 'rented', 'let / rented'] %}
+                            {% set occ_icon = 'vpn_key' %}
+                          {% elif occ == 'vacant' %}
+                            {% set occ_icon = 'meeting_room' %}
+                          {% endif %}
+                          <span class="client-unit-icon client-unit-icon-occupancy" title="{{ row.occupancy }}" aria-label="{{ row.occupancy }}">
+                            <i class="material-icons">{{ occ_icon }}</i>
+                          </span>
+                        </td>
+                        <td class="unit-dir-col-icon">
+                          {% set status = row.status_key %}
+                          {% set status_icon = 'info' %}
+                          {% if status == 'active' %}
+                            {% set status_icon = 'check_circle' %}
+                          {% elif status == 'inactive' %}
+                            {% set status_icon = 'pause_circle' %}
+                          {% endif %}
+                          <span class="client-unit-icon client-unit-icon-status {{ 'is-active' if status == 'active' else 'is-muted' }}" title="{{ row.status }}" aria-label="{{ row.status }}">
+                            <i class="material-icons">{{ status_icon }}</i>
+                          </span>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                    <tr class="d-none" data-client-unit-empty="owners">
+                      <td colspan="10" class="text-muted">No units match this filter.</td>
+                    </tr>
+                  </tbody>
+                </table>
+                </div>
+              </div>
+
+              <div class="d-none" data-client-directory-pane="residents">
+                <div class="unit-module-note mb-2">Members Logix resident access, letting agent visibility and Works Logix activity.</div>
+                <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0 client-unit-directory-table client-resident-directory-table">
+                  <thead>
+                    <tr>
+                      <th class="unit-dir-col-unit">Unit</th>
+                      <th class="unit-dir-col-block">Block</th>
+                      <th class="unit-dir-col-core">Core</th>
+                      <th class="unit-dir-col-owner">Resident's Name</th>
+                      <th class="unit-dir-col-phone">Phone No:</th>
+                      <th class="unit-dir-col-email">Email</th>
+                      <th class="unit-dir-col-icon">Portal</th>
+                      <th class="unit-dir-col-icon">Agent</th>
+                      <th class="unit-dir-col-icon">Works</th>
+                      <th class="unit-dir-col-icon">Requests</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in unit_directory.resident_rows %}
+                      <tr data-client-unit-row data-client-directory-row="residents" data-unit-tab="{{ row.tab|lower }}" data-unit-search="{{ (row.unit_display ~ ' ' ~ row.block ~ ' ' ~ row.core ~ ' ' ~ row.resident_names ~ ' ' ~ row.resident_phone ~ ' ' ~ row.resident_email)|lower }}">
+                        <td class="unit-dir-col-unit">
+                          <a href="{{ url_for('unit_bp.view', unit_id=row.unit.id, tab='residents') }}" class="fw-semibold">{{ row.unit_display }}</a>
+                        </td>
+                        <td class="unit-dir-col-block">{{ row.block }}</td>
+                        <td class="unit-dir-col-core">{{ row.core }}</td>
+                        <td class="unit-dir-col-owner">
+                          {% if row.resident_names != "-" %}
+                            <a href="{{ url_for('unit_bp.view', unit_id=row.unit.id, tab='residents') }}" class="fw-semibold">{{ row.resident_names }}</a>
+                          {% else %}
+                            -
+                          {% endif %}
+                        </td>
+                        <td class="unit-dir-col-phone">{{ row.resident_phone }}</td>
+                        <td class="unit-dir-col-email">
+                          {% if row.resident_email != "-" %}
+                            <a href="mailto:{{ row.resident_email }}">{{ row.resident_email }}</a>
+                          {% else %}
+                            -
+                          {% endif %}
+                        </td>
+                        <td class="unit-dir-col-icon">
+                          {% set access_status = row.member_access_status %}
+                          {% set access_icon = 'person_off' %}
+                          {% if access_status == 'active' %}
+                            {% set access_icon = 'how_to_reg' %}
+                          {% elif access_status == 'pending' %}
+                            {% set access_icon = 'schedule' %}
+                          {% endif %}
+                          <span class="client-unit-icon client-unit-icon-access is-{{ access_status }}" title="{{ row.member_access_label }}" aria-label="{{ row.member_access_label }}">
+                            <i class="material-icons">{{ access_icon }}</i>
+                          </span>
+                        </td>
+                        <td class="unit-dir-col-icon">
+                          <a class="client-unit-icon client-unit-icon-agent {{ 'is-active' if row.has_letting_agent else 'is-muted' }}"
+                             href="{{ url_for('unit_bp.view', unit_id=row.unit.id, tab='letting') }}"
+                             title="{{ 'Letting agent details captured' if row.has_letting_agent else 'No letting agent details captured' }}"
+                             aria-label="{{ 'Letting agent details captured' if row.has_letting_agent else 'No letting agent details captured' }}">
+                            <i class="material-icons">support_agent</i>
+                          </a>
+                        </td>
+                        <td class="unit-dir-col-icon">
+                          <a class="client-unit-signal-icon {{ 'has-count' if row.open_works_count else 'is-muted' }}"
+                             href="{{ url_for('unit_bp.view', unit_id=row.unit.id, tab='works', work_view='open') }}"
+                             title="{{ row.open_works_count }} open Works Logix work order{{ '' if row.open_works_count == 1 else 's' }}"
+                             aria-label="{{ row.open_works_count }} open Works Logix work order{{ '' if row.open_works_count == 1 else 's' }}">
+                            <i class="material-icons">engineering</i>
+                            <span>{{ row.open_works_count }}</span>
+                          </a>
+                        </td>
+                        <td class="unit-dir-col-icon">
+                          <a class="client-unit-signal-icon {{ 'has-count' if row.open_requests_count else 'is-muted' }}"
+                             href="{{ url_for('unit_bp.view', unit_id=row.unit.id, tab='works', work_view='open') }}"
+                             title="{{ row.open_requests_count }} open Members Logix request{{ '' if row.open_requests_count == 1 else 's' }}"
+                             aria-label="{{ row.open_requests_count }} open Members Logix request{{ '' if row.open_requests_count == 1 else 's' }}">
+                            <i class="material-icons">report_problem</i>
+                            <span>{{ row.open_requests_count }}</span>
+                          </a>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                    <tr class="d-none" data-client-unit-empty="residents">
+                      <td colspan="10" class="text-muted">No residents match this filter.</td>
+                    </tr>
+                  </tbody>
+                </table>
+                </div>
+              </div>
+            </div>
           {% else %}
-            <span class="badge bg-secondary">No contract</span>
-          {% endif %}
-        </div>
-        <div class="card-body">
-          <p><strong>Assigned PM:</strong> {{ client.assigned_pm.full_name if client.assigned_pm else '—' }}</p>
-          <p><strong>Financial Controller:</strong> {{ client.assigned_fc.full_name if client.assigned_fc else '—' }}</p>
-          <p><strong>Assistant:</strong> {{ client.assigned_assistant.full_name if client.assigned_assistant else '—' }}</p>
-          <hr>
-
-          <p><strong>Contract Value:</strong>
-            {% if latest_contract %}
-              {{ currency_no_cents(latest_contract.contract_value or 0, (latest_contract.currency or '€')) }}
-            {% else %}<span class="text-muted">—</span>{% endif %}
-          </p>
-
-          <p><strong>Contract Period:</strong>
-            {% if latest_contract %}
-              {{ latest_contract.start_date }} → {{ latest_contract.end_date }}
-            {% else %}<span class="text-muted">—</span>{% endif %}
-          </p>
-
-          <p><strong>Days to Expiry:</strong>
-            {% if latest_contract and dte is not none %}
-              {% if dte <= 0 %}
-                <span class="badge bg-danger">Expired</span>
-              {% elif dte <= 60 %}
-                <span class="badge bg-warning text-dark">{{ dte }} days</span>
-              {% else %}
-                <span class="badge bg-success">{{ dte }} days</span>
-              {% endif %}
-            {% else %}<span class="text-muted">—</span>{% endif %}
-          </p>
-
-          <p><strong>Next Fee Increase:</strong> {{ latest_contract.next_fee_increase_date if latest_contract else '—' }}</p>
-          <p><strong>Currency:</strong> {{ (latest_contract.currency if latest_contract else client.currency) or '—' }}</p>
-          <p><strong>Language:</strong> {{ client.preferred_language or '—' }}</p>
-
-          {% if latest_contract and (latest_contract.generated_pdf_path or latest_contract.generated_html_path) %}
-            <div class="mt-3 d-flex gap-2">
-              {% if latest_contract.generated_pdf_path %}
-                <a class="btn btn-outline-secondary btn-sm"
-                   href="{{ url_for('static', filename=latest_contract.generated_pdf_path) }}"
-                   target="_blank">Open PDF</a>
-              {% endif %}
-              {% if latest_contract.generated_html_path %}
-                <a class="btn btn-outline-secondary btn-sm"
-                   href="{{ url_for('static', filename=latest_contract.generated_html_path) }}"
-                   target="_blank">Open HTML</a>
-              {% endif %}
+            <div class="unit-form-subcard mb-0 text-muted">
+              No unit records have been generated yet. Save the development structure, then generate Unit Information.
             </div>
           {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <div class="row">
-    <div class="col-md-6 mb-4">
-      <div class="card h-100">
-        <div class="card-header pb-0"><strong>Contacts</strong></div>
-        <div class="card-body">
-          {% if client.contacts %}
-            <ul class="mb-0 ps-3">
-              {% for contact in client.contacts %}
-                <li class="mb-2">
-                  <strong>{{ contact.name or 'Contact' }}</strong><br>
-                  {% if contact.email %}📧 <a href="mailto:{{ contact.email }}">{{ contact.email }}</a><br>{% endif %}
-                  {% if contact.phone %}📞 {{ contact.phone }}{% endif %}
-                </li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <span class="text-muted">No contacts added.</span>
-          {% endif %}
+          <div class="unit-form-subcard mb-0">
+            <div class="unit-form-subheading">
+              <div>
+                <strong>Members Logix Portal Invites</strong>
+                <div class="unit-module-note">Controlled access codes for owners to link units to their portal.</div>
+              </div>
+              <div class="client-unit-actions">
+                <form method="POST" action="{{ url_for('super_admin.send_client_member_invites', client_id=client.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-outline-primary btn-sm">Email Pending Invites</button>
+                </form>
+                <span class="badge bg-gradient-secondary">{{ unit_access_invites|length if unit_access_invites else 0 }} latest</span>
+              </div>
+            </div>
+            {% if unit_access_invites %}
+              {% set invite_summary = unit_access_invite_summary or {} %}
+              <div class="client-invite-summary">
+                <span>Pending <strong>{{ invite_summary.pending or 0 }}</strong></span>
+                <span>Sent <strong>{{ invite_summary.sent or 0 }}</strong></span>
+                <span>Claimed <strong>{{ invite_summary.claimed or 0 }}</strong></span>
+                <span>Failed <strong>{{ invite_summary.failed or 0 }}</strong></span>
+                <span>Cancelled <strong>{{ invite_summary.cancelled or 0 }}</strong></span>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0 client-unit-invite-table">
+                  <thead>
+                    <tr>
+                      <th>Unit</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Portal Code</th>
+                      <th>Status</th>
+                      <th>Delivery</th>
+                      <th>Expires</th>
+                      <th class="text-end">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for invite in unit_access_invites %}
+                      <tr>
+                        <td>{{ invite.unit.unit_label if invite.unit else "Unit" }}</td>
+                        <td>{% if invite.email %}<a href="mailto:{{ invite.email }}">{{ invite.email }}</a>{% else %}-{% endif %}</td>
+                        <td>{{ invite.role|replace('_', ' ')|title }}</td>
+                        <td>
+                          {% if invite.status == "pending" %}
+                            <span class="client-portal-code">{{ invite.claim_code }}</span>
+                          {% else %}
+                            -
+                          {% endif %}
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ invite.status|title }}</span></td>
+                        <td>
+                          <span class="badge bg-light text-dark border">{{ (invite.delivery_status or "not_sent")|replace('_', ' ')|title }}</span>
+                          {% if invite.sent_at %}
+                            <div class="text-muted small">{{ invite.sent_at.strftime("%d %b %Y") }}</div>
+                          {% elif invite.last_delivery_error %}
+                            <div class="text-muted small">Needs review</div>
+                          {% endif %}
+                        </td>
+                        <td>{{ invite.expires_at.strftime("%d %b %Y") if invite.expires_at else "-" }}</td>
+                        <td class="text-end">
+                          {% if invite.status == "pending" %}
+                            <div class="client-invite-row-actions">
+                              {% if invite.email %}
+                                <form method="POST" action="{{ url_for('super_admin.send_member_invite', client_id=client.id, invite_id=invite.id) }}">
+                                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                  <button type="submit" class="btn btn-outline-primary btn-sm">
+                                    {{ "Resend" if invite.sent_at else "Send" }}
+                                  </button>
+                                </form>
+                              {% endif %}
+                              <form method="POST" action="{{ url_for('super_admin.cancel_member_invite', client_id=client.id, invite_id=invite.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">Cancel</button>
+                              </form>
+                            </div>
+                          {% else %}
+                            <span class="text-muted">-</span>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="text-muted">No member portal invite codes have been created for this client yet.</div>
+            {% endif %}
+          </div>
         </div>
-      </div>
-    </div>
 
-    <div class="col-md-6 mb-4">
-      <div class="card h-100">
-        <div class="card-header pb-0"><strong>Governance & Compliance</strong></div>
-        <div class="card-body">
-          <p><strong>Financial Year End:</strong> {{ client.financial_year_end or '—' }}</p>
-          <p><strong>Last AGM Date:</strong> {{ client.last_agm_date or '—' }}</p>
-          <p><strong>AGM Completed:</strong> {{ '✅ Yes' if client.agm_completed else '❌ No' }}</p>
-          <p><strong>GDPR Enforced:</strong> {{ '✅' if client.enforce_gdpr else '—' }}</p>
+        <div class="{{ '' if active_tab == 'contacts' else 'd-none' }}">
+          <div class="unit-panel-heading">
+            <h5>Contacts</h5>
+            <span class="unit-module-note">Development-level contacts and communication points</span>
+          </div>
+          <div class="unit-form-subcard mb-0">
+            {% if client.contacts %}
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                  <thead><tr><th>Name</th><th>Email</th><th>Phone</th></tr></thead>
+                  <tbody>
+                    {% for contact in client.contacts %}
+                    <tr>
+                      <td>{{ contact.name or 'Contact' }}</td>
+                      <td>{% if contact.email %}<a href="mailto:{{ contact.email }}">{{ contact.email }}</a>{% else %}-{% endif %}</td>
+                      <td>{{ contact.phone or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <span class="text-muted">No contacts added.</span>
+            {% endif %}
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
 
-  {# 🔑 NEW: lightweight Key Site Info card for discoverability #}
-  <div class="row">
-    <div class="col-md-12 mb-4">
-      <div class="card h-100 border-0 shadow-sm">
-        <div class="card-header pb-0 d-flex justify-content-between align-items-center">
-          <strong>Key Site Information</strong>
-          <a
-            href="{% if 'client_key_info.list_sections' in current_app.view_functions %}{{ url_for('client_key_info.list_sections', client_id=client.id) }}{% else %}/clients/{{ client.id }}/key-info/{% endif %}"
-            class="btn btn-sm btn-outline-dark"
-          >Open</a>
+        <div class="{{ '' if active_tab == 'governance' else 'd-none' }}">
+          <div class="unit-panel-heading">
+            <h5>Governance & Compliance</h5>
+            <span class="unit-module-note">Core company governance controls</span>
+          </div>
+          <div class="unit-core-summary-grid">
+            <div><span>Financial Year End</span><strong>{{ client.financial_year_end or "-" }}</strong></div>
+            <div><span>Last AGM Date</span><strong>{{ client.last_agm_date or "-" }}</strong></div>
+            <div><span>AGM Completed</span><strong>{{ "Yes" if client.agm_completed else "No" }}</strong></div>
+            <div><span>GDPR Enforced</span><strong>{{ "Yes" if client.enforce_gdpr else "-" }}</strong></div>
+          </div>
         </div>
-        <div class="card-body">
-          <p class="mb-2 text-muted small">
-            Centralised, role-aware site details (gates, keys, access, vendors, safety notes). 
-            Updates can be proposed by Admin/FC/PM/Contractors; publishing is gated by PM/Super Admin.
-          </p>
-          <a
-            href="{% if 'client_key_info.list_sections' in current_app.view_functions %}{{ url_for('client_key_info.list_sections', client_id=client.id) }}{% else %}/clients/{{ client.id }}/key-info/{% endif %}"
-            class="btn btn-primary btn-sm"
-          >Go to Key Site Info</a>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  {# ✅ Existing content continues… #}
-  <div class="row">
-    <div class="col-md-6 mb-4">
-      <div class="card h-100">
-        <div class="card-header pb-0"><strong>Legal & Ownership</strong></div>
-        <div class="card-body">
-          <p><strong>Ownership Type:</strong> {{ client.ownership_type or '—' }}</p>
-          <p><strong>Transferred Common Area:</strong> {{ '✅ Yes' if client.transfer_of_common_area else '❌ No' }}</p>
-          <p><strong>Deed of Covenants:</strong> {{ client.deed_of_covenants or '—' }}</p>
+        <div class="{{ '' if active_tab == 'site' else 'd-none' }}">
+          <div class="unit-panel-heading">
+            <div>
+              <h5>Key Site Information</h5>
+              <span class="unit-module-note">Gates, keys, access, vendors and safety notes</span>
+            </div>
+            <a href="{% if 'client_key_info.list_sections' in current_app.view_functions %}{{ url_for('client_key_info.list_sections', client_id=client.id) }}{% else %}/clients/{{ client.id }}/key-info/{% endif %}" class="btn btn-outline-primary btn-sm">Open Key Site Info</a>
+          </div>
+          <div class="unit-form-subcard mb-0">
+            Centralised site details can be proposed by Admin, FC, PM and contractors. Publishing is gated by PM or Super Admin.
+          </div>
         </div>
-      </div>
-    </div>
 
-    <div class="col-md-6 mb-4">
-      <div class="card h-100">
-        <div class="card-header pb-0 d-flex justify-content-between">
-          <strong>Additional Charges</strong>
-          <a href="{{ url_for('super_admin_contracts.renew', client_id=client.id) }}"
-             class="btn btn-sm btn-outline-primary">Renew/Amend</a>
+        <div class="{{ '' if active_tab == 'legal' else 'd-none' }}">
+          <div class="unit-panel-heading">
+            <h5>Legal & Ownership</h5>
+            <span class="unit-module-note">Ownership structure and covenant controls</span>
+          </div>
+          <div class="unit-core-summary-grid">
+            <div><span>Ownership Type</span><strong>{{ client.ownership_type or "-" }}</strong></div>
+            <div><span>Transferred Common Area</span><strong>{{ "Yes" if client.transfer_of_common_area else "No" }}</strong></div>
+            <div><span>Deed of Covenants</span><strong>{{ client.deed_of_covenants or "-" }}</strong></div>
+          </div>
         </div>
-        <div class="card-body">
-          {% if latest_contract and latest_contract.additional_fees %}
-            {% set fees = latest_contract.fees_dict() %}
-            {% if fees %}
-              {% for name, amt in fees.items() %}
-                <span class="badge bg-light text-dark border me-1 mb-1">
-                  {{ name }}: {{ (latest_contract.currency or '€') }}{{ "{:,.0f}".format(amt or 0) }}
-                </span>
-              {% endfor %}
+
+        <div class="{{ '' if active_tab == 'charges' else 'd-none' }}">
+          <div class="unit-panel-heading">
+            <h5>Additional Charges</h5>
+            <a href="{{ url_for('super_admin_contracts.renew', client_id=client.id) }}" class="btn btn-outline-primary btn-sm">Renew / Amend</a>
+          </div>
+          <div class="unit-form-subcard mb-0">
+            {% if latest_contract and latest_contract.additional_fees %}
+              {% set fees = latest_contract.fees_dict() %}
+              {% if fees %}
+                {% for name, amt in fees.items() %}
+                  <span class="badge bg-light text-dark border me-1 mb-1">
+                    {{ name }}: {{ latest_contract.currency or "EUR" }} {{ "{:,.0f}".format(amt or 0) }}
+                  </span>
+                {% endfor %}
+              {% else %}
+                <span class="text-muted">No additional charges.</span>
+              {% endif %}
             {% else %}
               <span class="text-muted">No additional charges.</span>
             {% endif %}
-          {% else %}
-            <span class="text-muted">No additional charges.</span>
-          {% endif %}
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
 
-  {# ✅ NEW: Contracts (Working vs Completed/Archived) — kept intact #}
-  <div class="row">
-    <div class="col-12 mb-4">
-      <div class="card border-0 shadow-sm">
-        <div class="card-header d-flex align-items-center justify-content-between">
-          <h6 class="mb-0">Contracts</h6>
-          <div class="d-flex gap-2">
+        <div class="{{ '' if active_tab == 'contracts' else 'd-none' }}">
+          <div class="unit-panel-heading">
+            <h5>Contracts</h5>
             {% if 'super_admin_contract_start.start' in current_app.view_functions %}
-              <a href="{{ url_for('super_admin_contract_start.start', client_id=client.id) }}"
-                 class="btn btn-sm btn-success">➕ Start New</a>
+              <a href="{{ url_for('super_admin_contract_start.start', client_id=client.id) }}" class="btn btn-success btn-sm">Start New</a>
             {% elif 'super_admin_simple_contracts.new_contract' in current_app.view_functions %}
-              <a href="{{ url_for('super_admin_simple_contracts.new_contract', client_id=client.id) }}"
-                 class="btn btn-sm btn-success">➕ Start New</a>
+              <a href="{{ url_for('super_admin_simple_contracts.new_contract', client_id=client.id) }}" class="btn btn-success btn-sm">Start New</a>
             {% else %}
-              <a href="{{ url_for('super_admin_contracts.renew', client_id=client.id, step=1) }}"
-                 class="btn btn-sm btn-success">➕ Start New</a>
+              <a href="{{ url_for('super_admin_contracts.renew', client_id=client.id, step=1) }}" class="btn btn-success btn-sm">Start New</a>
+            {% endif %}
+          </div>
+
+          {% set items = client.contracts or [] %}
+          {% set drafts = [] %}
+          {% set inprog = [] %}
+          {% set completed = [] %}
+          {% for c in items %}
+            {% set status = (c.sign_status or 'Draft') %}
+            {% if status in ['Draft', 'Sent', 'Viewed', 'In Review'] %}
+              {% if status == 'Draft' %}{% set _ = drafts.append(c) %}{% else %}{% set _ = inprog.append(c) %}{% endif %}
+            {% else %}
+              {% set _ = completed.append(c) %}
+            {% endif %}
+          {% endfor %}
+          {% set working = drafts + inprog %}
+
+          <div class="unit-form-subcard">
+            <div class="unit-form-subheading">
+              <strong>Working Contracts</strong>
+              <span class="badge bg-secondary">{{ working|length }}</span>
+            </div>
+            {% if working %}
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                  <thead><tr><th>Title</th><th>Status</th><th>Term</th><th>Value</th><th class="text-end">Action</th></tr></thead>
+                  <tbody>
+                    {% for c in working %}
+                    <tr>
+                      <td>{{ c.contract_title or ('Contract #' ~ c.id) }}</td>
+                      <td><span class="badge bg-light text-dark border">{{ c.sign_status or 'Draft' }}</span></td>
+                      <td>{{ c.start_date or '-' }} to {{ c.end_date or '-' }}</td>
+                      <td>{% if c.contract_value %}{{ currency_no_cents(c.contract_value, c.currency or "EUR") }}{% else %}-{% endif %}</td>
+                      <td class="text-end"><a class="btn btn-outline-primary btn-sm" href="{{ url_for('super_admin_contracts.renew', client_id=client.id, step=3, contract_id=c.id) }}">Open</a></td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <span class="text-muted">No working contracts.</span>
+            {% endif %}
+          </div>
+
+          <div class="unit-form-subcard mb-0">
+            <div class="unit-form-subheading">
+              <strong>Completed / Archived</strong>
+              <span class="badge bg-success">{{ completed|length }}</span>
+            </div>
+            {% if completed %}
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                  <thead><tr><th>Title</th><th>Status</th><th>Term</th><th>Value</th><th class="text-end">Action</th></tr></thead>
+                  <tbody>
+                    {% for c in completed %}
+                    <tr>
+                      <td>{{ c.contract_title or ('Contract #' ~ c.id) }}</td>
+                      <td><span class="badge bg-light text-dark border">{{ c.sign_status or 'Signed' }}</span></td>
+                      <td>{{ c.start_date or '-' }} to {{ c.end_date or '-' }}</td>
+                      <td>{% if c.contract_value %}{{ currency_no_cents(c.contract_value, c.currency or "EUR") }}{% else %}-{% endif %}</td>
+                      <td class="text-end"><a class="btn btn-outline-primary btn-sm" href="{{ url_for('super_admin_contracts.renew', client_id=client.id, step=3, contract_id=c.id) }}">Open</a></td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <span class="text-muted">No completed or archived contracts.</span>
             {% endif %}
           </div>
         </div>
 
-        {% set items = client.contracts or [] %}
-        {% set drafts = [] %}
-        {% set inprog = [] %}
-        {% set completed = [] %}
-
-        {% for c in items %}
-          {% set status = (c.sign_status or 'Draft') %}
-          {% if status in ['Draft', 'Sent', 'Viewed', 'In Review'] %}
-            {% if status == 'Draft' %}
-              {% set _ = drafts.append(c) %}
-            {% else %}
-              {% set _ = inprog.append(c) %}
-            {% endif %}
-          {% else %}
-            {% set _ = completed.append(c) %}
+        <div class="{{ '' if active_tab == 'gar' else 'd-none' }}">
+          {% set gar_health = gar_client_context.development_health if gar_client_context else {} %}
+          {% set gar_health_summary = gar_health.summary if gar_health else {} %}
+          {% set gar_health_signals = gar_health.signals if gar_health else [] %}
+          {% set gar_works_intel = gar_client_context.works_intelligence if gar_client_context else {} %}
+          <div class="unit-panel-heading">
+            <div>
+              <h5>GAR AI Monitoring</h5>
+              <span class="unit-module-note">General Artificial Resident governance intelligence</span>
+            </div>
+            <span class="badge bg-gradient-{{ 'success' if client.is_gar_monitored else 'secondary' }}">
+              {{ 'Monitored' if client.is_gar_monitored else 'Not Monitored' }}
+            </span>
+          </div>
+          <section class="client-gar-health-panel">
+            <div class="client-gar-health-score client-gar-health-{{ gar_health.tone or 'secondary' }}">
+              <span>Development Health</span>
+              <strong>{{ gar_health.score if gar_health.score is defined else "-" }}</strong>
+              <small>{{ gar_health.status or "Not assessed" }}</small>
+            </div>
+            <div class="client-gar-health-grid">
+              <div>
+                <span>Generated Units</span>
+                <strong>{{ gar_health_summary.generated_units or 0 }} / {{ gar_health_summary.expected_units or 0 }}</strong>
+              </div>
+              <div>
+                <span>Open Works</span>
+                <strong>{{ gar_health_summary.open_work_orders or 0 }}</strong>
+              </div>
+              <div>
+                <span>Resident Signals</span>
+                <strong>{{ gar_health_summary.pending_member_requests or 0 }}</strong>
+              </div>
+              <div>
+                <span>Finance Ready</span>
+                <strong>{{ gar_health_summary.finance_ready_units or 0 }}</strong>
+              </div>
+              <div>
+                <span>Compliance Expired</span>
+                <strong>{{ gar_health_summary.expired_compliance_documents or 0 }}</strong>
+              </div>
+              <div>
+                <span>Pattern Memory</span>
+                <strong>{{ gar_health_summary.gar_pattern_memory_groups or 0 }}</strong>
+              </div>
+            </div>
+          </section>
+          <div class="client-gar-signal-grid">
+            {% for signal in gar_health_signals %}
+              <article class="client-gar-signal client-gar-health-{{ signal.tone }}">
+                <div>
+                  <span>{{ signal.label }}</span>
+                  <strong>{{ signal.score }}</strong>
+                </div>
+                <small>{{ signal.summary }}</small>
+              </article>
+            {% endfor %}
+          </div>
+          {% if gar_health.recommended_actions %}
+            <div class="works-gar-recommendation-strip px-0">
+              {% for action in gar_health.recommended_actions[:3] %}
+                <article>
+                  <span>{{ action.priority|upper }}</span>
+                  <strong>{{ action.source }}</strong>
+                  <small>{{ action.message }}</small>
+                </article>
+              {% endfor %}
+            </div>
           {% endif %}
-        {% endfor %}
-
-        <div class="card-body pt-2">
-          <ul class="nav nav-pills mb-3" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-{{ client.id }}-working" type="button" role="tab">
-                Working (Draft/In-Progress)
-                <span class="badge bg-secondary ms-1">{{ (drafts|length) + (inprog|length) }}</span>
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-{{ client.id }}-completed" type="button" role="tab">
-                Completed/Archived
-                <span class="badge bg-success ms-1">{{ completed|length }}</span>
-              </button>
-            </li>
-          </ul>
-
-          <div class="tab-content">
-            <div id="tab-{{ client.id }}-working" class="tab-pane fade show active" role="tabpanel">
-              {% set working = drafts + inprog %}
-              {% if working %}
-                <div class="table-responsive">
-                  <table class="table table-sm align-middle">
-                    <thead>
-                      <tr>
-                        <th>Title</th>
-                        <th>Status</th>
-                        <th>Term</th>
-                        <th>Value</th>
-                        <th class="text-end">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for c in working %}
-                      <tr>
-                        <td>{{ c.contract_title or ('Contract #' ~ c.id) }}</td>
-                        <td>
-                          {% set s = c.sign_status or 'Draft' %}
-                          <span class="badge
-                            {% if s=='Draft' %}bg-secondary
-                            {% elif s in ['Sent','Viewed'] %}bg-info
-                            {% elif s=='Signed' %}bg-success
-                            {% elif s=='Declined' %}bg-danger
-                            {% elif s=='Expired' %}bg-warning text-dark
-                            {% else %}bg-light text-dark{% endif %}">
-                            {{ s }}
-                          </span>
-                        </td>
-                        <td>{{ c.start_date or '—' }} → {{ c.end_date or '—' }}</td>
-                        <td>
-                          {% if c.contract_value %}
-                            {{ currency_no_cents(c.contract_value, (c.currency or '€')) }}
-                          {% else %}—{% endif %}
-                        </td>
-                        <td class="text-end">
-                          <div class="btn-group">
-                            <a class="btn btn-sm btn-outline-primary"
-                               href="{{ url_for('super_admin_contracts.renew', client_id=client.id, step=3, contract_id=c.id) }}">
-                              {% if (c.sign_status or 'Draft') == 'Draft' %}Resume Draft{% else %}Open{% endif %}
-                            </a>
-                            {% if c.generated_pdf_path %}
-                              <a class="btn btn-sm btn-outline-secondary"
-                                 href="{{ url_for('static', filename=c.generated_pdf_path) }}" target="_blank">PDF</a>
-                            {% endif %}
-                          </div>
-                        </td>
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              {% else %}
-                <div class="text-muted small">No working contracts.</div>
-              {% endif %}
-            </div>
-
-            <div id="tab-{{ client.id }}-completed" class="tab-pane fade" role="tabpanel">
-              {% if completed %}
-                <div class="table-responsive">
-                  <table class="table table-sm align-middle">
-                    <thead>
-                      <tr>
-                        <th>Title</th>
-                        <th>Status</th>
-                        <th>Term</th>
-                        <th>Value</th>
-                        <th class="text-end">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for c in completed %}
-                      <tr>
-                        <td>{{ c.contract_title or ('Contract #' ~ c.id) }}</td>
-                        <td>
-                          {% set s = c.sign_status or 'Signed' %}
-                          <span class="badge
-                            {% if s=='Signed' %}bg-success
-                            {% elif s=='Declined' %}bg-danger
-                            {% elif s=='Expired' %}bg-warning text-dark
-                            {% else %}bg-light text-dark{% endif %}">
-                            {{ s }}
-                          </span>
-                        </td>
-                        <td>{{ c.start_date or '—' }} → {{ c.end_date or '—' }}</td>
-                        <td>
-                          {% if c.contract_value %}
-                            {{ currency_no_cents(c.contract_value, (c.currency or '€')) }}
-                          {% else %}—{% endif %}
-                        </td>
-                        <td class="text-end">
-                          <div class="btn-group">
-                            <a class="btn btn-sm btn-outline-primary"
-                               href="{{ url_for('super_admin_contracts.renew', client_id=client.id, step=3, contract_id=c.id) }}">Open</a>
-                            {% if c.generated_pdf_path %}
-                              <a class="btn btn-sm btn-outline-secondary"
-                                 href="{{ url_for('static', filename=c.generated_pdf_path) }}" target="_blank">PDF</a>
-                            {% endif %}
-                          </div>
-                        </td>
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              {% else %}
-                <div class="text-muted small">No completed/archived contracts.</div>
-              {% endif %}
-            </div>
+          <div class="unit-core-summary-grid">
+            <div><span>Governance Score</span><strong>{{ client.ai_governance_score or "-" }}</strong></div>
+            <div><span>Health Index</span><strong>{{ client.ai_health_index or "-" }}</strong></div>
+            <div><span>Compliance Index</span><strong>{{ client.ai_compliance_index or "-" }}</strong></div>
+            <div><span>Risk Level</span><strong>{{ client.ai_risk_level or "-" }}</strong></div>
+          </div>
+          <div class="unit-form-subcard mt-3 mb-0">
+            <strong>Advice Summary</strong>
+            <div class="text-muted mt-2">{{ client.ai_advice_summary or "No GAR AI summary captured yet." }}</div>
           </div>
         </div>
-      </div>
+      </section>
     </div>
-  </div>
 
-  <div class="row">
-    <div class="col-md-12 mb-4">
-      <div class="card h-100">
-        <div class="card-header pb-0 d-flex justify-content-between">
-          <strong>GAR AI Monitoring</strong>
-          <span class="badge bg-gradient-{{ 'success' if client.is_gar_monitored else 'secondary' }}">
-            {{ 'Monitored' if client.is_gar_monitored else 'Not Monitored' }}
-          </span>
-        </div>
-        <div class="card-body">
-          <p><strong>Governance Score:</strong> {{ client.ai_governance_score or '—' }}</p>
-          <p><strong>Health Index:</strong> {{ client.ai_health_index or '—' }}</p>
-          <p><strong>Compliance Index:</strong> {{ client.ai_compliance_index or '—' }}</p>
-          <p><strong>Advice Summary:</strong> {{ client.ai_advice_summary or '—' }}</p>
-          <p><strong>Risk Level:</strong> {{ client.ai_risk_level or '—' }}</p>
-        </div>
-      </div>
-    </div>
+    <a href="{{ client_profile_list_url }}" class="btn btn-outline-secondary mt-3">
+      <i class="material-icons text-sm me-1">arrow_back</i> Back to Clients
+    </a>
   </div>
-
-  <a href="{{ url_for('super_admin.manage_clients') }}" class="btn btn-outline-secondary mt-3">⬅ Back to Clients</a>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const unitRows = Array.from(document.querySelectorAll('[data-client-unit-row]'));
+  const unitEmptyRows = Array.from(document.querySelectorAll('[data-client-unit-empty]'));
+  const unitSearch = document.querySelector('[data-client-unit-search]');
+  const unitTabButtons = Array.from(document.querySelectorAll('[data-client-unit-tab]'));
+  const directoryButtons = Array.from(document.querySelectorAll('[data-client-directory-tab]'));
+  const directoryPanes = Array.from(document.querySelectorAll('[data-client-directory-pane]'));
+  let activeUnitTab = 'all';
+  let activeDirectory = 'owners';
+
+  function applyUnitFilters() {
+    const query = (unitSearch && unitSearch.value ? unitSearch.value : '').trim().toLowerCase();
+    const visibleByDirectory = {
+      owners: 0,
+      residents: 0
+    };
+
+    directoryPanes.forEach(function (pane) {
+      pane.classList.toggle('d-none', pane.dataset.clientDirectoryPane !== activeDirectory);
+    });
+
+    unitRows.forEach(function (row) {
+      const rowDirectory = row.dataset.clientDirectoryRow || 'owners';
+      const tabMatches = activeUnitTab === 'all' || row.dataset.unitTab === activeUnitTab;
+      const searchMatches = !query || (row.dataset.unitSearch || '').includes(query);
+      const show = tabMatches && searchMatches;
+      row.classList.toggle('d-none', !show);
+      if (show && visibleByDirectory[rowDirectory] !== undefined) {
+        visibleByDirectory[rowDirectory] += 1;
+      }
+    });
+
+    unitEmptyRows.forEach(function (row) {
+      const rowDirectory = row.dataset.clientUnitEmpty || 'owners';
+      row.classList.toggle('d-none', rowDirectory !== activeDirectory || visibleByDirectory[rowDirectory] !== 0);
+    });
+  }
+
+  directoryButtons.forEach(function (button) {
+    button.addEventListener('click', function () {
+      activeDirectory = button.dataset.clientDirectoryTab || 'owners';
+      directoryButtons.forEach(function (item) {
+        item.classList.toggle('active', item === button);
+      });
+      applyUnitFilters();
+    });
+  });
+
+  unitTabButtons.forEach(function (button) {
+    button.addEventListener('click', function () {
+      activeUnitTab = button.dataset.clientUnitTab || 'all';
+      unitTabButtons.forEach(function (item) {
+        item.classList.toggle('active', item === button);
+      });
+      applyUnitFilters();
+    });
+  });
+
+  if (unitSearch) {
+    unitSearch.addEventListener('input', applyUnitFilters);
+  }
+});
+</script>
 {% endblock %}

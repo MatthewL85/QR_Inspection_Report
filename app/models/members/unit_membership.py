@@ -21,10 +21,16 @@ class UnitMembership(db.Model):
     # Foreign keys
     unit_id = db.Column(db.Integer, db.ForeignKey("units.id"), nullable=False, index=True)
     member_id = db.Column(db.Integer, db.ForeignKey("members.id"), nullable=False, index=True)
+    client_id = db.Column(db.Integer, db.ForeignKey("clients.id"), nullable=True, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
 
     # Role in relation to this unit
     # e.g. "owner", "resident", "landlord", "director", "guarantor"
     role = db.Column(db.String(32), nullable=False, default="owner", index=True)
+    status = db.Column(db.String(32), nullable=False, default="active", index=True)
+    access_start = db.Column(db.Date, nullable=True)
+    access_end = db.Column(db.Date, nullable=True)
+    verified_at = db.Column(db.DateTime, nullable=True)
 
     # ---- Ownership timeline (for owners / landlords) -----------------------
     ownership_start_date = db.Column(db.Date, nullable=True)  # purchase date
@@ -55,6 +61,8 @@ class UnitMembership(db.Model):
     # ORM relationships (linked in Member and Unit in Step 1b)
     unit = db.relationship("Unit", back_populates="membership_links")
     member = db.relationship("Member", back_populates="unit_links")
+    client = db.relationship("Client")
+    user = db.relationship("User")
 
     # ------------------------------------------------------------------ #
     # Convenience helpers

@@ -1,0 +1,23 @@
+{% set actions = works_next_actions_list|default(next_actions|default([])) %}
+{% set title = works_next_actions_title|default('Next Actions') %}
+{% set subtitle = works_next_actions_subtitle|default('Prioritised operational focus') %}
+{% set prefix = works_next_actions_prefix|default('') %}
+{% set repeated_prefix = works_next_actions_repeated_returns_prefix|default('') %}
+{% set extra_class = works_next_actions_class|default('') %}
+
+{% if actions %}
+  <div class="works-next-actions {{ extra_class }}">
+    <div>
+      <span>{{ title }}</span>
+      <strong>{{ subtitle }}</strong>
+    </div>
+    {% for action in actions %}
+      {% set action_href = repeated_prefix if action.key == 'repeated_returns' and repeated_prefix else prefix ~ '#' ~ action.anchor %}
+      <a class="works-next-action works-next-action-{{ action.tone }}" href="{{ action_href }}">
+        <span>{{ action.label }}</span>
+        <strong>{{ action.action }}</strong>
+        <small>{{ action.count }} linked item{{ '' if action.count == 1 else 's' }}</small>
+      </a>
+    {% endfor %}
+  </div>
+{% endif %}

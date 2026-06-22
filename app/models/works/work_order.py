@@ -121,6 +121,19 @@ class WorkOrder(db.Model):
     # 🔁 Relationships to Quotes
     quote_responses = db.relationship('QuoteResponse', backref='work_order', lazy=True)
     quote_recipients = db.relationship('QuoteRecipient', backref='work_order', lazy=True)
+    reopen_requests = db.relationship(
+        'WorkOrderReopenRequest',
+        back_populates='work_order',
+        cascade='all, delete-orphan',
+        lazy=True,
+    )
+    lifecycle_events = db.relationship(
+        'WorkOrderLifecycleEvent',
+        back_populates='work_order',
+        cascade='all, delete-orphan',
+        order_by='WorkOrderLifecycleEvent.occurred_at',
+        lazy=True,
+    )
 
     def __repr__(self):
         return f"<WorkOrder id={self.id} title='{self.title}' status={self.status}>"

@@ -1,0 +1,67 @@
+{% extends 'layouts/super_admin_base.html' %}
+
+{% block page_content %}
+<section class="content-panel">
+  <div class="panel-header">
+    <h2>Contractor Compliance Documents</h2>
+    <p class="text-muted mb-0">Compliance records, expiry review and GAR AI parsing status for contractor files.</p>
+  </div>
+
+  <form method="GET" class="report-filter-panel mt-3">
+    <div class="filter-field">
+      <label for="search">Search</label>
+      <input id="search" name="search" class="form-control" value="{{ request.args.get('search', '') }}" placeholder="Filename, description, summary">
+    </div>
+    <div class="filter-field">
+      <label for="contractor_id">Contractor</label>
+      <select id="contractor_id" name="contractor_id" class="form-select">
+        <option value="">All contractors</option>
+        {% for contractor in contractors %}
+          <option value="{{ contractor.id }}" {% if request.args.get('contractor_id') == contractor.id|string %}selected{% endif %}>{{ contractor.company_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-field">
+      <label for="document_type">Type</label>
+      <select id="document_type" name="document_type" class="form-select">
+        <option value="">All types</option>
+        {% for item in document_types %}
+          <option value="{{ item }}" {% if request.args.get('document_type') == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-primary" type="submit">Apply</button>
+    </div>
+  </form>
+
+  <div class="table-responsive mt-3">
+    <table class="table table-sm align-middle">
+      <thead>
+        <tr>
+          <th>Document</th>
+          <th>Contractor</th>
+          <th>Type</th>
+          <th>Expiry</th>
+          <th>AI Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in documents.items %}
+          <tr>
+            <td>{{ doc.file_name or doc.document_name or 'Document' }}</td>
+            <td>{{ doc.contractor.company_name if doc.contractor else '-' }}</td>
+            <td>{{ doc.document_type or '-' }}</td>
+            <td>{{ doc.expiry_date.strftime('%d %b %Y') if doc.expiry_date else '-' }}</td>
+            <td><span class="badge bg-secondary">{{ doc.ai_status or 'Not reviewed' }}</span></td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5" class="text-muted py-4">No contractor compliance documents match this view.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

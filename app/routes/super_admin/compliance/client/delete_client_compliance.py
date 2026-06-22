@@ -16,4 +16,4 @@ def delete_client_compliance_document(doc_id):
     db.session.commit()
 
     flash('Client compliance document archived successfully.', 'success')
-    return redirect(url_for('super_admin.compliance_documents'))
+    return redirect(url_for('super_admin.compliance_documents_index'))

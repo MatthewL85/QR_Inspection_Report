@@ -142,5 +142,27 @@ class Member(db.Model):
     # ---------------------------------
     # Debug
     # ---------------------------------
+    @property
+    def full_name(self):
+        parts = [self.first_name, self.last_name]
+        name = " ".join(part for part in parts if part).strip()
+        return name or self.email or f"Member #{self.id}"
+
+    @property
+    def correspondence_address(self):
+        parts = [
+            self.postal_address_line1,
+            self.postal_address_line2,
+            self.postal_city,
+            self.postal_region,
+            self.postal_postcode,
+            self.postal_country,
+        ]
+        return ", ".join(part for part in parts if part)
+
+    @property
+    def country(self):
+        return self.correspondence_address or self.postal_country
+
     def __repr__(self):
         return f"<Member {self.first_name} {self.last_name} id={self.id}>"

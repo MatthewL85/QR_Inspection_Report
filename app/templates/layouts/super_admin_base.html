@@ -5,7 +5,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="{{ (S.primary_hex if S and S.primary_hex else '#2152ff') }}" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="LogixPM" />
   <title>{% block title %}Super Admin | LogixPM{% endblock %}</title>
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='assets/img/apple-icon.png') }}">
 
   <!-- Fonts & Icons -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons" rel="stylesheet" />
@@ -22,7 +26,7 @@
 
   <!-- Core CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/material-dashboard.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v=23) }}">
 
   <!-- Tenant Theme (no color-mix; validator-safe) -->
   <style id="tenant-theme">
@@ -173,6 +177,7 @@
 
 <body class="g-sidenav-show bg-gray-100">
   {% include '_partials/super_admin_sidebar.html' %}
+  <div id="sidebarOverlay" aria-hidden="true"></div>
 
   <main class="main-content position-relative border-radius-lg ps">
     {% include '_partials/navbar.html' %}
@@ -200,6 +205,7 @@
 
   <script src="{{ url_for('static', filename='assets/js/core/bootstrap.bundle.min.js') }}"></script>
   <script src="{{ url_for('static', filename='assets/js/material-dashboard.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/register_app_shell.js') }}"></script>
 
   <script>
     (function () {
@@ -212,7 +218,15 @@
 
       function toggleSidebar(e) {
         if (e) e.preventDefault();
+
+        if (window.matchMedia('(max-width: 767.98px)').matches) {
+          body.classList.toggle('sidebar-open');
+          body.classList.remove('sidebar-collapsed');
+          return;
+        }
+
         body.classList.toggle('sidebar-collapsed');
+        body.classList.remove('sidebar-open');
         try {
           localStorage.setItem(KEY, body.classList.contains('sidebar-collapsed') ? '1' : '0');
         } catch (e) { /* noop */ }
@@ -240,6 +254,13 @@
         document.addEventListener('DOMContentLoaded', bindAll);
       } else {
         bindAll();
+      }
+
+      var overlay = document.getElementById('sidebarOverlay');
+      if (overlay) {
+        overlay.addEventListener('click', function () {
+          body.classList.remove('sidebar-open');
+        });
       }
     })();
   </script>

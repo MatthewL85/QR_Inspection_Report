@@ -1,0 +1,15 @@
+{% extends 'layouts/super_admin_base.html' %}
+
+{% block title %}Works Logix | LogixPM{% endblock %}
+
+{% block page_content %}
+  {% set dashboard_endpoint = 'super_admin.dashboard' %}
+  {% set dashboard_label = 'Dashboard' %}
+  {% set convert_endpoint = 'super_admin.convert_member_request_to_work_order' %}
+  {% set assign_endpoint = 'super_admin.assign_work_order_contractor' %}
+  {% set reset_endpoint = 'super_admin.work_orders' %}
+  {% set repeated_returns_endpoint = 'super_admin.work_orders_repeated_returns' %}
+  {% set workspace_title = 'Works Logix' %}
+  {% set workspace_subtitle = 'Phase 3 command centre for member requests, work orders, contractor routing and GAR signals.' %}
+  {% include 'works/_command_centre.html' %}
+{% endblock %}

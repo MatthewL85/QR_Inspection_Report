@@ -1,538 +1,376 @@
 {% extends "layouts/super_admin_base.html" %}
 
 {% block page_content %}
-<div class="container-fluid py-4">
+{% macro currency_no_cents(amount, code='EUR') -%}
+  {%- set up = (code or 'EUR')|upper -%}
+  {%- set prefix = 'EUR ' if up == 'EUR' else ('GBP ' if up == 'GBP' else ('$' if up == 'USD' else up ~ ' ')) -%}
+  {{ prefix }}{{ '{:,.0f}'.format(amount or 0) }}
+{%- endmacro %}
 
-  {# ---- helpers (safe currency fallback, no cents) ---- #}
-  {% macro currency_no_cents(amount, symbol='€') -%}
-    {{ symbol }}{{ '{:,.0f}'.format(amount or 0) }}
-  {%- endmacro %}
+{% macro alert_label(contract) -%}
+  {%- set days = contract.days_to_expiry() if contract.end_date else none -%}
+  {%- if days is none -%}Missing Date
+  {%- elif days < 0 -%}Expired
+  {%- elif days <= 30 -%}Due 30d
+  {%- elif days <= 60 -%}Due 60d
+  {%- elif days <= 90 -%}Due 90d
+  {%- else -%}Active
+  {%- endif -%}
+{%- endmacro %}
 
-  <div class="row">
-    <div class="col-12">
-      <div class="card shadow-sm border-0">
-        <div class="card-body">
-          <div class="d-flex align-items-center justify-content-between">
-            <h4 class="mb-0">Contracts Overview</h4>
-            <div class="d-flex align-items-center">
-              {% if 'super_admin.dashboard' in current_app.view_functions %}
-              <a href="{{ url_for('super_admin.dashboard') }}" class="btn btn-sm btn-light">
-                ← Back to Dashboard
-              </a>
-              {% endif %}
+{% macro alert_class(contract) -%}
+  {%- set days = contract.days_to_expiry() if contract.end_date else none -%}
+  {%- if days is none -%}contract-alert-muted
+  {%- elif days < 0 -%}contract-alert-danger
+  {%- elif days <= 30 -%}contract-alert-warning
+  {%- elif days <= 60 -%}contract-alert-primary
+  {%- elif days <= 90 -%}contract-alert-info
+  {%- else -%}contract-alert-success
+  {%- endif -%}
+{%- endmacro %}
 
-              {# ✅ Start New Contract: prefer start screen if available, else fallback #}
-              {% set filtered_client_id = request.args.get('client_id') %}
-              {% if 'super_admin_contract_start.start' in current_app.view_functions %}
-                {% if filtered_client_id %}
-                  <a href="{{ url_for('super_admin_contract_start.start', client_id=filtered_client_id) }}"
-                     class="btn btn-sm btn-success ms-2">➕ Start New Contract</a>
-                {% else %}
-                  <a href="{{ url_for('super_admin_contract_start.start') }}"
-                     class="btn btn-sm btn-success ms-2">➕ Start New Contract</a>
-                {% endif %}
-              {% elif 'super_admin_simple_contracts.new_contract' in current_app.view_functions %}
-                {# fallback: quick draft flow #}
-                {% if filtered_client_id %}
-                  <a href="{{ url_for('super_admin_simple_contracts.new_contract', client_id=filtered_client_id) }}"
-                     class="btn btn-sm btn-success ms-2">➕ Start New Contract</a>
-                {% else %}
-                  <a href="{{ url_for('super_admin_simple_contracts.new_contract') }}"
-                     class="btn btn-sm btn-success ms-2">➕ Start New Contract</a>
-                {% endif %}
-              {% else %}
-                {# last-resort fallback: wizard step 1 (needs client_id, so omit param here) #}
-                <a href="{{ url_for('super_admin_contracts.renew', step=1, client_id=filtered_client_id) if filtered_client_id else url_for('super_admin_contracts.renew', step=1, client_id=0) }}"
-                   class="btn btn-sm btn-success ms-2">➕ Start New Contract</a>
-              {% endif %}
-              {# ✅ END new button #}
-            </div>
-          </div>
+{% macro start_contract_url(client_id=None) -%}
+  {%- if 'super_admin_contract_start.start' in current_app.view_functions -%}
+    {{ url_for('super_admin_contract_start.start', client_id=client_id) if client_id else url_for('super_admin_contract_start.start') }}
+  {%- elif 'super_admin_simple_contracts.new_contract' in current_app.view_functions -%}
+    {{ url_for('super_admin_simple_contracts.new_contract', client_id=client_id) if client_id else url_for('super_admin_simple_contracts.new_contract') }}
+  {%- else -%}
+    {{ url_for('super_admin_contracts.renew', step=1, client_id=client_id or 0) }}
+  {%- endif -%}
+{%- endmacro %}
 
-          {# ---- Tabs ---- #}
-          <ul class="nav nav-pills mt-3" id="contractsTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active"
-                      id="tab-expiry"
-                      data-bs-toggle="pill"
-                      data-bs-target="#expiry"
-                      type="button"
-                      role="tab"
-                      aria-controls="expiry"
-                      aria-selected="true">
-                Expiry
-                <span class="badge bg-danger ms-1">
-                  {{ (counts.expired if counts is defined else contracts_expired) or 0 }}
-                </span>
-                <span class="badge bg-warning ms-1">
-                  {{ (counts.exp_30 if counts is defined else contracts_expiring_30) or 0 }}
-                </span>
-                <span class="badge bg-primary ms-1">
-                  {{ (counts.exp_60 if counts is defined else contracts_expiring_60) or 0 }}
-                </span>
-                <span class="badge bg-info ms-1">
-                  {{ (counts.exp_90 if counts is defined else contracts_expiring_90) or 0 }}
-                </span>
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link"
-                      id="tab-pending"
-                      data-bs-toggle="pill"
-                      data-bs-target="#pending"
-                      type="button"
-                      role="tab"
-                      aria-controls="pending"
-                      aria-selected="false">
-                Pending Signatures
-                <span class="badge bg-secondary ms-1">
-                  {{ (counts.pending if counts is defined else count_pending) or 0 }}
-                </span>
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link"
-                      id="tab-signed"
-                      data-bs-toggle="pill"
-                      data-bs-target="#signed"
-                      type="button"
-                      role="tab"
-                      aria-controls="signed"
-                      aria-selected="false">
-                Signed (Last 30d)
-                <span class="badge bg-success ms-1">
-                  {{ (counts.signed if counts is defined else count_signed_30d) or 0 }}
-                </span>
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link"
-                      id="tab-declined"
-                      data-bs-toggle="pill"
-                      data-bs-target="#declined"
-                      type="button"
-                      role="tab"
-                      aria-controls="declined"
-                      aria-selected="false">
-                Declined
-                <span class="badge bg-danger ms-1">
-                  {{ (counts.declined if counts is defined else count_declined) or 0 }}
-                </span>
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link"
-                      id="tab-drafts"
-                      data-bs-toggle="pill"
-                      data-bs-target="#drafts"
-                      type="button"
-                      role="tab"
-                      aria-controls="drafts"
-                      aria-selected="false">
-                Drafts
-                <span class="badge bg-info ms-1">
-                  {{ (counts.drafts if counts is defined else count_drafts) or 0 }}
-                </span>
-              </button>
-            </li>
-          </ul>
+{% macro bucket_url(bucket) -%}
+  {{ url_for('super_admin_contracts.contracts_overview', bucket=bucket) }}#contract-register
+{%- endmacro %}
 
-          {# ---- Tab Content ---- #}
-          <div class="tab-content mt-3">
+{% set bucket_titles = {
+  'expired': 'Expired Contracts',
+  '30': 'Contracts Due in 30 Days',
+  '60': 'Contracts Due in 60 Days',
+  '90': 'Contracts Due in 90 Days',
+  'active': 'Active Contracts',
+  'archived': 'Archived Contracts',
+  'missing': 'Contracts Missing Expiry Dates'
+} %}
 
-            {# Expiry Tab #}
-            <div class="tab-pane fade show active" id="expiry" role="tabpanel" aria-labelledby="tab-expiry">
-              <h6 class="fw-bold mb-2">Expired</h6>
-              {% if expired and expired|length %}
-                <div class="table-responsive">
-                  <table class="table table-sm table-hover align-middle">
-                    <thead>
-                      <tr>
-                        <th>Client</th>
-                        <th>Title</th>
-                        <th>End Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for c in expired %}
-                      <tr>
-                        <td>{{ c.client.name if c.client else '—' }}</td>
-                        <td>{{ c.title|default('—') }}</td>
-                        <td class="text-danger">
-                          {{ c.end_date.strftime("%d-%m-%Y") if c.end_date else '—' }}
-                        </td>
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              {% else %}
-                <p class="text-muted">No expired contracts.</p>
-              {% endif %}
-
-              <h6 class="fw-bold mt-4 mb-2">Expiring in 30 Days</h6>
-              {% if expiring_30 and expiring_30|length %}
-                <div class="table-responsive">
-                  <table class="table table-sm table-hover align-middle">
-                    <thead>
-                      <tr>
-                        <th>Client</th>
-                        <th>Title</th>
-                        <th>End Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for c in expiring_30 %}
-                      <tr>
-                        <td>{{ c.client.name if c.client else '—' }}</td>
-                        <td>{{ c.title|default('—') }}</td>
-                        <td class="text-warning">
-                          {{ c.end_date.strftime("%d-%m-%Y") if c.end_date else '—' }}
-                        </td>
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              {% else %}
-                <p class="text-muted">No contracts expiring within 30 days.</p>
-              {% endif %}
-
-              <h6 class="fw-bold mt-4 mb-2">Expiring in 60 Days</h6>
-              {% if expiring_60 and expiring_60|length %}
-                <div class="table-responsive">
-                  <table class="table table-sm table-hover align-middle">
-                    <thead>
-                      <tr>
-                        <th>Client</th>
-                        <th>Title</th>
-                        <th>End Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for c in expiring_60 %}
-                      <tr>
-                        <td>{{ c.client.name if c.client else '—' }}</td>
-                        <td>{{ c.title|default('—') }}</td>
-                        <td class="text-primary">
-                          {{ c.end_date.strftime("%d-%m-%Y") if c.end_date else '—' }}
-                        </td>
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              {% else %}
-                <p class="text-muted">No contracts expiring within 60 days.</p>
-              {% endif %}
-
-              <h6 class="fw-bold mt-4 mb-2">Expiring in 90 Days</h6>
-              {% if expiring_90 and expiring_90|length %}
-                <div class="table-responsive">
-                  <table class="table table-sm table-hover align-middle">
-                    <thead>
-                      <tr>
-                        <th>Client</th>
-                        <th>Title</th>
-                        <th>End Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for c in expiring_90 %}
-                      <tr>
-                        <td>{{ c.client.name if c.client else '—' }}</td>
-                        <td>{{ c.title|default('—') }}</td>
-                        <td class="text-info">
-                          {{ c.end_date.strftime("%d-%m-%Y") if c.end_date else '—' }}
-                        </td>
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              {% else %}
-                <p class="text-muted">No contracts expiring within 90 days.</p>
-              {% endif %}
-            </div>
-
-            {# Pending Tab #}
-            <div class="tab-pane fade" id="pending" role="tabpanel" aria-labelledby="tab-pending">
-              {% if (counts.pending if counts is defined else count_pending) > 0 %}
-                {% include "super_admin/contracts/_pending_table.html" %}
-              {% else %}
-                <p class="text-muted">No pending signatures.</p>
-              {% endif %}
-            </div>
-
-            {# Signed Tab #}
-            <div class="tab-pane fade" id="signed" role="tabpanel" aria-labelledby="tab-signed">
-              {% if (counts.signed if counts is defined else count_signed_30d) > 0 %}
-                {% include "super_admin/contracts/_signed_table.html" %}
-              {% else %}
-                <p class="text-muted">No contracts signed in the last 30 days.</p>
-              {% endif %}
-            </div>
-
-            {# Declined Tab #}
-            <div class="tab-pane fade" id="declined" role="tabpanel" aria-labelledby="tab-declined">
-              {% if (counts.declined if counts is defined else count_declined) > 0 %}
-                {% include "super_admin/contracts/_declined_table.html" %}
-              {% else %}
-                <p class="text-muted">No declined contracts.</p>
-              {% endif %}
-            </div>
-
-            {# Drafts Tab #}
-            <div class="tab-pane fade" id="drafts" role="tabpanel" aria-labelledby="tab-drafts">
-              {% if (counts.drafts if counts is defined else count_drafts) > 0 %}
-                {% include "super_admin/contracts/_drafts_table.html" %}
-              {% else %}
-                <p class="text-muted">No drafts available.</p>
-              {% endif %}
-            </div>
-
-          </div>
-        </div>
-      </div>
+<div class="container-fluid contract-manager-workspace">
+  <div class="contract-manager-command-bar">
+    <div>
+      <h5>Contract Manager</h5>
+      <span>PSRA renewals, expiry alerts, fee control and GAR AI contract intelligence.</span>
     </div>
-  </div>
-
-  {# ✅ Unified drill-down table with filters + Archive button on SAME LINE #}
-  <div class="row mt-3">
-    <div class="col-12">
-      <div class="card border-0 shadow-sm">
-        <div class="card-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
-          <h6 class="mb-0">All Contracts</h6>
-
-          <div class="d-flex align-items-center gap-2 flex-wrap flex-md-nowrap">
-            <form method="get" class="d-flex gap-2 contracts-filters flex-wrap flex-md-nowrap">
-              <input type="hidden" name="tab" value="{{ request.args.get('tab', '') }}">
-              <input type="text" class="form-control form-control-sm" name="q"
-                     value="{{ request.args.get('q','') }}" placeholder="Search title/client…">
-              <input type="text" class="form-control form-control-sm" name="client_id"
-                     value="{{ request.args.get('client_id','') }}" placeholder="Client ID">
-              <select class="form-select form-select-sm" name="status" aria-label="Filter by status">
-                {% set s = request.args.get('status','') %}
-                <option value="" {{ s=='' and 'selected' or '' }}>All statuses</option>
-                {% for opt in ['Draft','Sent','Viewed','Signed','Declined','Expired'] %}
-                  <option value="{{ opt }}" {{ s==opt and 'selected' or '' }}>{{ opt }}</option>
-                {% endfor %}
-                <option value="Archived" {{ s=='Archived' and 'selected' or '' }}>Archived</option>
-              </select>
-              {% set inc = request.args.get('include_archived') %}
-              <div class="form-check d-flex align-items-center ms-1">
-                <input class="form-check-input me-1" type="checkbox" id="incArc" name="include_archived" value="1"
-                       {% if inc in ['1','true','True'] %}checked{% endif %}>
-                <label for="incArc" class="small">Include archived</label>
-              </div>
-              <button class="btn btn-sm btn-primary" type="submit">Filter</button>
-              <a class="btn btn-sm btn-outline-secondary"
-                 href="{{ url_for('super_admin_contracts.contracts_overview') }}">Reset</a>
-            </form>
-
-            {# ✅ Moved here: Archive Selected, stays disabled until checkboxes are checked #}
-            <button type="button" id="bulkArchiveBtn"
-                    class="btn btn-outline-danger btn-sm flex-shrink-0"
-                    data-bs-toggle="modal" data-bs-target="#archiveModal"
-                    data-bulk="1" disabled>
-              Archive Selected
-            </button>
-          </div>
-        </div>
-
-        <div class="card-body">
-
-          {# (kept for backwards-compatibility but hidden since button is now in header) #}
-          <div class="d-flex justify-content-end mb-2 d-none">
-            <button type="button" class="btn btn-outline-danger btn-sm">Archive Selected</button>
-          </div>
-
-          {% set dataset = all_contracts if all_contracts is defined and all_contracts is not none else [] %}
-          {% if not dataset %}
-            {% set dataset = [] %}
-            {% for L in [expired, expiring_30, expiring_60, expiring_90, pending, signed, declined, drafts, expired_sig] if L is defined and L %}
-              {% for c in L %}{% set _ = dataset.append(c) %}{% endfor %}
-            {% endfor %}
-          {% endif %}
-
-          {% if dataset %}
-            <form id="bulkArchiveForm" method="post" action="{{ url_for('super_admin_contracts.contracts_archive_bulk') }}">
-              {% if csrf_token is defined %}
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              {% endif %}
-
-              <div class="table-responsive">
-                <table class="table table-sm align-middle">
-                  <thead>
-                    <tr>
-                      <th class="text-center" style="width:36px;">
-                        <input type="checkbox" class="form-check-input" id="selectAll">
-                      </th>
-                      <th>Client</th>
-                      <th>Title</th>
-                      <th>Status</th>
-                      <th>Term</th>
-                      <th>Value</th>
-                      <th class="text-end">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for c in dataset %}
-                    {% set srow = c.sign_status or 'Draft' %}
-                    <tr class="{% if srow=='Archived' %}opacity-50{% endif %}">
-                      <td class="text-center">
-                        {% if srow != 'Archived' %}
-                          <input type="checkbox" class="form-check-input row-check" name="ids" value="{{ c.id }}">
-                        {% endif %}
-                      </td>
-                      <td>{{ c.client.name if c.client else '—' }}</td>
-                      <td>{{ c.contract_title or c.title or ('Contract #' ~ c.id) }}</td>
-                      <td>
-                        {% set s = c.sign_status or 'Draft' %}
-                        <span class="badge
-                          {% if s=='Draft' %}bg-secondary
-                          {% elif s in ['Sent','Viewed'] %}bg-info
-                          {% elif s=='Signed' %}bg-success
-                          {% elif s=='Declined' %}bg-danger
-                          {% elif s=='Expired' %}bg-warning text-dark
-                          {% elif s=='Archived' %}bg-light text-dark
-                          {% else %}bg-light text-dark{% endif %}">
-                          {{ s }}
-                        </span>
-                      </td>
-                      <td>{{ c.start_date or '—' }} → {{ c.end_date or '—' }}</td>
-                      <td>
-                        {% if c.contract_value %}
-                          {% set sym = (c.currency == 'GBP') and '£' or (c.currency or '€') %}
-                          {% if environment is defined and 'currency' in environment.filters %}
-                            {{ c.contract_value | currency(sym) }}
-                          {% else %}
-                            {{ currency_no_cents(c.contract_value, sym) }}
-                          {% endif %}
-                        {% else %}—{% endif %}
-                      </td>
-                      <td class="text-end">
-                        <div class="btn-group">
-                          <a class="btn btn-sm btn-outline-primary"
-                             href="{{ url_for('super_admin_contracts.renew', client_id=c.client_id, step=3, contract_id=c.id) }}">Open</a>
-                          {% if c.generated_pdf_path %}
-                            <a class="btn btn-sm btn-outline-secondary"
-                               href="{{ url_for('static', filename=c.generated_pdf_path) }}" target="_blank">PDF</a>
-                          {% endif %}
-                          {% if srow != 'Archived' %}
-                            <button type="button"
-                                    class="btn btn-sm btn-outline-danger"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#archiveModal"
-                                    data-id="{{ c.id }}"
-                                    data-title="{{ c.contract_title or c.title or ('Contract #' ~ c.id) }}">
-                              Archive
-                            </button>
-                          {% else %}
-                            <span class="text-muted small ms-2">—</span>
-                          {% endif %}
-                        </div>
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            </form>
-          {% else %}
-            <div class="text-muted">No contracts match the current filters.</div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
-
-  {# ✅ Archive confirmation modal (single & bulk) #}
-  <div class="modal fade" id="archiveModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <form method="post" id="archiveActionForm">
+    <div class="contract-manager-actions">
+      {% if 'super_admin.dashboard' in current_app.view_functions %}
+        <a href="{{ url_for('super_admin.dashboard') }}" class="contract-manager-link">
+          <i class="material-icons">arrow_back</i>
+          Dashboard
+        </a>
+      {% endif %}
+      <form method="post" action="{{ url_for('super_admin_contracts.sync_renewal_alerts') }}" class="m-0">
         {% if csrf_token is defined %}
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {% endif %}
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Archive contract(s)</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <p class="mb-2">This will hide the contract(s) from active lists and write an audit entry.</p>
-            <div class="mb-2">
-              <label class="form-label">Reason (optional)</label>
-              <input type="text" class="form-control" name="reason" placeholder="Duplicate draft">
-            </div>
-            <div class="alert alert-warning mb-0 small">
-              Action is reversible by Super Admin (unarchive). No hard delete is performed.
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-danger">Archive</button>
-          </div>
-        </div>
+        <button type="submit" class="contract-manager-secondary-button">
+          <i class="material-icons">notifications_active</i>
+          Refresh Alerts
+        </button>
       </form>
+      <a href="{{ start_contract_url(request.args.get('client_id')) }}" class="btn btn-sm btn-primary">
+        <i class="material-icons align-middle">add</i>
+        Start Contract
+      </a>
     </div>
   </div>
 
-  {# JS keeps button enabled/disabled and wires modal #}
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const selectAll  = document.getElementById('selectAll');
-      const bulkBtn    = document.getElementById('bulkArchiveBtn');
-      const modalEl    = document.getElementById('archiveModal');
-      const actionForm = document.getElementById('archiveActionForm');
+  <section class="contract-alert-grid">
+    <a class="contract-alert-card {{ 'is-active' if selected_bucket == 'expired' else '' }}"
+       data-contract-alert-link
+       href="{{ bucket_url('expired') }}">
+      <span>Expired</span>
+      <strong class="text-danger">{{ counts.expired or 0 }}</strong>
+    </a>
+    <a class="contract-alert-card {{ 'is-active' if selected_bucket == '30' else '' }}"
+       data-contract-alert-link
+       href="{{ bucket_url('30') }}">
+      <span>Due in 30 Days</span>
+      <strong class="text-warning">{{ counts.exp_30 or 0 }}</strong>
+    </a>
+    <a class="contract-alert-card {{ 'is-active' if selected_bucket == '60' else '' }}"
+       data-contract-alert-link
+       href="{{ bucket_url('60') }}">
+      <span>Due in 60 Days</span>
+      <strong class="text-primary">{{ counts.exp_60 or 0 }}</strong>
+    </a>
+    <a class="contract-alert-card {{ 'is-active' if selected_bucket == '90' else '' }}"
+       data-contract-alert-link
+       href="{{ bucket_url('90') }}">
+      <span>Due in 90 Days</span>
+      <strong class="text-info">{{ counts.exp_90 or 0 }}</strong>
+    </a>
+    <a class="contract-alert-card {{ 'is-active' if selected_bucket == 'active' else '' }}"
+       data-contract-alert-link
+       href="{{ bucket_url('active') }}">
+      <span>Active</span>
+      <strong class="text-success">{{ counts.active or 0 }}</strong>
+    </a>
+    <a class="contract-alert-card {{ 'is-active' if selected_bucket == 'archived' else '' }}"
+       data-contract-alert-link
+       href="{{ bucket_url('archived') }}">
+      <span>Archived</span>
+      <strong class="text-secondary">{{ counts.archived or 0 }}</strong>
+    </a>
+  </section>
 
-      const rowChecks = () => Array.from(document.querySelectorAll('.row-check'));
-      const anyChecked = () => rowChecks().some(cb => cb.checked);
+  <section class="contract-manager-panel" id="contract-register">
+    <div class="contract-manager-heading">
+      <div>
+        <h6>{{ bucket_titles.get(selected_bucket, 'Contract Register') }}</h6>
+        <span>
+          {{ all_contracts|length }} records in this view
+          {% if selected_bucket %}
+            <a class="contract-register-clear" href="{{ url_for('super_admin_contracts.contracts_overview') }}#contract-register">View all</a>
+          {% endif %}
+        </span>
+      </div>
+      <div class="contract-workflow-chips">
+        <a href="{{ url_for('super_admin_contracts.contracts_overview', status='Draft') }}">Drafts {{ counts.drafts or 0 }}</a>
+        <a href="{{ url_for('super_admin_contracts.contracts_overview', status='Sent') }}">Pending {{ counts.pending or 0 }}</a>
+        <a href="{{ url_for('super_admin_contracts.contracts_overview', status='Signed') }}">Signed {{ counts.signed or 0 }}</a>
+        <a href="{{ url_for('super_admin_contracts.contracts_overview', status='Declined') }}">Declined {{ counts.declined or 0 }}</a>
+      </div>
+    </div>
 
-      if (selectAll) {
-        selectAll.addEventListener('change', () => {
-          rowChecks().forEach(cb => { if (!cb.disabled) cb.checked = selectAll.checked; });
-          if (bulkBtn) bulkBtn.disabled = !anyChecked();
-        });
-      }
-      document.addEventListener('change', (e) => {
-        if (e.target.classList.contains('row-check')) {
-          if (bulkBtn) bulkBtn.disabled = !anyChecked();
-        }
-      });
+    <form method="get" class="contract-filter-bar">
+      <div>
+        <label for="contractSearch">Search</label>
+        <input id="contractSearch" type="text" class="form-control" name="q"
+               value="{{ request.args.get('q','') }}" placeholder="Client, property or contract">
+      </div>
+      <div>
+        <label for="clientFilter">Client</label>
+        <select id="clientFilter" class="form-select" name="client_id">
+          <option value="">All clients</option>
+          {% for client in client_options or [] %}
+            <option value="{{ client.id }}" {{ 'selected' if request.args.get('client_id')|int == client.id else '' }}>
+              {{ client.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="statusFilter">Status</label>
+        {% set selected_status = request.args.get('status','') %}
+        <select id="statusFilter" class="form-select" name="status">
+          <option value="">All statuses</option>
+          {% for opt in ['Draft','Sent','Viewed','Signed','Declined','Expired','Archived'] %}
+            <option value="{{ opt }}" {{ 'selected' if selected_status == opt else '' }}>{{ opt }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="bucketFilter">Alert</label>
+        <select id="bucketFilter" class="form-select" name="bucket">
+          <option value="">All alerts</option>
+          <option value="expired" {{ 'selected' if selected_bucket == 'expired' else '' }}>Expired</option>
+          <option value="30" {{ 'selected' if selected_bucket == '30' else '' }}>Due in 30 days</option>
+          <option value="60" {{ 'selected' if selected_bucket == '60' else '' }}>Due in 60 days</option>
+          <option value="90" {{ 'selected' if selected_bucket == '90' else '' }}>Due in 90 days</option>
+          <option value="active" {{ 'selected' if selected_bucket == 'active' else '' }}>Active</option>
+          <option value="archived" {{ 'selected' if selected_bucket == 'archived' else '' }}>Archived</option>
+          <option value="missing" {{ 'selected' if selected_bucket == 'missing' else '' }}>Missing date</option>
+        </select>
+      </div>
+      <div class="contract-filter-actions">
+        <label class="contract-archive-toggle">
+          <input type="checkbox" name="include_archived" value="1"
+                 {{ 'checked' if include_archived_effective else '' }}>
+          Archived
+        </label>
+        <button class="btn btn-sm btn-primary" type="submit">Apply</button>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('super_admin_contracts.contracts_overview') }}">Reset</a>
+      </div>
+    </form>
 
-      if (modalEl) {
-        modalEl.addEventListener('show.bs.modal', function (event) {
-          const btn = event.relatedTarget;
-          const isBulk = btn?.dataset?.bulk === "1";
-
-          Array.from(actionForm.querySelectorAll('input[name="ids"]')).forEach(n => n.remove());
-
-          if (isBulk) {
-            actionForm.action = "{{ url_for('super_admin_contracts.contracts_archive_bulk') }}";
-            rowChecks().filter(cb => cb.checked).forEach(cb => {
-              const input = document.createElement('input');
-              input.type = 'hidden';
-              input.name = 'ids';
-              input.value = cb.value;
-              actionForm.appendChild(input);
-            });
-          } else {
-            const id = btn.getAttribute('data-id');
-            actionForm.action = "{{ url_for('super_admin_contracts.contracts_archive_single', contract_id=0) }}".replace('/0/', '/' + id + '/');
-          }
-        });
-      }
-    });
-  </script>
-
-  {# Scoped CSS keeps controls on one line on md+ #}
-  <style>
-    .contracts-filters .form-control,
-    .contracts-filters .form-select { min-width: 170px; }
-    .contracts-filters .btn { white-space: nowrap; min-width: 84px; }
-    .contracts-filters .form-check { white-space: nowrap; }
-  </style>
-
+    <div class="contract-manager-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr>
+            <th style="width: 17%;">Client</th>
+            <th style="width: 16%;">Property</th>
+            <th style="width: 14%;">Contract</th>
+            <th style="width: 12%;">Fee</th>
+            <th style="width: 15%;">Term</th>
+            <th style="width: 9%;">Alert</th>
+            <th style="width: 9%;">Renewal</th>
+            <th style="width: 8%;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if all_contracts %}
+            {% for contract in all_contracts %}
+              {% set client = contract.client %}
+              {% set days = contract.days_to_expiry() if contract.end_date else none %}
+              {% set status = contract.sign_status or 'Draft' %}
+              {% set display_title = contract.contract_title if contract.contract_title is defined and contract.contract_title else contract.get_json('meta.contract_title', 'Contract #' ~ contract.id) %}
+              <tr class="{{ 'is-muted' if status == 'Archived' else '' }}">
+                <td>
+                  <div class="contract-manager-cell-stack">
+                    <strong>{{ client.name if client else '-' }}</strong>
+                    <span>{{ client.client_code if client and client.client_code else '-' }}</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="contract-manager-cell-stack">
+                    <strong>{{ client.property_name if client and client.property_name else '-' }}</strong>
+                    <span>{{ client.city if client and client.city else (client.region if client and client.region else '-') }}</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="contract-manager-cell-stack">
+                    <strong>{{ display_title }}</strong>
+                    <span>
+                      <span class="contract-status-pill">{{ status }}</span>
+                      {% if contract.new_contract_drafted %}
+                        <span class="contract-status-pill">Drafted</span>
+                      {% endif %}
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <div class="contract-manager-cell-stack">
+                    <strong>{{ currency_no_cents(contract.contract_value, contract.currency or (client.currency if client else 'EUR')) }}</strong>
+                    <span>
+                      Target:
+                      {% if contract.target_management_fee %}
+                        {{ currency_no_cents(contract.target_management_fee, contract.currency or (client.currency if client else 'EUR')) }}
+                      {% else %}
+                        -
+                      {% endif %}
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <div class="contract-manager-cell-stack">
+                    <strong>
+                      {{ contract.start_date.strftime('%d %b %Y') if contract.start_date else '-' }}
+                      to
+                      {{ contract.end_date.strftime('%d %b %Y') if contract.end_date else '-' }}
+                    </strong>
+                    <span>
+                      {% if days is none %}
+                        No expiry date
+                      {% elif days < 0 %}
+                        {{ days|abs }} days expired
+                      {% else %}
+                        {{ days }} days remaining
+                      {% endif %}
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <span class="contract-alert-pill {{ alert_class(contract) }}">{{ alert_label(contract) }}</span>
+                </td>
+                <td>
+                  <div class="contract-manager-cell-stack">
+                    <strong>{{ contract.renewal_month or '-' }}</strong>
+                    <span>
+                      Increase:
+                      {% if contract.annual_increase_percent %}
+                        {{ contract.annual_increase_percent }}%
+                      {% else %}
+                        -
+                      {% endif %}
+                    </span>
+                    <span>
+                      Next:
+                      {{ contract.next_fee_increase_date.strftime('%d %b %Y') if contract.next_fee_increase_date else '-' }}
+                    </span>
+                    <span>
+                      Owner:
+                      {{ contract.alert_owner.full_name if contract.alert_owner else '-' }}
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <div class="contract-row-actions">
+                    <a href="{{ url_for('super_admin_contracts.renew', client_id=contract.client_id, step=3, contract_id=contract.id) }}">
+                      Open
+                    </a>
+                    {% if 'super_admin_simple_contracts.edit_contract' in current_app.view_functions %}
+                      <a href="{{ url_for('super_admin_simple_contracts.edit_contract', contract_id=contract.id) }}">
+                        Renewal Data
+                      </a>
+                    {% endif %}
+                    {% if status != 'Archived' %}
+                      <button type="button"
+                              data-bs-toggle="modal"
+                              data-bs-target="#archiveModal"
+                              data-id="{{ contract.id }}"
+                              data-title="{{ display_title }}">
+                        Archive
+                      </button>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="8" class="contract-manager-empty">No contracts match the current filters.</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </section>
 </div>
+
+<div class="modal fade" id="archiveModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="post" id="archiveActionForm">
+      {% if csrf_token is defined %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% endif %}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Archive Contract</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-2">This hides the contract from active views and keeps the audit trail intact.</p>
+          <label class="form-label" for="archiveReason">Reason</label>
+          <input id="archiveReason" type="text" class="form-control" name="reason" placeholder="Duplicate draft">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Archive</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const modalEl = document.getElementById('archiveModal');
+    const actionForm = document.getElementById('archiveActionForm');
+
+    document.querySelectorAll('[data-contract-alert-link]').forEach(function (card) {
+      card.addEventListener('click', function (event) {
+        const href = card.getAttribute('href');
+        if (!href || event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        window.location.assign(href);
+      });
+    });
+
+    if (!modalEl || !actionForm) return;
+
+    modalEl.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+      const id = button ? button.getAttribute('data-id') : '';
+      actionForm.action = "{{ url_for('super_admin_contracts.contracts_archive_single', contract_id=0) }}".replace('/0/', '/' + id + '/');
+    });
+  });
+</script>
 {% endblock %}

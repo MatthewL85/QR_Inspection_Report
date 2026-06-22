@@ -49,11 +49,39 @@
     <ul class="navbar-nav justify-content-end ms-auto align-items-center">
       <!-- 🔔 Notifications -->
       <li class="nav-item dropdown px-3">
-        <a href="#" class="nav-link text-body p-0" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+        <a href="#" class="nav-link text-body p-0 notification-trigger" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
           <i class="material-icons">notifications</i>
+          {% if unread_notification_count|default(0) %}
+            <span class="notification-count">{{ unread_notification_count }}</span>
+          {% endif %}
         </a>
-        <ul class="dropdown-menu dropdown-menu-end px-2 py-3" aria-labelledby="dropdownMenuButton" style="min-width: 250px;">
-          <li><a class="dropdown-item border-radius-md" href="#">No new notifications</a></li>
+        <ul class="dropdown-menu dropdown-menu-end notification-menu" aria-labelledby="dropdownMenuButton">
+          <li class="notification-menu-heading">Notifications</li>
+          {% for item in unread_notification_views|default([]) %}
+            {% set notification = item.notification %}
+            <li>
+              <a class="dropdown-item notification-item" href="{{ url_for('notifications.open', notification_id=notification.id) }}">
+                <span class="notification-item-title">{{ item.module_label }} · {{ item.workflow_stage }}</span>
+                <span class="notification-item-message">{{ notification.message }}</span>
+                {% if item.source_label %}
+                  <span class="notification-item-source">{{ item.source_label }}</span>
+                {% endif %}
+              </a>
+            </li>
+          {% else %}
+            <li><span class="dropdown-item notification-empty">No new notifications</span></li>
+          {% endfor %}
+          <li><hr class="dropdown-divider"></li>
+          <li class="notification-menu-actions">
+            <a class="dropdown-item notification-menu-link" href="{{ url_for('notifications.index', next=request.full_path) }}">View all notifications</a>
+            {% if unread_notification_count|default(0) %}
+              <form method="post" action="{{ url_for('notifications.mark_all_read') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ request.full_path }}">
+                <button type="submit" class="dropdown-item notification-menu-link">Mark all read</button>
+              </form>
+            {% endif %}
+          </li>
         </ul>
       </li>
 

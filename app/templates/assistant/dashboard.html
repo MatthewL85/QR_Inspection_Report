@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Assistant Dashboard{% endblock %}
+{% block page_content %}
+<div class="container-fluid px-4">
+  <section class="card border-0 shadow-sm mb-4">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h1 class="h4 mb-1">Assistant Workspace</h1>
+        <p class="text-muted mb-0">
+          {% if cover_access %}
+            Company-wide cover queue for assistant management, routing and operational follow-up.
+          {% else %}
+            Assigned client support, documents and operational follow-up.
+          {% endif %}
+        </p>
+      </div>
+      {% if cover_access %}
+        <span class="dashboard-status-pill">Cover Access</span>
+      {% endif %}
+      <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-primary" href="{{ url_for('assistant.work_orders') }}">Open Works Logix</a>
+        <a class="btn btn-primary" href="{{ url_for('assistant.manage_clients') }}">Open Clients</a>
+      </div>
+    </div>
+  </section>
+
+  {% set dashboard_notification_title = 'Notification Action Queue' %}
+  {% include 'notifications/_dashboard_action_strip.html' %}
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm"><div class="card-body">
+        <div class="text-muted small fw-bold">ASSIGNED CLIENTS</div>
+        <div class="h3 mb-0">{{ client_count }}</div>
+      </div></div>
+    </div>
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm"><div class="card-body">
+        <div class="text-muted small fw-bold">UNITS IN VIEW</div>
+        <div class="h3 mb-0">{{ unit_count }}</div>
+      </div></div>
+    </div>
+  </div>
+
+  {% set gar_ask_action = url_for('assistant.dashboard') %}
+  {% set gar_ask_clear_url = url_for('assistant.dashboard') %}
+  {% set gar_ask_subtitle = 'Source-backed answers for assigned developments and permitted cover queues.' %}
+  {% include 'gar/_ask_panel.html' %}
+
+  <section class="card border-0 shadow-sm mt-3">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+          <h2 class="h6 mb-1">Works Attention Queue</h2>
+          <p class="text-muted mb-0">{{ works_stats.attention_total or 0 }} item{{ '' if (works_stats.attention_total or 0) == 1 else 's' }} need assistant focus.</p>
+        </div>
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('assistant.work_orders') }}">Open Queue</a>
+      </div>
+      <div class="works-attention-grid">
+        {% for key, queue in works_operational_queues.items() %}
+          {% set queue_href = url_for('assistant.work_orders_repeated_returns') if key == 'repeated_returns' else url_for('assistant.work_orders') ~ '#' ~ queue.anchor %}
+          <a class="works-attention-card works-attention-{{ queue.tone }}" href="{{ queue_href }}">
+            <span>{{ queue.label }}</span>
+            <strong>{{ queue.count }}</strong>
+            <small>{{ queue.description }}</small>
+          </a>
+        {% endfor %}
+      </div>
+      {% set works_gar_quality_url = url_for('assistant.work_orders_repeated_returns') %}
+      {% include 'works/_gar_quality_signals.html' %}
+      {% set works_next_actions_list = works_next_actions %}
+      {% set works_next_actions_subtitle = 'Prioritised assistant focus' %}
+      {% set works_next_actions_prefix = url_for('assistant.work_orders') %}
+      {% set works_next_actions_repeated_returns_prefix = url_for('assistant.work_orders_repeated_returns') %}
+      {% include 'works/_next_actions.html' %}
+    </div>
+  </section>
+</div>
+{% endblock %}

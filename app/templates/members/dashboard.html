@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}Members Logix{% endblock %}
+{% block page_content %}
+<div class="container-fluid px-4">
+  <section class="card border-0 shadow-sm mb-4">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h1 class="h4 mb-1">Members Logix</h1>
+        <p class="text-muted mb-0">Owner and resident access to units, requests, documents and GAR AI.</p>
+      </div>
+      <a class="btn btn-primary btn-sm" href="{{ url_for('members.works') }}">Open Maintenance</a>
+    </div>
+  </section>
+
+  {% set dashboard_notification_title = 'Notification Action Queue' %}
+  {% include 'notifications/_dashboard_action_strip.html' %}
+
+  {% set gar_ask_title = 'Ask GAR' %}
+  {% set gar_ask_subtitle = 'Source-backed answers from your linked units and visible maintenance records only.' %}
+  {% set gar_ask_placeholder = 'Ask about my requests, linked work orders, feedback or reopen requests' %}
+  {% set gar_ask_action = url_for('members.dashboard') %}
+  {% set gar_ask_clear_url = url_for('members.dashboard') %}
+  {% include 'gar/_ask_panel.html' %}
+
+  {% if member_next_actions %}
+    <section class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+          <div>
+            <h2 class="h6 mb-1">Next Actions</h2>
+            <p class="text-muted mb-0">Prioritised from your linked units and Works Logix records.</p>
+          </div>
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('members.works') }}">Open Maintenance</a>
+        </div>
+        {% set works_next_actions_list = member_next_actions %}
+        {% set works_next_actions_title = 'Action Focus' %}
+        {% set works_next_actions_subtitle = 'Members Logix' %}
+        {% set works_next_actions_prefix = url_for('members.works') %}
+        {% include 'works/_next_actions.html' %}
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="card border-0 shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <div>
+          <h2 class="h5 mb-1">My Linked Units</h2>
+          <p class="text-muted mb-0">Your owner/resident unit links and property details.</p>
+        </div>
+      </div>
+      <form method="POST" action="{{ url_for('members.claim_unit_access') }}" class="member-access-claim mb-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div>
+          <label for="claim_code" class="form-label mb-1">Add another property</label>
+          <p class="text-muted mb-0">Enter the access code supplied by your managing agent.</p>
+        </div>
+        <div class="member-access-claim-controls">
+          <input id="claim_code" name="claim_code" class="form-control" placeholder="e.g. A1B2-C3D4-E5F6" autocomplete="off">
+          <button type="submit" class="btn btn-primary">Add Property</button>
+        </div>
+      </form>
+      <div class="table-responsive">
+        <table class="table align-middle mb-0 member-linked-units-table">
+          <colgroup>
+            <col class="member-linked-units-col-development">
+            <col class="member-linked-units-col-building">
+            <col class="member-linked-units-col-unit">
+            <col class="member-linked-units-col-address">
+            <col class="member-linked-units-col-eircode">
+            <col class="member-linked-units-col-type">
+            <col class="member-linked-units-col-role">
+            <col class="member-linked-units-col-status">
+            <col class="member-linked-units-col-action">
+          </colgroup>
+          <thead class="table-light">
+            <tr>
+              <th>Development</th>
+              <th>Building Name</th>
+              <th>Unit</th>
+              <th>Address</th>
+              <th>Eircode</th>
+              <th>Type</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for link in memberships %}
+              {% set unit = link.unit %}
+              {% set address_parts = [] %}
+              {% if unit and unit.address_line_1 %}{% set _ = address_parts.append(unit.address_line_1) %}{% endif %}
+              {% if unit and unit.address_line_2 %}{% set _ = address_parts.append(unit.address_line_2) %}{% endif %}
+              {% if unit and unit.town_city %}{% set _ = address_parts.append(unit.town_city) %}{% endif %}
+              <tr>
+                <td>
+                  <span class="fw-semibold">{{ unit.client.name if unit and unit.client else '-' }}</span>
+                </td>
+                <td class="member-linked-units-building">
+                  <span class="badge bg-primary-subtle text-primary">
+                    {{ unit.block_name or '-' if unit else '-' }}
+                  </span>
+                </td>
+                <td class="member-linked-units-unit">
+                  <span class="fw-bold">{{ unit.unit_number or unit.unit_label or unit.unit_name or '-' if unit else '-' }}</span>
+                </td>
+                <td class="member-linked-units-address">{{ address_parts|join(', ') if address_parts else '-' }}</td>
+                <td class="member-linked-units-eircode">{{ unit.postal_code or '-' if unit else '-' }}</td>
+                <td class="member-linked-units-type">
+                  {{ unit.unit_type or unit.unit_category or '-' if unit else '-' }}
+                </td>
+                <td class="member-linked-units-role">{{ link.role|title }}</td>
+                <td class="member-linked-units-status"><span class="badge bg-success-subtle text-success">Current</span></td>
+                <td class="member-linked-units-action"><a href="{{ url_for('members.works') }}" class="btn btn-outline-primary btn-sm">Request / Track</a></td>
+              </tr>
+            {% else %}
+              <tr><td colspan="9" class="text-center text-muted py-4">No linked units yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -383,6 +383,7 @@ def edit_client(client_id):
             + _to_int(request.form.get('units_houses'))
             + _to_int(request.form.get('units_duplexes'))
             + _to_int(request.form.get('units_commercial'))
+            + _to_int(request.form.get('units_other'))
         )
         if parts_total > 0 and (posted_total == 0 or posted_total != parts_total):
             client.number_of_units = parts_total

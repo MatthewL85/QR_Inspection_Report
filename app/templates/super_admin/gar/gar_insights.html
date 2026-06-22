@@ -1,26 +1,302 @@
 {% extends 'layouts/super_admin_base.html' %}
 
-{% block title %}GAR Insights | LogixPM{% endblock %}
+{% block title %}GAR AI Centre | LogixPM{% endblock %}
 
 {% block page_content %}
-<div class="container-fluid py-4">
-  <div class="card shadow-sm">
-    <div class="card-header">
-      <h5 class="mb-0"><i class="material-icons text-danger me-2">smart_toy</i> GAR Insights</h5>
-    </div>
-    <div class="card-body">
-      <p>This section will show AI-flagged compliance documents or recommendations.</p>
+{% set summary = portfolio_context.portfolio_context if portfolio_context else {} %}
+{% set actions = portfolio_context.recommended_actions if portfolio_context else [] %}
+{% set health_summary = development_health_register.summary if development_health_register else {} %}
+{% set health_rows = development_health_register.rows if development_health_register else [] %}
+{% set health_actions = development_health_register.recommended_actions if development_health_register else [] %}
+{% set health_view = development_health_register.view_summary if development_health_register else {} %}
+{% set digest = operational_digest or {} %}
+{% set digest_summary = digest.summary if digest else {} %}
+{% set digest_works = digest_summary.works if digest_summary else {} %}
+{% set digest_actions = digest.priority_actions if digest else [] %}
+{% set works_attention = digest.works_attention if digest else [] %}
+{% set quality_signals = digest.quality_signals if digest else {} %}
+{% set contractor_quality = quality_signals.contractor_quality if quality_signals else [] %}
+{% set cover_context = digest.cover_context if digest else {} %}
+{% set filters = filters or {} %}
 
-      {% if gar_flagged_documents %}
-        <ul>
-          {% for doc in gar_flagged_documents %}
-            <li>{{ doc.file_name }} — {{ doc.parsed_summary }}</li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <div class="alert alert-info">No GAR insights available yet.</div>
-      {% endif %}
+<div class="gar-centre-workspace">
+  <section class="gar-centre-command-bar">
+    <div>
+      <h5>GAR AI Centre</h5>
+      <span>Portfolio intelligence, development health and source-record explainability.</span>
     </div>
+    <div class="gar-centre-actions">
+      <a href="{{ url_for('super_admin.dashboard') }}" class="contract-manager-link">
+        <i class="material-icons">arrow_back</i> Dashboard
+      </a>
+      <span class="dashboard-status-pill">General Artificial Resident</span>
+    </div>
+  </section>
+
+  <section class="gar-centre-hero">
+    <div class="gar-centre-score gar-centre-score-{{ 'danger' if health_summary.at_risk else ('warning' if health_summary.needs_review else 'success') }}">
+      <span>Portfolio Health</span>
+      <strong>{{ health_summary.average_score or 0 }}</strong>
+      <small>{{ health_summary.developments or 0 }} development{{ '' if (health_summary.developments or 0) == 1 else 's' }} monitored</small>
+    </div>
+    <div class="gar-centre-metrics">
+      <div><span>Clients</span><strong>{{ summary.clients or 0 }}</strong></div>
+      <div><span>Units</span><strong>{{ summary.units or 0 }}</strong></div>
+      <div><span>Open Works</span><strong>{{ summary.open_work_orders or 0 }}</strong></div>
+      <div><span>Expired Contracts</span><strong>{{ summary.expired_contracts or 0 }}</strong></div>
+      <div><span>At Risk</span><strong>{{ health_summary.at_risk or 0 }}</strong></div>
+      <div><span>Needs Review</span><strong>{{ health_summary.needs_review or 0 }}</strong></div>
+    </div>
+  </section>
+
+  {% set gar_ask_action = url_for('super_admin.gar_insights') %}
+  {% set gar_ask_clear_url = url_for('super_admin.gar_insights') %}
+  {% set gar_capabilities_url = url_for('super_admin.gar_capabilities_feed') %}
+  {% include 'gar/_ask_panel.html' %}
+
+  <section class="gar-centre-panel gar-centre-digest">
+    <div class="contract-manager-heading">
+      <div>
+        <h6>GAR Command Digest</h6>
+        <span>Source-backed operational readout for portfolio risk, Works attention and cover context.</span>
+      </div>
+      <a href="{{ url_for('super_admin.gar_insights_feed') }}" class="contract-manager-link">
+        <i class="material-icons">data_object</i> Feed
+      </a>
+    </div>
+    <div class="gar-centre-digest-grid">
+      <article>
+        <span>GAR Attention</span>
+        <strong>{{ digest_summary.gar_attention_total or 0 }}</strong>
+        <small>Active Works intelligence signals</small>
+      </article>
+      <article>
+        <span>Priority Actions</span>
+        <strong>{{ digest_summary.priority_action_count or 0 }}</strong>
+        <small>Recommended from live source records</small>
+      </article>
+      <article>
+        <span>Pending Reopens</span>
+        <strong>{{ digest_works.pending_reopen_requests or 0 }}</strong>
+        <small>Member/resident challenges awaiting review</small>
+      </article>
+      <article>
+        <span>Cover Events</span>
+        <strong>{{ cover_context.cover_event_count or 0 }}</strong>
+        <small>{{ cover_context.detail or 'No assistant cover routing recorded.' }}</small>
+      </article>
+      <article>
+        <span>Contractor Quality</span>
+        <strong>{{ quality_signals.contractor_quality_count or 0 }}</strong>
+        <small>{{ quality_signals.visibility_note or 'Management quality signals from Works Logix.' }}</small>
+      </article>
+    </div>
+  </section>
+
+  {% if quality_signals.contractor_quality_visible and contractor_quality %}
+    <section class="gar-centre-panel">
+      <div class="contract-manager-heading">
+        <div>
+          <h6>Contractor Quality Review</h6>
+          <span>GAR patterns from repeated completion returns and low member/resident feedback.</span>
+        </div>
+        <a href="{{ url_for('super_admin.work_orders_repeated_returns') }}" class="contract-manager-link">
+          <i class="material-icons">open_in_new</i> Review Queue
+        </a>
+      </div>
+      <div class="gar-centre-quality-list">
+        {% for record in contractor_quality[:4] %}
+          <article>
+            <span class="gar-centre-health-pill gar-centre-health-{{ 'danger' if record.get('severity') == 'high' else 'warning' }}">
+              {{ (record.get('severity') or 'medium')|upper }}
+            </span>
+            <div>
+              <strong>{{ record.get('label') or record.get('contractor_name') or 'Contractor' }}</strong>
+              <small>
+                {{ record.get('repeated_return_count') or 0 }} repeated return{{ '' if (record.get('repeated_return_count') or 0) == 1 else 's' }}
+                ·
+                {{ record.get('low_feedback_count') or 0 }} low feedback record{{ '' if (record.get('low_feedback_count') or 0) == 1 else 's' }}
+              </small>
+            </div>
+            <a href="{{ url_for('super_admin.work_orders_repeated_returns') }}" class="user-manager-action-link">Open</a>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="gar-centre-panel">
+    <div class="contract-manager-heading">
+      <div>
+        <h6>Development Health Register</h6>
+        <span>{{ health_view.records if health_view else health_rows|length }} of {{ health_view.total if health_view else health_rows|length }} developments in this view.</span>
+      </div>
+      <span class="contract-alert-pill contract-alert-info">Client scoped</span>
+    </div>
+    <form method="get" class="gar-centre-filter-bar">
+      <label>
+        Search
+        <input
+          type="search"
+          name="search"
+          value="{{ filters.search or '' }}"
+          placeholder="Development, property or city"
+        >
+      </label>
+      <label>
+        Health
+        <select name="status">
+          <option value="" {% if not filters.status %}selected{% endif %}>All health states</option>
+          <option value="danger" {% if filters.status == 'danger' %}selected{% endif %}>At Risk</option>
+          <option value="warning" {% if filters.status == 'warning' %}selected{% endif %}>Needs Review</option>
+          <option value="info" {% if filters.status == 'info' %}selected{% endif %}>Watch</option>
+          <option value="success" {% if filters.status == 'success' %}selected{% endif %}>Healthy</option>
+        </select>
+      </label>
+      <label>
+        Sort
+        <select name="sort">
+          <option value="risk_first" {% if filters.sort == 'risk_first' %}selected{% endif %}>Risk first</option>
+          <option value="score_high" {% if filters.sort == 'score_high' %}selected{% endif %}>Highest health</option>
+          <option value="score_low" {% if filters.sort == 'score_low' %}selected{% endif %}>Lowest health</option>
+          <option value="works_high" {% if filters.sort == 'works_high' %}selected{% endif %}>Most open works</option>
+          <option value="name" {% if filters.sort == 'name' %}selected{% endif %}>Development name</option>
+        </select>
+      </label>
+      <div class="gar-centre-filter-actions">
+        <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+        <button type="submit" name="export" value="csv" class="btn btn-sm btn-outline-primary">Export CSV</button>
+        <a href="{{ url_for('super_admin.gar_insights') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+      </div>
+    </form>
+    <div class="contract-manager-table-wrap">
+      <table class="table contract-manager-table gar-centre-table mb-0">
+        <colgroup>
+          <col style="width: 20%;">
+          <col style="width: 12%;">
+          <col style="width: 12%;">
+          <col style="width: 11%;">
+          <col style="width: 11%;">
+          <col style="width: 12%;">
+          <col style="width: 12%;">
+          <col style="width: 10%;">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Development</th>
+            <th>Health</th>
+            <th>Units</th>
+            <th>Open Works</th>
+            <th>Resident Signals</th>
+            <th>Finance Ready</th>
+            <th>Pattern Memory</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in health_rows %}
+            <tr>
+              <td>
+                <div class="contract-manager-cell-stack">
+                  <strong>{{ row.client_name }}</strong>
+                  <span>{{ row.property_name or row.city or '-' }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="gar-centre-health-pill gar-centre-health-{{ row.tone }}">{{ row.score }} / {{ row.status }}</span>
+              </td>
+              <td>{{ row.generated_units }} / {{ row.expected_units }}</td>
+              <td>
+                <a class="user-manager-action-link" href="{{ url_for('super_admin.work_orders', client_id=row.client_id) }}#open-work-orders">
+                  {{ row.open_work_orders }}
+                </a>
+              </td>
+              <td>
+                <a class="user-manager-action-link" href="{{ url_for('super_admin.work_orders', client_id=row.client_id) }}#member-requests">
+                  {{ row.resident_signals }}
+                </a>
+              </td>
+              <td>{{ row.finance_ready_units }}</td>
+              <td>
+                <a class="user-manager-action-link" href="{{ url_for('super_admin.work_orders', client_id=row.client_id) }}#gar-works-intelligence">
+                  {{ row.pattern_memory_groups }}
+                </a>
+              </td>
+              <td>
+                <div class="gar-centre-row-actions">
+                  <a class="user-manager-action-link" href="{{ url_for('super_admin.view_client', client_id=row.client_id, tab='gar') }}">Client GAR</a>
+                  <a class="user-manager-action-link" href="{{ url_for('super_admin.work_orders', client_id=row.client_id) }}">Works</a>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="8" class="contract-manager-empty">No developments match the current GAR health filters.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="gar-centre-grid">
+    <section class="gar-centre-panel">
+      <div class="contract-manager-heading">
+        <div>
+          <h6>Recommended Actions</h6>
+          <span>Ranked from the GAR operational digest.</span>
+        </div>
+      </div>
+      <div class="gar-centre-action-list">
+        {% for action in digest_actions[:6] %}
+          <article>
+            <span>{{ action.priority|upper }}</span>
+            <strong>{{ action.source }}</strong>
+            <small>{{ action.message }}</small>
+          </article>
+        {% else %}
+          <p class="works-gar-clear mb-0">No priority GAR actions are currently flagged from the portfolio context.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="gar-centre-panel">
+      <div class="contract-manager-heading">
+        <div>
+          <h6>Works Attention</h6>
+          <span>Signals that need review across Works Logix and Members Logix.</span>
+        </div>
+      </div>
+      <div class="gar-centre-action-list">
+        {% for signal in works_attention[:6] %}
+          <article>
+            <span>{{ signal.severity|upper }}</span>
+            <strong>{{ signal.label }} · {{ signal.count }}</strong>
+            <small>{{ signal.recommended_action }}</small>
+          </article>
+        {% else %}
+          <p class="works-gar-clear mb-0">No active Works intelligence signals are currently flagged.</p>
+        {% endfor %}
+      </div>
+    </section>
   </div>
+
+  <section class="gar-centre-panel">
+    <div class="contract-manager-heading">
+      <div>
+        <h6>Source References</h6>
+        <span>GAR is reading source records, not duplicated data.</span>
+      </div>
+      <span class="contract-alert-pill contract-alert-info">{{ digest.context_type or 'gar_operational_digest' }}</span>
+    </div>
+    <div class="gar-centre-source-list">
+      {% for source in digest.source_references or development_health_register.source_references %}
+        <article>
+          <strong>{{ source.model }}</strong>
+          <small>{{ source.fields|join(', ') }}</small>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
 </div>
 {% endblock %}

@@ -1,0 +1,28 @@
+<aside class="bg-white border-end" style="width: 250px; min-height: 100vh;">
+  <div class="p-3">
+    <h5 class="fw-bold text-primary">Members Logix</h5>
+    <hr>
+    <ul class="nav flex-column">
+      <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'members.dashboard' %}active text-primary fw-bold{% endif %}" href="{{ url_for('members.dashboard') }}">
+          <i class="fas fa-home me-2"></i>My Unit
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'members.works' %}active text-primary fw-bold{% endif %}" href="{{ url_for('members.works') }}">
+          <i class="fas fa-tools me-2"></i>Maintenance
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-muted" href="#">
+          <i class="fas fa-file-alt me-2"></i>Documents
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-muted" href="#">
+          <i class="fas fa-brain me-2"></i>GAR AI
+        </a>
+      </li>
+    </ul>
+  </div>
+</aside>

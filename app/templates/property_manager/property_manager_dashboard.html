@@ -7,7 +7,7 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
       <h4 class="fw-bold">🏢 Property Manager Dashboard</h4>
-      <p class="text-muted">Welcome, {{ session['user']['full_name'] }} (Company ID: {{ session['user']['company_id'] }})</p>
+      <p class="text-muted">Welcome, {{ full_name }}{% if company_id %} (Company ID: {{ company_id }}){% endif %}</p>
     </div>
     <div>
       <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger">Logout</a>
@@ -16,6 +16,43 @@
 
   <!-- Dashboard Tiles -->
   {% include 'dashboard_tiles_snippet.html' %}
+
+  {% set dashboard_notification_title = 'Notification Action Queue' %}
+  {% include 'notifications/_dashboard_action_strip.html' %}
+
+  {% set gar_ask_action = url_for('property_manager.pm_dashboard') %}
+  {% set gar_ask_clear_url = url_for('property_manager.pm_dashboard') %}
+  {% set gar_ask_subtitle = 'Source-backed answers for your assigned developments only.' %}
+  {% include 'gar/_ask_panel.html' %}
+
+  <section class="card border-0 shadow-sm mt-3">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+          <h2 class="h6 mb-1">Works Attention Queue</h2>
+          <p class="text-muted mb-0">{{ works_stats.attention_total or 0 }} item{{ '' if (works_stats.attention_total or 0) == 1 else 's' }} need PM focus.</p>
+        </div>
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('property_manager.work_orders') }}">Open Queue</a>
+      </div>
+      <div class="works-attention-grid">
+        {% for key, queue in works_operational_queues.items() %}
+          {% set queue_href = url_for('property_manager.work_orders_repeated_returns') if key == 'repeated_returns' else url_for('property_manager.work_orders') ~ '#' ~ queue.anchor %}
+          <a class="works-attention-card works-attention-{{ queue.tone }}" href="{{ queue_href }}">
+            <span>{{ queue.label }}</span>
+            <strong>{{ queue.count }}</strong>
+            <small>{{ queue.description }}</small>
+          </a>
+        {% endfor %}
+      </div>
+      {% set works_gar_quality_url = url_for('property_manager.work_orders_repeated_returns') %}
+      {% include 'works/_gar_quality_signals.html' %}
+      {% set works_next_actions_list = works_next_actions %}
+      {% set works_next_actions_subtitle = 'Prioritised PM focus' %}
+      {% set works_next_actions_prefix = url_for('property_manager.work_orders') %}
+      {% set works_next_actions_repeated_returns_prefix = url_for('property_manager.work_orders_repeated_returns') %}
+      {% include 'works/_next_actions.html' %}
+    </div>
+  </section>
 
   <!-- Equipment List -->
   <div class="dashboard-section mt-5">
@@ -94,7 +131,7 @@
         <i class="fas fa-hammer fa-2x mb-2 text-secondary"></i>
         <h5 class="card-title">Works Logix</h5>
         <p class="card-text">Create, track and manage work orders</p>
-        <a href="/work-orders" class="btn btn-outline-secondary disabled" title="Works Logix not yet available">Launching Soon</a>
+        <a href="{{ url_for('property_manager.work_orders') }}" class="btn btn-outline-secondary">Open Works Logix</a>
       </div>
     </div>
   </div>

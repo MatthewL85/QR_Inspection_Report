@@ -1,92 +1,118 @@
 {% extends "layouts/super_admin_base.html" %}
 {% block page_content %}
 
-<div class="container-fluid py-4">
+{% set can_edit = is_editable if is_editable is defined else true %}
 
-  <!-- Header -->
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0">
-      {% if mode == 'edit' %}Edit Simple Contract{% else %}New Simple Contract{% endif %}
-    </h4>
+{% macro render_field(field, span=6, placeholder='') %}
+  <div class="col-12 col-md-{{ span }}">
+    <label class="form-label" for="{{ field.id }}">{{ field.label.text }}</label>
+    {% if field.type == 'SelectField' %}
+      {{ field(class_="form-select", disabled=(not can_edit)) }}
+    {% elif field.type == 'TextAreaField' %}
+      {{ field(class_="form-control", rows="3", placeholder=placeholder, disabled=(not can_edit)) }}
+    {% else %}
+      {{ field(class_="form-control", placeholder=placeholder, disabled=(not can_edit)) }}
+    {% endif %}
+    {% if field.errors %}
+      <div class="invalid-feedback d-block">{{ field.errors|join(', ') }}</div>
+    {% endif %}
+  </div>
+{% endmacro %}
 
-    <div class="d-flex align-items-center">
-      {% if 'super_admin_contracts.contracts_overview' in current_app.view_functions %}
-      <a href="{{ url_for('super_admin_contracts.contracts_overview') }}" class="btn btn-sm btn-light">
-        ← Back to Contracts Overview
+<div class="container-fluid contract-manager-workspace">
+  <div class="contract-manager-command-bar">
+    <div>
+      <h5>{% if mode == 'edit' %}Edit Contract{% else %}New Contract{% endif %}</h5>
+      <span>Contract terms, renewal controls, fee movement and GAR AI contract context.</span>
+    </div>
+    <div class="contract-manager-actions">
+      <a href="{{ url_for('super_admin_contracts.contracts_overview') }}" class="contract-manager-link">
+        <i class="material-icons">arrow_back</i>
+        Contract Manager
       </a>
+    </div>
+  </div>
+
+  <form method="post" novalidate>
+    {{ form.csrf_token }}
+    {% for field in form if field.type == 'HiddenField' %}
+      {{ field }}
+    {% endfor %}
+
+    <section class="contract-manager-panel">
+      <div class="contract-manager-heading">
+        <div>
+          <h6>Core Contract Details</h6>
+          <span>Client, title, term and base fee</span>
+        </div>
+        {% if mode == 'edit' and not can_edit %}
+          <span class="contract-alert-pill contract-alert-muted">Read Only</span>
+        {% endif %}
+      </div>
+      <div class="contract-form-grid">
+        {{ render_field(form.client_id, 6) }}
+        {{ render_field(form.contract_title, 6, 'Management agreement') }}
+        {{ render_field(form.start_date, 3) }}
+        {{ render_field(form.end_date, 3) }}
+        {{ render_field(form.currency, 3, 'EUR') }}
+        {{ render_field(form.contract_value, 3, '0.00') }}
+        {{ render_field(form.ppm_schedule, 4) }}
+        {{ render_field(form.primary_contact_name, 4) }}
+        {{ render_field(form.primary_contact_email, 4) }}
+        {{ render_field(form.primary_contact_phone, 4) }}
+      </div>
+    </section>
+
+    <section class="contract-manager-panel">
+      <div class="contract-manager-heading">
+        <div>
+          <h6>Renewal Control</h6>
+          <span>Spreadsheet-style renewal data, now structured for alerts and reporting</span>
+        </div>
+      </div>
+      <div class="contract-form-grid">
+        {{ render_field(form.target_management_fee, 3, '0.00') }}
+        {{ render_field(form.annual_increase_percent, 3, '3.00') }}
+        {{ render_field(form.renewal_month, 3) }}
+        {{ render_field(form.next_fee_increase_date, 3) }}
+        {{ render_field(form.alert_owner_id, 4) }}
+        {{ render_field(form.last_reviewed_at, 4) }}
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="{{ form.new_contract_drafted.id }}">Contract Progress</label>
+          <label class="contract-form-check">
+            {{ form.new_contract_drafted(disabled=(not can_edit)) }}
+            <span>New contract drafted</span>
+          </label>
+          {% if form.new_contract_drafted.errors %}
+            <div class="invalid-feedback d-block">{{ form.new_contract_drafted.errors|join(', ') }}</div>
+          {% endif %}
+        </div>
+        {{ render_field(form.renewal_notes, 12, 'Renewal context, board instructions, fee negotiation notes') }}
+      </div>
+    </section>
+
+    <section class="contract-manager-panel">
+      <div class="contract-manager-heading">
+        <div>
+          <h6>GAR AI Governance</h6>
+          <span>Manual fields now, ready for GAR AI contract intelligence later</span>
+        </div>
+      </div>
+      <div class="contract-form-grid">
+        {{ render_field(form.gar_contract_risk_level, 4) }}
+        {{ render_field(form.gar_contract_recommendation, 8, 'GAR recommendation or reviewer note') }}
+        {{ render_field(form.notes, 12, 'Internal admin notes') }}
+      </div>
+    </section>
+
+    <div class="contract-form-actions">
+      <a class="btn btn-outline-secondary" href="{{ url_for('super_admin_contracts.contracts_overview') }}">Cancel</a>
+      {% if can_edit %}
+        <button type="submit" class="btn btn-primary">
+          {% if mode == 'edit' %}Save Changes{% else %}Create Draft{% endif %}
+        </button>
       {% endif %}
     </div>
-  </div>
-
-  <!-- Context chips -->
-  <div class="mb-3">
-    {% if request.args.get('client_id') %}
-      <span class="badge bg-primary me-1">Client: {{ request.args.get('client_id') }}</span>
-    {% endif %}
-    {% if request.args.get('parent_id') %}
-      <span class="badge bg-secondary">Parent Master: #{{ request.args.get('parent_id') }}</span>
-    {% endif %}
-  </div>
-
-  <!-- Form Card -->
-  <div class="card border-0 shadow-sm">
-    <div class="card-body">
-      <form method="post" novalidate>
-        {{ form.csrf_token }}
-
-        {# Render non-hidden fields with labels, help, and errors #}
-        <div class="row g-3">
-          {% for field in form if field.type != 'CSRFTokenField' and field.type != 'HiddenField' %}
-            <div class="col-12 col-md-6">
-              <label class="form-label" for="{{ field.id }}">{{ field.label.text }}</label>
-              {{ field(class_="form-control") }}
-              {% if field.description %}
-                <div class="form-text">{{ field.description }}</div>
-              {% endif %}
-              {% if field.errors %}
-                <div class="invalid-feedback d-block">
-                  {{ field.errors|join(', ') }}
-                </div>
-              {% endif %}
-            </div>
-          {% endfor %}
-        </div>
-
-        {# Hidden fields, if any (besides CSRF) #}
-        {% for field in form if field.type == 'HiddenField' %}
-          {{ field }}
-        {% endfor %}
-
-        <hr class="my-4">
-
-        <div class="d-flex justify-content-between">
-          <div class="text-muted small">
-            {% if request.args.get('parent_id') %}
-              Linked to governed master <strong>#{{ request.args.get('parent_id') }}</strong>.
-            {% else %}
-              You can link this later to a governed master from the contract page.
-            {% endif %}
-          </div>
-
-          <div class="d-flex gap-2">
-            <a class="btn btn-outline-secondary"
-               href="{{ url_for('super_admin_contracts.contracts_overview') }}">
-              Cancel
-            </a>
-            <button type="submit" class="btn btn-primary">
-              {% if mode == 'edit' %}Save Changes{% else %}Create Draft{% endif %}
-            </button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  {# Optional tips #}
-  <div class="alert alert-info mt-3 mb-0" role="alert">
-    <strong>Tip:</strong> Simple contracts are ideal for SOW/PO/Variation work outside your governed management contract.
-    You can convert a Simple draft to a governed template later if needed.
-  </div>
-
+  </form>
 </div>
 {% endblock %}

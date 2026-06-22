@@ -1,342 +1,722 @@
-{% extends "layouts/base.html" %}
+{% extends "base.html" %}
 
 {% block title %}
   {{ "Create Unit" if mode == "create" else "Edit Unit" }} | Units
 {% endblock %}
 
-{% block content %}
+{% block page_content %}
+{% set occupancy = unit.occupancy_status if unit and unit.occupancy_status else 'unknown' %}
+{% set can_manage_core = mode == "create" or can_edit_core_details %}
+{% set unit_display_label = unit.unit_label if unit and unit.unit_label else "New Unit" %}
+{% set unit_back_url = url_for('super_admin.view_client', client_id=unit.client_id, tab='units') if mode == "edit" and unit and unit.client_id else url_for('unit_bp.list') %}
+
 <div class="container-fluid py-4">
-
-  <div class="row">
-    <div class="col-12 col-xl-9">
-
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <div>
-            <h5 class="mb-0">
-              {{ "Create Unit" if mode == "create" else "Edit Unit" }}
-            </h5>
-            <p class="text-sm mb-0">
-              The central source of truth for Finance Logix, Works Logix, Members Logix
-              and GAR Governance AI.
-            </p>
-          </div>
-          <div>
-            <a href="{{ url_for('unit.list_units') }}" class="btn btn-outline-secondary btn-sm">
-              <i class="material-icons text-sm me-1">arrow_back</i> Back to Units
-            </a>
-          </div>
-        </div>
-
-        <div class="card-body">
-
-          <form method="post" novalidate>
-            {{ csrf_token() if csrf_token is defined }}
-
-            <div class="row">
-
-              <!-- =================================================================================== -->
-              <!-- LEFT COLUMN – CORE DETAILS -->
-              <!-- =================================================================================== -->
-              <div class="col-md-6">
-
-                <h6 class="text-xs text-uppercase text-secondary fw-bold mb-3">Core Unit Details</h6>
-
-                <!-- Client -->
-                <div class="mb-3">
-                  <label class="form-label">Client (Development) <span class="text-danger">*</span></label>
-                  <select name="client_id" class="form-select" required>
-                    <option value="">– Select Client –</option>
-                    {% for c in clients %}
-                      <option value="{{ c.id }}"
-                        {% if unit and unit.client_id == c.id %}selected{% endif %}>
-                        {{ c.name }}
-                      </option>
-                    {% endfor %}
-                  </select>
-                </div>
-
-                <!-- Unit Label -->
-                <div class="mb-3">
-                  <label class="form-label">Unit Label <span class="text-danger">*</span></label>
-                  <input type="text" name="unit_label" class="form-control"
-                         value="{{ unit.unit_label if unit else '' }}" required>
-                </div>
-
-                <!-- Category -->
-                <div class="mb-3">
-                  <label class="form-label">Unit Category</label>
-                  {% set current_cat = unit.unit_category if unit else '' %}
-                  {% set categories = [
-                    'Residential','Commercial','Mixed-Use','Parking Space',
-                    'Storage / Locker','Common Area','Plant Room / Services',
-                    'Amenity (Gym / Concierge / etc.)'
-                  ] %}
-                  <select name="unit_category" class="form-select">
-                    <option value="">– Select category –</option>
-                    {% for cat in categories %}
-                      <option value="{{ cat }}" {% if current_cat == cat %}selected{% endif %}>{{ cat }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-
-                <!-- Type -->
-                <div class="mb-3">
-                  <label class="form-label">Unit Type</label>
-                  <input type="text" name="unit_type" class="form-control"
-                         value="{{ unit.unit_type if unit else '' }}"
-                         placeholder="e.g. 2-bed apt, retail unit, duplex...">
-                </div>
-
-                <!-- Block / Core -->
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Block</label>
-                    <input type="text" name="block_name" class="form-control"
-                           value="{{ unit.block_name if unit else '' }}">
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Core / Stairwell</label>
-                    <input type="text" name="core_name" class="form-control"
-                           value="{{ unit.core_name if unit else '' }}">
-                  </div>
-                </div>
-
-                <!-- Floor + Entrance -->
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Floor</label>
-                    <input type="text" name="floor_number" class="form-control"
-                           value="{{ unit.floor_number if unit else '' }}">
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Entrance / Access Notes</label>
-                    <input type="text" name="entrance" class="form-control"
-                           value="{{ unit.entrance if unit else '' }}">
-                  </div>
-                </div>
-
-                <!-- Size + Parent Unit -->
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Area (m²)</label>
-                    <input type="number" name="square_meters" step="0.01" class="form-control"
-                           value="{{ unit.square_meters if unit and unit.square_meters is not none else '' }}">
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Parent Unit (if sub-unit)</label>
-                    <select name="parent_unit_id" class="form-select">
-                      <option value="">– None –</option>
-                      {% for u in possible_parents %}
-                        <option value="{{ u.id }}"
-                          {% if unit and unit.parent_unit_id == u.id %}selected{% endif %}>
-                          {{ u.unit_label }}{% if u.block_name %} – {{ u.block_name }}{% endif %}
-                        </option>
-                      {% endfor %}
-                    </select>
-                  </div>
-                </div>
-
-                <!-- =================================================================================== -->
-                <!-- OWNER / RESIDENT ASSIGNMENT (NEW ENTERPRISE FEATURE) -->
-                <!-- =================================================================================== -->
-                <h6 class="text-xs text-uppercase text-secondary fw-bold mt-4 mb-3">Ownership & Occupancy</h6>
-
-                <div class="mb-3">
-                  <label class="form-label">Owners</label>
-                  <select class="form-select" name="owner_ids" multiple>
-                    {% for m in members %}
-                      <option value="{{ m.id }}"
-                        {% if assigned_owner_ids and m.id in assigned_owner_ids %}selected{% endif %}>
-                        {{ m.full_name }}
-                      </option>
-                    {% endfor %}
-                  </select>
-                  <small class="text-muted text-xs">
-                    Owners cannot edit core details. Future Members Logix screens will sync with this list.
-                  </small>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Residents</label>
-                  <select class="form-select" name="resident_ids" multiple>
-                    {% for r in residents %}
-                      <option value="{{ r.id }}"
-                        {% if assigned_resident_ids and r.id in assigned_resident_ids %}selected{% endif %}>
-                        {{ r.full_name }}
-                      </option>
-                    {% endfor %}
-                  </select>
-                </div>
-
-              </div>
-
-              <!-- =================================================================================== -->
-              <!-- RIGHT COLUMN – STATUS, FINANCE & GAR AI -->
-              <!-- =================================================================================== -->
-              <div class="col-md-6">
-
-                <h6 class="text-xs text-uppercase text-secondary fw-bold mb-3">Status & Financial Meta</h6>
-
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Status</label>
-                    {% set st = unit.status if unit else "active" %}
-                    <select name="status" class="form-select">
-                      {% for s in ["active","inactive","sold","void","under_construction"] %}
-                        <option value="{{ s }}" {% if st == s %}selected{% endif %}>
-                          {{ s|replace("_"," ")|title }}
-                        </option>
-                      {% endfor %}
-                    </select>
-                  </div>
-                  <div class="col-md-6 d-flex align-items-center mb-3">
-                    <div class="form-check mt-4">
-                      <input type="checkbox" class="form-check-input"
-                             name="is_common_area" id="is_common_area"
-                             value="1" {% if unit and unit.is_common_area %}checked{% endif %}>
-                      <label class="form-check-label" for="is_common_area">
-                        Common Area / Shared Asset
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Service Charge Scheme -->
-                <div class="mb-3">
-                  <label class="form-label">Service Charge Scheme</label>
-                  {% set scheme = unit.service_charge_scheme if unit else "" %}
-                  <select name="service_charge_scheme" class="form-select">
-                    <option value="">– Not set –</option>
-                    {% for sc in [
-                      "Standard Schedule","Commercial Schedule","Car-park Schedule",
-                      "Mixed-Use / Custom","No Service Charge"
-                    ] %}
-                      <option value="{{ sc }}" {% if scheme == sc %}selected{% endif %}>
-                        {{ sc }}
-                      </option>
-                    {% endfor %}
-                  </select>
-                </div>
-
-                <!-- Service Charge Amount / % -->
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Service Charge %</label>
-                    <input type="number" step="0.0001" name="service_charge_percent"
-                           class="form-control"
-                           value="{{ unit.service_charge_percent if unit else '' }}">
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Service Charge Amount</label>
-                    <input type="number" step="0.01" name="service_charge_amount"
-                           class="form-control"
-                           value="{{ unit.service_charge_amount if unit else '' }}">
-                  </div>
-                </div>
-
-                <!-- Billing cycle -->
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Billing Frequency</label>
-                    {% set bf = unit.billing_frequency if unit else "" %}
-                    <select name="billing_frequency" class="form-select">
-                      <option value="">– Not set –</option>
-                      {% for opt in ["Annual","Bi-Annual","Quarterly","Monthly","On-Demand"] %}
-                        <option value="{{ opt }}" {% if bf == opt %}selected{% endif %}>{{ opt }}</option>
-                      {% endfor %}
-                    </select>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Financial Year Period</label>
-                    <div class="input-group">
-                      <input type="date" name="financial_year_start" class="form-control"
-                             value="{{ unit.financial_year_start|date('Y-m-d') if unit else '' }}">
-                      <span class="input-group-text">to</span>
-                      <input type="date" name="financial_year_end" class="form-control"
-                             value="{{ unit.financial_year_end|date('Y-m-d') if unit else '' }}">
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Notes -->
-                <div class="mb-3">
-                  <label class="form-label">Notes / Special Conditions</label>
-                  <textarea name="notes" class="form-control" rows="3">
-                    {{ unit.notes if unit else "" }}
-                  </textarea>
-                </div>
-
-                <!-- GAR AI Fields -->
-                <h6 class="text-xs text-uppercase text-secondary fw-bold mt-4 mb-3">AI / GAR Governance Fields</h6>
-
-                <div class="mb-3">
-                  <label class="form-label">AI Extracted Key Clauses</label>
-                  <textarea name="ai_key_clauses" class="form-control" rows="3">
-                    {{ unit.ai_key_clauses if unit else "" }}
-                  </textarea>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">GAR Flagged Clauses</label>
-                  <textarea name="gar_flagged_clauses" class="form-control" rows="3">
-                    {{ unit.gar_flagged_clauses if unit else "" }}
-                  </textarea>
-                </div>
-
-              </div>
-            </div>
-
-            <!-- ACTIONS -->
-            <div class="mt-4 d-flex justify-content-end gap-2">
-              <a href="{{ url_for('unit.list_units') }}" class="btn btn-outline-secondary">Cancel</a>
-              <button type="submit" class="btn btn-primary">
-                {{ "Create Unit" if mode == "create" else "Save Changes" }}
-              </button>
-            </div>
-
-          </form>
-
-        </div>
+  <div class="unit-workspace unit-form-workspace">
+    <div class="unit-command-bar">
+      <div>
+        <h5 class="mb-1">{{ "Create Unit" if mode == "create" else "Edit Unit" }}</h5>
+        <p class="unit-module-note mb-0">
+          Central unit record for Members Logix, Works Logix, Finance Logix and GAR AI.
+        </p>
       </div>
-
+      <a href="{{ unit_back_url }}" class="btn btn-outline-secondary btn-sm">
+        <i class="material-icons text-sm me-1">arrow_back</i>
+        {{ "Back to Unit Information" if mode == "edit" else "Back to Units" }}
+      </a>
     </div>
 
-    <!-- =================================================================================== -->
-    <!-- RIGHT SIDEBAR PANEL -->
-    <!-- =================================================================================== -->
-    <div class="col-12 col-xl-3 mt-4 mt-xl-0">
+    <form method="post" novalidate class="unit-main-grid unit-edit-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-      <div class="card h-100">
-        <div class="card-header pb-0">
-          <h6 class="mb-0">Unit Governance Snapshot</h6>
-        </div>
-        <div class="card-body">
-
-          {% if unit %}
-          <p class="text-sm"><strong>Unit ID:</strong> {{ unit.id }}</p>
-          <p class="text-sm"><strong>Last Updated:</strong> {{ unit.updated_at }}</p>
+      <section class="unit-panel unit-core-static-panel">
+        <div class="unit-panel-heading">
+          <div>
+            <h5>Core Unit Details</h5>
+            <span class="unit-module-note">Static development identity set during client/unit setup</span>
+          </div>
+          {% if can_manage_core %}
+            <span class="badge bg-gradient-info">Authorised edit</span>
+          {% else %}
+            <span class="badge bg-gradient-secondary">Protected record</span>
           {% endif %}
-
-          <p class="text-sm">This form powers cross-module connections:</p>
-
-          <ul class="text-sm ps-3">
-            <li>Owners + Residents → Members Logix</li>
-            <li>Service Charges → Finance Logix</li>
-            <li>Blocks + Cores → Fire Safety / Access / Concierge</li>
-            <li>GAR AI → Governance scoring + recommendations</li>
-          </ul>
-
-          <p class="text-xs text-muted mt-2 mb-0">
-            These fields are designed for scalability — multi-country, multi-company,
-            enterprise PM operations.
-          </p>
-
         </div>
-      </div>
 
-    </div>
+        {% if unit %}
+          <div class="unit-core-summary-grid">
+            <div>
+              <span>Development</span>
+              <strong>{{ unit.client.name if unit and unit.client else "-" }}</strong>
+            </div>
+            <div>
+              <span>Unit Label</span>
+              <strong>{{ unit_display_label }}</strong>
+            </div>
+            <div>
+              <span>Unit Number</span>
+              <strong>{{ unit.unit_number if unit and unit.unit_number else "-" }}</strong>
+            </div>
+            <div>
+              <span>Block</span>
+              <strong>{{ unit.block_name if unit and unit.block_name else "-" }}</strong>
+            </div>
+            <div>
+              <span>Core / Area</span>
+              <strong>
+                {% if unit and unit.core_name and unit.area_name %}
+                  {{ unit.core_name }} / {{ unit.area_name }}
+                {% elif unit and unit.core_name %}
+                  {{ unit.core_name }}
+                {% elif unit and unit.area_name %}
+                  {{ unit.area_name }}
+                {% else %}
+                  -
+                {% endif %}
+              </strong>
+            </div>
+            <div>
+              <span>Unit Category</span>
+              <strong>{{ unit.unit_category if unit and unit.unit_category else "-" }}</strong>
+            </div>
+            <div>
+              <span>Unit Type</span>
+              <strong>{{ unit.unit_type if unit and unit.unit_type else "-" }}</strong>
+            </div>
+            <div>
+              <span>Floor</span>
+              <strong>{{ unit.floor_number if unit and unit.floor_number else "-" }}</strong>
+            </div>
+            <div>
+              <span>Area (m2)</span>
+              <strong>{{ unit.square_meters if unit and unit.square_meters is not none else "-" }}</strong>
+            </div>
+            <div>
+              <span>Car Park Space</span>
+              <strong>{{ unit.parking_label if unit and unit.parking_label else "-" }}</strong>
+            </div>
+            <div>
+              <span>Storage / Locker</span>
+              <strong>{{ unit.storage_label if unit and unit.storage_label else "-" }}</strong>
+            </div>
+            <div>
+              <span>Parent Unit</span>
+              <strong>{{ unit.parent_unit.unit_label if unit and unit.parent_unit else "-" }}</strong>
+            </div>
+          </div>
+        {% endif %}
 
+        {% if not can_manage_core %}
+          <div class="unit-form-locked-note mt-3 mb-0">
+            Core unit details are protected because they define the unit across Members Logix, Works Logix, Finance Logix and GAR AI.
+            A Super Admin or authorised platform user must make changes to this section.
+          </div>
+        {% else %}
+          <div class="unit-form-subcard unit-core-controls mt-3 mb-0">
+            <div class="unit-form-subheading">
+              <strong>Authorised Core Controls</strong>
+              <span class="unit-module-note">Restricted setup fields</span>
+            </div>
+            <div class="unit-core-edit-grid">
+            <div class="mb-3">
+              <label class="form-label">Client (Development) <span class="text-danger">*</span></label>
+              {% if mode == "edit" and unit %}
+                <input type="hidden" name="client_id" value="{{ unit.client_id }}">
+                <input type="text" class="form-control" value="{{ unit.client.name if unit.client else 'Linked development' }}" readonly>
+                <small class="text-muted text-xs">
+                  This unit belongs to this development. The development link is fixed to protect cross-module records.
+                </small>
+              {% else %}
+                <select name="client_id" class="form-select" required>
+                  <option value="">Select Client</option>
+                  {% for c in clients %}
+                    <option value="{{ c.id }}" {% if unit and unit.client_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                  {% endfor %}
+                </select>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Unit Label <span class="text-danger">*</span></label>
+              <input type="text" name="unit_label" class="form-control" value="{{ unit.unit_label if unit else '' }}" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Unit Number</label>
+              <input type="text" name="unit_number" class="form-control" value="{{ unit.unit_number if unit and unit.unit_number else '' }}" placeholder="e.g. 25">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Block</label>
+              <input type="text" name="block_name" class="form-control" value="{{ unit.block_name if unit and unit.block_name else '' }}">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Area</label>
+              <input type="text" name="area_name" class="form-control" value="{{ unit.area_name if unit and unit.area_name else '' }}" placeholder="e.g. Commercial, Other">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Unit Category</label>
+              {% set current_cat = unit.unit_category if unit else '' %}
+              {% set categories = ['Residential','Commercial','Mixed-Use','Parking Space','Storage / Locker','Common Area','Plant Room / Services','Amenity (Gym / Concierge / etc.)'] %}
+              <select name="unit_category" class="form-select">
+                <option value="">Select category</option>
+                {% for cat in categories %}
+                  <option value="{{ cat }}" {% if current_cat == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Unit Type</label>
+              <input type="text" name="unit_type" class="form-control" value="{{ unit.unit_type if unit and unit.unit_type else '' }}" placeholder="e.g. Apartment, retail unit">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Floor</label>
+              <input type="text" name="floor_number" class="form-control" value="{{ unit.floor_number if unit and unit.floor_number else '' }}">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Area (m2)</label>
+              <input type="number" name="square_meters" step="0.01" class="form-control" value="{{ unit.square_meters if unit and unit.square_meters is not none else '' }}">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Car Park Space Number</label>
+              <input type="text" name="parking_label" class="form-control" value="{{ unit.parking_label if unit and unit.parking_label else '' }}" placeholder="e.g. CP-14">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Storage / Locker Number</label>
+              <input type="text" name="storage_label" class="form-control" value="{{ unit.storage_label if unit and unit.storage_label else '' }}" placeholder="e.g. Store 8">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Parent Unit (if sub-unit)</label>
+              <select name="parent_unit_id" class="form-select">
+                <option value="">None</option>
+                {% for u in possible_parents %}
+                  <option value="{{ u.id }}" {% if unit and unit.parent_unit_id == u.id %}selected{% endif %}>
+                    {{ u.unit_label }}{% if u.block_name %} - {{ u.block_name }}{% endif %}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            </div>
+          </div>
+        {% endif %}
+      </section>
+
+      {% set active_form_tab = request.args.get("active_form_tab", "ownership") %}
+      <nav class="unit-top-tabs unit-form-tabs" aria-label="Edit unit sections">
+        <button type="button" class="{{ 'active' if active_form_tab == 'ownership' else '' }}" data-unit-form-tab="ownership">Ownership & Occupancy</button>
+        <button type="button" data-unit-form-tab="letting" data-letting-tab>Letting Agent Details</button>
+        <button type="button" class="{{ 'active' if active_form_tab == 'tenant' else '' }}" data-unit-form-tab="tenant">Current Tenant / Occupier</button>
+        <button type="button" data-unit-form-tab="sale">Sale & Conveyancing</button>
+        <button type="button" data-unit-form-tab="finance">Status & Financial</button>
+        <button type="button" data-unit-form-tab="notes">Notes / Special Conditions</button>
+        <button type="button" data-unit-form-tab="gar">AI / GAR Governance</button>
+      </nav>
+
+      <section class="unit-panel">
+        <div class="unit-form-panel {{ 'd-none' if active_form_tab != 'ownership' else '' }}" data-unit-form-panel="ownership">
+          <div class="unit-panel-heading">
+            <h5>Ownership & Occupancy</h5>
+            <span class="unit-module-note">Owner contact, co-owner details and occupancy status</span>
+          </div>
+
+          <div class="unit-form-subcard">
+            <div class="unit-form-subheading">
+              <strong>Occupancy Status</strong>
+              <span class="badge bg-gradient-info">Visibility driver</span>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Occupancy Status</label>
+                <select name="occupancy_status" class="form-select" data-occupancy-status>
+                  <option value="unknown" {% if occupancy == 'unknown' %}selected{% endif %}>Unknown</option>
+                  <option value="owner_occupied" {% if occupancy == 'owner_occupied' %}selected{% endif %}>Owner Occupied</option>
+                  <option value="let" {% if occupancy == 'let' %}selected{% endif %}>Let / Rented</option>
+                  <option value="vacant" {% if occupancy == 'vacant' %}selected{% endif %}>Vacant / Empty</option>
+                </select>
+                <small class="text-muted text-xs">Letting Agent Details become available when the unit is marked as let/rented.</small>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Owner Portfolio Type</label>
+                {% set portfolio_type = unit.owner_portfolio_type if unit and unit.owner_portfolio_type else '' %}
+                <select name="owner_portfolio_type" class="form-select">
+                  <option value="">Standard private ownership</option>
+                  <option value="social_housing" {% if portfolio_type == 'social_housing' %}selected{% endif %}>Social housing portfolio</option>
+                  <option value="investment_company" {% if portfolio_type == 'investment_company' %}selected{% endif %}>Company investment portfolio</option>
+                  <option value="multi_property_owner" {% if portfolio_type == 'multi_property_owner' %}selected{% endif %}>Individual multi-property owner</option>
+                  <option value="other" {% if portfolio_type == 'other' %}selected{% endif %}>Other managed portfolio</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Portfolio / Organisation Name</label>
+                <input type="text" name="owner_portfolio_name" class="form-control" value="{{ unit.owner_portfolio_name if unit and unit.owner_portfolio_name else '' }}" placeholder="e.g. Housing body or investment company">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Portfolio Reference</label>
+                <input type="text" name="owner_portfolio_reference" class="form-control" value="{{ unit.owner_portfolio_reference if unit and unit.owner_portfolio_reference else '' }}" placeholder="Internal reference, if any">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Portfolio Notes</label>
+                <textarea name="owner_portfolio_notes" class="form-control" rows="2" placeholder="Notes for future Members Logix visibility and portfolio grouping">{{ unit.owner_portfolio_notes if unit and unit.owner_portfolio_notes else '' }}</textarea>
+              </div>
+              <div class="col-12 mt-2">
+                <small class="text-muted text-xs">
+                  Portfolio ownership is kept separate from tenant/resident access. Future Members Logix can show portfolio owners all linked units while residents only see their own occupier-facing information.
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div class="unit-form-subcard">
+            <nav class="unit-nested-tabs" aria-label="Owner sections">
+              <button type="button" class="active" data-owner-tab="primary">Primary Owner</button>
+              <button type="button" data-owner-tab="co_owner">Co-owner</button>
+            </nav>
+
+            <div class="unit-owner-panel" data-owner-panel="primary">
+              <div class="unit-form-subheading">
+                <strong>Primary Owner</strong>
+                <span class="badge bg-gradient-info">Owner</span>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">First Name</label>
+                  <input type="text" name="owner_first_name" class="form-control" value="{{ owner_member.first_name if owner_member else '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Last Name</label>
+                  <input type="text" name="owner_last_name" class="form-control" value="{{ owner_member.last_name if owner_member else '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Email</label>
+                  <input type="email" name="owner_email" class="form-control" value="{{ owner_member.email if owner_member else '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Phone</label>
+                  <input type="text" name="owner_phone" class="form-control" value="{{ owner_member.phone if owner_member else '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Alternative Phone</label>
+                  <input type="text" name="owner_alternate_phone" class="form-control" value="{{ owner_member.alternate_phone if owner_member else '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Contact Preference</label>
+                  {% set owner_contact = owner_member.preferred_contact_method if owner_member else '' %}
+                  <select name="owner_preferred_contact_method" class="form-select">
+                    <option value="">Not set</option>
+                    {% for opt in ["email", "phone", "post", "portal"] %}
+                      <option value="{{ opt }}" {% if owner_contact == opt %}selected{% endif %}>{{ opt|title }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Ownership Start</label>
+                  <input type="date" name="owner_ownership_start_date" class="form-control" value="{{ owner_link.ownership_start_date.strftime('%Y-%m-%d') if owner_link and owner_link.ownership_start_date else '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Ownership End</label>
+                  <input type="date" name="owner_ownership_end_date" class="form-control" value="{{ owner_link.ownership_end_date.strftime('%Y-%m-%d') if owner_link and owner_link.ownership_end_date else '' }}">
+                </div>
+                <div class="col-12 mb-3">
+                  <label class="form-label">Correspondence Address</label>
+                  <input type="text" name="owner_postal_address_line1" class="form-control mb-2" placeholder="Address line 1" value="{{ (owner_member.postal_address_line1 or '') if owner_member else '' }}">
+                  <input type="text" name="owner_postal_address_line2" class="form-control mb-2" placeholder="Address line 2" value="{{ (owner_member.postal_address_line2 or '') if owner_member else '' }}">
+                  <div class="row">
+                    <div class="col-md-6 mb-2"><input type="text" name="owner_postal_city" class="form-control" placeholder="City" value="{{ (owner_member.postal_city or '') if owner_member else '' }}"></div>
+                    <div class="col-md-6 mb-2"><input type="text" name="owner_postal_region" class="form-control" placeholder="County / Region" value="{{ (owner_member.postal_region or '') if owner_member else '' }}"></div>
+                    <div class="col-md-6 mb-2"><input type="text" name="owner_postal_postcode" class="form-control" placeholder="Postcode" value="{{ (owner_member.postal_postcode or '') if owner_member else '' }}"></div>
+                    <div class="col-md-6 mb-2"><input type="text" name="owner_postal_country" class="form-control" placeholder="Country" value="{{ (owner_member.postal_country or '') if owner_member else '' }}"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="unit-owner-panel d-none" data-owner-panel="co_owner">
+              <div class="unit-form-subheading">
+                <strong>Co-owner Details</strong>
+                <span class="badge bg-gradient-info">Co-owner</span>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">First Name</label>
+                  <input type="text" name="co_owner_first_name" class="form-control" value="{{ co_owner_member.first_name if co_owner_member else '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Last Name</label>
+                  <input type="text" name="co_owner_last_name" class="form-control" value="{{ co_owner_member.last_name if co_owner_member else '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Email</label>
+                  <input type="email" name="co_owner_email" class="form-control" value="{{ co_owner_member.email if co_owner_member else '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Phone</label>
+                  <input type="text" name="co_owner_phone" class="form-control" value="{{ co_owner_member.phone if co_owner_member else '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Ownership Start</label>
+                  <input type="date" name="co_owner_ownership_start_date" class="form-control" value="{{ co_owner_link.ownership_start_date.strftime('%Y-%m-%d') if co_owner_link and co_owner_link.ownership_start_date else '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Ownership End</label>
+                  <input type="date" name="co_owner_ownership_end_date" class="form-control" value="{{ co_owner_link.ownership_end_date.strftime('%Y-%m-%d') if co_owner_link and co_owner_link.ownership_end_date else '' }}">
+                </div>
+                <div class="col-12 mb-3">
+                  <label class="form-label">Correspondence Address</label>
+                  <input type="text" name="co_owner_postal_address_line1" class="form-control mb-2" placeholder="Address line 1" value="{{ (co_owner_member.postal_address_line1 or '') if co_owner_member else '' }}">
+                  <input type="text" name="co_owner_postal_address_line2" class="form-control mb-2" placeholder="Address line 2" value="{{ (co_owner_member.postal_address_line2 or '') if co_owner_member else '' }}">
+                  <div class="row">
+                    <div class="col-md-6 mb-2"><input type="text" name="co_owner_postal_city" class="form-control" placeholder="City" value="{{ (co_owner_member.postal_city or '') if co_owner_member else '' }}"></div>
+                    <div class="col-md-6 mb-2"><input type="text" name="co_owner_postal_region" class="form-control" placeholder="County / Region" value="{{ (co_owner_member.postal_region or '') if co_owner_member else '' }}"></div>
+                    <div class="col-md-6 mb-2"><input type="text" name="co_owner_postal_postcode" class="form-control" placeholder="Postcode" value="{{ (co_owner_member.postal_postcode or '') if co_owner_member else '' }}"></div>
+                    <div class="col-md-6 mb-2"><input type="text" name="co_owner_postal_country" class="form-control" placeholder="Country" value="{{ (co_owner_member.postal_country or '') if co_owner_member else '' }}"></div>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Notes</label>
+                  <textarea name="co_owner_notes" class="form-control" rows="2">{{ co_owner_link.notes if co_owner_link and co_owner_link.notes else '' }}</textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="unit-form-panel d-none" data-unit-form-panel="letting">
+          <div class="unit-panel-heading">
+            <h5>Letting Agent Details</h5>
+            <span class="unit-module-note">Available when occupancy is let/rented</span>
+          </div>
+          <div class="unit-form-locked-note" data-letting-locked-note>
+            Select <strong>Let / Rented</strong> in Ownership & Occupancy to use this tab.
+          </div>
+          <div class="unit-form-subcard" data-letting-fields>
+            <div class="unit-form-subheading">
+              <strong>Letting Agent Details</strong>
+              <span class="badge bg-gradient-info">Let / Rented</span>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Agent / Company Name</label>
+                <input type="text" name="letting_agent_name" class="form-control" value="{{ unit.letting_agent_name if unit and unit.letting_agent_name else '' }}">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Phone</label>
+                <input type="text" name="letting_agent_phone" class="form-control" value="{{ unit.letting_agent_phone if unit and unit.letting_agent_phone else '' }}">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" name="letting_agent_email" class="form-control" value="{{ unit.letting_agent_email if unit and unit.letting_agent_email else '' }}">
+              </div>
+              <div class="col-12 mb-3">
+                <label class="form-label">Correspondence Address</label>
+                <input type="text" name="letting_agent_address_line1" class="form-control mb-2" placeholder="Address line 1" value="{{ unit.letting_agent_address_line1 if unit and unit.letting_agent_address_line1 else '' }}">
+                <input type="text" name="letting_agent_address_line2" class="form-control mb-2" placeholder="Address line 2" value="{{ unit.letting_agent_address_line2 if unit and unit.letting_agent_address_line2 else '' }}">
+              <div class="row">
+                <div class="col-md-6 mb-2"><input type="text" name="letting_agent_city" class="form-control" placeholder="City" value="{{ unit.letting_agent_city if unit and unit.letting_agent_city else '' }}"></div>
+                <div class="col-md-6 mb-2"><input type="text" name="letting_agent_region" class="form-control" placeholder="County / Region" value="{{ unit.letting_agent_region if unit and unit.letting_agent_region else '' }}"></div>
+                <div class="col-md-6 mb-2"><input type="text" name="letting_agent_postcode" class="form-control" placeholder="Postcode" value="{{ unit.letting_agent_postcode if unit and unit.letting_agent_postcode else '' }}"></div>
+                <div class="col-md-6 mb-2"><input type="text" name="letting_agent_country" class="form-control" placeholder="Country" value="{{ unit.letting_agent_country if unit and unit.letting_agent_country else '' }}"></div>
+              </div>
+            </div>
+              <div class="col-12 mb-0">
+                <label class="form-label">Notes</label>
+                <textarea name="letting_agent_notes" class="form-control" rows="3">{{ unit.letting_agent_notes if unit and unit.letting_agent_notes else '' }}</textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="unit-form-panel {{ '' if active_form_tab == 'tenant' else 'd-none' }}" data-unit-form-panel="tenant">
+          <div class="unit-panel-heading">
+            <h5>Current Tenant / Occupier</h5>
+            <span class="unit-module-note">Current occupier details for Members Logix and Works Logix</span>
+          </div>
+          <div class="unit-form-subcard">
+            <div class="unit-form-subheading">
+              <strong>Primary Tenant / Occupier</strong>
+              <span class="badge bg-gradient-info">Primary</span>
+            </div>
+            <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">First Name</label>
+              <input type="text" name="tenant_first_name" class="form-control" value="{{ tenant_member.first_name if tenant_member else '' }}">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Last Name</label>
+              <input type="text" name="tenant_last_name" class="form-control" value="{{ tenant_member.last_name if tenant_member else '' }}">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" name="tenant_email" class="form-control" value="{{ tenant_member.email if tenant_member else '' }}">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Phone</label>
+              <input type="text" name="tenant_phone" class="form-control" value="{{ tenant_member.phone if tenant_member else '' }}">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Tenancy Start</label>
+              <input type="date" name="tenant_tenancy_start_date" class="form-control" value="{{ tenant_link.tenancy_start_date.strftime('%Y-%m-%d') if tenant_link and tenant_link.tenancy_start_date else '' }}">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Tenancy End</label>
+              <input type="date" name="tenant_tenancy_end_date" class="form-control" value="{{ tenant_link.tenancy_end_date.strftime('%Y-%m-%d') if tenant_link and tenant_link.tenancy_end_date else '' }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Notes</label>
+              <textarea name="tenant_notes" class="form-control" rows="3">{{ tenant_link.notes if tenant_link and tenant_link.notes else '' }}</textarea>
+            </div>
+            </div>
+          </div>
+
+          <div class="unit-form-subcard">
+            <div class="unit-form-subheading">
+              <strong>Add Additional Tenant</strong>
+              <span class="badge bg-gradient-info">Additional</span>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">First Name</label>
+                <input type="text" name="additional_tenant_first_name" class="form-control" placeholder="First name">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Last Name</label>
+                <input type="text" name="additional_tenant_last_name" class="form-control" placeholder="Last name">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" name="additional_tenant_email" class="form-control" placeholder="Email address">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Phone</label>
+                <input type="text" name="additional_tenant_phone" class="form-control" placeholder="Phone number">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Tenancy Start</label>
+                <input type="date" name="additional_tenant_tenancy_start_date" class="form-control">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Tenancy End</label>
+                <input type="date" name="additional_tenant_tenancy_end_date" class="form-control">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Notes</label>
+                <textarea name="additional_tenant_notes" class="form-control" rows="2" placeholder="Optional notes for this occupier"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="unit-form-panel d-none" data-unit-form-panel="sale">
+          <div class="unit-panel-heading">
+            <h5>Sale & Conveyancing</h5>
+            <span class="unit-module-note">Early structure for future sales and conveyancing workflows</span>
+          </div>
+          <div class="unit-form-subcard">
+            <div class="unit-form-subheading">
+              <strong>Sale & Conveyancing</strong>
+              <span class="badge bg-gradient-info">Optional</span>
+            </div>
+            <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Sale Status</label>
+              {% set sale_status = unit.sale_status if unit and unit.sale_status else '' %}
+              <select name="sale_status" class="form-select">
+                <option value="">No sale status</option>
+                {% for value, label in [('preparing_for_sale', 'Preparing For Sale'), ('for_sale', 'For Sale'), ('sale_agreed', 'Sale Agreed'), ('sold', 'Sold')] %}
+                  <option value="{{ value }}" {% if sale_status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Conveyancing Status</label>
+              {% set conveyancing_status = unit.conveyancing_status if unit and unit.conveyancing_status else '' %}
+              <select name="conveyancing_status" class="form-select">
+                <option value="">No conveyancing status</option>
+                {% for value, label in [('information_requested', 'Information Requested'), ('pack_in_progress', 'Pack In Progress'), ('queries_open', 'Queries Open'), ('complete', 'Complete')] %}
+                  <option value="{{ value }}" {% if conveyancing_status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="unit-form-panel d-none" data-unit-form-panel="finance">
+          <div class="unit-panel-heading">
+            <h5>Status & Financial</h5>
+            <span class="unit-module-note">Unit status and service charge setup</span>
+          </div>
+          <div class="unit-form-subcard">
+            <div class="unit-form-subheading">
+              <strong>Status & Financial</strong>
+              <span class="badge bg-gradient-info">Finance Logix ready</span>
+            </div>
+            <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Status</label>
+              {% set st = unit.status if unit else "Active" %}
+              <select name="status" class="form-select">
+                {% for s in ["Active","Inactive","Sold","Void","Under Construction"] %}
+                  <option value="{{ s }}" {% if st == s %}selected{% endif %}>{{ s|replace("_"," ")|title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-center mb-3">
+              <div class="form-check mt-4">
+                <input type="checkbox" class="form-check-input" name="is_common_area" id="is_common_area" value="1" {% if unit and unit.is_common_area %}checked{% endif %}>
+                <label class="form-check-label" for="is_common_area">Common Area / Shared Asset</label>
+              </div>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Service Charge Scheme</label>
+              {% set scheme = unit.service_charge_scheme if unit else "" %}
+              <select name="service_charge_scheme" class="form-select">
+                <option value="">Not set</option>
+                {% for sc in ["Standard Schedule","Commercial Schedule","Car-park Schedule","Mixed-Use / Custom","No Service Charge"] %}
+                  <option value="{{ sc }}" {% if scheme == sc %}selected{% endif %}>{{ sc }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Service Charge %</label>
+              <input type="number" step="0.0001" name="service_charge_percent" class="form-control" value="{{ unit.service_charge_percent if unit else '' }}">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Service Charge Amount</label>
+              <input type="number" step="0.01" name="service_charge_amount" class="form-control" value="{{ unit.service_charge_amount if unit else '' }}">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Billing Frequency</label>
+              {% set bf = unit.billing_frequency if unit else "" %}
+              <select name="billing_frequency" class="form-select">
+                <option value="">Not set</option>
+                {% for opt in ["Annual","Bi-Annual","Quarterly","Monthly","On-Demand"] %}
+                  <option value="{{ opt }}" {% if bf == opt %}selected{% endif %}>{{ opt }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Financial Year Start</label>
+              <input type="date" name="financial_year_start" class="form-control" value="{{ unit.financial_year_start.strftime('%Y-%m-%d') if unit and unit.financial_year_start else '' }}">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Financial Year End</label>
+              <input type="date" name="financial_year_end" class="form-control" value="{{ unit.financial_year_end.strftime('%Y-%m-%d') if unit and unit.financial_year_end else '' }}">
+            </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="unit-form-panel d-none" data-unit-form-panel="notes">
+          <div class="unit-panel-heading">
+            <h5>Notes / Special Conditions</h5>
+            <span class="unit-module-note">Management notes that should travel with the unit record</span>
+          </div>
+          <div class="unit-form-subcard">
+            <div class="unit-form-subheading">
+              <strong>Notes / Special Conditions</strong>
+              <span class="badge bg-gradient-info">Internal context</span>
+            </div>
+            <label class="form-label">Notes / Special Conditions</label>
+            <textarea name="notes" class="form-control" rows="8">{{ unit.notes if unit else "" }}</textarea>
+          </div>
+        </div>
+
+        <div class="unit-form-panel d-none" data-unit-form-panel="gar">
+          <div class="unit-panel-heading">
+            <h5>AI / GAR Governance</h5>
+            <span class="unit-module-note">Structured context for GAR AI as the platform intelligence layer grows</span>
+          </div>
+          <div class="unit-form-subcard">
+            <div class="unit-form-subheading">
+              <strong>AI / GAR Governance</strong>
+              <span class="badge bg-gradient-info">GAR AI</span>
+            </div>
+            <div class="row">
+            <div class="col-12 mb-3">
+              <label class="form-label">AI Summary</label>
+              <textarea name="ai_summary" class="form-control" rows="4">{{ unit.ai_summary if unit and unit.ai_summary else "" }}</textarea>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">GAR Recommendations</label>
+              <textarea name="gar_recommendations" class="form-control" rows="4">{{ unit.gar_recommendations if unit and unit.gar_recommendations else "" }}</textarea>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">GAR Feedback</label>
+              <textarea name="gar_feedback" class="form-control" rows="4">{{ unit.gar_feedback if unit and unit.gar_feedback else "" }}</textarea>
+            </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="unit-form-actions">
+          <a href="{{ unit_back_url }}" class="btn btn-outline-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">{{ "Create Unit" if mode == "create" else "Save Changes" }}</button>
+        </div>
+      </section>
+    </form>
   </div>
 </div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const tabButtons = Array.from(document.querySelectorAll("[data-unit-form-tab]"));
+    const panels = Array.from(document.querySelectorAll("[data-unit-form-panel]"));
+    const occupancySelect = document.querySelector("[data-occupancy-status]");
+    const lettingTab = document.querySelector("[data-letting-tab]");
+    const lettingPanel = document.querySelector("[data-unit-form-panel='letting']");
+    const lettingFields = document.querySelector("[data-letting-fields]");
+    const lockedNote = document.querySelector("[data-letting-locked-note]");
+    const ownerTabButtons = Array.from(document.querySelectorAll("[data-owner-tab]"));
+    const ownerPanels = Array.from(document.querySelectorAll("[data-owner-panel]"));
+
+    function showTab(tabName) {
+      if (tabName === "letting" && lettingTab && lettingTab.classList.contains("is-disabled")) {
+        return;
+      }
+      tabButtons.forEach((button) => button.classList.toggle("active", button.dataset.unitFormTab === tabName));
+      panels.forEach((panel) => panel.classList.toggle("d-none", panel.dataset.unitFormPanel !== tabName));
+    }
+
+    function updateLettingAvailability() {
+      const isLet = occupancySelect && occupancySelect.value === "let";
+      if (!lettingTab || !lettingPanel) return;
+      lettingTab.classList.toggle("is-disabled", !isLet);
+      lettingTab.setAttribute("aria-disabled", isLet ? "false" : "true");
+      if (lettingFields) lettingFields.classList.toggle("d-none", !isLet);
+      if (lockedNote) lockedNote.classList.toggle("d-none", isLet);
+      if (!isLet && lettingTab.classList.contains("active")) {
+        showTab("ownership");
+      }
+    }
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", function () {
+        showTab(button.dataset.unitFormTab);
+      });
+    });
+
+    function showOwnerTab(tabName) {
+      ownerTabButtons.forEach((button) => button.classList.toggle("active", button.dataset.ownerTab === tabName));
+      ownerPanels.forEach((panel) => panel.classList.toggle("d-none", panel.dataset.ownerPanel !== tabName));
+    }
+
+    ownerTabButtons.forEach((button) => {
+      button.addEventListener("click", function () {
+        showOwnerTab(button.dataset.ownerTab);
+      });
+    });
+
+    if (occupancySelect) {
+      occupancySelect.addEventListener("change", updateLettingAvailability);
+    }
+
+    updateLettingAvailability();
+  });
+</script>
 {% endblock %}

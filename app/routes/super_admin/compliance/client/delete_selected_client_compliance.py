@@ -17,7 +17,7 @@ def delete_selected_client_compliance():
     
     if not selected_ids:
         flash('⚠️ No documents were selected for deletion.', 'warning')
-        return redirect(url_for('super_admin.client_compliance_documents'))
+        return redirect(url_for('super_admin.compliance_documents_index'))
 
     deleted_count = 0
     for doc_id in selected_ids:
@@ -28,4 +28,4 @@ def delete_selected_client_compliance():
 
     db.session.commit()
     flash(f'🗑️ Successfully deleted {deleted_count} document(s).', 'success')
-    return redirect(url_for('super_admin.client_compliance_documents'))
+    return redirect(url_for('super_admin.compliance_documents_index'))

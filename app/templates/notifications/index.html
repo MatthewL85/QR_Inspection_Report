@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% block title %}Notifications - LogixPM{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid notification-centre client-manager-workspace app-ready-surface app-ready-surface--notifications"
+     data-app-mobile-ready="true"
+     data-app-safe-area="required"
+     data-app-source-backed="true"
+     data-app-offline="static-shell-only">
+  <div class="client-manager-command-bar notification-command-bar">
+    <div>
+      <h5>Notification Centre</h5>
+      <span>Role-aware action queue for Works Logix, contracts, GAR and platform alerts.</span>
+    </div>
+    <div class="notification-centre-actions">
+      <a class="unit-link-action" href="{{ notification_return_url }}">
+        <i class="material-icons">arrow_back</i> Back
+      </a>
+      {% if unread_count %}
+        <form method="post" action="{{ url_for('notifications.mark_all_read') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="{{ request.full_path }}">
+          <button type="submit" class="btn btn-primary btn-sm">Mark All Read</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <section class="notification-centre-summary app-surface-summary">
+    <a class="{{ 'active' if status_filter == 'unread' else '' }}" href="{{ url_for('notifications.index', status='unread', type=type_filter, priority=priority_filter, module=module_filter, stage=stage_filter, action=action_filter, search=search_filter) }}">
+      <span>Unread</span>
+      <strong>{{ unread_count }}</strong>
+    </a>
+    <a class="{{ 'active' if status_filter == 'all' else '' }}" href="{{ url_for('notifications.index', status='all', type=type_filter, priority=priority_filter, module=module_filter, stage=stage_filter, action=action_filter, search=search_filter) }}">
+      <span>All</span>
+      <strong>{{ all_count }}</strong>
+    </a>
+    <a class="{{ 'active' if status_filter == 'read' else '' }}" href="{{ url_for('notifications.index', status='read', type=type_filter, priority=priority_filter, module=module_filter, stage=stage_filter, action=action_filter, search=search_filter) }}">
+      <span>Read</span>
+      <strong>{{ read_count }}</strong>
+    </a>
+    <a class="{{ 'active' if action_filter == 'action' else '' }}" href="{{ url_for('notifications.index', status=status_filter, type=type_filter, priority=priority_filter, module=module_filter, stage=stage_filter, action='action', search=search_filter) }}">
+      <span>Needs Action</span>
+      <strong>{{ notification_stats.action_count }}</strong>
+    </a>
+    <a class="{{ 'active' if action_filter == 'gar' else '' }}" href="{{ url_for('notifications.index', status=status_filter, type=type_filter, priority=priority_filter, module=module_filter, stage=stage_filter, action='gar', search=search_filter) }}">
+      <span>GAR Related</span>
+      <strong>{{ notification_stats.gar_count }}</strong>
+    </a>
+    <a class="{{ 'active' if priority_filter == 'High' else '' }}" href="{{ url_for('notifications.index', status=status_filter, type=type_filter, priority='High', module=module_filter, stage=stage_filter, action=action_filter, search=search_filter) }}">
+      <span>High Priority</span>
+      <strong>{{ notification_stats.high_priority_count }}</strong>
+    </a>
+  </section>
+
+  <nav class="app-surface-nav" aria-label="Notification Centre quick filters" data-app-surface="notification-centre">
+    <a href="{{ url_for('notifications.index', status='unread', type=type_filter, priority=priority_filter, module=module_filter, stage=stage_filter, action=action_filter, search=search_filter) }}">Unread</a>
+    <a href="{{ url_for('notifications.index', status=status_filter, type=type_filter, priority=priority_filter, module=module_filter, stage=stage_filter, action='action', search=search_filter) }}">Needs Action</a>
+    <a href="{{ url_for('notifications.index', status=status_filter, type=type_filter, priority=priority_filter, module=module_filter, stage=stage_filter, action='gar', search=search_filter) }}">GAR</a>
+    <a href="#notification-filters">Filters</a>
+    <a href="#notification-list">Alerts</a>
+  </nav>
+
+  <section class="notification-centre-panel client-manager-panel">
+    <div class="client-manager-heading notification-centre-heading">
+      <div>
+        <h6>Alerts</h6>
+        <span>{{ notification_views|length }} notification{{ '' if notification_views|length == 1 else 's' }} in this view</span>
+      </div>
+      {% if search_filter %}
+        <span class="notification-current-filter">Search: {{ search_filter }}</span>
+      {% endif %}
+    </div>
+
+    <form method="get" action="{{ url_for('notifications.index') }}" class="notification-centre-filters" id="notification-filters">
+      <label>
+        Search
+        <input name="search" class="form-control" value="{{ search_filter or '' }}" placeholder="Message, module or action">
+      </label>
+      <label>
+        Status
+        <select name="status" class="form-control">
+          <option value="unread" {% if status_filter == 'unread' %}selected{% endif %}>Unread</option>
+          <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+          <option value="read" {% if status_filter == 'read' %}selected{% endif %}>Read</option>
+        </select>
+      </label>
+      <label>
+        Module
+        <select name="module" class="form-control">
+          <option value="">All modules</option>
+          {% for item in available_modules %}
+            <option value="{{ item.key }}" {% if module_filter == item.key %}selected{% endif %}>{{ item.label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        Action
+        <select name="action" class="form-control">
+          <option value="">All notifications</option>
+          <option value="action" {% if action_filter == 'action' %}selected{% endif %}>Needs action</option>
+          <option value="info" {% if action_filter == 'info' %}selected{% endif %}>Information only</option>
+          <option value="gar" {% if action_filter == 'gar' %}selected{% endif %}>GAR related</option>
+        </select>
+      </label>
+      <label>
+        Stage
+        <select name="stage" class="form-control">
+          <option value="">All stages</option>
+          {% for item in available_stages %}
+            <option value="{{ item }}" {% if stage_filter == item %}selected{% endif %}>{{ item }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        Type
+        <select name="type" class="form-control">
+          <option value="">All types</option>
+          {% for item in available_types %}
+            <option value="{{ item }}" {% if type_filter == item %}selected{% endif %}>{{ item|replace('_', ' ')|title }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        Priority
+        <select name="priority" class="form-control">
+          <option value="">All priorities</option>
+          {% for item in available_priorities %}
+            <option value="{{ item }}" {% if priority_filter == item %}selected{% endif %}>{{ item }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <div class="notification-centre-filter-actions">
+        <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+        <a href="{{ url_for('notifications.index') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+      </div>
+    </form>
+
+    {% if action_queue_views %}
+      <div class="notification-action-queue">
+        <div>
+          <span>Priority Action Queue</span>
+          <strong>{{ action_queue_views|length }} live action{{ '' if action_queue_views|length == 1 else 's' }}</strong>
+        </div>
+        {% for item in action_queue_views %}
+          {% set notification = item.notification %}
+          <a href="{{ url_for('notifications.open', notification_id=notification.id) }}" class="notification-action-card notification-action-card--{{ item.tone }}">
+            <span>{{ item.module_label }}</span>
+            <strong>{{ notification.message }}</strong>
+            <small>{{ item.workflow_stage }} - {{ notification.suggested_action or item.workflow_action }}</small>
+            {% if item.source_label %}
+              <em>{{ item.source_label }}</em>
+            {% endif %}
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if notification_stats.module_counts %}
+      <div class="notification-module-strip">
+        {% for module_name, count in notification_stats.module_counts.items() %}
+          <span>{{ module_name }} <strong>{{ count }}</strong></span>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if notification_stats.stage_counts %}
+      <div class="notification-stage-strip">
+        {% for stage_name, count in notification_stats.stage_counts.items() %}
+          <a class="{{ 'active' if stage_filter == stage_name else '' }}" href="{{ url_for('notifications.index', status=status_filter, type=type_filter, priority=priority_filter, module=module_filter, stage=stage_name, action=action_filter, search=search_filter) }}">
+            {{ stage_name }} <strong>{{ count }}</strong>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="notification-centre-list" id="notification-list">
+      {% for item in notification_views %}
+        {% set notification = item.notification %}
+        <article class="notification-centre-row notification-centre-row--{{ item.tone }} {{ 'is-unread' if not notification.is_read else '' }}">
+          <div>
+            <div class="notification-centre-badges">
+              <span class="notification-centre-type">{{ item.module_label }}</span>
+              <span class="notification-centre-type is-stage">{{ item.workflow_stage }}</span>
+              <span class="notification-centre-type is-muted">{{ notification.type|default('Alert')|replace('_', ' ')|title }}</span>
+              {% if item.is_action_required %}
+                <span class="notification-centre-type is-action">Needs Action</span>
+              {% endif %}
+              {% if item.is_gar_related %}
+                <span class="notification-centre-type is-gar">GAR</span>
+              {% endif %}
+            </div>
+            <h2>{{ notification.message }}</h2>
+            <div class="notification-centre-meta">
+              <span>{{ notification.priority_level or 'Normal' }} priority</span>
+              <span>{{ item.workflow_audience }}</span>
+              {% if item.source_label %}
+                <span>{{ item.source_label }}</span>
+              {% endif %}
+              {% if item.target_context.client_id %}
+                <span>Client #{{ item.target_context.client_id }}</span>
+              {% endif %}
+              {% if item.target_context.unit_id %}
+                <span>Unit #{{ item.target_context.unit_id }}</span>
+              {% endif %}
+              {% if notification.gar_category %}
+                <span>{{ notification.gar_category }}</span>
+              {% endif %}
+              {% if notification.created_at %}
+                <time datetime="{{ notification.created_at.isoformat() }}">{{ notification.created_at.strftime('%d %b %Y %H:%M') }}</time>
+              {% endif %}
+            </div>
+            {% if notification.suggested_action %}
+              <p>{{ notification.suggested_action }}</p>
+            {% elif item.workflow_action %}
+              <p>{{ item.workflow_action }}</p>
+            {% endif %}
+          </div>
+          <div class="notification-centre-row-actions">
+            {% if not notification.is_read %}
+              <span class="notification-status-pill">Unread</span>
+              <form method="post" action="{{ url_for('notifications.mark_read', notification_id=notification.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ request.full_path }}">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">Mark Read</button>
+              </form>
+            {% else %}
+              <span class="notification-status-pill is-read">Read</span>
+            {% endif %}
+            <a class="btn btn-outline-primary btn-sm" href="{{ url_for('notifications.open', notification_id=notification.id) }}">Open</a>
+          </div>
+        </article>
+      {% else %}
+        <div class="notification-centre-empty">
+          <strong>No notifications in this view.</strong>
+          <span>When Works Logix, Contracts, Members Logix or GAR generate role-specific alerts, they will appear here.</span>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

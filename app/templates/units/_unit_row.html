@@ -1,103 +1,57 @@
 <tr>
+    {% set owner_links = u.membership_links.filter_by(role="owner", is_current=True).all() if u.membership_links else [] %}
+    {% set primary_owner = owner_links[0].member if owner_links and owner_links[0].member else none %}
 
-    <!-- UNIT LABEL + TYPE -->
     <td class="ps-4 align-middle">
         <div class="d-flex flex-column">
-            <a href="{{ url_for('unit_bp.view_unit', unit_id=u.id) }}"
+            <a href="{{ url_for('unit_bp.view', unit_id=u.id) }}"
                class="text-dark text-sm fw-bold">
-                {{ u.unit_label }}
+                {{ u.unit_number or u.unit_label }}
             </a>
             <span class="text-xs text-secondary">
-                {{ u.unit_type or "—" }}
+                {{ u.unit_type or "-" }}
             </span>
         </div>
     </td>
 
-    <!-- BLOCK / CORE -->
     <td class="align-middle">
         {% if u.block_name %}
-            <span class="badge bg-gradient-info text-uppercase me-1">
-                {{ u.block_name }}
-            </span>
-        {% endif %}
-        {% if u.core_name %}
-            <span class="badge bg-gradient-secondary text-uppercase">
-                {{ u.core_name }}
-            </span>
-        {% endif %}
-        {% if not u.block_name and not u.core_name %}
-            <span class="text-muted">—</span>
+            <span class="badge bg-gradient-info text-uppercase">{{ u.block_name }}</span>
+        {% elif u.core_name %}
+            <span class="badge bg-gradient-secondary text-uppercase">{{ u.core_name }}</span>
+        {% else %}
+            <span class="text-muted">-</span>
         {% endif %}
     </td>
 
-    <!-- OWNERS -->
     <td class="align-middle">
-        <span class="badge bg-gradient-primary">
-            {{ u.owner_count }} Owner{{ "" if u.owner_count == 1 else "s" }}
+        {% if owner_links %}
+            {% for link in owner_links %}
+                {{ link.member.full_name if link.member else "Owner" }}{% if not loop.last %}, {% endif %}
+            {% endfor %}
+        {% else %}
+            <span class="text-muted">No owner captured</span>
+        {% endif %}
+    </td>
+
+    <td class="align-middle">
+        {{ primary_owner.phone if primary_owner and primary_owner.phone else "-" }}
+    </td>
+
+    <td class="align-middle">
+        {{ primary_owner.email if primary_owner and primary_owner.email else "-" }}
+    </td>
+
+    <td class="align-middle">
+        <span class="badge bg-gradient-secondary">
+            {{ u.occupancy_status|replace("_", " ")|title if u.occupancy_status else "Unknown" }}
         </span>
     </td>
 
-    <!-- RESIDENTS -->
-    <td class="align-middle">
-        <span class="badge bg-gradient-dark">
-            {{ u.resident_count }} Resident{{ "" if u.resident_count == 1 else "s" }}
-        </span>
-    </td>
-
-    <!-- COMPLIANCE STATUS -->
-    <td class="align-middle">
-        {% if u.compliance_status == "ok" %}
-            <span class="badge bg-gradient-success">Compliant</span>
-
-        {% elif u.compliance_status == "warning" %}
-            <span class="badge bg-gradient-warning text-dark">Warning</span>
-
-        {% elif u.compliance_status == "missing" %}
-            <span class="badge bg-gradient-danger">Missing</span>
-
-        {% else %}
-            <span class="badge bg-gradient-secondary">—</span>
-        {% endif %}
-    </td>
-
-    <!-- FINANCE STATUS -->
-    <td class="align-middle">
-        {% if u.balance_status == "arrears" %}
-            <span class="badge bg-gradient-danger">Arrears</span>
-
-        {% elif u.balance_status == "credit" %}
-            <span class="badge bg-gradient-success">Credit</span>
-
-        {% elif u.balance_status == "zero" %}
-            <span class="badge bg-gradient-secondary">0.00</span>
-
-        {% else %}
-            <span class="badge bg-gradient-secondary">—</span>
-        {% endif %}
-    </td>
-
-    <!-- GAR AI STATUS -->
-    <td class="align-middle">
-        {% if u.ai_status == "green" %}
-            <span class="badge bg-gradient-success">AI Clear</span>
-
-        {% elif u.ai_status == "amber" %}
-            <span class="badge bg-gradient-warning text-dark">AI Review</span>
-
-        {% elif u.ai_status == "red" %}
-            <span class="badge bg-gradient-danger">AI Flagged</span>
-
-        {% else %}
-            <span class="badge bg-gradient-secondary">—</span>
-        {% endif %}
-    </td>
-
-    <!-- ACTIONS -->
     <td class="text-end align-middle">
-        <a href="{{ url_for('unit_bp.view_unit', unit_id=u.id) }}"
+        <a href="{{ url_for('unit_bp.view', unit_id=u.id) }}"
            class="btn btn-sm bg-gradient-primary mb-0">
             <i class="fas fa-eye me-1"></i> View
         </a>
     </td>
-
 </tr>

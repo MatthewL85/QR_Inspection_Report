@@ -3,169 +3,179 @@
 {% import 'macros/common_macros.html' as common_macros %}
 {% import 'macros/compliance_macros.html' as compliance_macros %}
 
-{# 🔹 Local currency helper: prints symbol, no cents #}
 {% macro currency_no_cents(amount, code='EUR') -%}
   {%- set up = (code or 'EUR')|upper -%}
-  {%- set sym = '€' if up=='EUR' else ('£' if up=='GBP' else ('$' if up=='USD' else '€')) -%}
+  {%- set sym = 'EUR ' if up=='EUR' else ('GBP ' if up=='GBP' else ('$' if up=='USD' else up ~ ' ')) -%}
   {{ sym }}{{ '{:,.0f}'.format(amount or 0) }}
 {%- endmacro %}
 
 {% block page_content %}
-<div class="container-fluid pt-0">  {# was: py-4 — avoid double top padding #}
+<div class="container-fluid dashboard-workspace">
 
-  {# 🚀 Onboarding banner (kept; shows only when needed) #}
   {% if SHOW_ONBOARDING_BANNER %}
-    <div class="alert alert-info d-flex align-items-center justify-content-between shadow-sm" role="alert">
-      <div class="d-flex align-items-center">
-        <i class="material-icons me-2">rocket_launch</i>
+    <div class="alert alert-info dashboard-alert d-flex align-items-center justify-content-between" role="alert">
+      <div class="d-flex align-items-center gap-2">
+        <i class="material-icons">rocket_launch</i>
         <div>
-          <strong>Finish setting up your organization.</strong>
-          <div class="small">
-            Start the onboarding wizard to add company details and branding. You can customize everything later in Settings.
-          </div>
+          <strong>Finish setting up your organisation.</strong>
+          <div class="small">Add company details and branding. You can refine everything later in Settings.</div>
         </div>
       </div>
     </div>
   {% endif %}
 
-{# 🔝 Unified Contracts KPI (compact) #}
-<div class="row g-4 mt-1">
-  <div class="col-12">
-    <div class="card shadow-sm border h-100">
-      <div class="card-body py-3">  {# tighter vertical padding #}
-        <div class="d-flex align-items-center gap-2 mb-1">
-          <h6 class="mb-0">Contracts</h6>
+  <div class="dashboard-command-bar">
+    <div>
+      <h5>Super Admin Dashboard</h5>
+      <span>Portfolio command centre for LogixPM, Works Logix, Finance Logix, Members Logix and GAR AI.</span>
+    </div>
+    <div class="dashboard-command-meta">
+      <span class="dashboard-status-pill">GAR AI Centre</span>
+    </div>
+  </div>
+
+  {% set dashboard_notification_title = 'Notification Action Queue' %}
+  {% include 'notifications/_dashboard_action_strip.html' %}
+
+  <section class="dashboard-contract-strip">
+    <div class="dashboard-strip-heading">
+      <div>
+        <h6>Contracts</h6>
+        <span>Expiry control and renewal focus</span>
+      </div>
+      <a href="{{ url_for('super_admin_contracts.contracts_overview') }}">View Contracts</a>
+    </div>
+    <div class="dashboard-contract-metrics">
+      <a href="{{ url_for('super_admin_contracts.contracts_overview', bucket='expired') }}#contract-register">
+        <strong class="text-danger">{{ contracts_expired or 0 }}</strong>
+        <span>Expired</span>
+      </a>
+      <a href="{{ url_for('super_admin_contracts.contracts_overview', bucket='30') }}#contract-register">
+        <strong class="text-warning">{{ contracts_expiring_30 or 0 }}</strong>
+        <span>Expiring 30d</span>
+      </a>
+      <a href="{{ url_for('super_admin_contracts.contracts_overview', bucket='60') }}#contract-register">
+        <strong class="text-primary">{{ contracts_expiring_60 or 0 }}</strong>
+        <span>Expiring 60d</span>
+      </a>
+      <a href="{{ url_for('super_admin_contracts.contracts_overview', bucket='90') }}#contract-register">
+        <strong class="text-info">{{ contracts_expiring_90 or 0 }}</strong>
+        <span>Expiring 90d</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="dashboard-section">
+    <div class="dashboard-section-heading">
+      <h6>Portfolio Snapshot</h6>
+      <span>Fast operational readout</span>
+    </div>
+    <div class="row g-3 dashboard-kpi-grid">
+      {{ common_macros.metric_tile("Total Clients", total_clients or 0, "groups", "primary", "super_admin.manage_clients") }}
+      {{ common_macros.metric_tile("Team Total", total_pms or 0, "supervisor_account", "info", "super_admin.manage_users", {'role_filter': 'Property Manager'}) }}
+      {{ common_macros.metric_tile("Total Contractors", total_contractors or 0, "engineering", "warning", "super_admin.manage_users", {'role_filter': 'Contractor'}) }}
+
+      {% set mp_total = managed_portfolio_value_signed if managed_portfolio_value_signed is defined else (managed_portfolio_value or 0) %}
+      {% set ccy = currency_code|default('EUR') %}
+      {{ common_macros.metric_tile("Managed Portfolio", currency_no_cents(mp_total, ccy), "folder_shared", "secondary", "super_admin.manage_clients") }}
+    </div>
+  </section>
+
+  <section class="dashboard-section">
+    <div class="dashboard-section-heading">
+      <h6>Compliance & GAR Signals</h6>
+      <span>Documents, governance risk and upcoming obligations</span>
+    </div>
+    <div class="row g-3 dashboard-kpi-grid">
+      {{ common_macros.metric_tile("Upcoming AGMs", upcoming_agm_count or 0, "calendar_month", "success", "super_admin.upcoming_agms") }}
+      {{ compliance_macros.compliance_tile("Client Compliance Docs", client_compliance_docs or [], "file-contract", "primary", "super_admin.compliance_documents_index") }}
+      {{ compliance_macros.compliance_tile("Contractor Compliance Docs", contractor_compliance_docs or [], "file-shield", "secondary", "super_admin.contractor_compliance_documents") }}
+      {{ common_macros.metric_tile("Expiring Docs", expiring_docs_count or 0, "hourglass_empty", "warning", "super_admin.client_expiring_documents") }}
+      {{ common_macros.metric_tile("Missing Client Docs", clients_missing_docs or 0, "report_problem", "danger", "super_admin.compliance_documents_index") }}
+      {{ common_macros.metric_tile("Missing Contractor Docs", contractors_missing_docs or 0, "warning_amber", "danger", "super_admin.contractor_compliance_documents") }}
+      {{ common_macros.metric_tile("GAR Insights", gar_flagged_count or 0, "smart_toy", "info", "super_admin.gar_insights") }}
+    </div>
+  </section>
+
+  <section class="dashboard-section">
+    <div class="dashboard-section-heading">
+      <h6>Logix Modules</h6>
+      <span>Operational areas connected back to the same property record</span>
+    </div>
+    <div class="dashboard-module-grid">
+      <div class="dashboard-module-tile">
+        <div class="dashboard-module-icon text-warning"><i class="fas fa-tools"></i></div>
+        <div>
+          <strong>Works Logix</strong>
+          <span>Work orders and contractor assignments</span>
         </div>
-
-        <div class="row g-2 text-center align-items-center">  {# tighter grid gap #}
-          <div class="col-6 col-lg-3">
-            <div class="d-flex flex-column align-items-center justify-content-center">
-              <div class="fs-3 fw-bold text-danger lh-1 mb-1">{{ contracts_expired or 0 }}</div>
-              <div class="small text-secondary mb-0">Expired</div>
-            </div>
-          </div>
-
-          <div class="col-6 col-lg-3">
-            <div class="d-flex flex-column align-items-center justify-content-center">
-              <div class="fs-3 fw-bold text-warning lh-1 mb-1">{{ contracts_expiring_30 or 0 }}</div>
-              <div class="small text-secondary mb-0">Expiring ≤ 30d</div>
-            </div>
-          </div>
-
-          <div class="col-6 col-lg-3">
-            <div class="d-flex flex-column align-items-center justify-content-center">
-              <div class="fs-3 fw-bold text-primary lh-1 mb-1">{{ contracts_expiring_60 or 0 }}</div>
-              <div class="small text-secondary mb-0">Expiring ≤ 60d</div>
-            </div>
-          </div>
-
-          <div class="col-6 col-lg-3">
-            <div class="d-flex flex-column align-items-center justify-content-center">
-              <div class="fs-3 fw-bold text-info lh-1 mb-1">{{ contracts_expiring_90 or 0 }}</div>
-              <div class="small text-secondary mb-0">Expiring ≤ 90d</div>
-            </div>
-          </div>
-        </div>
+        {% if 'super_admin.work_orders' in current_app.view_functions %}
+          <a href="{{ url_for('super_admin.work_orders') }}">Open</a>
+        {% else %}
+          <span class="dashboard-muted-action">Coming Soon</span>
+        {% endif %}
       </div>
 
-      {# Consistent CTA like other tiles #}
-      <div class="card-footer bg-transparent py-1">
-        <a class="btn btn-link text-sm float-end"
-           href="{{ url_for('super_admin_contracts.contracts_overview') }}">
-          View
+      <div class="dashboard-module-tile">
+        <div class="dashboard-module-icon text-success"><i class="fas fa-coins"></i></div>
+        <div>
+          <strong>Finance Logix</strong>
+          <span>Service charge oversight and payment tracking</span>
+        </div>
+        <span class="dashboard-muted-action">Planned</span>
+      </div>
+
+      <div class="dashboard-module-tile">
+        <div class="dashboard-module-icon text-info"><i class="fas fa-users-cog"></i></div>
+        <div>
+          <strong>HR Logix</strong>
+          <span>Internal and contractor staff records</span>
+        </div>
+        <span class="dashboard-muted-action">Pending</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="dashboard-section">
+    <div class="dashboard-section-heading">
+      <h6>Works Attention Queue</h6>
+      <span>{{ works_stats.attention_total or 0 }} live item{{ '' if (works_stats.attention_total or 0) == 1 else 's' }} needing operational focus</span>
+    </div>
+    <div class="works-attention-grid">
+      {% for key, queue in works_operational_queues.items() %}
+        {% set queue_href = url_for('super_admin.work_orders_repeated_returns') if key == 'repeated_returns' else url_for('super_admin.work_orders') ~ '#' ~ queue.anchor %}
+        <a class="works-attention-card works-attention-{{ queue.tone }}" href="{{ queue_href }}">
+          <span>{{ queue.label }}</span>
+          <strong>{{ queue.count }}</strong>
+          <small>{{ queue.description }}</small>
         </a>
-      </div>
+      {% endfor %}
     </div>
-  </div>
-</div>
+    {% set works_gar_quality_url = url_for('super_admin.work_orders_repeated_returns') %}
+    {% include 'works/_gar_quality_signals.html' %}
+    {% set works_next_actions_list = works_next_actions %}
+    {% set works_next_actions_subtitle = 'Prioritised Works focus' %}
+    {% set works_next_actions_prefix = url_for('super_admin.work_orders') %}
+    {% set works_next_actions_repeated_returns_prefix = url_for('super_admin.work_orders_repeated_returns') %}
+    {% set works_next_actions_class = 'mt-3' %}
+    {% include 'works/_next_actions.html' %}
+  </section>
 
-  <!-- 📦 Row: Summary Tiles -->
-  <div class="row g-4 mt-2">
-    {{ common_macros.metric_tile("Total Clients",       total_clients or 0,      "groups",            "primary",   "super_admin.manage_clients") }}
-    {{ common_macros.metric_tile("Total PMs",           total_pms or 0,          "supervisor_account","info",      "super_admin.manage_users", {'role_filter': 'Property Manager'}) }}
-    {{ common_macros.metric_tile("Total Contractors",   total_contractors or 0,  "engineering",       "warning",   "super_admin.manage_users", {'role_filter': 'Contractor'}) }}
-
-    {# ✅ Managed Portfolio: show symbol (€, £, $) and ONLY signed total #}
-    {# Expecting backend to pass managed_portfolio_value_signed; fallback to managed_portfolio_value #}
-    {% set mp_total = managed_portfolio_value_signed if managed_portfolio_value_signed is defined else (managed_portfolio_value or 0) %}
-    {% set ccy = currency_code|default('EUR') %}
-    {{ common_macros.metric_tile("Managed Portfolio",
-                                 currency_no_cents(mp_total, ccy),
-                                 "folder_shared", "secondary",
-                                 "super_admin.manage_clients") }}
-  </div>
-
-  <!-- 📋 Row: Compliance & Insights -->
-  <div class="row g-4 mt-2">
-    {{ common_macros.metric_tile("Upcoming AGMs", upcoming_agm_count or 0, "calendar_month", "success", "super_admin.upcoming_agms") }}
-    {{ compliance_macros.compliance_tile("Client Compliance Docs", client_compliance_docs or [], "file-contract", "primary", "super_admin.compliance_documents_index") }}
-    {{ compliance_macros.compliance_tile("Contractor Compliance Docs", contractor_compliance_docs or [], "file-shield", "secondary", "super_admin.contractor_compliance_documents") }}
-    {{ common_macros.metric_tile("Expiring Docs", expiring_docs_count or 0, "hourglass_empty", "warning", "super_admin.client_expiring_documents") }}
-    {{ common_macros.metric_tile("Missing Client Docs", clients_missing_docs or 0, "report_problem", "danger", "super_admin.compliance_documents_index") }}
-    {{ common_macros.metric_tile("Missing Contractor Docs", contractors_missing_docs or 0, "warning_amber", "danger", "super_admin.contractor_compliance_documents") }}
-    {{ common_macros.metric_tile("GAR Insights", gar_flagged_count or 0, "smart_toy", "info", "super_admin.gar_insights") }}
-  </div>
-
-  <!-- 🚧 Logix Modules Row -->
-  <div class="row g-4 mt-2">
-    <div class="col-md-4">
-      <div class="card h-100 text-center shadow-sm border">
-        <div class="card-body">
-          <i class="fas fa-tools fa-2x mb-2 text-warning"></i>
-          <h5 class="card-title">Works Logix</h5>
-          <p class="card-text">Manage Work Orders & Contractor Assignments</p>
-          {% if 'super_admin.work_orders' in current_app.view_functions %}
-            <a href="{{ url_for('super_admin.work_orders') }}" class="btn btn-outline-primary btn-sm">Open</a>
-          {% else %}
-            <a href="#" class="btn btn-outline-primary btn-sm disabled">Coming Soon</a>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="card h-100 text-center shadow-sm border">
-        <div class="card-body">
-          <i class="fas fa-coins fa-2x mb-2 text-success"></i>
-          <h5 class="card-title">Finance Logix</h5>
-          <p class="card-text">Service Charge Oversight & Payment Tracking</p>
-          <a href="#" class="btn btn-outline-secondary btn-sm disabled">Planned</a>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="card h-100 text-center shadow-sm border">
-        <div class="card-body">
-          <i class="fas fa-users-cog fa-2x mb-2 text-info"></i>
-          <h5 class="card-title">HR Logix</h5>
-          <p class="card-text">Manage Internal & Contractor Staff Records</p>
-          <a href="#" class="btn btn-outline-info btn-sm disabled">Pending</a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 🔍 Audit Log Preview -->
   {% if audit_logs %}
-  <div class="card mt-5 shadow-sm">
-    <div class="card-header pb-0">
-      <h6 class="mb-0">🕵️ Recent Audit Logs</h6>
-    </div>
-    <div class="card-body px-4 pt-3 pb-3">
-      <ul class="list-group list-group-flush">
+    <section class="dashboard-panel">
+      <div class="dashboard-section-heading">
+        <h6>Recent Audit Logs</h6>
+        <a href="{{ url_for('super_admin.audit_logs') }}">View Full Log</a>
+      </div>
+      <ul class="dashboard-audit-list">
         {% for log in audit_logs[:5] %}
-        <li class="list-group-item px-0 d-flex justify-content-between">
-          <span><strong>{{ log.user_name }}</strong> — {{ log.change_type }} on <em>{{ log.target_model }}</em></span>
-          <span class="text-muted text-xs">{{ log.timestamp.strftime('%d %b %Y %H:%M') }}</span>
-        </li>
+          <li>
+            <span><strong>{{ log.user_name }}</strong> - {{ log.change_type }} on <em>{{ log.target_model }}</em></span>
+            <time>{{ log.timestamp.strftime('%d %b %Y %H:%M') }}</time>
+          </li>
         {% endfor %}
       </ul>
-      <div class="text-end mt-2">
-        <a href="{{ url_for('super_admin.audit_logs') }}" class="btn btn-link text-sm">View Full Log →</a>
-      </div>
-    </div>
-  </div>
+    </section>
   {% endif %}
 
 </div>

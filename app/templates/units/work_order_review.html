@@ -1,0 +1,524 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Work Order WO-{{ work_order.id }} | {{ unit.unit_label }}
+{% endblock %}
+
+{% block page_content %}
+<div class="unit-workspace">
+  <div class="unit-command-bar">
+    <div class="unit-breadcrumb">
+      <a href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='works') }}">Works</a>
+      <span>/</span>
+      <span>{{ client.name if client else "Development" }}</span>
+      <span>/</span>
+      <strong>WO-{{ work_order.id }}</strong>
+    </div>
+    <div class="unit-actions">
+      <a href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='works') }}" class="unit-link-action">
+        <i class="material-icons">arrow_back</i> Back to Works
+      </a>
+    </div>
+  </div>
+
+  <section class="unit-review-panel" id="work-order-review">
+    <div class="unit-panel-heading">
+      <div>
+        <h5>Work Order Review</h5>
+        <span class="unit-module-note">GAR AI context point for lifecycle, repeated issues and resident experience.</span>
+      </div>
+      <span class="unit-status-pill {{ 'is-active' if work_order.status not in ['Completed', 'Closed', 'Resolved', 'Cancelled', 'Canceled'] else '' }}">
+        {{ work_order.status or "Open" }}
+      </span>
+    </div>
+
+    <div class="unit-detail-grid">
+      <div>
+        <span>Reference</span>
+        <strong>WO-{{ work_order.id }}</strong>
+      </div>
+      <div>
+        <span>Unit</span>
+        <strong>{{ unit.unit_label or unit.unit_number or "-" }}</strong>
+      </div>
+      <div>
+        <span>Title</span>
+        <strong>{{ work_order.title or "-" }}</strong>
+      </div>
+      <div>
+        <span>Type</span>
+        <strong>{{ work_order.request_type or work_order.business_type or "-" }}</strong>
+      </div>
+      <div>
+        <span>Created</span>
+        <strong>{{ work_order.created_at.strftime("%d %b %Y") if work_order.created_at else "-" }}</strong>
+      </div>
+      <div>
+        <span>Preferred Visit</span>
+        <strong>{{ work_order.preferred_visit_date.strftime("%d %b %Y") if work_order.preferred_visit_date else "-" }}</strong>
+      </div>
+      <div>
+        <span>Occupant</span>
+        <strong>{{ work_order.occupant_name or "-" }}</strong>
+      </div>
+      <div>
+        <span>Occupant Phone</span>
+        <strong>{{ work_order.occupant_phone or "-" }}</strong>
+      </div>
+      <div class="unit-detail-wide">
+        <span>Description</span>
+        <strong>{{ work_order.description or "-" }}</strong>
+      </div>
+      <div class="unit-detail-wide">
+        <span>GAR AI Summary</span>
+        <strong>{{ work_order.gar_explanation or work_order.parsed_summary or "No GAR AI work order summary is available yet." }}</strong>
+      </div>
+    </div>
+
+    {% set audit_summary = work_order_audit_pack.summary if work_order_audit_pack else {} %}
+    {% set audit_readiness = work_order_audit_pack.closure_readiness if work_order_audit_pack else {} %}
+    {% set audit_evidence = work_order_audit_pack.evidence_items if work_order_audit_pack else [] %}
+    {% set audit_sources = work_order_audit_pack.source_references if work_order_audit_pack else [] %}
+    {% set audit_access = work_order_audit_pack.access_context if work_order_audit_pack else {} %}
+    {% set review_cycle = work_order_audit_pack.review_cycle if work_order_audit_pack else {} %}
+    {% set completion_evidence = work_order_audit_pack.completion_evidence if work_order_audit_pack else {} %}
+    <section class="works-audit-pack">
+      <div class="works-audit-pack-head">
+        <div>
+          <h6>Evidence & Audit Pack</h6>
+          <span>Single review point for Works Logix, Members Logix, Contractor Logix and GAR AI.</span>
+        </div>
+        <span class="unit-status-pill {{ 'is-warning' if audit_readiness.risk_flags else 'is-active' }}">
+          {{ "Review flags" if audit_readiness.risk_flags else "Audit ready" }}
+        </span>
+      </div>
+      <div class="works-audit-grid">
+        <article>
+          <span>Source Request</span>
+          <strong>{{ audit_summary.source_request or "No" }}</strong>
+        </article>
+        <article>
+          <span>Completion</span>
+          <strong>{{ audit_summary.contractor_completion or "No" }}</strong>
+        </article>
+        <article>
+          <span>Feedback</span>
+          <strong>{{ audit_summary.member_feedback or "No" }}</strong>
+        </article>
+        <article>
+          <span>Evidence</span>
+          <strong>{{ audit_summary.evidence_items or 0 }}</strong>
+        </article>
+        <article>
+          <span>Returns</span>
+          <strong>{{ review_cycle.completion_returns or 0 }}</strong>
+        </article>
+        <article>
+          <span>Evidence Quality</span>
+          <strong>
+            {% if completion_evidence.submitted %}
+              {{ (completion_evidence.quality_status or "missing")|replace("_", " ")|title }}
+            {% else %}
+              Awaiting Completion
+            {% endif %}
+          </strong>
+        </article>
+        <article>
+          <span>Reopen Requests</span>
+          <strong>{{ audit_summary.pending_reopen_requests or 0 }} pending</strong>
+        </article>
+        <article>
+          <span>Lifecycle Events</span>
+          <strong>{{ audit_summary.lifecycle_events or 0 }}</strong>
+        </article>
+      </div>
+      {% if audit_access.cover_context_used %}
+        <div class="works-audit-context-strip">
+          <article>
+            <span>Access Context</span>
+            <strong>Assistant Manager Cover</strong>
+            <small>{{ audit_access.cover_event_count or 0 }} lifecycle action{{ '' if (audit_access.cover_event_count or 0) == 1 else 's' }} recorded under operational cover.</small>
+          </article>
+          <article>
+            <span>Audit Use</span>
+            <strong>GAR-readable cover trail</strong>
+            <small>Reviewers can distinguish cover routing from normal assigned PM/assistant handling.</small>
+          </article>
+        </div>
+      {% endif %}
+      {% if audit_evidence %}
+        <div class="works-audit-evidence-list">
+          {% for item in audit_evidence %}
+            <a href="{{ item.reference }}" target="_blank" rel="noopener">
+              <span>{{ item.source }}</span>
+              <strong>{{ item.label }}</strong>
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% if completion_evidence.submitted %}
+        <div class="works-audit-context-strip">
+          <article>
+            <span>Completion Evidence Type</span>
+            <strong>{{ (completion_evidence.evidence_reference_type or "none")|replace("_", " ")|title }}</strong>
+            <small>{{ completion_evidence.attachments_count or 0 }} attachment{{ '' if (completion_evidence.attachments_count or 0) == 1 else 's' }} recorded</small>
+          </article>
+          <article>
+            <span>GAR Evidence Review</span>
+            <strong>{{ (completion_evidence.quality_status or "missing")|replace("_", " ")|title }}</strong>
+            <small>{{ completion_evidence.gar_recommendation or "Review notes, evidence and resident feedback before closing." }}</small>
+          </article>
+        </div>
+      {% endif %}
+      {% if review_cycle.completion_returns %}
+        <div class="works-audit-context-strip">
+          <article>
+            <span>Review Cycle</span>
+            <strong>{{ review_cycle.completion_submissions or 0 }} submission{{ '' if (review_cycle.completion_submissions or 0) == 1 else 's' }}, {{ review_cycle.completion_returns or 0 }} return{{ '' if (review_cycle.completion_returns or 0) == 1 else 's' }}</strong>
+            <small>{{ review_cycle.latest_return_reason or "Returned completion requires contractor follow-up." }}</small>
+          </article>
+          <article>
+            <span>GAR Signal</span>
+            <strong>{{ "Management attention" if review_cycle.needs_management_attention else "Normal follow-up" }}</strong>
+            <small>Repeated returns can indicate evidence gaps, recurring defects or contractor performance issues.</small>
+          </article>
+        </div>
+      {% endif %}
+      {% if audit_readiness.risk_flags %}
+        <div class="works-audit-flags">
+          {% for flag in audit_readiness.risk_flags %}
+            <span>{{ flag }}</span>
+          {% endfor %}
+        </div>
+      {% endif %}
+      <details class="works-audit-sources">
+        <summary>Audit source records</summary>
+        <div>
+          {% for source in audit_sources %}
+            <span>{{ source.model }}{% if source.id %} #{{ source.id }}{% endif %}: {{ source.status }}</span>
+          {% else %}
+            <span>No audit source references available.</span>
+          {% endfor %}
+        </div>
+      </details>
+    </section>
+
+    {% set gar_actions = gar_work_order_context.recommended_actions if gar_work_order_context else [] %}
+    {% set gar_risk = gar_work_order_context.risk_context if gar_work_order_context else {} %}
+    {% set gar_sources = gar_work_order_context.source_references if gar_work_order_context else [] %}
+    {% set gar_ops = gar_work_order_context.operational_intelligence if gar_work_order_context else {} %}
+    {% set gar_owner = gar_ops.current_owner if gar_ops else {} %}
+    {% set gar_next_step = gar_ops.recommended_next_step if gar_ops else {} %}
+    {% set gar_member_impact = gar_ops.member_impact if gar_ops else {} %}
+    {% set gar_contractor_signal = gar_ops.contractor_signal if gar_ops else {} %}
+    {% set gar_audit_signal = gar_ops.audit_signal if gar_ops else {} %}
+    {% set gar_history = gar_work_order_context.relevant_history if gar_work_order_context else {} %}
+    <section class="works-gar-snapshot">
+      <div class="works-gar-snapshot-head">
+        <div>
+          <h6>GAR AI Review Snapshot</h6>
+          <span>Operational context read from source records</span>
+        </div>
+        <span class="unit-status-pill {{ 'is-warning' if gar_actions else 'is-active' }}">
+          {{ gar_actions|length }} action{{ '' if gar_actions|length == 1 else 's' }}
+        </span>
+      </div>
+      <div class="works-gar-command-strip">
+        <article>
+          <span>Attention</span>
+          <strong>{{ (gar_ops.attention_level or "clear")|replace("_", " ")|title }}</strong>
+        </article>
+        <article>
+          <span>Current Owner</span>
+          <strong>{{ gar_owner.team or "Works Logix" }}</strong>
+          <small>{{ gar_owner.reason or "GAR is monitoring the workflow state." }}</small>
+        </article>
+        <article class="works-gar-command-main">
+          <span>Recommended Next Step</span>
+          <strong>{{ gar_next_step.action or "Monitor progress" }}</strong>
+          <small>{{ gar_next_step.detail or "Keep the work order visible until the next operational update." }}</small>
+        </article>
+      </div>
+      <div class="works-gar-history">
+        {% set gar_history_route = gar_history.routing_recommendation if gar_history else {} %}
+        <div class="works-gar-history-head">
+          <div>
+            <span>Relevant History</span>
+            <strong>{{ gar_history.admin_summary or "No related work order history is currently linked by GAR." }}</strong>
+          </div>
+          <small>{{ gar_history.summary.related_count or 0 }} related</small>
+        </div>
+        <article class="works-gar-history-route">
+          <span>Routing Intelligence</span>
+          <strong>{{ gar_history_route.action or "Proceed with normal triage" }}</strong>
+          <small>{{ gar_history_route.detail or "No related previous work has been identified by GAR." }}</small>
+        </article>
+        {% if gar_history.records %}
+          <div class="works-gar-history-list">
+            {% for record in gar_history.records[:3] %}
+              <article>
+                <span>{{ record.reference }}{% if record.created_at %} · {{ record.created_at[:10] }}{% endif %}</span>
+                <strong>{{ record.title or record.category or "Previous work order" }}</strong>
+                <small>{{ record.outcome or "Previous outcome not recorded" }}</small>
+                <div>
+                  {% for reason in record.match_reasons %}
+                    <em>{{ reason }}</em>
+                  {% endfor %}
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="works-gar-clear">GAR will show previous related work here once the unit, block or works category has history.</p>
+        {% endif %}
+      </div>
+      <div class="works-gar-grid">
+        <div>
+          <span>Lifecycle Events</span>
+          <strong>{{ gar_audit_signal.lifecycle_event_count if gar_audit_signal else (gar_work_order_context.lifecycle_context|length if gar_work_order_context else 0) }}</strong>
+        </div>
+        <div>
+          <span>Pending Reopens</span>
+          <strong>{{ gar_risk.pending_reopen_requests or 0 }}</strong>
+        </div>
+        <div>
+          <span>Completion Review</span>
+          <strong>{{ "Required" if gar_risk.completion_waiting_for_review else "Not waiting" }}</strong>
+        </div>
+        <div>
+          <span>Contractor Follow-up</span>
+          <strong>{{ "Required" if gar_risk.returned_to_contractor else "Clear" }}</strong>
+        </div>
+      </div>
+      <div class="works-gar-insight-grid">
+        <article>
+          <span>Member / Resident Impact</span>
+          <strong>{{ gar_member_impact.urgency or "Standard" }}</strong>
+          <small>
+            {% if gar_member_impact.feedback_rating %}
+              Feedback: {{ gar_member_impact.feedback_rating }}/5
+            {% elif gar_member_impact.media_available %}
+              Media or evidence available
+            {% else %}
+              No resident impact signal beyond the request record
+            {% endif %}
+          </small>
+        </article>
+        <article>
+          <span>Contractor Signal</span>
+          <strong>{{ gar_contractor_signal.contractor_name or "Not assigned" }}</strong>
+          <small>
+            {% if gar_contractor_signal.completion_submitted %}
+              Completion evidence: {{ gar_contractor_signal.completion_evidence_count or 0 }}
+            {% elif gar_contractor_signal.returned_for_follow_up %}
+              Returned for follow-up
+            {% else %}
+              {{ gar_contractor_signal.accepted_by or "Awaiting contractor workflow" }}
+            {% endif %}
+          </small>
+        </article>
+        <article>
+          <span>Audit Signal</span>
+          <strong>{{ gar_audit_signal.latest_event or "No event yet" }}</strong>
+          <small>
+            {% if gar_audit_signal.source_modules %}
+              {{ gar_audit_signal.source_modules|join(", ") }}
+            {% else %}
+              Source modules will appear as the workflow progresses
+            {% endif %}
+          </small>
+        </article>
+      </div>
+      {% if gar_ops.blockers %}
+        <div class="works-gar-blockers">
+          <span>GAR Blockers</span>
+          {% for blocker in gar_ops.blockers %}
+            <article>
+              <strong>{{ blocker.source }}</strong>
+              <small>{{ blocker.message }}</small>
+            </article>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% if gar_actions %}
+        <div class="works-gar-actions">
+          {% for action in gar_actions %}
+            <article>
+              <span>{{ action.priority|upper }}</span>
+              <strong>{{ action.message }}</strong>
+              <small>{{ action.source }}</small>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="works-gar-clear">No GAR workflow actions are currently flagged for this work order.</p>
+      {% endif %}
+      <details class="works-gar-sources">
+        <summary>Source records GAR is reading</summary>
+        <div>
+          {% for source in gar_sources %}
+            <span>{{ source.model }}{% if source.id %} #{{ source.id }}{% endif %}</span>
+          {% else %}
+            <span>No source references available.</span>
+          {% endfor %}
+        </div>
+      </details>
+    </section>
+
+    {% set timeline_events = workflow_timeline %}
+    {% set timeline_title = "Workflow Lifecycle" %}
+    {% include "works/_lifecycle_timeline.html" %}
+
+    {% if work_order.completion %}
+      <h6 class="unit-section-title">Contractor Completion</h6>
+      <div class="unit-reopen-review-list">
+        <div class="unit-detail-grid">
+          <div>
+            <span>Completed By</span>
+            <strong>{{ work_order.completion.completed_by.full_name if work_order.completion.completed_by else "-" }}</strong>
+          </div>
+          <div>
+            <span>Submitted</span>
+            <strong>{{ work_order.completion.completed_at.strftime("%d %b %Y") if work_order.completion.completed_at else "-" }}</strong>
+          </div>
+          <div>
+            <span>Media / Attachments</span>
+            <strong>{{ "Yes" if work_order.completion.media_uploaded else "No" }} / {{ work_order.completion.attachments_count or 0 }}</strong>
+          </div>
+          <div>
+            <span>Evidence Reference</span>
+            <strong>
+              {% if work_order.completion.external_reference %}
+                {% if work_order.completion.external_reference.startswith("http") %}
+                  <a href="{{ work_order.completion.external_reference }}" target="_blank" rel="noopener">Open Evidence</a>
+                {% else %}
+                  {{ work_order.completion.external_reference }}
+                {% endif %}
+              {% else %}
+                -
+              {% endif %}
+            </strong>
+          </div>
+          <div>
+            <span>Confirmed By</span>
+            <strong>{{ work_order.completion.confirmed_by_admin.full_name if work_order.completion.confirmed_by_admin else "-" }}</strong>
+          </div>
+          <div class="unit-detail-wide">
+            <span>Completion Notes</span>
+            <strong>{{ work_order.completion.completion_notes or "-" }}</strong>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if work_order.feedback %}
+      <h6 class="unit-section-title" id="member-feedback">Member / Resident Feedback</h6>
+      <div class="unit-reopen-review-list">
+        <div class="unit-detail-grid">
+          <div>
+            <span>Rating</span>
+            <strong>{{ "%.1f"|format(work_order.feedback.overall_rating) }} / 5</strong>
+          </div>
+          <div>
+            <span>Submitted By</span>
+            <strong>{{ work_order.feedback.given_by.full_name if work_order.feedback.given_by else "-" }}</strong>
+          </div>
+          <div>
+            <span>Submitted</span>
+            <strong>{{ work_order.feedback.created_at.strftime("%d %b %Y") if work_order.feedback.created_at else "-" }}</strong>
+          </div>
+          <div>
+            <span>Source</span>
+            <strong>{{ work_order.feedback.feedback_source or "Members Logix" }}</strong>
+          </div>
+          <div>
+            <span>Evidence</span>
+            <strong>
+              {% if work_order.feedback.evidence_reference %}
+                <a href="{{ work_order.feedback.evidence_reference }}" target="_blank" rel="noopener">View evidence</a>
+              {% else %}
+                -
+              {% endif %}
+            </strong>
+          </div>
+          <div class="unit-detail-wide">
+            <span>Comments</span>
+            <strong>{{ work_order.feedback.comments or "-" }}</strong>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if (work_order.status or "")|lower == "completion submitted" %}
+      <div class="unit-reopen-panel" id="completion-review">
+        <div>
+          <h6>Review Contractor Completion</h6>
+          <p>Approve only when the completion evidence is acceptable. Return the work if further action is needed.</p>
+        </div>
+        <div class="unit-reopen-actions">
+          <form method="post" action="{{ url_for('unit_bp.work_order_completion_review', unit_id=unit.id, work_order_id=work_order.id, decision='approve') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="review_notes" value="Approved from Works Logix review.">
+            <button type="submit" class="btn btn-primary btn-sm">Approve & Close</button>
+          </form>
+          <form method="post" action="{{ url_for('unit_bp.work_order_completion_review', unit_id=unit.id, work_order_id=work_order.id, decision='return') }}" class="d-flex gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input class="form-control form-control-sm" name="review_notes" placeholder="Return reason">
+            <button type="submit" class="btn btn-outline-danger btn-sm">Return</button>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+
+    {% set closed_statuses = ["completed", "complete", "closed", "resolved", "cancelled", "canceled", "rejected"] %}
+    {% if (work_order.status or "")|lower in closed_statuses %}
+      <div class="unit-reopen-panel">
+        <div>
+          <h6>Reopen Work Order</h6>
+          <p>Use this when the issue was closed but needs to be reviewed again by Works Logix.</p>
+        </div>
+        <form method="post" action="{{ url_for('unit_bp.work_order_reopen', unit_id=unit.id, work_order_id=work_order.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-primary btn-sm">Reopen Work Order</button>
+        </form>
+      </div>
+    {% endif %}
+
+    {% if work_order.reopen_requests %}
+      <h6 class="unit-section-title" id="reopen-review">Reopen Request History</h6>
+      <div class="table-responsive">
+        <table class="table unit-table align-items-center mb-0">
+          <thead>
+            <tr>
+              <th>Requested</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Evidence</th>
+              <th>Reviewed</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for reopen_request in work_order.reopen_requests %}
+              <tr>
+                <td>{{ reopen_request.created_at.strftime("%d %b %Y") if reopen_request.created_at else "-" }}</td>
+                <td>{{ reopen_request.reason or "-" }}</td>
+                <td>{{ reopen_request.status }}</td>
+                <td>
+                  {% if reopen_request.evidence_reference %}
+                    <a href="{{ reopen_request.evidence_reference }}" target="_blank" rel="noopener">View</a>
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+                <td>{{ reopen_request.reviewed_at.strftime("%d %b %Y") if reopen_request.reviewed_at else "-" }}</td>
+                <td>{{ reopen_request.review_notes or reopen_request.additional_details or "-" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

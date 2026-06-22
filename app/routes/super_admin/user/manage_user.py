@@ -53,7 +53,10 @@ def manage_users():
         base_query = base_query.filter(
             (User.email.ilike(f'%{search}%')) |
             (User.full_name.ilike(f'%{search}%')) |
-            (User.username.ilike(f'%{search}%'))
+            (User.username.ilike(f'%{search}%')) |
+            (User.mobile_phone.ilike(f'%{search}%')) |
+            (User.direct_phone.ilike(f'%{search}%')) |
+            (User.phone_extension.ilike(f'%{search}%'))
         )
 
     if role_filter:
@@ -131,7 +134,10 @@ def export_users():
         q = q.filter(
             (User.email.ilike(f'%{search}%')) |
             (User.full_name.ilike(f'%{search}%')) |
-            (User.username.ilike(f'%{search}%'))
+            (User.username.ilike(f'%{search}%')) |
+            (User.mobile_phone.ilike(f'%{search}%')) |
+            (User.direct_phone.ilike(f'%{search}%')) |
+            (User.phone_extension.ilike(f'%{search}%'))
         )
 
     if role_filter:
@@ -152,17 +158,20 @@ def export_users():
     # Build CSV
     buf = StringIO()
     writer = csv.writer(buf)
-    writer.writerow(["id", "email", "full_name", "username", "role", "company", "status"])
+    writer.writerow(["id", "full_name", "role", "email", "mobile", "direct_line", "extension", "username", "company", "status"])
 
     for u in users:
         role_name = getattr(getattr(u, "role", None), "name", "")      # robust with outerjoin
         company_name = getattr(getattr(u, "company", None), "name", "")
         writer.writerow([
             u.id,
-            u.email,
             u.full_name,
-            u.username,
             role_name,
+            u.email,
+            u.mobile_phone or "",
+            u.direct_phone or "",
+            u.phone_extension or "",
+            u.username,
             company_name,
             "active" if getattr(u, "is_active", True) else "inactive",
         ])

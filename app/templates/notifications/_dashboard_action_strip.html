@@ -1,0 +1,22 @@
+{% set dashboard_notification_items = unread_notification_action_views|default([]) %}
+{% if dashboard_notification_items %}
+  <section class="dashboard-notification-strip {{ dashboard_notification_class|default('') }}">
+    <div class="dashboard-notification-heading">
+      <div>
+        <h6>{{ dashboard_notification_title|default('Notification Action Queue') }}</h6>
+        <span>{{ unread_notification_action_count|default(0) }} action item{{ '' if unread_notification_action_count|default(0) == 1 else 's' }} in your unread queue</span>
+      </div>
+      <a href="{{ url_for('notifications.index', status='unread', action='action') }}">View all</a>
+    </div>
+    <div class="dashboard-notification-list">
+      {% for item in dashboard_notification_items[:3] %}
+        {% set notification = item.notification %}
+        <a class="dashboard-notification-card dashboard-notification-card--{{ item.tone }}" href="{{ url_for('notifications.open', notification_id=notification.id) }}">
+          <span>{{ item.module_label }} | {{ item.workflow_stage }}</span>
+          <strong>{{ notification.message }}</strong>
+          <small>{{ item.source_label or item.workflow_action }}</small>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+{% endif %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Finance Clients{% endblock %}
+{% block page_content %}
+<div class="container-fluid px-4">
+  <section class="card border-0 shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h1 class="h4 mb-1">Finance Client Manager</h1>
+          <p class="text-muted mb-0">Read-only finance view of active client records.</p>
+        </div>
+        <a class="btn btn-outline-secondary" href="{{ url_for('finance.dashboard') }}">Dashboard</a>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Client</th>
+              <th>Property</th>
+              <th>Location</th>
+              <th>Units</th>
+              <th>Contract Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for client in clients %}
+              <tr>
+                <td class="fw-bold">{{ client.name }}</td>
+                <td>{{ client.property_name or '-' }}</td>
+                <td>{{ client.city or client.region or '-' }}</td>
+                <td>{{ client.number_of_units or '-' }}</td>
+                <td>EUR {{ "{:,.0f}".format(client.contract_value or 0) }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5" class="text-center text-muted py-4">No clients available.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

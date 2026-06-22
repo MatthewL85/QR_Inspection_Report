@@ -64,10 +64,10 @@ def edit_client_compliance_document(doc_id):
 
         db.session.commit()
         flash('Client compliance document updated successfully.', 'success')
-        return redirect(url_for('super_admin.compliance_documents'))
+        return redirect(url_for('super_admin.compliance_documents_index'))
 
     return render_template(
-        'super_admin/edit_client_compliance_document.html',
+        'super_admin/compliance_documents/client/edit_client_compliance.html',
         document=document,
         clients=clients
     )
