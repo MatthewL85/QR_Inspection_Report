@@ -4084,7 +4084,7 @@ body.sidebar-collapsed .main-content {
   overflow: hidden;
 }
 
-.works-review-detail-grid > div {
+.unit-detail-grid.works-review-detail-grid > div {
   padding: 0.65rem 1rem;
 }
 
