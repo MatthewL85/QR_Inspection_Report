@@ -1,6 +1,6 @@
 import os
 
-from flask import Blueprint, render_template, session, request, current_app, flash, redirect, url_for, jsonify
+from flask import Blueprint, render_template, session, request, current_app, flash, redirect, url_for, jsonify, abort, send_file
 from werkzeug.utils import secure_filename
 
 from app.extensions import db
@@ -23,6 +23,11 @@ from app.services.works.workflow_service import (
     get_contractor_work_orders,
 )
 from app.services.works.audit_pack_service import build_completion_evidence_pack
+from app.models.works.work_order import WorkOrder
+from app.services.works.work_order_docket_service import (
+    build_contractor_work_order_docket,
+    render_contractor_work_order_pdf,
+)
 
 contractor_bp = Blueprint('contractor', __name__)
 
@@ -108,6 +113,44 @@ def work_orders():
     return render_template('contractor/work_orders.html', filters=filters, **data)
 
 
+def _contractor_work_order_or_404(work_order_id: int) -> tuple[User, WorkOrder]:
+    user = _current_contractor_user()
+    if not user:
+        abort(403)
+
+    work_order = WorkOrder.query.filter(
+        WorkOrder.id == work_order_id,
+        WorkOrder.contractor_id == user.contractor_id,
+    ).first_or_404()
+    return user, work_order
+
+
+@contractor_bp.route('/work-orders/<int:work_order_id>', endpoint='work_order_detail')
+@login_required(role='Contractor')
+def work_order_detail(work_order_id):
+    _user, work_order = _contractor_work_order_or_404(work_order_id)
+    docket = build_contractor_work_order_docket(work_order, audience="contractor")
+    return render_template('contractor/work_order_detail.html', docket=docket)
+
+
+@contractor_bp.route('/work-orders/<int:work_order_id>/pdf', endpoint='work_order_pdf')
+@login_required(role='Contractor')
+def work_order_pdf(work_order_id):
+    _user, work_order = _contractor_work_order_or_404(work_order_id)
+    docket = build_contractor_work_order_docket(work_order, audience="contractor")
+    if not docket["pdf_ready"]:
+        flash('The work order PDF becomes available after you accept the job.', 'warning')
+        return redirect(url_for('contractor.work_order_detail', work_order_id=work_order.id))
+
+    pdf_stream = render_contractor_work_order_pdf(work_order)
+    return send_file(
+        pdf_stream,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=f"WO-{work_order.id}-contractor-pack.pdf",
+    )
+
+
 @contractor_bp.route('/work-orders/feed.json', endpoint='work_orders_feed')
 @login_required(role='Contractor')
 def work_orders_feed():
@@ -160,7 +203,7 @@ def update_work_order(work_order_id, action):
         flash('Your contractor profile is not linked yet.', 'warning')
         return redirect(url_for('contractor.contractor_dashboard'))
 
-    if action not in {'accept', 'start', 'complete'}:
+    if action not in {'accept', 'reject', 'start', 'complete'}:
         flash('That work order action is not available.', 'danger')
         return redirect(url_for('contractor.work_orders', **_contractor_filter_args()))
 
@@ -178,10 +221,13 @@ def update_work_order(work_order_id, action):
 
     messages = {
         'accept': 'Work order accepted.',
+        'reject': 'Work order returned to Works Logix.',
         'start': 'Work order marked as in progress.',
         'complete': 'Completion submitted to Works Logix.',
     }
     flash(messages[action], 'success')
+    if request.form.get('return_to') == 'detail':
+        return redirect(url_for('contractor.work_order_detail', work_order_id=work_order.id))
     return redirect(url_for('contractor.work_orders', **_contractor_filter_args()))
 
 @contractor_bp.route('/settings')

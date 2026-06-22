@@ -144,6 +144,24 @@ When Assistant Manager or Master Assistant cover is used, conversion and routing
 
 The work order lifecycle timeline should show this access context as a small audit pill where it applies. This lets reviewers see how an item moved through the platform without reading raw database metadata.
 
+## Contractor Work Order Pack
+
+Contractor Logix should let the assigned contractor open a dedicated work order pack before accepting or returning the job.
+
+The contractor pack shows:
+
+- work order title, type, status and description
+- development, block/core, unit and address
+- access notes where available
+- PM, assistant, occupier/reporter and contractor contact details
+- linked request evidence such as member images, videos or document references
+- contractor-safe GAR relevant history
+- lifecycle history for the assigned work order
+
+Contractors can accept the work order from this pack, or return/reject it to Works Logix with a reason. Rejections create a lifecycle event and notify the relevant management users so the job can be reviewed or rerouted.
+
+The downloadable work order PDF is controlled. It becomes available only after the contractor accepts the work order or the work order is further along the contractor lifecycle. This prevents a contractor from downloading a formal docket before taking responsibility for the job.
+
 ## Evidence and Audit Pack
 
 The work order review screen includes an Evidence and Audit Pack.

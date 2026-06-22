@@ -1382,6 +1382,26 @@ def contractor_update_work_order(
             note="Contractor accepted the assigned work order.",
             status_snapshot=work_order.status,
         )
+    elif action == "reject":
+        work_order.status = "Rejected"
+        record_work_order_lifecycle_event(
+            work_order=work_order,
+            event_type="contractor_rejected",
+            title="Contractor rejected work order",
+            source_module="Contractor Logix",
+            actor_user_id=user_id,
+            actor_label="Contractor",
+            note=completion_notes or "Contractor rejected the assigned work order.",
+            status_snapshot=work_order.status,
+        )
+        _notify_work_managers(
+            work_order=work_order,
+            notification_type="works_contractor_rejected",
+            message=f"Contractor rejected WO-{work_order.id}.",
+            suggested_action="Review the contractor reason and reroute the work order if required.",
+            priority_level="High",
+            extra_data={"contractor_rejection_reason": completion_notes or None},
+        )
     elif action == "start":
         work_order.status = "In Progress"
         work_order.accepted_contractor_id = work_order.accepted_contractor_id or user_id

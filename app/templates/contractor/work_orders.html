@@ -22,6 +22,14 @@
   {% endif %}
 {%- endmacro %}
 
+{% macro work_order_link(item) -%}
+  <strong>
+    <a href="{{ url_for('contractor.work_order_detail', work_order_id=item.id) }}">
+      {{ item.title or 'Work Order #' ~ item.id }}
+    </a>
+  </strong>
+{%- endmacro %}
+
 {% macro gar_history_panel(history) -%}
   {% if history and history.summary.related_count %}
     <details class="works-lifecycle-toggle works-gar-history-toggle">
@@ -184,7 +192,7 @@
         <tbody>
           {% for item in returned_work_orders %}
             <tr id="returned-work-order-{{ item.id }}">
-              <td><strong>{{ item.title or 'Work Order #' ~ item.id }}</strong><span>{{ item.description or '-' }}</span></td>
+              <td>{{ work_order_link(item) }}<span>{{ item.description or '-' }}</span></td>
               <td>{{ item.client.name if item.client else '-' }}</td>
               <td>{{ unit_label(item.unit) }}</td>
               <td>{{ status_pill(item.status) }}</td>
@@ -257,7 +265,7 @@
         <tbody>
           {% for item in submitted_work_orders %}
             <tr id="work-order-{{ item.id }}">
-              <td><strong>{{ item.title or 'Work Order #' ~ item.id }}</strong></td>
+              <td>{{ work_order_link(item) }}</td>
               <td>{{ item.client.name if item.client else '-' }}</td>
               <td>{{ unit_label(item.unit) }}</td>
               <td>{{ status_pill(item.status) }}</td>
@@ -307,12 +315,13 @@
         <tbody>
           {% for item in assigned_work_orders %}
             <tr id="work-order-{{ item.id }}">
-              <td><strong>{{ item.title or 'Work Order #' ~ item.id }}</strong><span>{{ item.description or '-' }}</span></td>
+              <td>{{ work_order_link(item) }}<span>{{ item.description or '-' }}</span></td>
               <td>{{ item.client.name if item.client else '-' }}</td>
               <td>{{ unit_label(item.unit) }}</td>
               <td>{{ item.business_type or item.request_type or '-' }}</td>
               <td>{{ status_pill(item.status) }}</td>
               <td>
+                <a class="user-manager-action-link" href="{{ url_for('contractor.work_order_detail', work_order_id=item.id) }}">View pack</a>
                 <form method="post"
                       action="{{ url_for('contractor.update_work_order', work_order_id=item.id, action='accept') }}"
                       data-app-action="contractor-accept-work-order"
@@ -367,7 +376,7 @@
         <tbody>
           {% for item in active_work_orders %}
             <tr id="work-order-{{ item.id }}">
-              <td><strong>{{ item.title or 'Work Order #' ~ item.id }}</strong></td>
+              <td>{{ work_order_link(item) }}</td>
               <td>{{ item.client.name if item.client else '-' }}</td>
               <td>{{ unit_label(item.unit) }}</td>
               <td>{{ status_pill(item.status) }}</td>
@@ -451,7 +460,7 @@
         <tbody>
           {% for item in closed_work_orders %}
             <tr id="work-order-{{ item.id }}">
-              <td><strong>{{ item.title or 'Work Order #' ~ item.id }}</strong></td>
+              <td>{{ work_order_link(item) }}</td>
               <td>{{ item.client.name if item.client else '-' }}</td>
               <td>{{ unit_label(item.unit) }}</td>
               <td>{{ status_pill(item.status) }}</td>
