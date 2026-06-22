@@ -1209,6 +1209,17 @@ def convert_member_request_to_work_order(
 
     unit = member_request.unit
     member = member_request.member
+    reporter = member_request.requested_by
+    occupant_name = (
+        getattr(reporter, "full_name", None)
+        or (member.full_name if member else None)
+    )
+    occupant_phone = (
+        getattr(reporter, "mobile_phone", None)
+        or getattr(reporter, "direct_phone", None)
+        or (getattr(member, "phone", None) if member else None)
+        or (getattr(member, "alternate_phone", None) if member else None)
+    )
 
     work_order = WorkOrder(
         title=member_request.title,
@@ -1222,9 +1233,9 @@ def convert_member_request_to_work_order(
         company_id=company_id,
         unit_id=unit.id,
         maintenance_request_id=member_request.id,
-        occupant_name=member.full_name if member else None,
-        occupant_phone=getattr(member, "phone", None) if member else None,
-        occupant_apartment=unit.unit_label or unit.unit_number,
+        occupant_name=occupant_name,
+        occupant_phone=occupant_phone,
+        occupant_apartment=unit.unit_number or unit.unit_label,
         privacy_scope="Admin,PM,Contractor",
         attachments_count=member_request.attachments_count or 0,
         parsed_summary=member_request.parsed_summary or member_request.gar_summary,

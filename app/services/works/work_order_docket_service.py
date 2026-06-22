@@ -82,6 +82,8 @@ def build_contractor_work_order_docket(work_order: WorkOrder, *, audience: str =
     unit = work_order.unit
     contractor = work_order.contractor_company
     maintenance_request = work_order.maintenance_request
+    request_reporter = getattr(maintenance_request, "requested_by", None) if maintenance_request else None
+    request_member = getattr(maintenance_request, "member", None) if maintenance_request else None
     creator = work_order.created_by
     accepted_by = work_order.accepted_contractor
     pm = getattr(client, "assigned_pm", None) if client else None
@@ -122,9 +124,15 @@ def build_contractor_work_order_docket(work_order: WorkOrder, *, audience: str =
         ),
         _contact_card(
             "Reported By / Occupier",
-            work_order.occupant_name or getattr(getattr(maintenance_request, "requested_by", None), "full_name", ""),
-            work_order.occupant_phone,
-            getattr(getattr(maintenance_request, "requested_by", None), "email", ""),
+            work_order.occupant_name
+            or getattr(request_reporter, "full_name", "")
+            or getattr(request_member, "full_name", ""),
+            work_order.occupant_phone
+            or getattr(request_reporter, "mobile_phone", "")
+            or getattr(request_reporter, "direct_phone", "")
+            or getattr(request_member, "phone", "")
+            or getattr(request_member, "alternate_phone", ""),
+            getattr(request_reporter, "email", "") or getattr(request_member, "email", ""),
             work_order.occupant_apartment,
         ),
         _contact_card(
