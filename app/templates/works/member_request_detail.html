@@ -1,0 +1,152 @@
+{% extends layout_template|default('base.html') %}
+
+{% block title %}Member Request Review | Works Logix{% endblock %}
+
+{% macro status_pill(value) -%}
+  {% set key = (value or 'Pending')|lower %}
+  {% if key in ['urgent', 'emergency'] %}
+    <span class="contract-alert-pill contract-alert-warning">{{ value }}</span>
+  {% elif key in ['rejected'] %}
+    <span class="contract-alert-pill contract-alert-danger">{{ value }}</span>
+  {% elif key in ['more info requested'] %}
+    <span class="contract-alert-pill contract-alert-info">{{ value }}</span>
+  {% else %}
+    <span class="contract-alert-pill contract-alert-muted">{{ value or 'Pending' }}</span>
+  {% endif %}
+{%- endmacro %}
+
+{% block page_content %}
+{% set unit = member_request.unit %}
+{% set client = unit.client if unit else none %}
+{% set member = member_request.member %}
+{% set requested_by = member_request.requested_by %}
+<div class="contract-manager app-ready-surface app-ready-surface--works"
+     data-app-source-backed="true"
+     data-app-mobile-ready="true">
+  <section class="contract-manager-hero">
+    <div>
+      <h1>Member Request Review</h1>
+      <p>Review the issue before deciding whether it should become a Works Logix work order.</p>
+    </div>
+    <a class="contract-manager-link" href="{{ url_for(dashboard_endpoint, **filters) }}">Back to {{ dashboard_label }}</a>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>{{ member_request.title }}</h2>
+        <p>{{ client.name if client else 'Unlinked development' }}{% if unit %} - {{ unit.block_name ~ ' / ' if unit.block_name }}{{ unit.unit_number or unit.unit_label }}{% endif %}</p>
+      </div>
+      {{ status_pill(member_request.status or 'Pending') }}
+    </div>
+
+    <div class="works-command-grid">
+      <article class="works-kpi-card"><span>Category</span><strong>{{ member_request.category or 'General' }}</strong></article>
+      <article class="works-kpi-card"><span>Urgency</span><strong>{{ member_request.urgency_level or 'Normal' }}</strong></article>
+      <article class="works-kpi-card"><span>Reported</span><strong>{{ member_request.created_at.strftime('%d %b %Y') if member_request.created_at else '-' }}</strong></article>
+      <article class="works-kpi-card"><span>Source</span><strong>{{ member_request.source_system or member_request.request_channel or 'Members Logix' }}</strong></article>
+    </div>
+
+    <div class="unit-detail-grid mt-3">
+      <div>
+        <span class="unit-detail-label">Issue Details</span>
+        <strong>{{ member_request.description or '-' }}</strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Reporter</span>
+        <strong>
+          {{ requested_by.full_name if requested_by else ((member.first_name ~ ' ' ~ member.last_name)|trim if member else 'Member / Resident') }}
+          {% if requested_by and requested_by.email %}<br>{{ requested_by.email }}{% endif %}
+        </strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Development</span>
+        <strong>{{ client.name if client else '-' }}</strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Unit</span>
+        <strong>
+          {% if unit %}
+            {{ unit.block_name ~ ' / ' if unit.block_name }}{{ unit.unit_number or unit.unit_label }}
+            {% if unit.core_name %}<br>{{ unit.core_name }}{% endif %}
+          {% else %}
+            -
+          {% endif %}
+        </strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Media / Evidence</span>
+        <strong>
+          {% if member_request.attachment_url %}
+            <a href="{{ member_request.attachment_url }}" target="_blank" rel="noopener">Open attached evidence</a>
+          {% else %}
+            No media attached
+          {% endif %}
+        </strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Triage Notes</span>
+        <strong>{{ member_request.internal_notes or '-' }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Triage Decision</h2>
+        <p>Only convert requests that are appropriate for the OMC or management company to progress.</p>
+      </div>
+    </div>
+
+    <div class="works-attention-grid">
+      <article class="works-attention-card works-attention-primary">
+        <span>Valid Works Issue</span>
+        <strong>Convert</strong>
+        <small>Create the Works Logix work order and keep the member request linked as source evidence.</small>
+        {% if unit %}
+          <form method="post" action="{{ url_for(convert_endpoint, request_id=member_request.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="search" value="{{ filters.search or '' }}">
+            <input type="hidden" name="client_id" value="{{ filters.client_id or '' }}">
+            <input type="hidden" name="status" value="{{ filters.status or '' }}">
+            <button type="submit" class="btn btn-sm btn-primary mt-2">Convert to Work Order</button>
+          </form>
+        {% else %}
+          <span class="unit-module-note">A linked unit is required before conversion.</span>
+        {% endif %}
+      </article>
+
+      <article class="works-attention-card works-attention-info">
+        <span>Need More Detail</span>
+        <strong>Ask for Information</strong>
+        <small>Send a message to the member/resident and pause this request from the conversion queue.</small>
+        <form method="post" action="{{ url_for(triage_endpoint, request_id=member_request.id) }}" class="mt-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="request_info">
+          <input type="hidden" name="search" value="{{ filters.search or '' }}">
+          <input type="hidden" name="client_id" value="{{ filters.client_id or '' }}">
+          <input type="hidden" name="status" value="{{ filters.status or '' }}">
+          <textarea name="message" rows="3" required placeholder="What information, photos, access details or clarification is needed?"></textarea>
+          <button type="submit" class="btn btn-sm btn-outline-primary mt-2">Send Request</button>
+        </form>
+      </article>
+
+      <article class="works-attention-card works-attention-danger">
+        <span>Not Progressed</span>
+        <strong>Reject</strong>
+        <small>Use where the issue is outside OMC/management responsibility or cannot be progressed.</small>
+        <form method="post" action="{{ url_for(triage_endpoint, request_id=member_request.id) }}" class="mt-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="reject">
+          <input type="hidden" name="search" value="{{ filters.search or '' }}">
+          <input type="hidden" name="client_id" value="{{ filters.client_id or '' }}">
+          <input type="hidden" name="status" value="{{ filters.status or '' }}">
+          <textarea name="message" rows="3" required placeholder="Explain clearly why this request is not being converted."></textarea>
+          <button type="submit" class="btn btn-sm btn-outline-danger mt-2">Reject Request</button>
+        </form>
+      </article>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -162,6 +162,24 @@ Contractors can accept the work order from this pack, or return/reject it to Wor
 
 The downloadable work order PDF is controlled. It becomes available only after the contractor accepts the work order or the work order is further along the contractor lifecycle. This prevents a contractor from downloading a formal docket before taking responsibility for the job.
 
+## Member Request Triage
+
+Members Logix maintenance requests must be reviewed before they are converted into Works Logix work orders.
+
+PM, Assistant/APM, Admin and Super Admin users should open the request review screen from the Member Request Triage queue. The review screen shows the issue details, development, unit, reporter context, urgency and any linked photo, video, document or evidence reference.
+
+The triage decision has three controlled outcomes:
+
+- `Convert to Work Order`: use only when the issue is valid for the OMC or management company to progress.
+- `Ask for Information`: sends a message back to the member/resident and moves the request to `More Info Requested`.
+- `Reject`: sends a clear decision message back to the member/resident and moves the request to `Rejected`.
+
+Requests marked `More Info Requested` or `Rejected` should not remain in the live conversion queue. This prevents every member request from being treated as something that must become a work order.
+
+Members can attach request evidence either by uploading a supported file or by pasting a secure evidence link. The evidence reference stays on the Maintenance Request and is copied into the Work Order evidence context if the request is converted.
+
+When Works Logix asks for more information, Members Logix should show a response control on that request. The member/resident can add the requested clarification and attach another evidence file or secure link. Sending the response returns the request to `Pending` so it appears in the triage queue again.
+
 ## Evidence and Audit Pack
 
 The work order review screen includes an Evidence and Audit Pack.

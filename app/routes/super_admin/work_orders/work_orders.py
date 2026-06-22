@@ -8,6 +8,8 @@ from app.services.works.workflow_service import (
     assign_contractor_to_work_order,
     build_command_centre,
     convert_member_request_to_work_order,
+    get_member_request_for_triage,
+    update_member_request_triage,
     works_command_centre_payload,
 )
 
@@ -112,6 +114,62 @@ def convert_member_request(request_id):
         abort(404)
 
     flash("Member request converted to a Works Logix work order.", "success")
+    return redirect(url_for("super_admin.work_orders", **_works_filter_args()))
+
+
+@super_admin_bp.route(
+    "/work-orders/member-requests/<int:request_id>",
+    methods=["GET"],
+    endpoint="member_request_detail",
+)
+@super_admin_required
+@login_required
+def member_request_detail(request_id):
+    company_id = _company_id()
+    if not company_id:
+        abort(403)
+
+    member_request = get_member_request_for_triage(request_id=request_id, company_id=company_id)
+    if not member_request:
+        abort(404)
+
+    return render_template(
+        "works/member_request_detail.html",
+        layout_template="layouts/super_admin_base.html",
+        dashboard_endpoint="super_admin.work_orders",
+        dashboard_label="Works Logix",
+        convert_endpoint="super_admin.convert_member_request_to_work_order",
+        triage_endpoint="super_admin.update_member_request_triage",
+        member_request=member_request,
+        filters=_works_filter_args(),
+    )
+
+
+@super_admin_bp.route(
+    "/work-orders/member-requests/<int:request_id>/triage",
+    methods=["POST"],
+    endpoint="update_member_request_triage",
+)
+@super_admin_required
+@login_required
+def triage_member_request(request_id):
+    company_id = _company_id()
+    if not company_id:
+        abort(403)
+
+    updated = update_member_request_triage(
+        request_id=request_id,
+        company_id=company_id,
+        reviewed_by_id=current_user.id,
+        action=request.form.get("action", ""),
+        message=request.form.get("message", ""),
+        access_context="super_admin",
+    )
+    if not updated:
+        flash("That member request could not be updated.", "danger")
+        return redirect(url_for("super_admin.work_orders", **_works_filter_args()))
+
+    flash("Member request triage response sent.", "success")
     return redirect(url_for("super_admin.work_orders", **_works_filter_args()))
 
 

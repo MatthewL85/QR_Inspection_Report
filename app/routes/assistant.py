@@ -12,6 +12,8 @@ from app.services.works.workflow_service import (
     assign_contractor_to_work_order,
     build_command_centre,
     convert_member_request_to_work_order,
+    get_member_request_for_triage,
+    update_member_request_triage,
     works_command_centre_payload,
 )
 
@@ -267,6 +269,69 @@ def convert_member_request(request_id):
         return redirect(url_for("assistant.work_orders", **_works_filter_args()))
 
     flash("Member request converted to a Works Logix work order.", "success")
+    return redirect(url_for("assistant.work_orders", **_works_filter_args()))
+
+
+@assistant_bp.route(
+    "/work-orders/member-requests/<int:request_id>",
+    methods=["GET"],
+    endpoint="member_request_detail",
+)
+@login_required
+def member_request_detail(request_id):
+    company_id = getattr(current_user, "company_id", None)
+    if not company_id:
+        flash("Company context is missing. Please log in again.", "danger")
+        return redirect(url_for("auth.login"))
+
+    member_request = get_member_request_for_triage(
+        request_id=request_id,
+        company_id=company_id,
+        allowed_client_ids=_assigned_client_ids(),
+    )
+    if not member_request:
+        flash("That request is not available for your assigned developments.", "danger")
+        return redirect(url_for("assistant.work_orders", **_works_filter_args()))
+
+    return render_template(
+        "works/member_request_detail.html",
+        layout_template="base.html",
+        dashboard_endpoint="assistant.work_orders",
+        dashboard_label="Works Logix",
+        convert_endpoint="assistant.convert_member_request",
+        triage_endpoint="assistant.update_member_request_triage",
+        member_request=member_request,
+        filters=_works_filter_args(),
+        cover_access=_has_assistant_cover_access(),
+    )
+
+
+@assistant_bp.route(
+    "/work-orders/member-requests/<int:request_id>/triage",
+    methods=["POST"],
+    endpoint="update_member_request_triage",
+)
+@login_required
+def update_member_request_triage_route(request_id):
+    company_id = getattr(current_user, "company_id", None)
+    if not company_id:
+        flash("Company context is missing. Please log in again.", "danger")
+        return redirect(url_for("auth.login"))
+
+    updated = update_member_request_triage(
+        request_id=request_id,
+        company_id=company_id,
+        reviewed_by_id=getattr(current_user, "id", None),
+        action=request.form.get("action", ""),
+        message=request.form.get("message", ""),
+        allowed_client_ids=_assigned_client_ids(),
+        access_context="assistant_manager_cover" if _has_assistant_cover_access() else "assigned_assistant",
+    )
+    if not updated:
+        flash("That member request could not be updated.", "danger")
+        return redirect(url_for("assistant.work_orders", **_works_filter_args()))
+
+    flash("Member request triage response sent.", "success")
     return redirect(url_for("assistant.work_orders", **_works_filter_args()))
 
 

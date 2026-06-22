@@ -1,7 +1,12 @@
 from __future__ import annotations
 
-from flask import Blueprint, flash, redirect, jsonify, render_template, request, url_for
+import os
+from datetime import datetime
+from uuid import uuid4
+
+from flask import Blueprint, current_app, flash, redirect, jsonify, render_template, request, url_for
 from flask_login import current_user, login_required
+from werkzeug.utils import secure_filename
 
 from app.extensions import db
 from app.models.maintenance.maintenance_request import MaintenanceRequest
@@ -21,6 +26,12 @@ from app.services.works.workflow_service import (
 
 
 members_bp = Blueprint("members", __name__, url_prefix="/members")
+
+MEMBER_REQUEST_UPLOAD_EXTENSIONS = {
+    "jpg", "jpeg", "png", "gif", "webp", "heic",
+    "mp4", "mov", "webm", "avi", "m4v",
+    "pdf", "doc", "docx",
+}
 
 
 def _current_member():
@@ -48,6 +59,25 @@ def _accessible_unit_ids(member):
 
 def _works_anchor(anchor: str) -> str:
     return url_for("members.works", _anchor=anchor)
+
+
+def _save_member_request_upload(file_storage, request_id: int) -> str | None:
+    if not file_storage or not file_storage.filename:
+        return None
+
+    filename = secure_filename(file_storage.filename)
+    if not filename or "." not in filename:
+        return None
+
+    extension = filename.rsplit(".", 1)[-1].lower()
+    if extension not in MEMBER_REQUEST_UPLOAD_EXTENSIONS:
+        return None
+
+    upload_dir = os.path.join(current_app.static_folder, "uploads", "member_requests", str(request_id))
+    os.makedirs(upload_dir, exist_ok=True)
+    stored_name = f"{uuid4().hex}.{extension}"
+    file_storage.save(os.path.join(upload_dir, stored_name))
+    return f"/static/uploads/member_requests/{request_id}/{stored_name}"
 
 
 @members_bp.route("/dashboard", endpoint="dashboard")
@@ -168,6 +198,7 @@ def create_maintenance_request():
         return redirect(_works_anchor("submit-request"))
 
     media_reference = (request.form.get("media_reference") or "").strip()
+    media_file = request.files.get("media_file")
     maintenance_request = MaintenanceRequest(
         member_id=member.id,
         unit_id=unit_id,
@@ -188,10 +219,77 @@ def create_maintenance_request():
         photo_links=[media_reference] if media_reference else None,
     )
     db.session.add(maintenance_request)
+    db.session.flush()
+
+    uploaded_reference = _save_member_request_upload(media_file, maintenance_request.id)
+    if media_file and media_file.filename and not uploaded_reference:
+        db.session.rollback()
+        flash("That file type is not supported for maintenance request evidence.", "warning")
+        return redirect(_works_anchor("submit-request"))
+    if uploaded_reference:
+        maintenance_request.attachment_url = uploaded_reference
+        maintenance_request.attachments_count = 1
+        maintenance_request.media_uploaded = True
+        maintenance_request.doc_links = [uploaded_reference]
+        maintenance_request.photo_links = [uploaded_reference]
+
     db.session.commit()
     notify_member_request_submitted(maintenance_request)
 
     flash("Maintenance request submitted. Works Logix can now triage it.", "success")
+    return redirect(_works_anchor("my-requests"))
+
+
+@members_bp.route("/works/requests/<int:request_id>/respond", methods=["POST"], endpoint="respond_to_maintenance_request")
+@login_required
+def respond_to_maintenance_request(request_id):
+    member = _current_member()
+    if not member:
+        flash("Your member profile is not linked yet.", "warning")
+        return redirect(_works_anchor("my-requests"))
+
+    maintenance_request = MaintenanceRequest.query.filter_by(
+        id=request_id,
+        member_id=member.id,
+    ).first()
+    if not maintenance_request or maintenance_request.work_order_id:
+        flash("That request is not available for update.", "warning")
+        return redirect(_works_anchor("my-requests"))
+
+    if (maintenance_request.status or "").strip().lower() != "more info requested":
+        flash("This request is not waiting for more information.", "info")
+        return redirect(_works_anchor("my-requests"))
+
+    response = (request.form.get("response") or "").strip()
+    media_reference = (request.form.get("media_reference") or "").strip()
+    media_file = request.files.get("media_file")
+    uploaded_reference = _save_member_request_upload(media_file, maintenance_request.id)
+    if media_file and media_file.filename and not uploaded_reference:
+        flash("That file type is not supported for maintenance request evidence.", "warning")
+        return redirect(_works_anchor("my-requests"))
+    if not response and not media_reference and not uploaded_reference:
+        flash("Please add the extra information or attach evidence before sending.", "warning")
+        return redirect(_works_anchor("my-requests"))
+
+    if response:
+        maintenance_request.description = (
+            f"{maintenance_request.description or ''}\n\n"
+            f"Member response {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}: {response}"
+        ).strip()
+    evidence_reference = uploaded_reference or media_reference
+    if evidence_reference:
+        maintenance_request.attachment_url = evidence_reference
+        maintenance_request.attachments_count = max(maintenance_request.attachments_count or 0, 1)
+        maintenance_request.media_uploaded = True
+        maintenance_request.doc_links = [evidence_reference]
+        maintenance_request.photo_links = [evidence_reference]
+
+    maintenance_request.status = "Pending"
+    maintenance_request.updated_at = datetime.utcnow()
+    db.session.commit()
+    notify_member_request_submitted(maintenance_request)
+
+    flash("Additional information sent. Works Logix can now review the request again.", "success")
     return redirect(_works_anchor("my-requests"))
 
 

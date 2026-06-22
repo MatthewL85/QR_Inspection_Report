@@ -40,6 +40,7 @@
 {% set dashboard_endpoint = dashboard_endpoint|default('super_admin.dashboard') %}
 {% set dashboard_label = dashboard_label|default('Dashboard') %}
 {% set convert_endpoint = convert_endpoint|default('super_admin.convert_member_request_to_work_order') %}
+{% set request_detail_endpoint = request_detail_endpoint|default(none) %}
 {% set assign_endpoint = assign_endpoint|default('super_admin.assign_work_order_contractor') %}
 {% set workspace_title = workspace_title|default('Works Logix') %}
 {% set workspace_subtitle = workspace_subtitle|default('Phase 3 command centre for member requests, work orders, contractor routing and GAR signals.') %}
@@ -350,7 +351,9 @@
               <td>{{ status_pill(item.urgency_level or 'Normal') }}</td>
               <td>{{ item.created_at.strftime('%d %b %Y') if item.created_at else '-' }}</td>
               <td>
-                {% if item.unit %}
+                {% if request_detail_endpoint %}
+                  <a class="user-manager-action-link" href="{{ url_for(request_detail_endpoint, request_id=item.id, search=filters.search, client_id=filters.client_id or '', status=filters.status) }}">Review</a>
+                {% elif item.unit %}
                   <form method="POST" action="{{ url_for(convert_endpoint, request_id=item.id) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="search" value="{{ filters.search }}">

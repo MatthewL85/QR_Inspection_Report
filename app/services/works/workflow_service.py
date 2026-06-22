@@ -508,6 +508,106 @@ def notify_member_request_submitted(maintenance_request: MaintenanceRequest) -> 
     return created
 
 
+def get_member_request_for_triage(
+    *,
+    request_id: int,
+    company_id: int,
+    allowed_client_ids: tuple[int, ...] | None = None,
+) -> MaintenanceRequest | None:
+    member_request = (
+        MaintenanceRequest.query
+        .filter(
+            MaintenanceRequest.id == request_id,
+            _maintenance_request_company_filter(company_id),
+        )
+        .first()
+    )
+    if not member_request:
+        return None
+
+    if allowed_client_ids is not None:
+        client_id = member_request.unit.client_id if member_request.unit else None
+        if client_id not in allowed_client_ids:
+            return None
+
+    return member_request
+
+
+def update_member_request_triage(
+    *,
+    request_id: int,
+    company_id: int,
+    reviewed_by_id: int | None,
+    action: str,
+    message: str,
+    allowed_client_ids: tuple[int, ...] | None = None,
+    access_context: str = "works_triage",
+) -> MaintenanceRequest | None:
+    """Record a non-conversion triage decision and notify the member."""
+
+    member_request = get_member_request_for_triage(
+        request_id=request_id,
+        company_id=company_id,
+        allowed_client_ids=allowed_client_ids,
+    )
+    if not member_request or member_request.work_order_id:
+        return None
+
+    action_key = (action or "").strip().lower()
+    clean_message = (message or "").strip()
+    if action_key == "request_info":
+        member_request.status = "More Info Requested"
+        notification_type = "works_request_more_info"
+        suggested_action = "Review the request and provide the extra information requested."
+        default_message = "Works Logix needs more information before this can be progressed."
+    elif action_key == "reject":
+        member_request.status = "Rejected"
+        notification_type = "works_request_rejected"
+        suggested_action = "Review the decision from Works Logix."
+        default_message = "Works Logix has reviewed this request and will not convert it to a work order."
+    else:
+        return None
+
+    note = clean_message or default_message
+    existing_notes = (member_request.internal_notes or "").strip()
+    stamped_note = (
+        f"{datetime.utcnow().strftime('%Y-%m-%d %H:%M')} | {access_context} | "
+        f"{member_request.status}: {note}"
+    )
+    member_request.internal_notes = f"{existing_notes}\n{stamped_note}".strip() if existing_notes else stamped_note
+    member_request.updated_at = datetime.utcnow()
+
+    recipient_ids = {
+        user_id
+        for user_id in (
+            member_request.requested_by_id,
+            getattr(member_request.member, "user_id", None),
+        )
+        if user_id
+    }
+    link_url = f"/members/works#member-request-{member_request.id}"
+    for recipient_id in recipient_ids:
+        _queue_notification(
+            recipient_id=recipient_id,
+            message=f"{default_message} {note}",
+            notification_type=notification_type,
+            link_url=link_url,
+            priority_level="Normal",
+            suggested_action=suggested_action,
+            extracted_data={
+                "maintenance_request_id": member_request.id,
+                "unit_id": member_request.unit_id,
+                "client_id": member_request.unit.client_id if member_request.unit else None,
+                "reviewed_by_id": reviewed_by_id,
+                "action_target": link_url,
+                "access_context": access_context,
+            },
+        )
+
+    db.session.commit()
+    return member_request
+
+
 def notify_work_order_reopen_requested(reopen_request: WorkOrderReopenRequest) -> int:
     work_order = reopen_request.work_order
     if not work_order:
