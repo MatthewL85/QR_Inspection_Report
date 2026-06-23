@@ -25,8 +25,8 @@ The Phase 3 cross-module flow is:
 1. Member or resident submits a maintenance request.
 2. Works Logix shows the request in the operational queue.
 3. PM, Admin, assigned Assistant or Master Assistant reviews it.
-4. The request can be converted to a work order.
-5. The work order can be routed to a contractor.
+4. The request can be converted to a work order only after a contractor is selected.
+5. The new work order is immediately routed to the selected contractor queue.
 6. Contractor accepts, starts and submits completion evidence.
 7. Member or resident is notified and can provide feedback.
 8. PM/Admin reviews completion.
@@ -170,11 +170,13 @@ PM, Assistant/APM, Admin and Super Admin users should open the request review sc
 
 The triage decision has three controlled outcomes:
 
-- `Convert to Work Order`: use only when the issue is valid for the OMC or management company to progress.
+- `Convert to Work Order`: use only when the issue is valid for the OMC or management company to progress. The user must select the contractor before conversion, so the work order is sent to the correct Contractor Logix queue immediately.
 - `Ask for Information`: sends a message back to the member/resident and moves the request to `More Info Requested`.
 - `Reject`: sends a clear decision message back to the member/resident and moves the request to `Rejected`.
 
 Requests marked `More Info Requested` or `Rejected` should not remain in the live conversion queue. This prevents every member request from being treated as something that must become a work order.
+
+The contractor selector is GAR-ready. It can show suggested routing context based on the request category, preferred contractor flags and current open workload. GAR suggestions are advisory only: PM/Admin/Assistant users still decide who receives the work.
 
 Members can attach request evidence either by uploading a supported file or by pasting a secure evidence link. The evidence reference stays on the Maintenance Request and is copied into the Work Order evidence context if the request is converted.
 

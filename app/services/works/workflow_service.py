@@ -398,6 +398,69 @@ def _notify_contractor_users(
     return created
 
 
+def build_contractor_routing_options(
+    *,
+    member_request: MaintenanceRequest | None = None,
+    company_id: int | None = None,
+) -> list[dict]:
+    """Return active contractors with lightweight GAR-ready routing context."""
+
+    contractors = (
+        Contractor.query
+        .filter(Contractor.is_active.is_(True))
+        .order_by(
+            Contractor.is_gar_preferred.desc(),
+            Contractor.business_type.asc(),
+            Contractor.company_name.asc(),
+        )
+        .all()
+    )
+    request_category = _normalise_status(getattr(member_request, "category", None))
+    options: list[dict] = []
+
+    for contractor in contractors:
+        open_query = WorkOrder.query.filter(WorkOrder.contractor_id == contractor.id)
+        if company_id:
+            open_query = open_query.filter(_work_order_company_filter(company_id))
+        open_count = sum(1 for item in open_query.all() if is_open_status(item.status))
+
+        contractor_type = _normalise_status(contractor.business_type)
+        contractor_tags = _normalise_status(contractor.tags)
+        matches_category = bool(
+            request_category
+            and (
+                request_category in contractor_type
+                or request_category in contractor_tags
+                or contractor_type in request_category
+            )
+        )
+        suggested = bool(matches_category or contractor.is_gar_preferred)
+        reason_parts = []
+        if matches_category:
+            reason_parts.append("category match")
+        if contractor.is_gar_preferred:
+            reason_parts.append("preferred")
+        if open_count >= 5:
+            reason_parts.append(f"{open_count} open jobs")
+
+        options.append({
+            "contractor": contractor,
+            "open_work_orders": open_count,
+            "matches_category": matches_category,
+            "is_suggested": suggested,
+            "suggestion_reason": ", ".join(reason_parts) or "available",
+        })
+
+    return sorted(
+        options,
+        key=lambda item: (
+            not item["is_suggested"],
+            item["open_work_orders"],
+            item["contractor"].company_name or "",
+        ),
+    )
+
+
 def _notify_linked_members_of_completion(work_order: WorkOrder) -> int:
     if not work_order.unit_id:
         return 0
@@ -1182,6 +1245,7 @@ def convert_member_request_to_work_order(
     request_id: int,
     company_id: int,
     created_by_id: int,
+    contractor_id: int | None = None,
     allowed_client_ids: tuple[int, ...] | None = None,
     access_context: str = "direct",
 ) -> WorkOrder | None:
@@ -1200,10 +1264,51 @@ def convert_member_request_to_work_order(
     if allowed_client_ids is not None and member_request.unit.client_id not in allowed_client_ids:
         return None
 
+    contractor = None
+    if contractor_id:
+        contractor = Contractor.query.filter(
+            Contractor.id == contractor_id,
+            Contractor.is_active.is_(True),
+        ).first()
+        if not contractor:
+            return None
+
     existing_work_order = WorkOrder.query.filter_by(maintenance_request_id=member_request.id).first()
     if existing_work_order:
+        needs_commit = False
+        if contractor and existing_work_order.contractor_id != contractor.id:
+            existing_work_order.contractor_id = contractor.id
+            needs_commit = True
+            if _normalise_status(existing_work_order.status) in {"", "open", "pending"}:
+                existing_work_order.status = "Assigned"
+            record_work_order_lifecycle_event(
+                work_order=existing_work_order,
+                event_type="contractor_assigned",
+                title="Contractor assigned",
+                source_module="Works Logix",
+                actor_user_id=created_by_id,
+                actor_label=_actor_label(created_by_id, contractor.company_name or "Works Logix"),
+                note="Work order routed to the contractor queue during member request conversion.",
+                status_snapshot=existing_work_order.status,
+                contractor_id=contractor.id,
+                event_metadata={
+                    "contractor_id": contractor.id,
+                    "contractor_name": contractor.company_name,
+                    "access_context": access_context,
+                    "allowed_client_scope": "restricted" if allowed_client_ids is not None else "company",
+                },
+            )
+            _notify_contractor_users(
+                work_order=existing_work_order,
+                notification_type="works_assignment",
+                message=f"Work order WO-{existing_work_order.id} has been assigned to your contractor queue.",
+                suggested_action="Review the job details and accept or start the work.",
+                priority_level="Normal",
+            )
         if not member_request.work_order_id:
             member_request.work_order_id = existing_work_order.id
+            needs_commit = True
+        if needs_commit:
             db.session.commit()
         return existing_work_order
 
@@ -1232,6 +1337,7 @@ def convert_member_request_to_work_order(
         client_id=unit.client_id,
         company_id=company_id,
         unit_id=unit.id,
+        contractor_id=contractor.id if contractor else None,
         maintenance_request_id=member_request.id,
         occupant_name=occupant_name,
         occupant_phone=occupant_phone,
@@ -1245,6 +1351,10 @@ def convert_member_request_to_work_order(
         gar_urgency_score=member_request.ai_priority_score,
         gar_recommended_action=member_request.gar_summary,
     )
+    if contractor:
+        work_order.status = "Assigned"
+        if not work_order.business_type and contractor.business_type:
+            work_order.business_type = contractor.business_type
 
     db.session.add(work_order)
     db.session.flush()
@@ -1265,9 +1375,38 @@ def convert_member_request_to_work_order(
             "unit_id": unit.id,
             "access_context": access_context,
             "allowed_client_scope": "restricted" if allowed_client_ids is not None else "company",
+            "contractor_id": contractor.id if contractor else None,
+            "contractor_name": contractor.company_name if contractor else None,
         },
         occurred_at=work_order.created_at,
     )
+
+    if contractor:
+        record_work_order_lifecycle_event(
+            work_order=work_order,
+            event_type="contractor_assigned",
+            title="Contractor assigned",
+            source_module="Works Logix",
+            actor_user_id=created_by_id,
+            actor_label=_actor_label(created_by_id, contractor.company_name or "Works Logix"),
+            note="Work order routed to the contractor queue during member request conversion.",
+            status_snapshot=work_order.status,
+            contractor_id=contractor.id,
+            event_metadata={
+                "contractor_id": contractor.id,
+                "contractor_name": contractor.company_name,
+                "access_context": access_context,
+                "allowed_client_scope": "restricted" if allowed_client_ids is not None else "company",
+            },
+            occurred_at=work_order.created_at,
+        )
+        _notify_contractor_users(
+            work_order=work_order,
+            notification_type="works_assignment",
+            message=f"Work order WO-{work_order.id} has been assigned to your contractor queue.",
+            suggested_action="Review the job details and accept or start the work.",
+            priority_level="Normal",
+        )
 
     member_request.work_order_id = work_order.id
     member_request.status = "Converted"

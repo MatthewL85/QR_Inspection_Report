@@ -10,6 +10,7 @@ from app.services.works.workflow_service import (
     WorksFilters,
     assign_contractor_to_work_order,
     build_command_centre,
+    build_contractor_routing_options,
     convert_member_request_to_work_order,
     get_member_request_for_triage,
     update_member_request_triage,
@@ -219,11 +220,16 @@ def convert_member_request(request_id):
     if not company_id:
         flash("Company context is missing. Please log in again.", "danger")
         return redirect(url_for('auth.login'))
+    contractor_id = request.form.get("contractor_id", type=int)
+    if not contractor_id:
+        flash("Select a contractor before converting the request to a work order.", "warning")
+        return redirect(url_for('property_manager.member_request_detail', request_id=request_id, **_works_filter_args()))
 
     work_order = convert_member_request_to_work_order(
         request_id=request_id,
         company_id=company_id,
         created_by_id=session.get('user_id'),
+        contractor_id=contractor_id,
         allowed_client_ids=_pm_client_ids(),
         access_context="assigned_property_manager",
     )
@@ -231,7 +237,7 @@ def convert_member_request(request_id):
         flash("That request could not be converted for your assigned developments.", "danger")
         return redirect(url_for('property_manager.work_orders', **_works_filter_args()))
 
-    flash("Member request converted to a Works Logix work order.", "success")
+    flash("Member request converted and sent to the selected contractor.", "success")
     return redirect(url_for('property_manager.work_orders', **_works_filter_args()))
 
 
@@ -260,6 +266,10 @@ def member_request_detail(request_id):
         convert_endpoint="property_manager.convert_member_request",
         triage_endpoint="property_manager.update_member_request_triage",
         member_request=member_request,
+        contractor_routing_options=build_contractor_routing_options(
+            member_request=member_request,
+            company_id=company_id,
+        ),
         filters=_works_filter_args(),
     )
 

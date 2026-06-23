@@ -143,7 +143,25 @@
             <input type="hidden" name="search" value="{{ filters.search or '' }}">
             <input type="hidden" name="client_id" value="{{ filters.client_id or '' }}">
             <input type="hidden" name="status" value="{{ filters.status or '' }}">
-            <button type="submit" class="btn btn-sm btn-primary mt-2">Convert to Work Order</button>
+            <label class="unit-detail-label mt-2" for="contractor_id_{{ member_request.id }}">Contractor</label>
+            <select id="contractor_id_{{ member_request.id }}" name="contractor_id" required>
+              <option value="">Select contractor</option>
+              {% for option in contractor_routing_options or [] %}
+                {% set contractor = option.contractor %}
+                <option value="{{ contractor.id }}">
+                  {{ contractor.company_name }}
+                  {% if contractor.business_type %} - {{ contractor.business_type }}{% endif %}
+                  {% if option.is_suggested %} (Suggested: {{ option.suggestion_reason }}){% endif %}
+                  {% if option.open_work_orders %} - {{ option.open_work_orders }} open{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+            {% if not contractor_routing_options %}
+              <span class="unit-module-note">No active contractors are available for routing.</span>
+            {% endif %}
+            <button type="submit" class="btn btn-sm btn-primary mt-2" {% if not contractor_routing_options %}disabled{% endif %}>
+              Convert & Send
+            </button>
           </form>
         {% else %}
           <span class="unit-module-note">A linked unit is required before conversion.</span>

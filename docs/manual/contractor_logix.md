@@ -27,6 +27,8 @@ Contractors can:
 - submit evidence reference
 - resubmit returned completion work
 
+When a Members Logix request is approved by Works Logix triage, the PM/Admin/Assistant selects the contractor before conversion. The created work order is assigned immediately, so it appears in the selected contractor's queue without needing a second routing step.
+
 ## Returned Work
 
 If PM/Admin reviews completion and returns it, the item should go back into the contractor queue with review notes.

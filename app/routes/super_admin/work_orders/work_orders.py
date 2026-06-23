@@ -7,6 +7,7 @@ from app.services.works.workflow_service import (
     WorksFilters,
     assign_contractor_to_work_order,
     build_command_centre,
+    build_contractor_routing_options,
     convert_member_request_to_work_order,
     get_member_request_for_triage,
     update_member_request_triage,
@@ -103,17 +104,22 @@ def convert_member_request(request_id):
     company_id = _company_id()
     if not company_id:
         abort(403)
+    contractor_id = request.form.get("contractor_id", type=int)
+    if not contractor_id:
+        flash("Select a contractor before converting the request to a work order.", "warning")
+        return redirect(url_for("super_admin.member_request_detail", request_id=request_id, **_works_filter_args()))
 
     work_order = convert_member_request_to_work_order(
         request_id=request_id,
         company_id=company_id,
         created_by_id=current_user.id,
+        contractor_id=contractor_id,
         access_context="super_admin",
     )
     if not work_order:
         abort(404)
 
-    flash("Member request converted to a Works Logix work order.", "success")
+    flash("Member request converted and sent to the selected contractor.", "success")
     return redirect(url_for("super_admin.work_orders", **_works_filter_args()))
 
 
@@ -141,6 +147,10 @@ def member_request_detail(request_id):
         convert_endpoint="super_admin.convert_member_request_to_work_order",
         triage_endpoint="super_admin.update_member_request_triage",
         member_request=member_request,
+        contractor_routing_options=build_contractor_routing_options(
+            member_request=member_request,
+            company_id=company_id,
+        ),
         filters=_works_filter_args(),
     )
 
