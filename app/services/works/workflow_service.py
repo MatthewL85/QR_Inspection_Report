@@ -585,7 +585,7 @@ def update_member_request_triage(
         )
         if user_id
     }
-    link_url = f"/members/works#member-request-{member_request.id}"
+    link_url = f"/members/works/requests/{member_request.id}"
     for recipient_id in recipient_ids:
         _queue_notification(
             recipient_id=recipient_id,

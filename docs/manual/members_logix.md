@@ -2,7 +2,7 @@
 
 Status: Phase 3 operating guide
 
-Last updated: 2026-06-21
+Last updated: 2026-06-22
 
 ## Purpose
 
@@ -29,6 +29,17 @@ Members and residents can:
 - add feedback evidence such as a photo, video, document or secure link
 - request a reopen if the issue was closed but not resolved
 - add a reopen evidence reference such as a photo, video, document or secure link
+
+When Works Logix asks for more information, the member or resident should not answer from a cramped table row. The request opens into a dedicated Maintenance Request page showing:
+
+- the original request
+- the Works Logix reply
+- request status, category, urgency and dates
+- linked development and unit details
+- attached evidence
+- a response form for clarification, access notes, photos, videos, documents or secure evidence links
+
+Submitting the response returns the maintenance request to `Pending` so Works Logix can review it again and decide whether to convert it to a work order.
 
 ## Visibility Rules
 

@@ -178,7 +178,7 @@ Requests marked `More Info Requested` or `Rejected` should not remain in the liv
 
 Members can attach request evidence either by uploading a supported file or by pasting a secure evidence link. The evidence reference stays on the Maintenance Request and is copied into the Work Order evidence context if the request is converted.
 
-When Works Logix asks for more information, Members Logix should show a response control on that request. The member/resident can add the requested clarification and attach another evidence file or secure link. Sending the response returns the request to `Pending` so it appears in the triage queue again.
+When Works Logix asks for more information, Members Logix should open the member/resident into a dedicated Maintenance Request review page. That page shows the original issue, the Works Logix reply, linked unit/development context, evidence and a response form. The member/resident can add the requested clarification and attach another evidence file or secure link. Sending the response returns the request to `Pending` so it appears in the triage queue again.
 
 ## Evidence and Audit Pack
 

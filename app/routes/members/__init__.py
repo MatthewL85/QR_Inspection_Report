@@ -61,6 +61,31 @@ def _works_anchor(anchor: str) -> str:
     return url_for("members.works", _anchor=anchor)
 
 
+def _member_request_for_current_member(request_id: int, member: Member | None) -> MaintenanceRequest | None:
+    if not member:
+        return None
+
+    return MaintenanceRequest.query.filter_by(
+        id=request_id,
+        member_id=member.id,
+    ).first()
+
+
+def _latest_member_visible_request_note(maintenance_request: MaintenanceRequest) -> str | None:
+    notes = [
+        line.strip()
+        for line in (maintenance_request.internal_notes or "").splitlines()
+        if line.strip()
+    ]
+    if not notes:
+        return None
+
+    latest_note = notes[-1]
+    if ": " in latest_note:
+        return latest_note.split(": ", 1)[-1].strip()
+    return latest_note
+
+
 def _save_member_request_upload(file_storage, request_id: int) -> str | None:
     if not file_storage or not file_storage.filename:
         return None
@@ -240,6 +265,23 @@ def create_maintenance_request():
     return redirect(_works_anchor("my-requests"))
 
 
+@members_bp.route("/works/requests/<int:request_id>", endpoint="maintenance_request_detail")
+@login_required
+def maintenance_request_detail(request_id):
+    member = _current_member()
+    maintenance_request = _member_request_for_current_member(request_id, member)
+    if not maintenance_request:
+        flash("That request is not available from your Members Logix account.", "warning")
+        return redirect(_works_anchor("my-requests"))
+
+    return render_template(
+        "members/maintenance_request_detail.html",
+        member=member,
+        maintenance_request=maintenance_request,
+        works_reply=_latest_member_visible_request_note(maintenance_request),
+    )
+
+
 @members_bp.route("/works/requests/<int:request_id>/respond", methods=["POST"], endpoint="respond_to_maintenance_request")
 @login_required
 def respond_to_maintenance_request(request_id):
@@ -248,17 +290,14 @@ def respond_to_maintenance_request(request_id):
         flash("Your member profile is not linked yet.", "warning")
         return redirect(_works_anchor("my-requests"))
 
-    maintenance_request = MaintenanceRequest.query.filter_by(
-        id=request_id,
-        member_id=member.id,
-    ).first()
+    maintenance_request = _member_request_for_current_member(request_id, member)
     if not maintenance_request or maintenance_request.work_order_id:
         flash("That request is not available for update.", "warning")
         return redirect(_works_anchor("my-requests"))
 
     if (maintenance_request.status or "").strip().lower() != "more info requested":
         flash("This request is not waiting for more information.", "info")
-        return redirect(_works_anchor("my-requests"))
+        return redirect(url_for("members.maintenance_request_detail", request_id=request_id))
 
     response = (request.form.get("response") or "").strip()
     media_reference = (request.form.get("media_reference") or "").strip()
@@ -266,10 +305,10 @@ def respond_to_maintenance_request(request_id):
     uploaded_reference = _save_member_request_upload(media_file, maintenance_request.id)
     if media_file and media_file.filename and not uploaded_reference:
         flash("That file type is not supported for maintenance request evidence.", "warning")
-        return redirect(_works_anchor("my-requests"))
+        return redirect(url_for("members.maintenance_request_detail", request_id=request_id))
     if not response and not media_reference and not uploaded_reference:
         flash("Please add the extra information or attach evidence before sending.", "warning")
-        return redirect(_works_anchor("my-requests"))
+        return redirect(url_for("members.maintenance_request_detail", request_id=request_id))
 
     if response:
         maintenance_request.description = (
@@ -290,7 +329,7 @@ def respond_to_maintenance_request(request_id):
     notify_member_request_submitted(maintenance_request)
 
     flash("Additional information sent. Works Logix can now review the request again.", "success")
-    return redirect(_works_anchor("my-requests"))
+    return redirect(url_for("members.maintenance_request_detail", request_id=request_id))
 
 
 @members_bp.route("/works/<int:work_order_id>/reopen", methods=["POST"], endpoint="request_reopen")

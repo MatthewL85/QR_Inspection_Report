@@ -195,6 +195,7 @@
             <th>Media</th>
             <th>Works Link</th>
             <th>Submitted</th>
+            <th>Review</th>
           </tr>
         </thead>
         <tbody>
@@ -208,26 +209,6 @@
               <td>{{ item.urgency_level or 'Normal' }}</td>
               <td>
                 <span class="contract-alert-pill">{{ item.status or 'Pending' }}</span>
-                {% if (item.status or '')|lower == 'more info requested' %}
-                  <details class="works-reopen-details mt-2">
-                    <summary>Send more information</summary>
-                    <form method="post"
-                          action="{{ url_for('members.respond_to_maintenance_request', request_id=item.id) }}"
-                          enctype="multipart/form-data"
-                          data-app-action="member-maintenance-request-response"
-                          data-app-requires-online="true"
-                          data-app-requires-csrf="true"
-                          data-app-source-record="maintenance_request">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                      <textarea name="response" rows="2" placeholder="Add the requested information, access notes or clarification."></textarea>
-                      <input type="file"
-                             name="media_file"
-                             accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx">
-                      <input type="url" name="media_reference" placeholder="Or paste an evidence link">
-                      <button type="submit" class="contract-manager-button">Send Info</button>
-                    </form>
-                  </details>
-                {% endif %}
               </td>
               <td>
                 {% if item.attachment_url %}
@@ -244,9 +225,14 @@
                 {% endif %}
               </td>
               <td>{{ item.created_at.strftime('%d %b %Y') if item.created_at else '-' }}</td>
+              <td>
+                <a class="user-manager-action-link" href="{{ url_for('members.maintenance_request_detail', request_id=item.id) }}">
+                  {% if (item.status or '')|lower == 'more info requested' %}Review / Respond{% else %}View{% endif %}
+                </a>
+              </td>
             </tr>
           {% else %}
-            <tr><td colspan="7" class="contract-manager-empty">No maintenance requests have been submitted yet.</td></tr>
+            <tr><td colspan="8" class="contract-manager-empty">No maintenance requests have been submitted yet.</td></tr>
           {% endfor %}
         </tbody>
       </table>
