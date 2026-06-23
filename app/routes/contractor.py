@@ -31,6 +31,46 @@ from app.services.works.work_order_docket_service import (
 
 contractor_bp = Blueprint('contractor', __name__)
 
+CONTRACTOR_EVIDENCE_UPLOAD_EXTENSIONS = {
+    "jpg", "jpeg", "png", "gif", "webp", "heic",
+    "mp4", "mov", "webm", "avi", "m4v",
+    "pdf", "doc", "docx",
+}
+
+
+def _save_contractor_evidence_upload(file_storage, work_order_id: int) -> str | None:
+    if not file_storage or not file_storage.filename:
+        return None
+
+    filename = secure_filename(file_storage.filename)
+    if not filename or "." not in filename:
+        return None
+
+    extension = filename.rsplit(".", 1)[-1].lower()
+    if extension not in CONTRACTOR_EVIDENCE_UPLOAD_EXTENSIONS:
+        return None
+
+    upload_dir = os.path.join(current_app.static_folder, "uploads", "contractor_evidence", str(work_order_id))
+    os.makedirs(upload_dir, exist_ok=True)
+    stored_name = f"{os.urandom(8).hex()}.{extension}"
+    file_storage.save(os.path.join(upload_dir, stored_name))
+    return f"/static/uploads/contractor_evidence/{work_order_id}/{stored_name}"
+
+
+def _save_contractor_evidence_uploads(file_storages, work_order_id: int) -> tuple[list[str], list[str]]:
+    uploaded_references: list[str] = []
+    unsupported_filenames: list[str] = []
+    for file_storage in file_storages or []:
+        if not file_storage or not file_storage.filename:
+            continue
+        uploaded_reference = _save_contractor_evidence_upload(file_storage, work_order_id)
+        if uploaded_reference:
+            uploaded_references.append(uploaded_reference)
+        else:
+            unsupported_filenames.append(file_storage.filename)
+    return uploaded_references, unsupported_filenames
+
+
 @contractor_bp.route('/dashboard')
 @login_required(role='Contractor')
 def contractor_dashboard():
@@ -207,6 +247,16 @@ def update_work_order(work_order_id, action):
         flash('That work order action is not available.', 'danger')
         return redirect(url_for('contractor.work_orders', **_contractor_filter_args()))
 
+    uploaded_references, unsupported_filenames = _save_contractor_evidence_uploads(
+        request.files.getlist("evidence_files"),
+        work_order_id,
+    )
+    if unsupported_filenames:
+        flash('One or more evidence files are not supported.', 'warning')
+        if request.form.get('return_to') == 'detail':
+            return redirect(url_for('contractor.work_order_detail', work_order_id=work_order_id))
+        return redirect(url_for('contractor.work_orders', **_contractor_filter_args()))
+
     work_order = contractor_update_work_order(
         work_order_id=work_order_id,
         contractor_id=user.contractor_id,
@@ -214,6 +264,7 @@ def update_work_order(work_order_id, action):
         action=action,
         completion_notes=(request.form.get('completion_notes') or '').strip(),
         evidence_reference=(request.form.get('evidence_reference') or '').strip(),
+        evidence_references=uploaded_references,
     )
     if not work_order:
         flash('That work order is not assigned to your contractor profile.', 'danger')

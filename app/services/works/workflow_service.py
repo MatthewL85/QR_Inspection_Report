@@ -1472,6 +1472,7 @@ def contractor_update_work_order(
     action: str,
     completion_notes: str = "",
     evidence_reference: str = "",
+    evidence_references: list[str] | None = None,
 ) -> WorkOrder | None:
     work_order = WorkOrder.query.filter(
         WorkOrder.id == work_order_id,
@@ -1530,12 +1531,29 @@ def contractor_update_work_order(
         work_order.status = "Completion Submitted"
         work_order.accepted_contractor_id = work_order.accepted_contractor_id or user_id
         evidence_reference = evidence_reference.strip()
+        clean_evidence_links = []
+        for value in [evidence_reference, *(evidence_references or [])]:
+            value = (value or "").strip()
+            if value and value not in clean_evidence_links:
+                clean_evidence_links.append(value)
+        primary_evidence_reference = clean_evidence_links[0] if clean_evidence_links else ""
         if work_order.completion:
             work_order.completion.completion_notes = completion_notes or work_order.completion.completion_notes
-            if evidence_reference:
-                work_order.completion.external_reference = evidence_reference
+            existing_data = work_order.completion.extracted_data or {}
+            existing_links = existing_data.get("evidence_links") if isinstance(existing_data, dict) else []
+            merged_links = []
+            for value in [work_order.completion.external_reference, *(existing_links or []), *clean_evidence_links]:
+                value = (value or "").strip()
+                if value and value not in merged_links:
+                    merged_links.append(value)
+            if merged_links:
+                work_order.completion.external_reference = work_order.completion.external_reference or merged_links[0]
                 work_order.completion.media_uploaded = True
-                work_order.completion.attachments_count = max(work_order.completion.attachments_count or 0, 1)
+                work_order.completion.attachments_count = len(merged_links)
+                work_order.completion.extracted_data = {
+                    **(existing_data if isinstance(existing_data, dict) else {}),
+                    "evidence_links": merged_links,
+                }
         else:
             db.session.add(
                 WorkOrderCompletion(
@@ -1543,9 +1561,10 @@ def contractor_update_work_order(
                     completed_by_id=user_id,
                     contractor_id=contractor_id,
                     completion_notes=completion_notes,
-                    external_reference=evidence_reference or None,
-                    media_uploaded=bool(evidence_reference),
-                    attachments_count=1 if evidence_reference else 0,
+                    external_reference=primary_evidence_reference or None,
+                    media_uploaded=bool(clean_evidence_links),
+                    attachments_count=len(clean_evidence_links),
+                    extracted_data={"evidence_links": clean_evidence_links} if clean_evidence_links else None,
                     consent_verified=True,
                     source_system="Contractor Logix",
                 )
@@ -1560,8 +1579,10 @@ def contractor_update_work_order(
             note=completion_notes or "Contractor submitted completion evidence.",
             status_snapshot=work_order.status,
             event_metadata={
-                "evidence_reference": evidence_reference or None,
-                "media_uploaded": bool(evidence_reference),
+                "evidence_reference": primary_evidence_reference or None,
+                "evidence_links": clean_evidence_links,
+                "attachments_count": len(clean_evidence_links),
+                "media_uploaded": bool(clean_evidence_links),
             },
         )
         _notify_linked_members_of_completion(work_order)

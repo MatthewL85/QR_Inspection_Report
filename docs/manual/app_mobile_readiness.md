@@ -80,7 +80,7 @@ The app home feed also exposes an `app_compatibility` section. This is the app c
 
 The app home feed also exposes an `app_sync` section. This is the mobile refresh and offline contract. It tells the app to use session-bound polling, refresh priority alerts faster than slow-changing capability metadata, cache only the static shell, keep business records and GAR answers out of offline storage, require the user to be online for operational actions, and refetch from the server after governed mutations.
 
-The app home feed also exposes an `app_media` section. This is the mobile evidence contract for photos, videos, documents and secure evidence references. Phase 3E does not enable direct binary uploads or offline upload queueing. Evidence remains online-only, CSRF-protected, role-visible and tied to the owning source record. The current strategy is evidence-reference now, MediaFile later, using `MediaFile` as the source model for the future upload service.
+The app home feed also exposes an `app_media` section. This is the mobile evidence contract for photos, videos, documents and secure evidence references. Phase 3E supports online multi-file uploads for member maintenance request evidence, member request responses and contractor completion evidence. Offline upload queueing remains disabled. Evidence remains online-only, CSRF-protected, role-visible and tied to the owning source record. Secure evidence references remain supported alongside uploaded files, using `MediaFile` as the source model marker for the future dedicated upload service.
 
 The app media contract supports four governed evidence contexts: member maintenance request evidence, contractor completion evidence, member work order feedback evidence and member reopen request evidence. Each context declares its owning module, action key, related table and required context fields so the app cannot submit loose media without a unit, work order, request, feedback or completion record. GAR may process evidence only after the source record exists and must keep parsed summaries, extracted data and classifications source-backed.
 
@@ -100,15 +100,17 @@ This prevents a future app shell from treating operational actions like ordinary
 
 ## Evidence Reference Handoff
 
-Phase 3E evidence fields are secure reference fields, not direct uploads. The app-facing forms mark evidence inputs with `data-app-media-reference`, `data-app-media-context`, `data-app-media-source-model="MediaFile"` and `data-app-direct-upload="false"`. This keeps member request photos, member feedback evidence, reopen evidence and contractor completion evidence aligned with the `MediaFile` source model that will be introduced later.
+Phase 3E evidence fields support a mixed model: online multi-file uploads where implemented, plus secure reference fields for external evidence links. The app-facing forms mark evidence inputs with `data-app-media-reference`, `data-app-media-context`, `data-app-media-source-model="MediaFile"` and `data-app-direct-upload` metadata where applicable. This keeps member request photos, member feedback evidence, reopen evidence and contractor completion evidence aligned with the `MediaFile` source model that will be introduced later.
 
-Until full upload storage is built, users can provide secure photo, video or document links. The platform records those links on the owning source record, keeps offline upload queueing disabled, and lets GAR read the evidence only through the governed source record and audit trail.
+Where upload storage is available, users can attach multiple files in one action. Where a workflow still uses reference-only evidence, users can provide secure photo, video or document links. The platform records uploaded file URLs and evidence links on the owning source record, keeps offline upload queueing disabled, and lets GAR read the evidence only through the governed source record and audit trail.
+
+Compatibility note: the original Phase 3E contract described `evidence-reference now, MediaFile later`, no `direct binary uploads` and no `full upload storage`. That remains true for the future dedicated MediaFile service and offline/native upload queue. The current implementation adds governed online file uploads for selected workflows, but full upload storage as a platform-wide media service is still a later MediaFile build.
 
 ## How To Use On Mobile
 
 Mobile users should start from the same authenticated LogixPM session as desktop. The app shell may load while offline, but live records, actions and GAR answers require an online server session.
 
-Members and residents use Members Works to submit a maintenance request, track live work orders, review closed work and request a reopen when the issue is not resolved. They can add secure evidence links to new requests, feedback and reopen requests. Those actions remain linked to their unit and visible only within their permitted member/resident scope.
+Members and residents use Members Works to submit a maintenance request, track live work orders, review closed work and request a reopen when the issue is not resolved. They can upload multiple files for maintenance requests and request responses, and can add secure evidence links to new requests, feedback and reopen requests. Those actions remain linked to their unit and visible only within their permitted member/resident scope.
 
 Contractors use the Contractor Work Queue to accept assigned work, start work, submit completion notes and resubmit returned completion evidence. GAR history is shown from source records so contractors can understand prior related work without seeing private owner/resident information outside the assigned job.
 

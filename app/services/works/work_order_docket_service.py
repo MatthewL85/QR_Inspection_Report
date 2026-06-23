@@ -76,6 +76,19 @@ def _contact_card(label: str, name: str = "", phone: str = "", email: str = "", 
     }
 
 
+def _unique_links(*groups: Any) -> list[str]:
+    links: list[str] = []
+    for group in groups:
+        if not group:
+            continue
+        values = group if isinstance(group, list) else [group]
+        for value in values:
+            value = (value or "").strip()
+            if value and value not in links:
+                links.append(value)
+    return links
+
+
 def build_contractor_work_order_docket(work_order: WorkOrder, *, audience: str = "contractor") -> dict[str, Any]:
     """Build the contractor-visible work order pack from source records."""
     client = work_order.client
@@ -90,23 +103,30 @@ def build_contractor_work_order_docket(work_order: WorkOrder, *, audience: str =
     assistant = getattr(client, "assigned_assistant", None) if client else None
 
     evidence_items = []
-    if maintenance_request and maintenance_request.attachment_url:
-        evidence_items.append({
-            "source": "Members Logix",
-            "label": "Request attachment",
-            "reference": maintenance_request.attachment_url,
-        })
+    if maintenance_request:
+        request_links = _unique_links(
+            maintenance_request.attachment_url,
+            maintenance_request.doc_links,
+            maintenance_request.photo_links,
+        )
+        for index, reference in enumerate(request_links, start=1):
+            evidence_items.append({
+                "source": "Members Logix",
+                "label": f"Request attachment {index}",
+                "reference": reference,
+            })
     if work_order.attachments_count:
         evidence_items.append({
             "source": "Works Logix",
             "label": "Work order attachments",
             "reference": f"{work_order.attachments_count} attachment(s) recorded",
         })
-    if work_order.completion and work_order.completion.external_reference:
+    completion_evidence = build_completion_evidence_pack(work_order.completion)
+    for index, reference in enumerate(completion_evidence.get("evidence_links") or [], start=1):
         evidence_items.append({
             "source": "Contractor Logix",
-            "label": "Completion evidence",
-            "reference": work_order.completion.external_reference,
+            "label": f"Completion evidence {index}",
+            "reference": reference,
         })
 
     contacts = [

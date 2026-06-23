@@ -45,7 +45,7 @@ Contractor Logix should show a compact evidence status beside submitted, returne
 
 The status comes from the shared Works Logix `completion_evidence` object, not from a separate contractor-only calculation. This keeps the contractor queue, PM/Admin review screen, GAR AI and future mobile/app views aligned.
 
-In Phase 3, contractors can submit notes and an evidence reference such as a photo, video, document or external link. File upload storage is a later build, but the source contract is already shaped so uploads can connect into the same evidence pack.
+In Phase 3, contractors can submit notes, upload multiple photos/videos/documents at once and add an evidence reference such as an external secure link. Uploaded evidence is stored against the completion source record and included in the same Works Logix evidence pack used by PM/Admin review, GAR and future app clients.
 
 ## Visibility Rules
 

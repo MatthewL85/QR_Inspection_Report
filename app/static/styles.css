@@ -4078,6 +4078,33 @@ body.sidebar-collapsed .main-content {
   margin-top: 0.15rem;
 }
 
+.works-evidence-link-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.works-evidence-link {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border: 1px solid #2563eb;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #0b5cff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.2;
+  padding: 0.35rem 0.7rem;
+  text-decoration: none;
+}
+
+.works-evidence-link:hover {
+  background: #dbeafe;
+  color: #073ea8;
+  text-decoration: none;
+}
+
 .works-review-detail-grid {
   border: 1px solid #eef1f5;
   border-radius: 8px;

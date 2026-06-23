@@ -105,6 +105,33 @@ def _save_member_request_upload(file_storage, request_id: int) -> str | None:
     return f"/static/uploads/member_requests/{request_id}/{stored_name}"
 
 
+def _save_member_request_uploads(file_storages, request_id: int) -> tuple[list[str], list[str]]:
+    uploaded_references: list[str] = []
+    unsupported_filenames: list[str] = []
+    for file_storage in file_storages or []:
+        if not file_storage or not file_storage.filename:
+            continue
+        uploaded_reference = _save_member_request_upload(file_storage, request_id)
+        if uploaded_reference:
+            uploaded_references.append(uploaded_reference)
+        else:
+            unsupported_filenames.append(file_storage.filename)
+    return uploaded_references, unsupported_filenames
+
+
+def _merge_evidence_links(*groups) -> list[str]:
+    links: list[str] = []
+    for group in groups:
+        if not group:
+            continue
+        values = group if isinstance(group, list) else [group]
+        for value in values:
+            value = (value or "").strip()
+            if value and value not in links:
+                links.append(value)
+    return links
+
+
 @members_bp.route("/dashboard", endpoint="dashboard")
 @login_required
 def dashboard():
@@ -223,7 +250,7 @@ def create_maintenance_request():
         return redirect(_works_anchor("submit-request"))
 
     media_reference = (request.form.get("media_reference") or "").strip()
-    media_file = request.files.get("media_file")
+    media_files = request.files.getlist("media_file")
     maintenance_request = MaintenanceRequest(
         member_id=member.id,
         unit_id=unit_id,
@@ -246,17 +273,18 @@ def create_maintenance_request():
     db.session.add(maintenance_request)
     db.session.flush()
 
-    uploaded_reference = _save_member_request_upload(media_file, maintenance_request.id)
-    if media_file and media_file.filename and not uploaded_reference:
+    uploaded_references, unsupported_filenames = _save_member_request_uploads(media_files, maintenance_request.id)
+    if unsupported_filenames:
         db.session.rollback()
         flash("That file type is not supported for maintenance request evidence.", "warning")
         return redirect(_works_anchor("submit-request"))
-    if uploaded_reference:
-        maintenance_request.attachment_url = uploaded_reference
-        maintenance_request.attachments_count = 1
-        maintenance_request.media_uploaded = True
-        maintenance_request.doc_links = [uploaded_reference]
-        maintenance_request.photo_links = [uploaded_reference]
+    evidence_links = _merge_evidence_links(media_reference, uploaded_references)
+    if evidence_links:
+        maintenance_request.attachment_url = evidence_links[0]
+        maintenance_request.attachments_count = len(evidence_links)
+        maintenance_request.media_uploaded = bool(uploaded_references)
+        maintenance_request.doc_links = evidence_links
+        maintenance_request.photo_links = evidence_links
 
     db.session.commit()
     notify_member_request_submitted(maintenance_request)
@@ -301,12 +329,12 @@ def respond_to_maintenance_request(request_id):
 
     response = (request.form.get("response") or "").strip()
     media_reference = (request.form.get("media_reference") or "").strip()
-    media_file = request.files.get("media_file")
-    uploaded_reference = _save_member_request_upload(media_file, maintenance_request.id)
-    if media_file and media_file.filename and not uploaded_reference:
+    media_files = request.files.getlist("media_file")
+    uploaded_references, unsupported_filenames = _save_member_request_uploads(media_files, maintenance_request.id)
+    if unsupported_filenames:
         flash("That file type is not supported for maintenance request evidence.", "warning")
         return redirect(url_for("members.maintenance_request_detail", request_id=request_id))
-    if not response and not media_reference and not uploaded_reference:
+    if not response and not media_reference and not uploaded_references:
         flash("Please add the extra information or attach evidence before sending.", "warning")
         return redirect(url_for("members.maintenance_request_detail", request_id=request_id))
 
@@ -315,13 +343,17 @@ def respond_to_maintenance_request(request_id):
             f"{maintenance_request.description or ''}\n\n"
             f"Member response {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}: {response}"
         ).strip()
-    evidence_reference = uploaded_reference or media_reference
-    if evidence_reference:
-        maintenance_request.attachment_url = evidence_reference
-        maintenance_request.attachments_count = max(maintenance_request.attachments_count or 0, 1)
-        maintenance_request.media_uploaded = True
-        maintenance_request.doc_links = [evidence_reference]
-        maintenance_request.photo_links = [evidence_reference]
+    evidence_links = _merge_evidence_links(
+        maintenance_request.doc_links,
+        media_reference,
+        uploaded_references,
+    )
+    if evidence_links:
+        maintenance_request.attachment_url = evidence_links[0]
+        maintenance_request.attachments_count = len(evidence_links)
+        maintenance_request.media_uploaded = bool(uploaded_references) or bool(maintenance_request.media_uploaded)
+        maintenance_request.doc_links = evidence_links
+        maintenance_request.photo_links = evidence_links
 
     maintenance_request.status = "Pending"
     maintenance_request.updated_at = datetime.utcnow()

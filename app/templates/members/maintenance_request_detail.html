@@ -79,11 +79,18 @@
         <span class="unit-detail-label">Core</span>
         <strong>{{ unit.core_name if unit and unit.core_name else '-' }}</strong>
       </div>
-      <div>
+      <div class="unit-detail-wide">
         <span class="unit-detail-label">Evidence</span>
         <strong>
-          {% if maintenance_request.attachment_url %}
-            <a href="{{ maintenance_request.attachment_url }}" target="_blank" rel="noopener">Open evidence</a>
+          {% set evidence_links = maintenance_request.doc_links or maintenance_request.photo_links or ([maintenance_request.attachment_url] if maintenance_request.attachment_url else []) %}
+          {% if evidence_links %}
+            <span class="works-evidence-link-list">
+              {% for evidence_link in evidence_links %}
+                <a class="works-evidence-link" href="{{ evidence_link }}" target="_blank" rel="noopener">
+                  Open evidence {{ loop.index }}
+                </a>
+              {% endfor %}
+            </span>
           {% else %}
             No evidence attached
           {% endif %}
@@ -118,9 +125,10 @@
           <textarea name="response" rows="4" placeholder="Add the requested information, access notes or clarification."></textarea>
         </label>
         <label>
-          Attach Photo, Video or Document
+          Attach Photos, Videos or Documents
           <input type="file"
                  name="media_file"
+                 multiple
                  accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx">
         </label>
         <label>

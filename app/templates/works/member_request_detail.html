@@ -100,11 +100,18 @@
         <span class="unit-detail-label">Eircode / Postal Code</span>
         <strong>{{ unit_postcode or '-' }}</strong>
       </div>
-      <div>
+      <div class="unit-detail-wide">
         <span class="unit-detail-label">Media / Evidence</span>
         <strong>
-          {% if member_request.attachment_url %}
-            <a href="{{ member_request.attachment_url }}" target="_blank" rel="noopener">Open attached evidence</a>
+          {% set evidence_links = member_request.doc_links or member_request.photo_links or ([member_request.attachment_url] if member_request.attachment_url else []) %}
+          {% if evidence_links %}
+            <span class="works-evidence-link-list">
+              {% for evidence_link in evidence_links %}
+                <a class="works-evidence-link" href="{{ evidence_link }}" target="_blank" rel="noopener">
+                  Open attached evidence {{ loop.index }}
+                </a>
+              {% endfor %}
+            </span>
           {% else %}
             No media attached
           {% endif %}

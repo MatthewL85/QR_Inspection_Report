@@ -204,6 +204,7 @@
                   <summary>Resubmit completion</summary>
                   <form method="post"
                         action="{{ url_for('contractor.update_work_order', work_order_id=item.id, action='complete') }}"
+                        enctype="multipart/form-data"
                         data-app-action="contractor-submit-completion"
                         data-app-requires-online="true"
                         data-app-requires-csrf="true"
@@ -220,6 +221,12 @@
                            data-app-media-context="contractor_completion_evidence"
                            data-app-media-source-model="MediaFile"
                            data-app-direct-upload="false">
+                    <input type="file"
+                           name="evidence_files"
+                           multiple
+                           accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx"
+                           data-app-media-context="contractor_completion_evidence"
+                           data-app-media-source-model="WorkOrderCompletion">
                     <button type="submit" class="contract-manager-button">Resubmit</button>
                   </form>
                 </details>
@@ -400,6 +407,7 @@
                   <summary>Submit completion</summary>
                   <form method="post"
                         action="{{ url_for('contractor.update_work_order', work_order_id=item.id, action='complete') }}"
+                        enctype="multipart/form-data"
                         data-app-action="contractor-submit-completion"
                         data-app-requires-online="true"
                         data-app-requires-csrf="true"
@@ -415,6 +423,12 @@
                            data-app-media-context="contractor_completion_evidence"
                            data-app-media-source-model="MediaFile"
                            data-app-direct-upload="false">
+                    <input type="file"
+                           name="evidence_files"
+                           multiple
+                           accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx"
+                           data-app-media-context="contractor_completion_evidence"
+                           data-app-media-source-model="WorkOrderCompletion">
                     <button type="submit" class="contract-manager-button">Submit</button>
                   </form>
                 </details>

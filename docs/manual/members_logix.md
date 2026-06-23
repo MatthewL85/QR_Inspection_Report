@@ -2,7 +2,7 @@
 
 Status: Phase 3 operating guide
 
-Last updated: 2026-06-22
+Last updated: 2026-06-23
 
 ## Purpose
 
@@ -22,7 +22,7 @@ Members and residents can:
 - ask GAR source-backed questions from the dashboard and maintenance page
 - submit a maintenance request
 - add description and context
-- include media references for photos or videos
+- upload multiple photos, videos or documents at once, or include secure evidence links
 - see linked open and closed work orders where permitted
 - see member-safe contractor completion evidence status
 - provide feedback after contractor completion

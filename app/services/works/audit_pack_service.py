@@ -34,6 +34,18 @@ def _reference_type(reference: str | None) -> str:
     return "reference"
 
 
+def _completion_evidence_links(completion: WorkOrderCompletion | None) -> list[str]:
+    if not completion:
+        return []
+    links: list[str] = []
+    extracted_data = completion.extracted_data if isinstance(completion.extracted_data, dict) else {}
+    for value in [completion.external_reference, *(extracted_data.get("evidence_links") or [])]:
+        value = (value or "").strip()
+        if value and value not in links:
+            links.append(value)
+    return links
+
+
 def build_completion_evidence_pack(completion: WorkOrderCompletion | None) -> dict[str, Any]:
     """Build a GAR-readable completion evidence assessment."""
     if not completion:
@@ -49,9 +61,10 @@ def build_completion_evidence_pack(completion: WorkOrderCompletion | None) -> di
             "source_references": [],
         }
 
-    evidence_reference = (completion.external_reference or "").strip()
+    evidence_links = _completion_evidence_links(completion)
+    evidence_reference = evidence_links[0] if evidence_links else ""
     notes_present = bool((completion.completion_notes or "").strip())
-    attachments_count = completion.attachments_count or 0
+    attachments_count = max(completion.attachments_count or 0, len(evidence_links))
     evidence_present = bool(evidence_reference) or bool(completion.media_uploaded) or attachments_count > 0
     review_flags = []
     if not notes_present:
@@ -80,6 +93,7 @@ def build_completion_evidence_pack(completion: WorkOrderCompletion | None) -> di
         "evidence_reference_present": bool(evidence_reference),
         "evidence_reference_type": _reference_type(evidence_reference),
         "evidence_reference": evidence_reference or None,
+        "evidence_links": evidence_links,
         "media_uploaded": bool(completion.media_uploaded),
         "attachments_count": attachments_count,
         "quality_status": quality_status,
@@ -105,17 +119,27 @@ def build_work_order_audit_pack(work_order: WorkOrder) -> dict[str, Any]:
     lifecycle_events = list(work_order.lifecycle_events or [])
 
     evidence_items = []
-    if maintenance_request and maintenance_request.attachment_url:
-        evidence_items.append({
-            "source": "Members Logix",
-            "label": "Member request media",
-            "reference": maintenance_request.attachment_url,
-        })
-    if completion and completion.external_reference:
+    if maintenance_request:
+        request_links = []
+        for value in [
+            maintenance_request.attachment_url,
+            *(maintenance_request.doc_links or []),
+            *(maintenance_request.photo_links or []),
+        ]:
+            value = (value or "").strip()
+            if value and value not in request_links:
+                request_links.append(value)
+        for index, reference in enumerate(request_links, start=1):
+            evidence_items.append({
+                "source": "Members Logix",
+                "label": f"Member request media {index}",
+                "reference": reference,
+            })
+    for index, reference in enumerate(_completion_evidence_links(completion), start=1):
         evidence_items.append({
             "source": "Contractor Logix",
-            "label": "Completion evidence",
-            "reference": completion.external_reference,
+            "label": f"Completion evidence {index}",
+            "reference": reference,
         })
     if feedback and feedback.evidence_reference:
         evidence_items.append({
