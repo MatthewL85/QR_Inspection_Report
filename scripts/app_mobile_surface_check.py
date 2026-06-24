@@ -82,6 +82,7 @@ APP_ACTIONS = {
         "contractor-accept-work-order",
         "contractor-start-work-order",
         "contractor-submit-completion",
+        "contractor-progress-update",
     ),
 }
 
@@ -101,6 +102,7 @@ APP_MEDIA_REFERENCES = {
     ),
     "app/templates/contractor/work_orders.html": (
         "contractor_completion_evidence",
+        "contractor_progress_update",
     ),
 }
 

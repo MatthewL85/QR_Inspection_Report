@@ -369,6 +369,42 @@
     {% set timeline_title = "Workflow Lifecycle" %}
     {% include "works/_lifecycle_timeline.html" %}
 
+    <h6 class="unit-section-title">Progress Updates</h6>
+    <div class="unit-reopen-review-list">
+      <div class="contract-manager-table-wrap">
+        <table class="contract-manager-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Visibility</th>
+              <th>Update</th>
+              <th>Evidence</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for update in progress_updates %}
+              <tr>
+                <td>{{ update.created_at.strftime("%d %b %Y %H:%M") if update.created_at else "-" }}</td>
+                <td><span class="contract-alert-pill contract-alert-muted">{{ update.visibility_label }}</span></td>
+                <td>{{ update.note }}</td>
+                <td>
+                  {% if update.evidence_links %}
+                    {% for evidence_link in update.evidence_links %}
+                      <a class="works-evidence-link" href="{{ evidence_link }}" target="_blank" rel="noopener">Open {{ loop.index }}</a>
+                    {% endfor %}
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="4" class="contract-manager-empty">No management-visible progress updates have been added yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     {% if work_order.completion %}
       <h6 class="unit-section-title">Contractor Completion</h6>
       <div class="unit-reopen-review-list">

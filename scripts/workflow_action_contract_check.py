@@ -21,6 +21,7 @@ EXPECTED_ACTION_ENDPOINTS = {
     "assistant.convert_member_request": "/assistant/work-orders/member-requests/<int:request_id>/convert",
     "assistant.assign_work_order_contractor": "/assistant/work-orders/<int:work_order_id>/assign-contractor",
     "contractor.update_work_order": "/contractor/work-orders/<int:work_order_id>/<action>",
+    "contractor.add_progress_update": "/contractor/work-orders/<int:work_order_id>/progress",
     "members.create_maintenance_request": "/members/works/requests",
     "members.submit_work_order_feedback": "/members/works/<int:work_order_id>/feedback",
     "members.request_reopen": "/members/works/<int:work_order_id>/reopen",

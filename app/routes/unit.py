@@ -12,7 +12,7 @@ from app.services.unit_access_service import create_unit_access_invite
 from app.services.unit_service import UnitService
 from app.services.work_order_reopen_service import WorkOrderReopenService
 from app.services.works import build_work_order_audit_pack, can_manage_reopen_request, can_manage_work_order
-from app.services.works.workflow_service import build_work_order_lifecycle, review_contractor_completion
+from app.services.works.workflow_service import build_work_order_lifecycle, progress_updates_for_audience, review_contractor_completion
 
 
 unit_bp = Blueprint("unit_bp", __name__, url_prefix="/units")
@@ -199,6 +199,7 @@ def work_order_review(unit_id, work_order_id):
         gar_work_order_context=build_work_order_context(work_order.id, getattr(current_user, "id", None), "admin"),
         work_order_audit_pack=build_work_order_audit_pack(work_order),
         workflow_timeline=build_work_order_lifecycle(work_order),
+        progress_updates=progress_updates_for_audience(work_order, "management"),
     )
 
 

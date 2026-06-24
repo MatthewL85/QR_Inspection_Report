@@ -256,6 +256,7 @@
             <th>Title</th>
             <th>Status</th>
             <th>Created</th>
+            <th>Progress</th>
             <th>Feedback</th>
             <th>Track</th>
           </tr>
@@ -268,6 +269,28 @@
               <td><strong>{{ item.title or 'Work Order' }}</strong></td>
               <td><span class="contract-alert-pill">{{ item.status or 'Open' }}</span></td>
               <td>{{ item.created_at.strftime('%d %b %Y') if item.created_at else '-' }}</td>
+              <td>
+                {% set progress_updates = progress_updates_by_work_order.get(item.id, []) if progress_updates_by_work_order is defined else [] %}
+                {% if progress_updates %}
+                  <details class="works-lifecycle-toggle">
+                    <summary>{{ progress_updates|length }} update{{ '' if progress_updates|length == 1 else 's' }}</summary>
+                    {% for update in progress_updates %}
+                      <div class="unit-module-note mb-2">
+                        <strong>{{ update.created_at.strftime('%d %b %Y') if update.created_at else 'Update' }}</strong><br>
+                        {{ update.note }}
+                        {% if update.evidence_links %}
+                          <br>
+                          {% for evidence_link in update.evidence_links %}
+                            <a class="works-evidence-link" href="{{ evidence_link }}" target="_blank" rel="noopener">Open {{ loop.index }}</a>
+                          {% endfor %}
+                        {% endif %}
+                      </div>
+                    {% endfor %}
+                  </details>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
               <td>
                 {{ member_evidence_summary(completion_evidence_by_work_order.get(item.id)) }}
                 {% if (item.status or '')|lower == 'completion submitted' %}
@@ -320,7 +343,7 @@
               </td>
             </tr>
           {% else %}
-            <tr><td colspan="7" class="contract-manager-empty">No open work orders are linked to your units.</td></tr>
+            <tr><td colspan="8" class="contract-manager-empty">No open work orders are linked to your units.</td></tr>
           {% endfor %}
         </tbody>
       </table>

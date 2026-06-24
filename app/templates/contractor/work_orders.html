@@ -432,8 +432,43 @@
                     <button type="submit" class="contract-manager-button">Submit</button>
                   </form>
                 </details>
+                <details class="works-reopen-details">
+                  <summary>Add progress update</summary>
+                  <form method="post"
+                        action="{{ url_for('contractor.add_progress_update', work_order_id=item.id) }}"
+                        enctype="multipart/form-data"
+                        data-app-action="contractor-progress-update"
+                        data-app-requires-online="true"
+                        data-app-requires-csrf="true"
+                        data-app-offline-queue="false"
+                        data-app-source-record="work_order">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="search" value="{{ filters.search }}">
+                    <input type="hidden" name="status" value="{{ filters.status }}">
+                    <textarea name="progress_note" rows="2" required placeholder="Progress update"></textarea>
+                    <select name="visibility_scope" required>
+                      <option value="management">Contractor + Management</option>
+                      <option value="contractor_internal">Contractor Only</option>
+                      <option value="reporter_visible">All Parties</option>
+                    </select>
+                    <input type="file"
+                           name="progress_files"
+                           multiple
+                           accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx"
+                           data-app-media-context="contractor_progress_update"
+                           data-app-media-source-model="WorkOrderProgressUpdate">
+                    <button type="submit" class="contract-manager-button">Add Update</button>
+                  </form>
+                </details>
               </td>
               <td>
+                {% set progress_updates = progress_updates_by_work_order.get(item.id, []) if progress_updates_by_work_order is defined else [] %}
+                {% if progress_updates %}
+                  {% set latest_progress = progress_updates[-1] %}
+                  <div class="unit-module-note mb-2">
+                    Latest: {{ latest_progress.note|truncate(80) }}
+                  </div>
+                {% endif %}
                 {{ gar_history_panel(gar_history_by_work_order.get(item.id)) }}
                 <details class="works-lifecycle-toggle">
                   <summary>Track lifecycle</summary>

@@ -155,6 +155,81 @@
   </section>
 
   <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Progress Updates</h2>
+        <p>Operational updates, visibility controlled for Contractor Logix, Works Logix and Members Logix.</p>
+      </div>
+    </div>
+    {% if docket.status_key not in ['closed', 'completed', 'resolved', 'cancelled'] %}
+      <form method="post"
+            action="{{ url_for('contractor.add_progress_update', work_order_id=work_order.id) }}"
+            enctype="multipart/form-data"
+            class="contract-manager-form-grid"
+            data-app-action="contractor-progress-update"
+            data-app-requires-online="true"
+            data-app-requires-csrf="true"
+            data-app-offline-queue="false"
+            data-app-source-record="work_order">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="return_to" value="detail">
+        <div class="unit-detail-wide">
+          <label class="unit-detail-label" for="progress_note">Progress Note</label>
+          <textarea id="progress_note" name="progress_note" rows="3" required placeholder="Add an update, delay note, access issue or site progress."></textarea>
+        </div>
+        <div>
+          <label class="unit-detail-label" for="visibility_scope">Visibility</label>
+          <select id="visibility_scope" name="visibility_scope" required>
+            <option value="management">Contractor + Management</option>
+            <option value="contractor_internal">Contractor Only</option>
+            <option value="reporter_visible">All Parties</option>
+          </select>
+        </div>
+        <div>
+          <label class="unit-detail-label" for="progress_files">Photos / Videos / Documents</label>
+          <input id="progress_files"
+                 type="file"
+                 name="progress_files"
+                 multiple
+                 accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx"
+                 data-app-media-context="contractor_progress_update"
+                 data-app-media-source-model="WorkOrderProgressUpdate">
+        </div>
+        <div class="unit-detail-wide">
+          <button type="submit" class="btn btn-sm btn-primary">Add Progress Update</button>
+        </div>
+      </form>
+    {% endif %}
+    <div class="contract-manager-table-wrap mt-3">
+      <table class="contract-manager-table">
+        <thead>
+          <tr><th>Date</th><th>Visibility</th><th>Update</th><th>Evidence</th></tr>
+        </thead>
+        <tbody>
+          {% for update in progress_updates %}
+            <tr>
+              <td>{{ update.created_at.strftime('%d %b %Y %H:%M') if update.created_at else '-' }}</td>
+              <td><span class="contract-alert-pill contract-alert-muted">{{ update.visibility_label }}</span></td>
+              <td>{{ update.note }}</td>
+              <td>
+                {% if update.evidence_links %}
+                  {% for evidence_link in update.evidence_links %}
+                    <a class="works-evidence-link" href="{{ evidence_link }}" target="_blank" rel="noopener">Open {{ loop.index }}</a>
+                  {% endfor %}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="contract-manager-empty">No progress updates have been added yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
     {% set timeline_events = docket.lifecycle %}
     {% set timeline_title = "Work Order Lifecycle" %}
     {% include "works/_lifecycle_timeline.html" %}

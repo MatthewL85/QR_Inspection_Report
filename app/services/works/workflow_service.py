@@ -18,6 +18,7 @@ from app.models.members.unit_membership import UnitMembership
 from app.models.works.work_order import WorkOrder
 from app.models.works.work_order_completion import WorkOrderCompletion
 from app.models.works.work_order_lifecycle_event import WorkOrderLifecycleEvent
+from app.models.works.work_order_progress_update import WorkOrderProgressUpdate
 from app.models.works.work_order_reopen_request import WorkOrderReopenRequest
 from app.services.gar.context import build_work_order_relevant_history
 from app.services.gar import build_works_intelligence_queue
@@ -257,6 +258,7 @@ def record_work_order_lifecycle_event(
     status_snapshot: str = "",
     member_id: int | None = None,
     contractor_id: int | None = None,
+    visibility_scope: str = "Admin,PM,GAR",
     event_metadata: dict | None = None,
     occurred_at=None,
 ) -> WorkOrderLifecycleEvent:
@@ -276,6 +278,7 @@ def record_work_order_lifecycle_event(
         note=note,
         status_snapshot=status_snapshot or work_order.status,
         actor_label=actor_label,
+        visibility_scope=visibility_scope,
         event_metadata=event_metadata,
         gar_context_reference=f"WorkOrder#{work_order.id}",
         occurred_at=occurred_at or datetime.utcnow(),
@@ -534,6 +537,47 @@ def _notify_linked_members_of_closure(work_order: WorkOrder) -> int:
                     "unit_id": work_order.unit_id,
                     "client_id": work_order.client_id,
                     "action_target": _member_work_order_link(work_order, "closed-work-order"),
+                },
+            )
+        )
+
+    return created
+
+
+def _notify_linked_members_of_progress(work_order: WorkOrder, progress_update: WorkOrderProgressUpdate) -> int:
+    if not work_order.unit_id:
+        return 0
+
+    links = (
+        UnitMembership.query
+        .filter(
+            UnitMembership.unit_id == work_order.unit_id,
+            UnitMembership.is_current.is_(True),
+            UnitMembership.role.in_(("owner", "resident", "tenant")),
+        )
+        .all()
+    )
+
+    created = 0
+    for link in links:
+        member = link.member
+        if not member or not member.user_id:
+            continue
+
+        created += int(
+            _queue_notification(
+                recipient_id=member.user_id,
+                message=f"Progress update added to work order WO-{work_order.id}.",
+                notification_type="works_progress_update",
+                link_url=_member_work_order_link(work_order),
+                priority_level="Normal",
+                suggested_action="Review the latest contractor progress update.",
+                extracted_data={
+                    "work_order_id": work_order.id,
+                    "progress_update_id": progress_update.id,
+                    "unit_id": work_order.unit_id,
+                    "client_id": work_order.client_id,
+                    "action_target": _member_work_order_link(work_order),
                 },
             )
         )
@@ -1086,6 +1130,7 @@ def _work_order_payload(
     include_gar_history: bool = False,
     gar_audience: str = "admin",
 ) -> dict:
+    progress_updates = progress_updates_for_audience(work_order, gar_audience)
     payload = {
         "id": work_order.id,
         "reference": f"WO-{work_order.id}",
@@ -1106,6 +1151,18 @@ def _work_order_payload(
         "return_context": build_work_order_return_context(work_order),
         "review_cycle": build_work_order_review_cycle(work_order),
         "quality_review_signal": build_work_order_quality_review_signal(work_order),
+        "progress_updates": [
+            {
+                "id": update.id,
+                "created_at": _iso_date(update.created_at),
+                "visibility_scope": update.visibility_scope,
+                "visibility_label": update.visibility_label,
+                "note": update.note,
+                "attachments_count": update.attachments_count or 0,
+                "evidence_links": update.evidence_links or [],
+            }
+            for update in progress_updates
+        ],
         "feedback": {
             "rating": work_order.feedback.overall_rating if work_order.feedback else None,
             "comments": work_order.feedback.comments if work_order.feedback else None,
@@ -1603,6 +1660,101 @@ def get_contractor_work_orders(
     }
 
 
+WORK_ORDER_PROGRESS_VISIBILITY = {
+    "contractor_internal": "Contractor Only",
+    "management": "Contractor + Management",
+    "reporter_visible": "All Parties",
+}
+
+
+def _normalise_progress_visibility(value: str | None) -> str:
+    key = (value or "management").strip().lower()
+    return key if key in WORK_ORDER_PROGRESS_VISIBILITY else "management"
+
+
+def add_work_order_progress_update(
+    *,
+    work_order_id: int,
+    contractor_id: int,
+    user_id: int,
+    note: str,
+    visibility_scope: str = "management",
+    evidence_links: list[str] | None = None,
+) -> WorkOrderProgressUpdate | None:
+    work_order = WorkOrder.query.filter(
+        WorkOrder.id == work_order_id,
+        WorkOrder.contractor_id == contractor_id,
+    ).first()
+    note = (note or "").strip()
+    if not work_order or not note:
+        return None
+    if is_closed_status(work_order.status):
+        return None
+
+    visibility_scope = _normalise_progress_visibility(visibility_scope)
+    evidence_links = [link for link in (evidence_links or []) if link]
+    progress_update = WorkOrderProgressUpdate(
+        work_order_id=work_order.id,
+        company_id=work_order.company_id,
+        client_id=work_order.client_id,
+        unit_id=work_order.unit_id,
+        contractor_id=work_order.contractor_id,
+        created_by_id=user_id,
+        visibility_scope=visibility_scope,
+        note=note,
+        evidence_links=evidence_links,
+        attachments_count=len(evidence_links),
+    )
+    db.session.add(progress_update)
+    db.session.flush()
+
+    lifecycle_visibility = {
+        "contractor_internal": "Contractor,GAR",
+        "management": "Admin,PM,Contractor,GAR",
+        "reporter_visible": "Admin,PM,Contractor,Member,Resident,Owner,GAR",
+    }[visibility_scope]
+    record_work_order_lifecycle_event(
+        work_order=work_order,
+        event_type="progress_update_added",
+        title="Progress update added",
+        source_module="Contractor Logix",
+        actor_user_id=user_id,
+        actor_label=_actor_label(user_id, "Contractor"),
+        note=note,
+        status_snapshot=work_order.status,
+        contractor_id=work_order.contractor_id,
+        visibility_scope=lifecycle_visibility,
+        event_metadata={
+            "progress_update_id": progress_update.id,
+            "visibility_scope": visibility_scope,
+            "visibility_label": WORK_ORDER_PROGRESS_VISIBILITY[visibility_scope],
+            "attachments_count": len(evidence_links),
+            "evidence_links": evidence_links,
+        },
+    )
+
+    if visibility_scope == "reporter_visible":
+        _notify_linked_members_of_progress(work_order, progress_update)
+
+    db.session.commit()
+    return progress_update
+
+
+def progress_updates_for_audience(work_order: WorkOrder, audience: str = "management") -> list[WorkOrderProgressUpdate]:
+    audience_key = (audience or "management").strip().lower()
+    allowed_scopes = {
+        "contractor": {"contractor_internal", "management", "reporter_visible"},
+        "management": {"management", "reporter_visible"},
+        "admin": {"management", "reporter_visible"},
+        "member": {"reporter_visible"},
+    }.get(audience_key, {"management", "reporter_visible"})
+
+    return [
+        item for item in (work_order.progress_updates or [])
+        if (item.visibility_scope or "management") in allowed_scopes
+    ]
+
+
 def contractor_update_work_order(
     *,
     work_order_id: int,
@@ -2043,12 +2195,21 @@ def build_work_order_lifecycle_for_audience(work_order: WorkOrder, audience: str
     for event in events:
         item = dict(event)
         source = (item.get("source") or "").lower()
+        visibility_tokens = {
+            token.strip().lower()
+            for token in (item.get("visibility_scope") or "").split(",")
+            if token.strip()
+        }
         if audience_key == "member":
+            if visibility_tokens and not visibility_tokens.intersection({"member", "members", "resident", "residents", "owner", "owners"}):
+                continue
             if source == "contractor logix":
                 item["actor"] = "Contractor"
             if source == "works logix" and item.get("event_type") in {"contractor_assigned"}:
                 item["note"] = "The work order has been routed for action."
         elif audience_key == "contractor":
+            if visibility_tokens and not visibility_tokens.intersection({"contractor", "gar"}):
+                continue
             if source == "members logix":
                 item["actor"] = "Member / Resident"
             if item.get("event_type") in {"member_feedback_submitted"}:

@@ -23,11 +23,26 @@ Contractors can:
 - ask GAR source-backed questions from the Contractor Logix dashboard
 - accept assigned work
 - start work
+- add progress updates with photos, videos or documents
 - submit completion notes
 - submit evidence reference
 - resubmit returned completion work
 
 When a Members Logix request is approved by Works Logix triage, the PM/Admin/Assistant selects the contractor before conversion. The created work order is assigned immediately, so it appears in the selected contractor's queue without needing a second routing step.
+
+## Progress Updates
+
+Contractors can add progress updates while a work order is active. This is used for access issues, attendance notes, delays, interim findings, photos or videos before final completion.
+
+Each update has a visibility choice:
+
+- Contractor Only
+- Contractor + Management
+- All Parties
+
+Only `All Parties` updates are shown to the member/resident/reporter in Members Logix. Management users can see management-visible updates in the Works Logix review pack. Contractor-only updates remain inside Contractor Logix and contractor-safe GAR context.
+
+Progress updates do not replace completion submission. Completion evidence is still required when the contractor is ready to submit the job for PM/Admin review.
 
 ## Returned Work
 

@@ -85,6 +85,7 @@ from app.models.works.work_order_setting_audit_log import WorkOrderSettingAuditL
 from app.models.works.work_order_policy import WorkOrderPolicy
 from app.models.works.work_order_reopen_request import WorkOrderReopenRequest
 from app.models.works.work_order_lifecycle_event import WorkOrderLifecycleEvent
+from app.models.works.work_order_progress_update import WorkOrderProgressUpdate
 from app.models.works.quote_response import QuoteResponse
 from app.models.works.quote_recipient import QuoteRecipient
 from app.models.works.special_project import ClientSpecialProject

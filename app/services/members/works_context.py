@@ -5,7 +5,7 @@ from app.models.works.work_order import WorkOrder
 from app.models.works.work_order_reopen_request import WorkOrderReopenRequest
 from app.models.works.work_order_completion import WorkOrderCompletion
 from app.services.works.audit_pack_service import build_completion_evidence_pack
-from app.services.works.workflow_service import build_work_order_lifecycle_for_audience
+from app.services.works.workflow_service import build_work_order_lifecycle_for_audience, progress_updates_for_audience
 
 
 def _iso_date(value):
@@ -78,6 +78,7 @@ def _member_completion_evidence_payload(completion: WorkOrderCompletion | None):
 
 
 def _member_work_order_payload(item):
+    progress_updates = progress_updates_for_audience(item, "member")
     return {
         "id": item.id,
         "reference": f"WO-{item.id}",
@@ -88,6 +89,16 @@ def _member_work_order_payload(item):
         "feedback_required": (item.status or "").lower() == "completion submitted" and not item.feedback,
         "feedback_sent": bool(item.feedback),
         "completion_evidence": _member_completion_evidence_payload(item.completion),
+        "progress_updates": [
+            {
+                "id": update.id,
+                "created_at": _iso_date(update.created_at),
+                "note": update.note,
+                "attachments_count": update.attachments_count or 0,
+                "evidence_links": update.evidence_links or [],
+            }
+            for update in progress_updates
+        ],
         "feedback": {
             "rating": item.feedback.overall_rating if item.feedback else None,
             "comments": item.feedback.comments if item.feedback else None,
@@ -123,6 +134,7 @@ def build_member_works_context(member, memberships):
         "member_next_actions": [],
         "lifecycle_by_work_order": {},
         "completion_evidence_by_work_order": {},
+        "progress_updates_by_work_order": {},
     }
     if not member or not unit_ids:
         return empty_context
@@ -239,6 +251,10 @@ def build_member_works_context(member, memberships):
         },
         "completion_evidence_by_work_order": {
             item.id: _member_completion_evidence_payload(item.completion)
+            for item in work_orders
+        },
+        "progress_updates_by_work_order": {
+            item.id: progress_updates_for_audience(item, "member")
             for item in work_orders
         },
     }

@@ -15,12 +15,14 @@ from app.services.gar import (
 )
 from app.services.works.workflow_service import (
     ContractorWorkFilters,
+    add_work_order_progress_update,
     build_work_order_lifecycle_for_audience,
     build_work_order_return_context,
     build_work_order_review_cycle,
     contractor_work_queue_payload,
     contractor_update_work_order,
     get_contractor_work_orders,
+    progress_updates_for_audience,
 )
 from app.services.works.audit_pack_service import build_completion_evidence_pack
 from app.models.works.work_order import WorkOrder
@@ -150,6 +152,10 @@ def work_orders():
         item.id: build_work_order_review_cycle(item)
         for item in data.get("work_orders", [])
     }
+    data["progress_updates_by_work_order"] = {
+        item.id: progress_updates_for_audience(item, "contractor")
+        for item in data.get("work_orders", [])
+    }
     return render_template('contractor/work_orders.html', filters=filters, **data)
 
 
@@ -170,7 +176,11 @@ def _contractor_work_order_or_404(work_order_id: int) -> tuple[User, WorkOrder]:
 def work_order_detail(work_order_id):
     _user, work_order = _contractor_work_order_or_404(work_order_id)
     docket = build_contractor_work_order_docket(work_order, audience="contractor")
-    return render_template('contractor/work_order_detail.html', docket=docket)
+    return render_template(
+        'contractor/work_order_detail.html',
+        docket=docket,
+        progress_updates=progress_updates_for_audience(work_order, "contractor"),
+    )
 
 
 @contractor_bp.route('/work-orders/<int:work_order_id>/pdf', endpoint='work_order_pdf')
@@ -279,6 +289,42 @@ def update_work_order(work_order_id, action):
     flash(messages[action], 'success')
     if request.form.get('return_to') == 'detail':
         return redirect(url_for('contractor.work_order_detail', work_order_id=work_order.id))
+    return redirect(url_for('contractor.work_orders', **_contractor_filter_args()))
+
+
+@contractor_bp.route('/work-orders/<int:work_order_id>/progress', methods=['POST'], endpoint='add_progress_update')
+@login_required(role='Contractor')
+def add_progress_update(work_order_id):
+    user = _current_contractor_user()
+    if not user:
+        flash('Your contractor profile is not linked yet.', 'warning')
+        return redirect(url_for('contractor.contractor_dashboard'))
+
+    uploaded_references, unsupported_filenames = _save_contractor_evidence_uploads(
+        request.files.getlist("progress_files"),
+        work_order_id,
+    )
+    if unsupported_filenames:
+        flash('One or more progress files are not supported.', 'warning')
+        if request.form.get('return_to') == 'detail':
+            return redirect(url_for('contractor.work_order_detail', work_order_id=work_order_id))
+        return redirect(url_for('contractor.work_orders', **_contractor_filter_args()))
+
+    progress_update = add_work_order_progress_update(
+        work_order_id=work_order_id,
+        contractor_id=user.contractor_id,
+        user_id=user.id,
+        note=(request.form.get('progress_note') or '').strip(),
+        visibility_scope=(request.form.get('visibility_scope') or '').strip(),
+        evidence_links=uploaded_references,
+    )
+    if not progress_update:
+        flash('Progress update could not be saved for this work order.', 'warning')
+    else:
+        flash('Progress update added.', 'success')
+
+    if request.form.get('return_to') == 'detail':
+        return redirect(url_for('contractor.work_order_detail', work_order_id=work_order_id))
     return redirect(url_for('contractor.work_orders', **_contractor_filter_args()))
 
 @contractor_bp.route('/settings')

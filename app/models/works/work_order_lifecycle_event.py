@@ -51,6 +51,7 @@ class WorkOrderLifecycleEvent(db.Model):
             "note": self.note or "-",
             "status": self.status_snapshot or "",
             "event_type": self.event_type,
+            "visibility_scope": self.visibility_scope or "",
             "access_context": metadata.get("access_context") or "",
             "persisted": True,
         }

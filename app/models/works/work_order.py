@@ -134,6 +134,13 @@ class WorkOrder(db.Model):
         order_by='WorkOrderLifecycleEvent.occurred_at',
         lazy=True,
     )
+    progress_updates = db.relationship(
+        'WorkOrderProgressUpdate',
+        back_populates='work_order',
+        cascade='all, delete-orphan',
+        order_by='WorkOrderProgressUpdate.created_at',
+        lazy=True,
+    )
 
     def __repr__(self):
         return f"<WorkOrder id={self.id} title='{self.title}' status={self.status}>"

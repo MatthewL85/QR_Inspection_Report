@@ -162,6 +162,26 @@ Contractors can accept the work order from this pack, or return/reject it to Wor
 
 The downloadable work order PDF is controlled. It becomes available only after the contractor accepts the work order or the work order is further along the contractor lifecycle. This prevents a contractor from downloading a formal docket before taking responsibility for the job.
 
+## Work Order Progress Updates
+
+Active work orders can have progress updates before completion. This is a Contractor Logix action stored against the Works Logix work order.
+
+Each progress update records:
+
+- update note
+- created by and created date
+- visibility scope
+- linked photos, videos or documents
+- lifecycle event for audit and GAR context
+
+Visibility is controlled per update:
+
+- `Contractor Only`: visible inside Contractor Logix and GAR contractor context only.
+- `Contractor + Management`: visible to the contractor and Works management users.
+- `All Parties`: visible to the contractor, Works management users and the member/resident/reporter through Members Logix.
+
+Progress updates are not completion evidence. They are an operational timeline for jobs that take time, need access, have delays, require interim attendance or need interim photos. Completion evidence remains the formal close-out submission.
+
 ## Member Request Triage
 
 Members Logix maintenance requests must be reviewed before they are converted into Works Logix work orders.
@@ -190,6 +210,7 @@ It brings together:
 
 - source member request
 - work order details
+- contractor progress updates visible to management
 - contractor completion
 - member feedback
 - reopen request history
@@ -253,6 +274,7 @@ GAR reads the work order lifecycle and can summarise:
 - current stage
 - missing evidence
 - member dissatisfaction signals
+- contractor progress updates by role visibility
 - recommended next step
 - audit signal
 - repeated issue patterns
