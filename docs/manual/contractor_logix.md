@@ -50,9 +50,13 @@ Scheduling a job docket:
 
 The Contractor Calendar has an `.ics` feed. This allows the schedule to be opened or subscribed to from Outlook, Google Calendar, Apple Calendar and phone calendars. This is the Phase 1 integration approach because it is standard, lightweight and avoids prematurely adding full OAuth/two-way sync. Later phases can add direct Google/Microsoft calendar connections, conflict detection, drag-and-drop scheduling and GAR scheduling recommendations.
 
-## Progress Updates
+## Updates
 
-Contractors can add progress updates while a work order is active. This is used for access issues, attendance notes, delays, interim findings, photos or videos before final completion.
+Contractors can add updates while a work order is active. Updates can be marked as either `Progress Update` or `Completion`.
+
+Progress updates are used for access issues, attendance notes, delays, interim findings, photos or videos before final completion.
+
+Completion updates are used when the contractor believes the works are complete and wants the item submitted for PM/Admin review. A completion update creates/updates the Works Logix completion evidence pack, moves the work order to `Completion Submitted`, and keeps the formal PM/Admin approve-or-return flow intact.
 
 Each update has a visibility choice:
 
@@ -60,9 +64,9 @@ Each update has a visibility choice:
 - Contractor + Management
 - All Parties
 
-Only `All Parties` updates are shown to the member/resident/reporter in Members Logix. Management users can see management-visible updates in the Works Logix review pack. Contractor-only updates remain inside Contractor Logix and contractor-safe GAR context.
+Completion defaults to `All Parties`, but the contractor can change visibility where appropriate. Only `All Parties` updates are shown to the member/resident/reporter in Members Logix. Management users can see management-visible updates in the Works Logix review pack. Contractor-only updates remain inside Contractor Logix and contractor-safe GAR context.
 
-Progress updates do not replace completion submission. Completion evidence is still required when the contractor is ready to submit the job for PM/Admin review.
+Ordinary progress updates do not replace completion submission. A contractor should use the `Completion` update type when the job is ready for PM/Admin review.
 
 ## Returned Work
 

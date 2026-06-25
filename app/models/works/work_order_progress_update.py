@@ -15,6 +15,7 @@ class WorkOrderProgressUpdate(db.Model):
     created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
 
     visibility_scope = db.Column(db.String(40), nullable=False, default="management")
+    update_type = db.Column(db.String(40), nullable=False, default="progress")
     note = db.Column(db.Text, nullable=False)
     evidence_links = db.Column(db.JSON, nullable=True)
     attachments_count = db.Column(db.Integer, nullable=False, default=0)
@@ -44,5 +45,13 @@ class WorkOrderProgressUpdate(db.Model):
         }
         return labels.get(self.visibility_scope or "", "Contractor + Management")
 
+    @property
+    def update_type_label(self) -> str:
+        labels = {
+            "progress": "Progress Update",
+            "completion": "Completion",
+        }
+        return labels.get(self.update_type or "", "Progress Update")
+
     def __repr__(self):
-        return f"<WorkOrderProgressUpdate work_order_id={self.work_order_id} visibility={self.visibility_scope}>"
+        return f"<WorkOrderProgressUpdate work_order_id={self.work_order_id} type={self.update_type} visibility={self.visibility_scope}>"

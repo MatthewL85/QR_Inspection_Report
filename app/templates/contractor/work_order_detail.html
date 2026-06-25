@@ -157,8 +157,8 @@
   <section class="contract-manager-panel">
     <div class="contract-manager-section-heading">
       <div>
-        <h2>Progress Updates</h2>
-        <p>Operational updates, visibility controlled for Contractor Logix, Works Logix and Members Logix.</p>
+        <h2>Updates</h2>
+        <p>Progress and completion updates, visibility controlled for Contractor Logix, Works Logix and Members Logix.</p>
       </div>
     </div>
     {% if docket.status_key not in ['closed', 'completed', 'resolved', 'cancelled'] %}
@@ -174,10 +174,17 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="return_to" value="detail">
         <div class="contractor-progress-note">
-          <label class="unit-detail-label" for="progress_note">Progress Note</label>
-          <textarea id="progress_note" name="progress_note" rows="6" required placeholder="Add an update, delay note, access issue or site progress."></textarea>
+          <label class="unit-detail-label" for="progress_note">Update Note</label>
+          <textarea id="progress_note" name="progress_note" rows="6" required placeholder="Add a progress note, delay note, access issue or completion summary."></textarea>
         </div>
         <div class="contractor-progress-actions">
+          <div>
+            <label class="unit-detail-label" for="update_type">Update Type</label>
+            <select id="update_type" name="update_type" required data-completion-visibility-target="visibility_scope">
+              <option value="progress">Progress Update</option>
+              <option value="completion">Completion</option>
+            </select>
+          </div>
           <div>
             <label class="unit-detail-label" for="visibility_scope">Visibility</label>
             <select id="visibility_scope" name="visibility_scope" required>
@@ -196,19 +203,20 @@
                    data-app-media-context="contractor_progress_update"
                    data-app-media-source-model="WorkOrderProgressUpdate">
           </div>
-          <button type="submit" class="btn btn-sm btn-primary">Add Progress Update</button>
+          <button type="submit" class="btn btn-sm btn-primary">Add Update</button>
         </div>
       </form>
     {% endif %}
     <div class="contract-manager-table-wrap contractor-pack-table-wrap mt-3">
       <table class="contract-manager-table">
         <thead>
-          <tr><th>Date</th><th>Visibility</th><th>Update</th><th>Evidence</th></tr>
+          <tr><th>Date</th><th>Type</th><th>Visibility</th><th>Update</th><th>Evidence</th></tr>
         </thead>
         <tbody>
           {% for update in progress_updates %}
             <tr>
               <td>{{ update.created_at.strftime('%d %b %Y %H:%M') if update.created_at else '-' }}</td>
+              <td><span class="contract-alert-pill contract-alert-muted">{{ update.update_type_label }}</span></td>
               <td><span class="contract-alert-pill contract-alert-muted">{{ update.visibility_label }}</span></td>
               <td>{{ update.note }}</td>
               <td>
@@ -222,7 +230,7 @@
               </td>
             </tr>
           {% else %}
-            <tr><td colspan="4" class="contract-manager-empty">No progress updates have been added yet.</td></tr>
+            <tr><td colspan="5" class="contract-manager-empty">No updates have been added yet.</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -235,4 +243,27 @@
     {% include "works/_lifecycle_timeline.html" %}
   </section>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+  document.addEventListener("change", function (event) {
+    var source = event.target;
+    if (!source || source.name !== "update_type") {
+      return;
+    }
+    var targetId = source.getAttribute("data-completion-visibility-target");
+    var visibility = targetId ? document.getElementById(targetId) : null;
+    if (visibility && source.value === "completion" && visibility.dataset.userChanged !== "true") {
+      visibility.value = "reporter_visible";
+    }
+  });
+
+  document.addEventListener("change", function (event) {
+    if (event.target && event.target.name === "visibility_scope") {
+      event.target.dataset.userChanged = "true";
+    }
+  });
+</script>
 {% endblock %}

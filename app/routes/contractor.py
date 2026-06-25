@@ -335,12 +335,13 @@ def add_progress_update(work_order_id):
         user_id=user.id,
         note=(request.form.get('progress_note') or '').strip(),
         visibility_scope=(request.form.get('visibility_scope') or '').strip(),
+        update_type=(request.form.get('update_type') or '').strip(),
         evidence_links=uploaded_references,
     )
     if not progress_update:
-        flash('Progress update could not be saved for this work order.', 'warning')
+        flash('Update could not be saved for this work order.', 'warning')
     else:
-        flash('Progress update added.', 'success')
+        flash('Completion submitted for review.' if progress_update.update_type == 'completion' else 'Update added.', 'success')
 
     if request.form.get('return_to') == 'detail':
         return redirect(url_for('contractor.work_order_detail', work_order_id=work_order_id))

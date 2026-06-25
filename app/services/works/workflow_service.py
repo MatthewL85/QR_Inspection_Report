@@ -1156,6 +1156,8 @@ def _work_order_payload(
             {
                 "id": update.id,
                 "created_at": _iso_date(update.created_at),
+                "update_type": update.update_type,
+                "update_type_label": update.update_type_label,
                 "visibility_scope": update.visibility_scope,
                 "visibility_label": update.visibility_label,
                 "note": update.note,
@@ -1667,10 +1669,26 @@ WORK_ORDER_PROGRESS_VISIBILITY = {
     "reporter_visible": "All Parties",
 }
 
+WORK_ORDER_UPDATE_TYPES = {
+    "progress": "Progress Update",
+    "completion": "Completion",
+}
+
 
 def _normalise_progress_visibility(value: str | None) -> str:
     key = (value or "management").strip().lower()
     return key if key in WORK_ORDER_PROGRESS_VISIBILITY else "management"
+
+
+def _normalise_work_update_type(value: str | None) -> str:
+    key = (value or "progress").strip().lower()
+    return key if key in WORK_ORDER_UPDATE_TYPES else "progress"
+
+
+def _completion_visibility_from_update_visibility(value: str) -> str:
+    if value == "reporter_visible":
+        return "Admin,PM,Contractor,Member,Resident,Owner,GAR"
+    return "Admin,PM,Contractor,GAR"
 
 
 def add_work_order_progress_update(
@@ -1680,6 +1698,7 @@ def add_work_order_progress_update(
     user_id: int,
     note: str,
     visibility_scope: str = "management",
+    update_type: str = "progress",
     evidence_links: list[str] | None = None,
 ) -> WorkOrderProgressUpdate | None:
     work_order = WorkOrder.query.filter(
@@ -1692,6 +1711,9 @@ def add_work_order_progress_update(
     if is_closed_status(work_order.status):
         return None
 
+    update_type = _normalise_work_update_type(update_type)
+    if update_type == "completion" and not visibility_scope:
+        visibility_scope = "reporter_visible"
     visibility_scope = _normalise_progress_visibility(visibility_scope)
     evidence_links = [link for link in (evidence_links or []) if link]
     progress_update = WorkOrderProgressUpdate(
@@ -1702,6 +1724,7 @@ def add_work_order_progress_update(
         contractor_id=work_order.contractor_id,
         created_by_id=user_id,
         visibility_scope=visibility_scope,
+        update_type=update_type,
         note=note,
         evidence_links=evidence_links,
         attachments_count=len(evidence_links),
@@ -1714,10 +1737,55 @@ def add_work_order_progress_update(
         "management": "Admin,PM,Contractor,GAR",
         "reporter_visible": "Admin,PM,Contractor,Member,Resident,Owner,GAR",
     }[visibility_scope]
+    if update_type == "completion":
+        work_order.status = "Completion Submitted"
+        work_order.accepted_contractor_id = work_order.accepted_contractor_id or user_id
+        primary_evidence_reference = evidence_links[0] if evidence_links else ""
+        completion_visibility = _completion_visibility_from_update_visibility(visibility_scope)
+        if work_order.completion:
+            work_order.completion.completion_notes = note or work_order.completion.completion_notes
+            existing_data = work_order.completion.extracted_data or {}
+            existing_links = existing_data.get("evidence_links") if isinstance(existing_data, dict) else []
+            merged_links = []
+            for value in [work_order.completion.external_reference, *(existing_links or []), *evidence_links]:
+                value = (value or "").strip()
+                if value and value not in merged_links:
+                    merged_links.append(value)
+            if merged_links:
+                work_order.completion.external_reference = work_order.completion.external_reference or merged_links[0]
+                work_order.completion.media_uploaded = True
+                work_order.completion.attachments_count = len(merged_links)
+                work_order.completion.extracted_data = {
+                    **(existing_data if isinstance(existing_data, dict) else {}),
+                    "evidence_links": merged_links,
+                    "completion_update_id": progress_update.id,
+                }
+            work_order.completion.visibility_scope = completion_visibility
+            work_order.completion.consent_verified = True
+        else:
+            db.session.add(
+                WorkOrderCompletion(
+                    work_order_id=work_order.id,
+                    completed_by_id=user_id,
+                    contractor_id=contractor_id,
+                    completion_notes=note,
+                    external_reference=primary_evidence_reference or None,
+                    media_uploaded=bool(evidence_links),
+                    attachments_count=len(evidence_links),
+                    extracted_data={
+                        "evidence_links": evidence_links,
+                        "completion_update_id": progress_update.id,
+                    } if evidence_links else {"completion_update_id": progress_update.id},
+                    consent_verified=True,
+                    source_system="Contractor Logix",
+                    visibility_scope=completion_visibility,
+                )
+            )
+
     record_work_order_lifecycle_event(
         work_order=work_order,
-        event_type="progress_update_added",
-        title="Progress update added",
+        event_type="completion_submitted" if update_type == "completion" else "progress_update_added",
+        title="Completion submitted" if update_type == "completion" else "Progress update added",
         source_module="Contractor Logix",
         actor_user_id=user_id,
         actor_label=_actor_label(user_id, "Contractor"),
@@ -1727,14 +1795,27 @@ def add_work_order_progress_update(
         visibility_scope=lifecycle_visibility,
         event_metadata={
             "progress_update_id": progress_update.id,
+            "update_type": update_type,
+            "update_type_label": WORK_ORDER_UPDATE_TYPES[update_type],
             "visibility_scope": visibility_scope,
             "visibility_label": WORK_ORDER_PROGRESS_VISIBILITY[visibility_scope],
             "attachments_count": len(evidence_links),
             "evidence_links": evidence_links,
+            "media_uploaded": bool(evidence_links),
         },
     )
 
-    if visibility_scope == "reporter_visible":
+    if update_type == "completion":
+        if visibility_scope == "reporter_visible":
+            _notify_linked_members_of_completion(work_order)
+        _notify_work_managers(
+            work_order=work_order,
+            notification_type="works_completion_review",
+            message=f"Contractor completion submitted for WO-{work_order.id}.",
+            suggested_action="Review contractor evidence, member feedback and approve or return the work.",
+            priority_level="High",
+        )
+    elif visibility_scope == "reporter_visible":
         _notify_linked_members_of_progress(work_order, progress_update)
 
     db.session.commit()
