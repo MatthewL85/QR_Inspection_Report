@@ -145,7 +145,33 @@
         </thead>
         <tbody>
           {% for item in docket.evidence_items %}
-            <tr><td>{{ item.source }}</td><td>{{ item.label }}</td><td>{{ item.reference }}</td></tr>
+            <tr>
+              <td>{{ item.source }}</td>
+              <td>
+                {{ item.label }}
+                {% if item.reference_type and item.reference_type != "note" %}
+                  <span class="contract-alert-pill contract-alert-muted">{{ item.reference_type|title }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if item.reference_url %}
+                  <a class="works-evidence-link" href="{{ item.reference_url }}" target="_blank" rel="noopener">
+                    Open Evidence
+                  </a>
+                  {% if item.is_image %}
+                    <a class="contractor-evidence-preview" href="{{ item.reference_url }}" target="_blank" rel="noopener" aria-label="Open image evidence">
+                      <img src="{{ item.reference_url }}" alt="{{ item.label }}">
+                    </a>
+                  {% elif item.is_video %}
+                    <a class="contractor-evidence-preview contractor-evidence-video" href="{{ item.reference_url }}" target="_blank" rel="noopener">
+                      Video Evidence
+                    </a>
+                  {% endif %}
+                {% else %}
+                  {{ item.display_reference or "-" }}
+                {% endif %}
+              </td>
+            </tr>
           {% else %}
             <tr><td colspan="3" class="contract-manager-empty">No images, videos or document references are linked yet.</td></tr>
           {% endfor %}

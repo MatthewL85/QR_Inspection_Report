@@ -14,6 +14,9 @@ from app.services.works.workflow_service import build_work_order_lifecycle_for_a
 
 
 PDF_READY_STATUSES = {"accepted", "in progress", "completion submitted", "completed", "closed", "resolved", "returned"}
+IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp", "heic"}
+VIDEO_EXTENSIONS = {"mp4", "mov", "webm", "avi", "m4v"}
+DOCUMENT_EXTENSIONS = {"pdf", "doc", "docx"}
 
 
 def _display(value: Any, fallback: str = "-") -> str:
@@ -89,6 +92,45 @@ def _unique_links(*groups: Any) -> list[str]:
     return links
 
 
+def _reference_extension(reference: str) -> str:
+    clean_reference = (reference or "").split("?", 1)[0].split("#", 1)[0]
+    if "." not in clean_reference:
+        return ""
+    return clean_reference.rsplit(".", 1)[-1].lower()
+
+
+def _reference_type(reference: str) -> str:
+    extension = _reference_extension(reference)
+    if extension in IMAGE_EXTENSIONS:
+        return "image"
+    if extension in VIDEO_EXTENSIONS:
+        return "video"
+    if extension in DOCUMENT_EXTENSIONS:
+        return "document"
+    return "link" if _is_openable_reference(reference) else "note"
+
+
+def _is_openable_reference(reference: str) -> bool:
+    reference = (reference or "").strip().lower()
+    return reference.startswith(("/static/", "http://", "https://"))
+
+
+def _evidence_item(source: str, label: str, reference: str) -> dict[str, Any]:
+    reference = (reference or "").strip()
+    reference_type = _reference_type(reference)
+    return {
+        "source": source,
+        "label": label,
+        "reference": reference,
+        "display_reference": "Open evidence" if _is_openable_reference(reference) else _display(reference),
+        "reference_url": reference if _is_openable_reference(reference) else "",
+        "reference_type": reference_type,
+        "is_image": reference_type == "image",
+        "is_video": reference_type == "video",
+        "is_document": reference_type == "document",
+    }
+
+
 def build_contractor_work_order_docket(work_order: WorkOrder, *, audience: str = "contractor") -> dict[str, Any]:
     """Build the contractor-visible work order pack from source records."""
     client = work_order.client
@@ -110,24 +152,22 @@ def build_contractor_work_order_docket(work_order: WorkOrder, *, audience: str =
             maintenance_request.photo_links,
         )
         for index, reference in enumerate(request_links, start=1):
-            evidence_items.append({
-                "source": "Members Logix",
-                "label": f"Request attachment {index}",
-                "reference": reference,
-            })
+            evidence_items.append(_evidence_item("Members Logix", f"Request attachment {index}", reference))
     if work_order.attachments_count:
         evidence_items.append({
             "source": "Works Logix",
             "label": "Work order attachments",
             "reference": f"{work_order.attachments_count} attachment(s) recorded",
+            "display_reference": f"{work_order.attachments_count} attachment(s) recorded",
+            "reference_url": "",
+            "reference_type": "note",
+            "is_image": False,
+            "is_video": False,
+            "is_document": False,
         })
     completion_evidence = build_completion_evidence_pack(work_order.completion)
     for index, reference in enumerate(completion_evidence.get("evidence_links") or [], start=1):
-        evidence_items.append({
-            "source": "Contractor Logix",
-            "label": f"Completion evidence {index}",
-            "reference": reference,
-        })
+        evidence_items.append(_evidence_item("Contractor Logix", f"Completion evidence {index}", reference))
 
     contacts = [
         _contact_card(

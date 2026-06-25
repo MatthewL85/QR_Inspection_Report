@@ -72,7 +72,17 @@
     <thead><tr><th>Source</th><th>Evidence</th><th>Reference</th></tr></thead>
     <tbody>
       {% for item in docket.evidence_items %}
-        <tr><td>{{ item.source }}</td><td>{{ item.label }}</td><td>{{ item.reference }}</td></tr>
+        <tr>
+          <td>{{ item.source }}</td>
+          <td>{{ item.label }}</td>
+          <td>
+            {% if item.reference_url %}
+              <a href="{{ item.reference_url }}">{{ item.display_reference }}</a>
+            {% else %}
+              {{ item.display_reference or "-" }}
+            {% endif %}
+          </td>
+        </tr>
       {% else %}
         <tr><td colspan="3">No images, videos or document references are linked yet.</td></tr>
       {% endfor %}
