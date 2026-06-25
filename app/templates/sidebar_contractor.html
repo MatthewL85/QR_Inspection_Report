@@ -19,8 +19,8 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link {% if request.endpoint == 'contractor.contractor_ppm_calendar' %}active text-primary fw-bold{% endif %}" href="{{ url_for('contractor.contractor_ppm_calendar') }}">
-          <i class="fas fa-calendar-alt me-2"></i>PPM Calendar
+        <a class="nav-link {% if request.endpoint in ['contractor.calendar', 'contractor.contractor_ppm_calendar'] %}active text-primary fw-bold{% endif %}" href="{{ url_for('contractor.calendar') }}">
+          <i class="fas fa-calendar-alt me-2"></i>Calendar
         </a>
       </li>
       <li class="nav-item mt-auto">

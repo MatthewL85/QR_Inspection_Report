@@ -83,6 +83,7 @@ class WorkOrder(db.Model):
 
     completion = db.relationship('WorkOrderCompletion', back_populates='work_order', uselist=False)
     feedback = db.relationship('ContractorFeedback', back_populates='work_order', uselist=False)
+    job_docket = db.relationship('JobDocket', back_populates='work_order', uselist=False)
 
 
     # 📎 External/API Fields

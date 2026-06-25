@@ -78,6 +78,8 @@ from app.models.contractor.contractor_assignment import ContractorAssignment
 from app.models.contractor.contractor_feedback import ContractorFeedback
 from app.models.contractor.contractor_performance import ContractorPerformance
 from app.models.contractor.contractor_compliance_document import ContractorComplianceDocument
+from app.models.contractor.job_docket import JobDocket
+from app.models.contractor.contractor_calendar_entry import ContractorCalendarEntry
 from app.models.works.work_order import WorkOrder
 from app.models.works.work_order_completion import WorkOrderCompletion
 from app.models.works.work_order_settings import WorkOrderSettings

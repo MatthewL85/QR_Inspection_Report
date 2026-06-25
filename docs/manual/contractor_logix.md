@@ -2,7 +2,7 @@
 
 Status: Phase 3 operating guide
 
-Last updated: 2026-05-28
+Last updated: 2026-06-25
 
 ## Purpose
 
@@ -29,6 +29,26 @@ Contractors can:
 - resubmit returned completion work
 
 When a Members Logix request is approved by Works Logix triage, the PM/Admin/Assistant selects the contractor before conversion. The created work order is assigned immediately, so it appears in the selected contractor's queue without needing a second routing step.
+
+## Calendar-Centred Job Dockets
+
+Contractor Logix is being shaped around the operational flow:
+
+Work Order -> Accept -> Job Docket -> Assign -> Schedule -> Complete -> Report -> Invoice.
+
+When a contractor accepts a work order, Contractor Logix now creates a real Job Docket linked back to the Works Logix work order. This gives the contractor an operational record without moving ownership of the original work order out of Works Logix.
+
+Accepted job dockets appear in the Contractor Calendar as an Unscheduled Job Queue until the contractor assigns an engineer/team and chooses a calendar slot.
+
+Scheduling a job docket:
+
+- records the scheduled date/time
+- assigns the engineer and/or team
+- creates a Contractor Calendar entry
+- changes the job docket and linked work order to `Scheduled`
+- writes a lifecycle event for Works Logix and GAR context
+
+The Contractor Calendar has an `.ics` feed. This allows the schedule to be opened or subscribed to from Outlook, Google Calendar, Apple Calendar and phone calendars. This is the Phase 1 integration approach because it is standard, lightweight and avoids prematurely adding full OAuth/two-way sync. Later phases can add direct Google/Microsoft calendar connections, conflict detection, drag-and-drop scheduling and GAR scheduling recommendations.
 
 ## Progress Updates
 

@@ -22,6 +22,7 @@ from app.models.works.work_order_progress_update import WorkOrderProgressUpdate
 from app.models.works.work_order_reopen_request import WorkOrderReopenRequest
 from app.services.gar.context import build_work_order_relevant_history
 from app.services.gar import build_works_intelligence_queue
+from app.services.contractor.job_docket_service import ensure_job_docket_for_work_order
 from app.services.works.audit_pack_service import build_completion_evidence_pack
 
 
@@ -1775,6 +1776,7 @@ def contractor_update_work_order(
     if action == "accept":
         work_order.status = "Accepted"
         work_order.accepted_contractor_id = user_id
+        job_docket, docket_created = ensure_job_docket_for_work_order(work_order, accepted_by_id=user_id)
         record_work_order_lifecycle_event(
             work_order=work_order,
             event_type="contractor_accepted",
@@ -1784,7 +1786,29 @@ def contractor_update_work_order(
             actor_label="Contractor",
             note="Contractor accepted the assigned work order.",
             status_snapshot=work_order.status,
+            event_metadata={
+                "job_docket_id": job_docket.id,
+                "job_docket_number": job_docket.docket_number,
+                "job_docket_created": docket_created,
+            },
         )
+        if docket_created:
+            record_work_order_lifecycle_event(
+                work_order=work_order,
+                event_type="job_docket_created",
+                title="Job docket created",
+                source_module="Contractor Logix",
+                actor_user_id=user_id,
+                actor_label="Contractor",
+                note=f"{job_docket.docket_number} is ready for assignment and scheduling.",
+                status_snapshot=job_docket.status,
+                visibility_scope="Admin,PM,Contractor,GAR",
+                event_metadata={
+                    "job_docket_id": job_docket.id,
+                    "job_docket_number": job_docket.docket_number,
+                    "job_docket_status": job_docket.status,
+                },
+            )
     elif action == "reject":
         work_order.status = "Rejected"
         record_work_order_lifecycle_event(

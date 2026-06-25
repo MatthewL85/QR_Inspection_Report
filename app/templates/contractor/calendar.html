@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% block title %}Contractor Calendar{% endblock %}
+
+{% macro unit_label(unit) -%}
+  {% if unit %}
+    {{ unit.block_name ~ ' / ' if unit.block_name }}{{ unit.core_name ~ ' / ' if unit.core_name }}{{ unit.unit_number or unit.unit_label }}
+  {% else %}
+    -
+  {% endif %}
+{%- endmacro %}
+
+{% macro time_range(entry) -%}
+  {% if entry.start_time %}{{ entry.start_time.strftime('%H:%M') }}{% else %}Any time{% endif %}
+  {% if entry.end_time %} - {{ entry.end_time.strftime('%H:%M') }}{% endif %}
+{%- endmacro %}
+
+{% block page_content %}
+<div class="contract-manager app-ready-surface app-ready-surface--contractor"
+     data-app-mobile-ready="true"
+     data-app-safe-area="required"
+     data-app-source-backed="true"
+     data-app-offline="static-shell-only">
+  <section class="contract-manager-hero">
+    <div>
+      <h1>Contractor Calendar</h1>
+      <p>Accepted jobs, engineer scheduling and calendar export for Contractor Logix.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="contract-manager-link" href="{{ url_for('contractor.work_orders') }}">Work Queue</a>
+      <a class="contract-manager-button" href="{{ url_for('contractor.calendar_ics') }}">
+        <i class="fas fa-calendar-plus me-1"></i> Calendar Feed
+      </a>
+    </div>
+  </section>
+
+  <section class="works-command-grid">
+    <article class="works-kpi-card"><span>Unscheduled</span><strong class="text-warning">{{ stats.unscheduled }}</strong></article>
+    <article class="works-kpi-card"><span>Scheduled</span><strong class="text-primary">{{ stats.scheduled }}</strong></article>
+    <article class="works-kpi-card"><span>Overdue</span><strong class="text-danger">{{ stats.overdue }}</strong></article>
+    <article class="works-kpi-card"><span>Completed</span><strong class="text-success">{{ stats.completed }}</strong></article>
+  </section>
+
+  <nav class="app-surface-nav" aria-label="Contractor Calendar actions" data-app-surface="contractor-calendar">
+    <a href="#unscheduled-jobs">Unscheduled</a>
+    <a href="#scheduled-jobs">Scheduled</a>
+    <a href="{{ url_for('contractor.calendar_ics') }}">Export .ics</a>
+  </nav>
+
+  <section class="contract-manager-panel" id="unscheduled-jobs">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Unscheduled Job Queue</h2>
+        <p>Accepted job dockets waiting for an engineer, team and calendar slot.</p>
+      </div>
+      <span class="contract-alert-pill contract-alert-muted">{{ unscheduled_dockets|length }} waiting</span>
+    </div>
+
+    <div class="contract-manager-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr>
+            <th>Docket</th>
+            <th>Job</th>
+            <th>Location</th>
+            <th>Priority</th>
+            <th>Schedule</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for docket in unscheduled_dockets %}
+            <tr>
+              <td>
+                <div class="contract-manager-cell-stack">
+                  <strong>{{ docket.docket_number }}</strong>
+                  <span>WO-{{ docket.work_order_id }}</span>
+                </div>
+              </td>
+              <td>
+                <div class="contract-manager-cell-stack">
+                  <strong>{{ docket.work_order.title if docket.work_order else 'Work Order' }}</strong>
+                  <span>{{ docket.required_trade or 'Trade not set' }}</span>
+                </div>
+              </td>
+              <td>
+                <div class="contract-manager-cell-stack">
+                  <strong>{{ docket.client.name if docket.client else '-' }}</strong>
+                  <span>{{ unit_label(docket.unit) }}</span>
+                </div>
+              </td>
+              <td><span class="unit-status-pill">{{ docket.priority or 'Normal' }}</span></td>
+              <td>
+                <form method="post"
+                      action="{{ url_for('contractor.schedule_job_docket', docket_id=docket.id) }}"
+                      class="contract-manager-form-grid"
+                      data-app-action="contractor-schedule-job-docket"
+                      data-app-requires-online="true"
+                      data-app-requires-csrf="true"
+                      data-app-offline-queue="false"
+                      data-app-source-record="JobDocket:{{ docket.id }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <div>
+                    <label>Date</label>
+                    <input type="date" name="scheduled_date" required>
+                  </div>
+                  <div>
+                    <label>Start</label>
+                    <input type="time" name="start_time">
+                  </div>
+                  <div>
+                    <label>End</label>
+                    <input type="time" name="end_time">
+                  </div>
+                  <div>
+                    <label>Duration</label>
+                    <input type="number" min="15" step="15" name="estimated_duration_minutes" placeholder="mins">
+                  </div>
+                  <div>
+                    <label>Engineer</label>
+                    <select name="assigned_engineer_id">
+                      <option value="">Unassigned</option>
+                      {% for engineer in engineers %}
+                        <option value="{{ engineer.id }}">{{ engineer.full_name or engineer.email }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div>
+                    <label>Team</label>
+                    <select name="assigned_team_id">
+                      <option value="">No team</option>
+                      {% for team in teams %}
+                        <option value="{{ team.id }}">{{ team.name }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="contractor-calendar-notes">
+                    <label>Notes</label>
+                    <input type="text" name="notes" placeholder="Access, timing or appointment notes">
+                  </div>
+                  <div class="d-flex align-items-end">
+                    <button type="submit" class="contract-manager-button">Schedule</button>
+                  </div>
+                </form>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5" class="contract-manager-empty">No accepted job dockets are waiting for scheduling.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel" id="scheduled-jobs">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Scheduled Jobs</h2>
+        <p>Calendar entries created from accepted job dockets. Export the feed to Outlook, Google Calendar or phone calendars.</p>
+      </div>
+      <form method="get" class="d-flex gap-2 flex-wrap align-items-end">
+        <select name="engineer_id" class="form-select form-select-sm">
+          <option value="">All engineers</option>
+          {% for engineer in engineers %}
+            <option value="{{ engineer.id }}" {% if filters.engineer_id == engineer.id %}selected{% endif %}>{{ engineer.full_name or engineer.email }}</option>
+          {% endfor %}
+        </select>
+        <select name="team_id" class="form-select form-select-sm">
+          <option value="">All teams</option>
+          {% for team in teams %}
+            <option value="{{ team.id }}" {% if filters.team_id == team.id %}selected{% endif %}>{{ team.name }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="contract-manager-link">Apply</button>
+      </form>
+    </div>
+
+    <div class="contract-manager-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Docket</th>
+            <th>Engineer / Team</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in scheduled_entries %}
+            <tr>
+              <td><strong>{{ entry.scheduled_date.strftime('%d %b %Y') if entry.scheduled_date else '-' }}</strong></td>
+              <td>{{ time_range(entry) }}</td>
+              <td>
+                <div class="contract-manager-cell-stack">
+                  <strong>{{ entry.job_docket.docket_number if entry.job_docket else '-' }}</strong>
+                  <span>{{ entry.title }}</span>
+                </div>
+              </td>
+              <td>
+                <div class="contract-manager-cell-stack">
+                  <strong>{{ entry.assigned_engineer.full_name if entry.assigned_engineer else 'No engineer' }}</strong>
+                  <span>{{ entry.assigned_team.name if entry.assigned_team else 'No team' }}</span>
+                </div>
+              </td>
+              <td>
+                <div class="contract-manager-cell-stack">
+                  <strong>{{ entry.client.name if entry.client else '-' }}</strong>
+                  <span>{{ unit_label(entry.unit) }}</span>
+                </div>
+              </td>
+              <td><span class="unit-status-pill is-active">{{ entry.calendar_status }}</span></td>
+              <td>
+                {% if entry.work_order_id %}
+                  <a href="{{ url_for('contractor.work_order_detail', work_order_id=entry.work_order_id) }}">Open</a>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="7" class="contract-manager-empty">No scheduled job dockets match this view.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

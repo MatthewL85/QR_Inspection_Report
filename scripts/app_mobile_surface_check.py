@@ -40,6 +40,17 @@ SURFACE_TEMPLATES = {
         "#completed-work",
         "GAR history",
     ),
+    "app/templates/contractor/calendar.html": (
+        "app-ready-surface--contractor",
+        'data-app-mobile-ready="true"',
+        'data-app-safe-area="required"',
+        'data-app-source-backed="true"',
+        'data-app-offline="static-shell-only"',
+        'data-app-surface="contractor-calendar"',
+        "#unscheduled-jobs",
+        "#scheduled-jobs",
+        "Calendar Feed",
+    ),
     "app/templates/notifications/index.html": (
         "app-ready-surface--notifications",
         'data-app-mobile-ready="true"',
@@ -83,6 +94,9 @@ APP_ACTIONS = {
         "contractor-start-work-order",
         "contractor-submit-completion",
         "contractor-progress-update",
+    ),
+    "app/templates/contractor/calendar.html": (
+        "contractor-schedule-job-docket",
     ),
 }
 

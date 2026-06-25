@@ -2046,6 +2046,9 @@ body.sidebar-collapsed .main-content {
 .contract-manager-filters.works-request-form input,
 .contract-manager-filters.works-request-form select,
 .contract-manager-filters.works-request-form textarea,
+.contract-manager-form-grid input,
+.contract-manager-form-grid select,
+.contract-manager-form-grid textarea,
 .works-reopen-details input,
 .works-reopen-details textarea {
   width: 100%;
@@ -2055,6 +2058,25 @@ body.sidebar-collapsed .main-content {
   color: #17233c;
   font-size: 0.86rem;
   padding: 0.58rem 0.7rem;
+}
+
+.contract-manager-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 0.65rem;
+  align-items: end;
+}
+
+.contract-manager-form-grid label {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #43536a;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.contractor-calendar-notes {
+  grid-column: span 2;
 }
 
 .works-form-wide {
@@ -5474,5 +5496,13 @@ body.sidebar-collapsed .main-content {
   .app-ready-surface .contract-manager-button,
   .app-ready-surface .btn {
     min-height: 38px;
+  }
+
+  .contract-manager-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contractor-calendar-notes {
+    grid-column: auto;
   }
 }

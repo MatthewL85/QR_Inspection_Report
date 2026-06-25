@@ -8,7 +8,10 @@
       <h1>Contractor Logix</h1>
       <p>Assigned work orders, completion updates and future performance evidence.</p>
     </div>
-    <a class="contract-manager-link" href="{{ url_for('contractor.work_orders') }}">Open Work Queue</a>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="contract-manager-link" href="{{ url_for('contractor.calendar') }}">Open Calendar</a>
+      <a class="contract-manager-button" href="{{ url_for('contractor.work_orders') }}">Open Work Queue</a>
+    </div>
   </section>
 
   {% set dashboard_notification_title = 'Notification Action Queue' %}
