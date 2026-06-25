@@ -4100,6 +4100,14 @@ body.sidebar-collapsed .main-content {
   margin-top: 0.15rem;
 }
 
+.contractor-pack-detail-grid {
+  padding: 0 1rem 0.75rem;
+}
+
+.contractor-pack-detail-grid > div {
+  padding: 0.55rem 0;
+}
+
 .works-evidence-link-list {
   display: flex;
   flex-wrap: wrap;

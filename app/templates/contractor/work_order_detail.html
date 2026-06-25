@@ -50,7 +50,7 @@
       <article class="works-kpi-card"><span>Preferred Visit</span><strong>{{ docket.dates.preferred_visit }}</strong></article>
     </div>
 
-    <div class="unit-detail-grid">
+    <div class="unit-detail-grid contractor-pack-detail-grid">
       <div>
         <span class="unit-detail-label">Description</span>
         <strong>{{ work_order.description or '-' }}</strong>
@@ -88,7 +88,7 @@
         <p>Site information visible to the assigned contractor for this job only.</p>
       </div>
     </div>
-    <div class="unit-detail-grid">
+    <div class="unit-detail-grid contractor-pack-detail-grid">
       <div><span class="unit-detail-label">Development</span><strong>{{ docket.location.development }}</strong></div>
       <div><span class="unit-detail-label">Property</span><strong>{{ docket.location.property }}</strong></div>
       <div><span class="unit-detail-label">Unit</span><strong>{{ docket.location.unit }}</strong></div>
@@ -132,7 +132,7 @@
         <p>Source details from Members Logix, Works Logix and Contractor Logix.</p>
       </div>
     </div>
-    <div class="unit-detail-grid">
+    <div class="unit-detail-grid contractor-pack-detail-grid">
       <div><span class="unit-detail-label">Member Request</span><strong>{{ docket.request_context.member_request_title }}</strong></div>
       <div><span class="unit-detail-label">Urgency</span><strong>{{ docket.request_context.member_request_urgency }}</strong></div>
       <div><span class="unit-detail-label">Category</span><strong>{{ docket.request_context.member_request_category }}</strong></div>
