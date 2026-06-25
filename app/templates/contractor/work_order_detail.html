@@ -63,20 +63,28 @@
 
     {% if docket.status_key in ['assigned', 'open', 'quote requested', 'quote submitted'] %}
       <div class="contract-manager-actions-row contractor-pack-actions-row">
-        <form method="post" action="{{ url_for('contractor.update_work_order', work_order_id=work_order.id, action='accept') }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <input type="hidden" name="return_to" value="detail">
-          <button type="submit" class="btn btn-sm btn-primary">Accept Work Order</button>
-        </form>
-        <details class="works-reopen-details">
-          <summary>Return / reject this work order</summary>
+        <div class="contractor-pack-action-buttons">
+          <form method="post" action="{{ url_for('contractor.update_work_order', work_order_id=work_order.id, action='accept') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="return_to" value="detail">
+            <button type="submit" class="btn btn-sm btn-primary">Accept Work Order</button>
+          </form>
+          <button type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  data-reject-toggle="contractor_reject_panel"
+                  aria-controls="contractor_reject_panel"
+                  aria-expanded="false">
+            Reject Work Order
+          </button>
+        </div>
+        <div id="contractor_reject_panel" class="contractor-pack-reject-panel" hidden>
           <form method="post" action="{{ url_for('contractor.update_work_order', work_order_id=work_order.id, action='reject') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="return_to" value="detail">
             <textarea name="completion_notes" rows="3" required placeholder="Tell Works Logix why this cannot be accepted."></textarea>
             <button type="submit" class="btn btn-sm btn-outline-danger">Return to Works Logix</button>
           </form>
-        </details>
+        </div>
       </div>
     {% endif %}
   </section>
@@ -298,6 +306,19 @@
     if (event.target && event.target.name === "visibility_scope") {
       event.target.dataset.userChanged = "true";
     }
+  });
+
+  document.addEventListener("click", function (event) {
+    var toggle = event.target.closest("[data-reject-toggle]");
+    if (!toggle) {
+      return;
+    }
+    var panel = document.getElementById(toggle.getAttribute("data-reject-toggle"));
+    if (!panel) {
+      return;
+    }
+    panel.hidden = !panel.hidden;
+    toggle.setAttribute("aria-expanded", panel.hidden ? "false" : "true");
   });
 </script>
 {% endblock %}
