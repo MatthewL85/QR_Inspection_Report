@@ -4108,6 +4108,56 @@ body.sidebar-collapsed .main-content {
   padding: 0.55rem 0;
 }
 
+.contractor-pack-table-wrap {
+  margin-left: 1rem;
+  margin-right: 1rem;
+  width: auto;
+}
+
+.contractor-progress-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.42fr);
+  gap: 0.9rem;
+  align-items: stretch;
+  padding: 0 1rem 1rem;
+}
+
+.contractor-progress-form label {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #43536a;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.contractor-progress-form textarea,
+.contractor-progress-form select,
+.contractor-progress-form input {
+  width: 100%;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #17233c;
+  font-size: 0.86rem;
+  padding: 0.58rem 0.7rem;
+}
+
+.contractor-progress-note textarea {
+  min-height: 132px;
+  resize: vertical;
+}
+
+.contractor-progress-actions {
+  display: grid;
+  grid-template-rows: auto auto min-content;
+  gap: 0.65rem;
+  align-content: start;
+}
+
+.contractor-progress-actions .btn {
+  justify-self: start;
+}
+
 .works-evidence-link-list {
   display: flex;
   flex-wrap: wrap;
@@ -5507,6 +5557,10 @@ body.sidebar-collapsed .main-content {
   }
 
   .contract-manager-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contractor-progress-form {
     grid-template-columns: 1fr;
   }
 

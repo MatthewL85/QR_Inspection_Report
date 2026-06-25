@@ -138,7 +138,7 @@
       <div><span class="unit-detail-label">Category</span><strong>{{ docket.request_context.member_request_category }}</strong></div>
       <div><span class="unit-detail-label">External Ref</span><strong>{{ docket.classification.external_reference }}</strong></div>
     </div>
-    <div class="contract-manager-table-wrap mt-3">
+    <div class="contract-manager-table-wrap contractor-pack-table-wrap mt-3">
       <table class="contract-manager-table">
         <thead>
           <tr><th>Source</th><th>Evidence</th><th>Reference</th></tr>
@@ -165,7 +165,7 @@
       <form method="post"
             action="{{ url_for('contractor.add_progress_update', work_order_id=work_order.id) }}"
             enctype="multipart/form-data"
-            class="contract-manager-form-grid"
+            class="contractor-progress-form"
             data-app-action="contractor-progress-update"
             data-app-requires-online="true"
             data-app-requires-csrf="true"
@@ -173,34 +173,34 @@
             data-app-source-record="work_order">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="return_to" value="detail">
-        <div class="unit-detail-wide">
+        <div class="contractor-progress-note">
           <label class="unit-detail-label" for="progress_note">Progress Note</label>
-          <textarea id="progress_note" name="progress_note" rows="3" required placeholder="Add an update, delay note, access issue or site progress."></textarea>
+          <textarea id="progress_note" name="progress_note" rows="6" required placeholder="Add an update, delay note, access issue or site progress."></textarea>
         </div>
-        <div>
-          <label class="unit-detail-label" for="visibility_scope">Visibility</label>
-          <select id="visibility_scope" name="visibility_scope" required>
-            <option value="management">Contractor + Management</option>
-            <option value="contractor_internal">Contractor Only</option>
-            <option value="reporter_visible">All Parties</option>
-          </select>
-        </div>
-        <div>
-          <label class="unit-detail-label" for="progress_files">Photos / Videos / Documents</label>
-          <input id="progress_files"
-                 type="file"
-                 name="progress_files"
-                 multiple
-                 accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx"
-                 data-app-media-context="contractor_progress_update"
-                 data-app-media-source-model="WorkOrderProgressUpdate">
-        </div>
-        <div class="unit-detail-wide">
+        <div class="contractor-progress-actions">
+          <div>
+            <label class="unit-detail-label" for="visibility_scope">Visibility</label>
+            <select id="visibility_scope" name="visibility_scope" required>
+              <option value="management">Contractor + Management</option>
+              <option value="contractor_internal">Contractor Only</option>
+              <option value="reporter_visible">All Parties</option>
+            </select>
+          </div>
+          <div>
+            <label class="unit-detail-label" for="progress_files">Photos / Videos / Documents</label>
+            <input id="progress_files"
+                   type="file"
+                   name="progress_files"
+                   multiple
+                   accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx"
+                   data-app-media-context="contractor_progress_update"
+                   data-app-media-source-model="WorkOrderProgressUpdate">
+          </div>
           <button type="submit" class="btn btn-sm btn-primary">Add Progress Update</button>
         </div>
       </form>
     {% endif %}
-    <div class="contract-manager-table-wrap mt-3">
+    <div class="contract-manager-table-wrap contractor-pack-table-wrap mt-3">
       <table class="contract-manager-table">
         <thead>
           <tr><th>Date</th><th>Visibility</th><th>Update</th><th>Evidence</th></tr>
