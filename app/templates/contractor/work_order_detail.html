@@ -62,7 +62,7 @@
     </div>
 
     {% if docket.status_key in ['assigned', 'open', 'quote requested', 'quote submitted'] %}
-      <div class="contract-manager-actions-row">
+      <div class="contract-manager-actions-row contractor-pack-actions-row">
         <form method="post" action="{{ url_for('contractor.update_work_order', work_order_id=work_order.id, action='accept') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="return_to" value="detail">

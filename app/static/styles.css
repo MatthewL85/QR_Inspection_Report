@@ -4108,6 +4108,24 @@ body.sidebar-collapsed .main-content {
   padding: 0.55rem 0;
 }
 
+.contractor-pack-actions-row {
+  align-items: flex-start;
+  border-top: 1px solid #eef1f5;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0 1rem;
+  padding: 0.7rem 0 0.85rem;
+}
+
+.contractor-pack-actions-row form {
+  margin: 0;
+}
+
+.contractor-pack-actions-row .works-reopen-details {
+  margin: 0;
+}
+
 .contractor-pack-table-wrap {
   margin-left: 1rem;
   margin-right: 1rem;
