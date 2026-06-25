@@ -181,6 +181,7 @@
           <div>
             <label class="unit-detail-label" for="update_type">Update Type</label>
             <select id="update_type" name="update_type" required data-completion-visibility-target="visibility_scope">
+              <option value="" selected disabled>Select update type</option>
               <option value="progress">Progress Update</option>
               <option value="completion">Completion</option>
             </select>
@@ -188,6 +189,7 @@
           <div>
             <label class="unit-detail-label" for="visibility_scope">Visibility</label>
             <select id="visibility_scope" name="visibility_scope" required>
+              <option value="" selected disabled>Select visibility</option>
               <option value="management">Contractor + Management</option>
               <option value="contractor_internal">Contractor Only</option>
               <option value="reporter_visible">All Parties</option>
@@ -203,7 +205,7 @@
                    data-app-media-context="contractor_progress_update"
                    data-app-media-source-model="WorkOrderProgressUpdate">
           </div>
-          <button type="submit" class="btn btn-sm btn-primary">Add Update</button>
+          <button type="submit" class="btn btn-sm btn-primary" data-update-submit>Add Update</button>
         </div>
       </form>
     {% endif %}
@@ -255,8 +257,14 @@
     }
     var targetId = source.getAttribute("data-completion-visibility-target");
     var visibility = targetId ? document.getElementById(targetId) : null;
-    if (visibility && source.value === "completion" && visibility.dataset.userChanged !== "true") {
+    if (visibility && source.value === "completion") {
       visibility.value = "reporter_visible";
+      visibility.dataset.userChanged = "false";
+    }
+    var form = source.closest("form");
+    var submitButton = form ? form.querySelector("[data-update-submit]") : null;
+    if (submitButton) {
+      submitButton.textContent = source.value === "completion" ? "Submit Completion Notes" : "Add Update";
     }
   });
 

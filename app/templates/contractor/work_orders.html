@@ -446,7 +446,13 @@
                     <input type="hidden" name="search" value="{{ filters.search }}">
                     <input type="hidden" name="status" value="{{ filters.status }}">
                     <textarea name="progress_note" rows="2" required placeholder="Progress update"></textarea>
-                    <select name="visibility_scope" required>
+                    <select name="update_type" required data-completion-visibility-target="visibility_scope_{{ item.id }}">
+                      <option value="" selected disabled>Select update type</option>
+                      <option value="progress">Progress Update</option>
+                      <option value="completion">Completion</option>
+                    </select>
+                    <select id="visibility_scope_{{ item.id }}" name="visibility_scope" required>
+                      <option value="" selected disabled>Select visibility</option>
                       <option value="management">Contractor + Management</option>
                       <option value="contractor_internal">Contractor Only</option>
                       <option value="reporter_visible">All Parties</option>
@@ -457,7 +463,7 @@
                            accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx"
                            data-app-media-context="contractor_progress_update"
                            data-app-media-source-model="WorkOrderProgressUpdate">
-                    <button type="submit" class="contract-manager-button">Add Update</button>
+                    <button type="submit" class="contract-manager-button" data-update-submit>Add Update</button>
                   </form>
                 </details>
               </td>
@@ -536,4 +542,33 @@
     </div>
   </section>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+  document.addEventListener("change", function (event) {
+    var source = event.target;
+    if (!source || source.name !== "update_type") {
+      return;
+    }
+    var targetId = source.getAttribute("data-completion-visibility-target");
+    var visibility = targetId ? document.getElementById(targetId) : null;
+    if (visibility && source.value === "completion") {
+      visibility.value = "reporter_visible";
+      visibility.dataset.userChanged = "false";
+    }
+    var form = source.closest("form");
+    var submitButton = form ? form.querySelector("[data-update-submit]") : null;
+    if (submitButton) {
+      submitButton.textContent = source.value === "completion" ? "Submit Completion Notes" : "Add Update";
+    }
+  });
+
+  document.addEventListener("change", function (event) {
+    if (event.target && event.target.name === "visibility_scope") {
+      event.target.dataset.userChanged = "true";
+    }
+  });
+</script>
 {% endblock %}

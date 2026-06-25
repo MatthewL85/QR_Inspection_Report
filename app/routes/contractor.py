@@ -17,6 +17,8 @@ from app.services.gar import (
 )
 from app.services.works.workflow_service import (
     ContractorWorkFilters,
+    WORK_ORDER_PROGRESS_VISIBILITY,
+    WORK_ORDER_UPDATE_TYPES,
     add_work_order_progress_update,
     build_work_order_lifecycle_for_audience,
     build_work_order_return_context,
@@ -319,6 +321,14 @@ def add_progress_update(work_order_id):
         flash('Your contractor profile is not linked yet.', 'warning')
         return redirect(url_for('contractor.contractor_dashboard'))
 
+    update_type = (request.form.get('update_type') or '').strip()
+    visibility_scope = (request.form.get('visibility_scope') or '').strip()
+    if update_type not in WORK_ORDER_UPDATE_TYPES or visibility_scope not in WORK_ORDER_PROGRESS_VISIBILITY:
+        flash('Please select an update type and visibility before submitting.', 'warning')
+        if request.form.get('return_to') == 'detail':
+            return redirect(url_for('contractor.work_order_detail', work_order_id=work_order_id))
+        return redirect(url_for('contractor.work_orders', **_contractor_filter_args()))
+
     uploaded_references, unsupported_filenames = _save_contractor_evidence_uploads(
         request.files.getlist("progress_files"),
         work_order_id,
@@ -334,8 +344,8 @@ def add_progress_update(work_order_id):
         contractor_id=user.contractor_id,
         user_id=user.id,
         note=(request.form.get('progress_note') or '').strip(),
-        visibility_scope=(request.form.get('visibility_scope') or '').strip(),
-        update_type=(request.form.get('update_type') or '').strip(),
+        visibility_scope=visibility_scope,
+        update_type=update_type,
         evidence_links=uploaded_references,
     )
     if not progress_update:
