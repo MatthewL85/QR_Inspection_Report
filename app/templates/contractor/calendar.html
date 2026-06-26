@@ -71,7 +71,9 @@
             <tr>
               <td>
                 <div class="contract-manager-cell-stack">
-                  <strong>{{ docket.docket_number }}</strong>
+                  <strong>
+                    <a href="{{ url_for('contractor.job_docket_detail', docket_id=docket.id) }}">{{ docket.docket_number }}</a>
+                  </strong>
                   <span>WO-{{ docket.work_order_id }}</span>
                 </div>
               </td>
@@ -212,7 +214,11 @@
               <td><span class="unit-status-pill is-active">{{ entry.calendar_status }}</span></td>
               <td>
                 {% if entry.work_order_id %}
-                  <a href="{{ url_for('contractor.work_order_detail', work_order_id=entry.work_order_id) }}">Open</a>
+                  {% if entry.job_docket %}
+                    <a href="{{ url_for('contractor.job_docket_detail', docket_id=entry.job_docket.id) }}">Open Docket</a>
+                  {% else %}
+                    <a href="{{ url_for('contractor.work_order_detail', work_order_id=entry.work_order_id) }}">Open</a>
+                  {% endif %}
                 {% else %}
                   -
                 {% endif %}

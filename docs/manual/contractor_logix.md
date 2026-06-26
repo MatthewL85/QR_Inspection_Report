@@ -2,7 +2,7 @@
 
 Status: Phase 3 operating guide
 
-Last updated: 2026-06-25
+Last updated: 2026-06-26
 
 ## Purpose
 
@@ -39,6 +39,8 @@ Work Order -> Accept -> Job Docket -> Assign -> Schedule -> Complete -> Report -
 When a contractor accepts a work order, Contractor Logix now creates a real Job Docket linked back to the Works Logix work order. This gives the contractor an operational record without moving ownership of the original work order out of Works Logix.
 
 Accepted job dockets appear in the Contractor Calendar as an Unscheduled Job Queue until the contractor assigns an engineer/team and chooses a calendar slot.
+
+Each job docket has its own operational detail page. The page shows the linked work order, schedule, engineer/team assignment, site and contact information, scope of works, evidence, contractor updates and the shared Works Logix lifecycle. This separates the contractor's operational file from the pre-acceptance work order pack while keeping both records linked.
 
 Scheduling a job docket:
 

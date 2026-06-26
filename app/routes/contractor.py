@@ -8,6 +8,7 @@ from app.extensions import db
 from app.helpers.decorators import login_required
 from app.models import ContractorComplianceDocument
 from app.models.contractor.contractor_team import ContractorTeam
+from app.models.contractor.job_docket import JobDocket
 from app.models.core.user import User
 from app.services.gar import (
     attach_gar_capability_readiness,
@@ -377,6 +378,29 @@ def calendar():
         'contractor/calendar.html',
         filters=filters,
         **calendar_context(user.contractor_id, filters=filters),
+    )
+
+
+@contractor_bp.route('/job-dockets/<int:docket_id>', endpoint='job_docket_detail')
+@login_required(role='Contractor')
+def job_docket_detail(docket_id):
+    user = _current_contractor_user()
+    if not user:
+        flash('Your contractor profile is not linked yet.', 'warning')
+        return redirect(url_for('contractor.contractor_dashboard'))
+
+    job_docket = JobDocket.query.filter_by(
+        id=docket_id,
+        contractor_id=user.contractor_id,
+    ).first_or_404()
+    work_order = job_docket.work_order
+    work_pack = build_contractor_work_order_docket(work_order, audience="contractor")
+    return render_template(
+        'contractor/job_docket_detail.html',
+        job_docket=job_docket,
+        work_order=work_order,
+        work_pack=work_pack,
+        progress_updates=progress_updates_for_audience(work_order, "contractor"),
     )
 
 

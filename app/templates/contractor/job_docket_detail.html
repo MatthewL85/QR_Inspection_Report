@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% block title %}{{ job_docket.docket_number or 'Job Docket' }}{% endblock %}
+
+{% macro display(value) -%}
+  {{ value if value not in [none, ''] else '-' }}
+{%- endmacro %}
+
+{% macro time_range(docket) -%}
+  {% if docket.start_time %}{{ docket.start_time.strftime('%H:%M') }}{% else %}Any time{% endif %}
+  {% if docket.end_time %} - {{ docket.end_time.strftime('%H:%M') }}{% endif %}
+{%- endmacro %}
+
+{% block page_content %}
+<div class="contract-manager app-ready-surface app-ready-surface--contractor"
+     data-app-mobile-ready="true"
+     data-app-source-backed="true">
+  <section class="contract-manager-hero">
+    <div>
+      <h1>{{ job_docket.docket_number or 'Job Docket' }}</h1>
+      <p>{{ work_order.title or 'Contractor Logix job docket' }}</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="contract-manager-link" href="{{ url_for('contractor.calendar') }}">Back to Calendar</a>
+      <a class="contract-manager-link" href="{{ url_for('contractor.work_order_detail', work_order_id=work_order.id) }}">Work Order Pack</a>
+      {% if work_pack.pdf_ready %}
+        <a class="contract-manager-button" href="{{ url_for('contractor.work_order_pdf', work_order_id=work_order.id) }}">Download PDF</a>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Job Docket</h2>
+        <p>Operational record for scheduling, attendance, updates and completion.</p>
+      </div>
+      <span class="contract-alert-pill contract-alert-muted">{{ job_docket.status }}</span>
+    </div>
+    <div class="contractor-docket-summary-grid">
+      <article>
+        <span>Work Order</span>
+        <strong>WO-{{ work_order.id }}</strong>
+        <small>{{ work_order.status or '-' }}</small>
+      </article>
+      <article>
+        <span>Schedule</span>
+        <strong>{{ job_docket.scheduled_date.strftime('%d %b %Y') if job_docket.scheduled_date else 'Not Scheduled' }}</strong>
+        <small>{{ time_range(job_docket) if job_docket.scheduled_date else 'Awaiting calendar slot' }}</small>
+      </article>
+      <article>
+        <span>Engineer / Team</span>
+        <strong>{{ job_docket.assigned_engineer.full_name if job_docket.assigned_engineer else 'No Engineer' }}</strong>
+        <small>{{ job_docket.assigned_team.name if job_docket.assigned_team else 'No team assigned' }}</small>
+      </article>
+      <article>
+        <span>Priority / Trade</span>
+        <strong>{{ job_docket.priority or 'Normal' }}</strong>
+        <small>{{ job_docket.required_trade or work_order.business_type or 'Trade not set' }}</small>
+      </article>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Site & Contact</h2>
+        <p>Information needed before attending site.</p>
+      </div>
+    </div>
+    <div class="unit-detail-grid contractor-pack-detail-grid">
+      <div><span class="unit-detail-label">Development</span><strong>{{ work_pack.location.development }}</strong></div>
+      <div><span class="unit-detail-label">Property</span><strong>{{ work_pack.location.property }}</strong></div>
+      <div><span class="unit-detail-label">Unit</span><strong>{{ work_pack.location.unit }}</strong></div>
+      <div><span class="unit-detail-label">Block / Core</span><strong>{{ work_pack.location.block }}{% if work_pack.location.core != '-' %} / {{ work_pack.location.core }}{% endif %}</strong></div>
+      <div><span class="unit-detail-label">Address</span><strong>{{ work_pack.location.address_lines|join(', ') if work_pack.location.address_lines else '-' }}</strong></div>
+      <div><span class="unit-detail-label">Access Notes</span><strong>{{ job_docket.access_notes or work_pack.location.access_notes or '-' }}</strong></div>
+      <div><span class="unit-detail-label">Contact Name</span><strong>{{ job_docket.contact_name or '-' }}</strong></div>
+      <div><span class="unit-detail-label">Contact Phone</span><strong>{{ job_docket.contact_phone or '-' }}</strong></div>
+      <div><span class="unit-detail-label">Contact Email</span><strong>{{ job_docket.contact_email or '-' }}</strong></div>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Work Details</h2>
+        <p>Scope, source request and GAR context for this job.</p>
+      </div>
+    </div>
+    <div class="unit-detail-grid contractor-pack-detail-grid">
+      <div><span class="unit-detail-label">Scope of Works</span><strong>{{ job_docket.scope_of_works or work_order.description or '-' }}</strong></div>
+      <div><span class="unit-detail-label">Request Type</span><strong>{{ work_pack.classification.request_type }}</strong></div>
+      <div><span class="unit-detail-label">Member Request</span><strong>{{ work_pack.request_context.member_request_title }}</strong></div>
+      <div><span class="unit-detail-label">GAR Context</span><strong>{{ work_pack.gar_history.contractor_safe_summary if work_pack.gar_history and work_pack.gar_history.contractor_safe_summary else 'No related history flagged.' }}</strong></div>
+      <div><span class="unit-detail-label">Scheduling Notes</span><strong>{{ job_docket.scheduling_notes or '-' }}</strong></div>
+      <div><span class="unit-detail-label">Contractor Job No.</span><strong>{{ job_docket.contractor_job_number or '-' }}</strong></div>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Evidence</h2>
+        <p>Member request and contractor evidence connected to this docket.</p>
+      </div>
+    </div>
+    <div class="contract-manager-table-wrap contractor-pack-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr><th>Source</th><th>Evidence</th><th>Open</th></tr>
+        </thead>
+        <tbody>
+          {% for item in work_pack.evidence_items %}
+            <tr>
+              <td>{{ item.source }}</td>
+              <td>
+                {{ item.label }}
+                {% if item.reference_type and item.reference_type != 'note' %}
+                  <span class="contract-alert-pill contract-alert-muted">{{ item.reference_type|title }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if item.reference_url %}
+                  <a class="works-evidence-link" href="{{ item.reference_url }}" target="_blank" rel="noopener">Open Evidence</a>
+                {% else %}
+                  {{ item.display_reference or '-' }}
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="3" class="contract-manager-empty">No evidence is linked to this docket yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Updates</h2>
+        <p>Latest contractor progress and completion notes.</p>
+      </div>
+      <a class="contract-manager-link" href="{{ url_for('contractor.work_order_detail', work_order_id=work_order.id) }}#updates">Add Update</a>
+    </div>
+    <div class="contract-manager-table-wrap contractor-pack-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr><th>Date</th><th>Type</th><th>Visibility</th><th>Update</th><th>Evidence</th></tr>
+        </thead>
+        <tbody>
+          {% for update in progress_updates %}
+            <tr>
+              <td>{{ update.created_at.strftime('%d %b %Y %H:%M') if update.created_at else '-' }}</td>
+              <td><span class="contract-alert-pill contract-alert-muted">{{ update.update_type_label }}</span></td>
+              <td><span class="contract-alert-pill contract-alert-muted">{{ update.visibility_label }}</span></td>
+              <td>{{ update.note }}</td>
+              <td>
+                {% if update.evidence_links %}
+                  {% for evidence_link in update.evidence_links %}
+                    <a class="works-evidence-link" href="{{ evidence_link }}" target="_blank" rel="noopener">Open {{ loop.index }}</a>
+                  {% endfor %}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5" class="contract-manager-empty">No updates have been added yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    {% set timeline_events = work_pack.lifecycle %}
+    {% set timeline_title = "Job Docket Lifecycle" %}
+    {% include "works/_lifecycle_timeline.html" %}
+  </section>
+</div>
+{% endblock %}

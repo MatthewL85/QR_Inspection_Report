@@ -4219,6 +4219,46 @@ body.sidebar-collapsed .main-content {
   margin-top: 0.4rem;
 }
 
+.contractor-docket-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  padding: 0 1rem 1rem;
+}
+
+.contractor-docket-summary-grid article {
+  border: 1px solid #e4e9f1;
+  border-radius: 8px;
+  background: #ffffff;
+  min-height: 96px;
+  padding: 0.72rem 0.8rem;
+}
+
+.contractor-docket-summary-grid span {
+  display: block;
+  color: #55657a;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.contractor-docket-summary-grid strong {
+  display: block;
+  color: #17233c;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.2;
+  margin-top: 0.28rem;
+}
+
+.contractor-docket-summary-grid small {
+  display: block;
+  color: #667386;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  margin-top: 0.28rem;
+}
+
 .contractor-progress-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(300px, 0.42fr);
@@ -5542,6 +5582,7 @@ body.sidebar-collapsed .main-content {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .contractor-docket-summary-grid,
   .contractor-dashboard-ops-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -5624,6 +5665,7 @@ body.sidebar-collapsed .main-content {
   }
 
   .dashboard-contract-metrics,
+  .contractor-docket-summary-grid,
   .contractor-dashboard-ops-grid,
   .works-command-grid,
   .works-gar-signal-grid,
