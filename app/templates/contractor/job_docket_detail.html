@@ -11,6 +11,10 @@
 {%- endmacro %}
 
 {% block page_content %}
+{% set docket_status = (job_docket.status or '')|lower %}
+{% set work_status = (work_order.status or '')|lower %}
+{% set is_closed = work_status in ['closed', 'completed', 'resolved', 'cancelled'] or docket_status in ['approved', 'invoiced', 'cancelled'] %}
+{% set is_scheduled = job_docket.scheduled_date or docket_status in ['scheduled', 'in progress', 'awaiting parts', 'awaiting access', 'completed', 'completed - awaiting review', 'approved', 'invoiced'] %}
 <div class="contract-manager app-ready-surface app-ready-surface--contractor"
      data-app-mobile-ready="true"
      data-app-source-backed="true">
@@ -27,6 +31,96 @@
       {% endif %}
     </div>
   </section>
+
+  {% if not is_scheduled and not is_closed %}
+    <section class="contract-manager-panel contractor-docket-next-step" id="schedule-job">
+      <div class="contract-manager-section-heading">
+        <div>
+          <h2>Schedule Job</h2>
+          <p>This job has been accepted. Add the visit to the calendar before field actions open.</p>
+        </div>
+        <span class="contract-alert-pill contract-alert-warning">Awaiting Schedule</span>
+      </div>
+      <form method="post"
+            action="{{ url_for('contractor.schedule_job_docket', docket_id=job_docket.id) }}"
+            class="contract-manager-form-grid contractor-schedule-form"
+            data-app-action="contractor-job-docket-schedule"
+            data-app-requires-csrf="true">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="return_to" value="docket">
+        <label>
+          Engineer
+          <select name="assigned_engineer_id">
+            <option value="">Unassigned engineer</option>
+            {% for engineer in engineers %}
+              <option value="{{ engineer.id }}" {% if job_docket.assigned_engineer_id == engineer.id %}selected{% endif %}>
+                {{ engineer.full_name or engineer.email }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>
+          Team
+          <select name="assigned_team_id">
+            <option value="">No team</option>
+            {% for team in teams %}
+              <option value="{{ team.id }}" {% if job_docket.assigned_team_id == team.id %}selected{% endif %}>{{ team.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>
+          Visit Date
+          <input type="date" name="scheduled_date" required>
+        </label>
+        <label>
+          Start Time
+          <input type="time" name="start_time">
+        </label>
+        <label>
+          End Time
+          <input type="time" name="end_time">
+        </label>
+        <label>
+          Estimated Duration
+          <input type="number" name="estimated_duration_minutes" min="15" step="15" placeholder="Minutes">
+        </label>
+        <label class="contractor-schedule-notes">
+          Appointment Notes
+          <textarea name="notes" rows="3" placeholder="Access arrangements, appointment notes or engineer instructions.">{{ job_docket.scheduling_notes or '' }}</textarea>
+        </label>
+        <div class="contractor-schedule-submit">
+          <button type="submit" class="contract-manager-button">Schedule Job</button>
+        </div>
+      </form>
+    </section>
+  {% elif is_scheduled %}
+    <section class="contract-manager-panel contractor-scheduled-summary" id="scheduled-visit">
+      <div class="contract-manager-section-heading">
+        <div>
+          <h2>Scheduled Visit</h2>
+          <p>The job is now on the calendar. Field actions are available below.</p>
+        </div>
+        <span class="contract-alert-pill contract-alert-success">Scheduled</span>
+      </div>
+      <div class="contractor-docket-summary-grid">
+        <article>
+          <span>Date</span>
+          <strong>{{ job_docket.scheduled_date.strftime('%d %b %Y') if job_docket.scheduled_date else '-' }}</strong>
+          <small>{{ time_range(job_docket) if job_docket.scheduled_date else '-' }}</small>
+        </article>
+        <article>
+          <span>Engineer</span>
+          <strong>{{ job_docket.assigned_engineer.full_name if job_docket.assigned_engineer else 'No Engineer' }}</strong>
+          <small>{{ job_docket.assigned_team.name if job_docket.assigned_team else 'No team assigned' }}</small>
+        </article>
+        <article>
+          <span>Duration</span>
+          <strong>{{ (job_docket.estimated_duration_minutes ~ ' mins') if job_docket.estimated_duration_minutes else '-' }}</strong>
+          <small>{{ job_docket.scheduling_notes or 'No appointment notes' }}</small>
+        </article>
+      </div>
+    </section>
+  {% endif %}
 
   <section class="contract-manager-panel">
     <div class="contract-manager-section-heading">
@@ -97,79 +191,90 @@
     </div>
   </section>
 
-  <section class="contract-manager-panel" id="field-actions">
-    <div class="contract-manager-section-heading">
-      <div>
-        <h2>Field Actions</h2>
-        <p>Start attendance, add site updates or submit completion from the job docket.</p>
+  {% if is_scheduled or is_closed %}
+    <section class="contract-manager-panel" id="field-actions">
+      <div class="contract-manager-section-heading">
+        <div>
+          <h2>Field Actions</h2>
+          <p>Start attendance, add site updates or submit completion from the job docket.</p>
+        </div>
+        <span class="contract-alert-pill contract-alert-muted">{{ work_order.status or job_docket.status }}</span>
       </div>
-      <span class="contract-alert-pill contract-alert-muted">{{ work_order.status or job_docket.status }}</span>
-    </div>
 
-    {% set work_status = (work_order.status or '')|lower %}
-    {% if work_status in ['accepted', 'scheduled'] %}
-      <div class="contract-manager-actions-row contractor-pack-actions-row">
-        <form method="post" action="{{ url_for('contractor.update_work_order', work_order_id=work_order.id, action='start') }}">
+      {% if work_status in ['accepted', 'scheduled'] %}
+        <div class="contract-manager-actions-row contractor-pack-actions-row">
+          <form method="post" action="{{ url_for('contractor.update_work_order', work_order_id=work_order.id, action='start') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="return_to" value="docket">
+            <input type="hidden" name="docket_id" value="{{ job_docket.id }}">
+            <button type="submit" class="btn btn-sm btn-primary">Start Job</button>
+          </form>
+        </div>
+      {% endif %}
+
+      {% if not is_closed %}
+        <form method="post"
+              action="{{ url_for('contractor.add_progress_update', work_order_id=work_order.id) }}"
+              enctype="multipart/form-data"
+              class="contractor-progress-form"
+              data-app-action="contractor-job-docket-update"
+              data-app-requires-online="true"
+              data-app-requires-csrf="true"
+              data-app-offline-queue="false"
+              data-app-source-record="JobDocket:{{ job_docket.id }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="return_to" value="docket">
           <input type="hidden" name="docket_id" value="{{ job_docket.id }}">
-          <button type="submit" class="btn btn-sm btn-primary">Start Job</button>
+          <div class="contractor-progress-note">
+            <label class="unit-detail-label" for="docket_progress_note">Update Note</label>
+            <textarea id="docket_progress_note" name="progress_note" rows="6" required placeholder="Add a site update, access issue, delay note or completion summary."></textarea>
+          </div>
+          <div class="contractor-progress-actions">
+            <div>
+              <label class="unit-detail-label" for="docket_update_type">Update Type</label>
+              <select id="docket_update_type" name="update_type" required data-completion-visibility-target="docket_visibility_scope">
+                <option value="" selected disabled>Select update type</option>
+                <option value="progress">Progress Update</option>
+                <option value="completion">Completion</option>
+              </select>
+            </div>
+            <div>
+              <label class="unit-detail-label" for="docket_visibility_scope">Visibility</label>
+              <select id="docket_visibility_scope" name="visibility_scope" required>
+                <option value="" selected disabled>Select visibility</option>
+                <option value="management">Contractor + Management</option>
+                <option value="contractor_internal">Contractor Only</option>
+                <option value="reporter_visible">All Parties</option>
+              </select>
+            </div>
+            <div>
+              <label class="unit-detail-label" for="docket_progress_files">Photos / Videos / Documents</label>
+              <input id="docket_progress_files"
+                     type="file"
+                     name="progress_files"
+                     multiple
+                     accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx"
+                     data-app-media-context="contractor_job_docket_update"
+                     data-app-media-source-model="JobDocket">
+            </div>
+            <button type="submit" class="btn btn-sm btn-primary" data-update-submit>Add Update</button>
+          </div>
         </form>
+      {% else %}
+        <p class="contract-manager-empty">This job is closed. Updates are read-only.</p>
+      {% endif %}
+    </section>
+  {% else %}
+    <section class="contract-manager-panel" id="field-actions">
+      <div class="contract-manager-section-heading">
+        <div>
+          <h2>Field Actions</h2>
+          <p>Field actions will open once this job has been scheduled.</p>
+        </div>
+        <a class="contract-manager-link" href="#schedule-job">Schedule First</a>
       </div>
-    {% endif %}
-
-    {% if work_status not in ['closed', 'completed', 'resolved', 'cancelled'] %}
-      <form method="post"
-            action="{{ url_for('contractor.add_progress_update', work_order_id=work_order.id) }}"
-            enctype="multipart/form-data"
-            class="contractor-progress-form"
-            data-app-action="contractor-job-docket-update"
-            data-app-requires-online="true"
-            data-app-requires-csrf="true"
-            data-app-offline-queue="false"
-            data-app-source-record="JobDocket:{{ job_docket.id }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="return_to" value="docket">
-        <input type="hidden" name="docket_id" value="{{ job_docket.id }}">
-        <div class="contractor-progress-note">
-          <label class="unit-detail-label" for="docket_progress_note">Update Note</label>
-          <textarea id="docket_progress_note" name="progress_note" rows="6" required placeholder="Add a site update, access issue, delay note or completion summary."></textarea>
-        </div>
-        <div class="contractor-progress-actions">
-          <div>
-            <label class="unit-detail-label" for="docket_update_type">Update Type</label>
-            <select id="docket_update_type" name="update_type" required data-completion-visibility-target="docket_visibility_scope">
-              <option value="" selected disabled>Select update type</option>
-              <option value="progress">Progress Update</option>
-              <option value="completion">Completion</option>
-            </select>
-          </div>
-          <div>
-            <label class="unit-detail-label" for="docket_visibility_scope">Visibility</label>
-            <select id="docket_visibility_scope" name="visibility_scope" required>
-              <option value="" selected disabled>Select visibility</option>
-              <option value="management">Contractor + Management</option>
-              <option value="contractor_internal">Contractor Only</option>
-              <option value="reporter_visible">All Parties</option>
-            </select>
-          </div>
-          <div>
-            <label class="unit-detail-label" for="docket_progress_files">Photos / Videos / Documents</label>
-            <input id="docket_progress_files"
-                   type="file"
-                   name="progress_files"
-                   multiple
-                   accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx"
-                   data-app-media-context="contractor_job_docket_update"
-                   data-app-media-source-model="JobDocket">
-          </div>
-          <button type="submit" class="btn btn-sm btn-primary" data-update-submit>Add Update</button>
-        </div>
-      </form>
-    {% else %}
-      <p class="contract-manager-empty">This job is closed. Updates are read-only.</p>
-    {% endif %}
-  </section>
+    </section>
+  {% endif %}
 
   <section class="contract-manager-panel">
     <div class="contract-manager-section-heading">

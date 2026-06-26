@@ -444,12 +444,26 @@ def job_docket_detail(docket_id):
     ).first_or_404()
     work_order = job_docket.work_order
     work_pack = build_contractor_work_order_docket(work_order, audience="contractor")
+    engineers = (
+        User.query
+        .filter(User.contractor_id == user.contractor_id, User.is_active.is_(True))
+        .order_by(User.full_name.asc())
+        .all()
+    )
+    teams = (
+        ContractorTeam.query
+        .filter(ContractorTeam.contractor_id == user.contractor_id, ContractorTeam.is_active.is_(True))
+        .order_by(ContractorTeam.name.asc())
+        .all()
+    )
     return render_template(
         'contractor/job_docket_detail.html',
         job_docket=job_docket,
         work_order=work_order,
         work_pack=work_pack,
         progress_updates=progress_updates_for_audience(work_order, "contractor"),
+        engineers=engineers,
+        teams=teams,
     )
 
 
@@ -465,6 +479,8 @@ def schedule_docket(docket_id):
         scheduled_date = datetime.strptime(request.form.get('scheduled_date') or '', "%Y-%m-%d").date()
     except ValueError:
         flash('Choose a valid scheduled date before adding the job to the calendar.', 'warning')
+        if request.form.get('return_to') == 'docket':
+            return redirect(url_for('contractor.job_docket_detail', docket_id=docket_id))
         return redirect(url_for('contractor.calendar'))
 
     def parse_time(field_name):
@@ -486,6 +502,8 @@ def schedule_docket(docket_id):
         is_active=True,
     ).first():
         flash('Choose an engineer linked to this contractor account.', 'warning')
+        if request.form.get('return_to') == 'docket':
+            return redirect(url_for('contractor.job_docket_detail', docket_id=docket_id))
         return redirect(url_for('contractor.calendar'))
 
     if assigned_team_id and not ContractorTeam.query.filter_by(
@@ -494,6 +512,8 @@ def schedule_docket(docket_id):
         is_active=True,
     ).first():
         flash('Choose a team linked to this contractor account.', 'warning')
+        if request.form.get('return_to') == 'docket':
+            return redirect(url_for('contractor.job_docket_detail', docket_id=docket_id))
         return redirect(url_for('contractor.calendar'))
 
     docket, entry = schedule_job_docket(
@@ -510,6 +530,8 @@ def schedule_docket(docket_id):
     )
     if not docket or not entry:
         flash('That job docket is not available for this contractor account.', 'danger')
+        if request.form.get('return_to') == 'docket':
+            return redirect(url_for('contractor.job_docket_detail', docket_id=docket_id))
         return redirect(url_for('contractor.calendar'))
 
     record_work_order_lifecycle_event(
@@ -533,6 +555,8 @@ def schedule_docket(docket_id):
     )
     db.session.commit()
     flash('Job docket scheduled and added to Contractor Calendar.', 'success')
+    if request.form.get('return_to') == 'docket':
+        return redirect(url_for('contractor.job_docket_detail', docket_id=docket.id))
     return redirect(url_for('contractor.calendar'))
 
 

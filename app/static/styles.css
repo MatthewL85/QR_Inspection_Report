@@ -4259,6 +4259,35 @@ body.sidebar-collapsed .main-content {
   margin-top: 0.28rem;
 }
 
+.contractor-docket-next-step {
+  border-color: #bfdbfe;
+  background: #f8fbff;
+}
+
+.contractor-schedule-form {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 0 1rem 1rem;
+}
+
+.contractor-schedule-form label {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.contractor-schedule-notes {
+  grid-column: span 2;
+}
+
+.contractor-schedule-submit {
+  align-self: end;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.contractor-scheduled-summary .contractor-docket-summary-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .contractor-today-card-grid {
   display: grid;
   gap: 0.75rem;
