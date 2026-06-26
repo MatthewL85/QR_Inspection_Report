@@ -42,6 +42,8 @@ Accepted job dockets appear in the Contractor Calendar as an Unscheduled Job Que
 
 Each job docket has its own operational detail page. The page shows the linked work order, schedule, engineer/team assignment, site and contact information, scope of works, evidence, contractor updates and the shared Works Logix lifecycle. This separates the contractor's operational file from the pre-acceptance work order pack while keeping both records linked.
 
+The contractor dashboard links scheduled and overdue operational tiles into the mobile-ready Today's Jobs view at `/contractor/today`. This view groups scheduled job dockets into Today, Overdue and Upcoming, shows the field essentials for each visit, and links directly to the job docket or update area. It is designed as the first engineer-friendly schedule surface before the later full mobile app build.
+
 Scheduling a job docket:
 
 - records the scheduled date/time

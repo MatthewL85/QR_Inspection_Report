@@ -34,6 +34,7 @@ from app.services.contractor.job_docket_service import (
     build_contractor_calendar_ics,
     calendar_context,
     contractor_calendar_entries_for_ics,
+    contractor_today_schedule_context,
     schedule_job_docket,
 )
 from app.services.works.audit_pack_service import build_completion_evidence_pack
@@ -378,6 +379,20 @@ def calendar():
         'contractor/calendar.html',
         filters=filters,
         **calendar_context(user.contractor_id, filters=filters),
+    )
+
+
+@contractor_bp.route('/today', endpoint='today')
+@login_required(role='Contractor')
+def today():
+    user = _current_contractor_user()
+    if not user:
+        flash('Your contractor profile is not linked yet.', 'warning')
+        return redirect(url_for('contractor.contractor_dashboard'))
+
+    return render_template(
+        'contractor/today.html',
+        **contractor_today_schedule_context(user.contractor_id),
     )
 
 

@@ -4259,6 +4259,97 @@ body.sidebar-collapsed .main-content {
   margin-top: 0.28rem;
 }
 
+.contractor-today-card-grid {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0 1rem 1rem;
+}
+
+.contractor-today-card {
+  border: 1px solid #e4e9f1;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0.85rem;
+}
+
+.contractor-today-card.is-overdue {
+  border-color: #fecaca;
+  background: #fffafa;
+}
+
+.contractor-today-card-head {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.contractor-today-card-head span,
+.contractor-today-info-grid span {
+  display: block;
+  color: #55657a;
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.contractor-today-card-head strong {
+  display: block;
+  color: #17233c;
+  font-size: 1.08rem;
+  font-weight: 900;
+  margin-top: 0.2rem;
+}
+
+.contractor-today-title {
+  border-top: 1px solid #eef1f5;
+  margin-top: 0.7rem;
+  padding-top: 0.65rem;
+}
+
+.contractor-today-title strong,
+.contractor-today-title span {
+  display: block;
+}
+
+.contractor-today-title strong {
+  color: #17233c;
+  font-weight: 900;
+}
+
+.contractor-today-title span {
+  color: #526174;
+  margin-top: 0.15rem;
+}
+
+.contractor-today-info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.contractor-today-info-grid strong {
+  display: block;
+  color: #17233c;
+  font-size: 0.88rem;
+  font-weight: 800;
+  margin-top: 0.15rem;
+}
+
+.contractor-today-wide {
+  grid-column: span 2;
+}
+
+.contractor-today-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
 .contractor-progress-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(300px, 0.42fr);
@@ -5587,6 +5678,10 @@ body.sidebar-collapsed .main-content {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .contractor-today-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .works-form-wide {
     grid-column: span 1;
   }
@@ -5745,6 +5840,14 @@ body.sidebar-collapsed .main-content {
   }
 
   .contractor-calendar-notes {
+    grid-column: auto;
+  }
+
+  .contractor-today-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contractor-today-wide {
     grid-column: auto;
   }
 }

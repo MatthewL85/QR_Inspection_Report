@@ -36,12 +36,12 @@
         <strong class="text-warning">{{ calendar_data.stats.unscheduled if calendar_data else 0 }}</strong>
         <small>Assign engineer/team and add jobs to the calendar.</small>
       </a>
-      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.calendar') }}#scheduled-jobs">
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.today') }}">
         <span>Scheduled Today</span>
         <strong class="text-primary">{{ calendar_data.stats.scheduled_today if calendar_data else 0 }}</strong>
         <small>Jobs due to be attended today.</small>
       </a>
-      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.calendar') }}#scheduled-jobs">
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.today') }}#overdue-jobs">
         <span>Overdue Scheduled</span>
         <strong class="text-danger">{{ calendar_data.stats.overdue if calendar_data else 0 }}</strong>
         <small>Scheduled jobs past their date and still open.</small>

@@ -27,6 +27,7 @@
     </div>
     <div class="d-flex gap-2 flex-wrap">
       <a class="contract-manager-link" href="{{ url_for('contractor.work_orders') }}">Work Queue</a>
+      <a class="contract-manager-link" href="{{ url_for('contractor.today') }}">Today</a>
       <a class="contract-manager-button" href="{{ url_for('contractor.calendar_ics') }}">
         <i class="fas fa-calendar-plus me-1"></i> Calendar Feed
       </a>
@@ -43,6 +44,7 @@
   <nav class="app-surface-nav" aria-label="Contractor Calendar actions" data-app-surface="contractor-calendar">
     <a href="#unscheduled-jobs">Unscheduled</a>
     <a href="#scheduled-jobs">Scheduled</a>
+    <a href="{{ url_for('contractor.today') }}">Today</a>
     <a href="{{ url_for('contractor.calendar_ics') }}">Export .ics</a>
   </nav>
 

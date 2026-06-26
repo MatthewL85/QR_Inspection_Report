@@ -168,6 +168,47 @@ def calendar_context(contractor_id: int, *, filters: dict | None = None) -> dict
     }
 
 
+def contractor_today_schedule_context(
+    contractor_id: int,
+    *,
+    days_ahead: int = 7,
+) -> dict:
+    """Build the mobile-ready contractor field schedule view."""
+
+    today = date.today()
+    horizon = today + timedelta(days=days_ahead)
+    scheduled_entries = (
+        ContractorCalendarEntry.query
+        .filter(
+            ContractorCalendarEntry.contractor_id == contractor_id,
+            ContractorCalendarEntry.calendar_status == SCHEDULED_STATUS,
+            ContractorCalendarEntry.scheduled_date <= horizon,
+        )
+        .order_by(
+            ContractorCalendarEntry.scheduled_date.asc(),
+            ContractorCalendarEntry.start_time.asc(),
+            ContractorCalendarEntry.id.asc(),
+        )
+        .all()
+    )
+    overdue_entries = [entry for entry in scheduled_entries if entry.scheduled_date < today]
+    today_entries = [entry for entry in scheduled_entries if entry.scheduled_date == today]
+    upcoming_entries = [entry for entry in scheduled_entries if today < entry.scheduled_date <= horizon]
+    return {
+        "today": today,
+        "horizon": horizon,
+        "overdue_entries": overdue_entries,
+        "today_entries": today_entries,
+        "upcoming_entries": upcoming_entries,
+        "stats": {
+            "overdue": len(overdue_entries),
+            "today": len(today_entries),
+            "upcoming": len(upcoming_entries),
+            "total_visible": len(scheduled_entries),
+        },
+    }
+
+
 def schedule_job_docket(
     *,
     docket_id: int,
