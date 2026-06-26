@@ -4221,8 +4221,8 @@ body.sidebar-collapsed .main-content {
 
 .contractor-docket-summary-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.65rem;
+  grid-template-columns: repeat(5, minmax(140px, 1fr));
+  gap: 0.5rem;
   padding: 0 1rem 1rem;
 }
 
@@ -4230,8 +4230,8 @@ body.sidebar-collapsed .main-content {
   border: 1px solid #e4e9f1;
   border-radius: 8px;
   background: #ffffff;
-  min-height: 96px;
-  padding: 0.72rem 0.8rem;
+  min-height: 82px;
+  padding: 0.62rem 0.68rem;
 }
 
 .contractor-docket-summary-grid span {
