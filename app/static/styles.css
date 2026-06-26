@@ -4394,6 +4394,24 @@ body.sidebar-collapsed .main-content {
   justify-self: start;
 }
 
+.works-schedule-cell {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.works-schedule-cell strong {
+  color: #17233c;
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.works-schedule-cell span,
+.works-schedule-cell small {
+  color: #526174;
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
 .works-evidence-link-list {
   display: flex;
   flex-wrap: wrap;

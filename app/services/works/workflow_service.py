@@ -1033,6 +1033,47 @@ def _client_payload(client: Client | None) -> dict | None:
     }
 
 
+def _time_payload(value):
+    return value.strftime("%H:%M") if value else None
+
+
+def _work_order_schedule_payload(work_order: WorkOrder | None) -> dict:
+    if not work_order or not work_order.job_docket:
+        return {
+            "scheduled": False,
+            "status": "Not Scheduled",
+        }
+
+    docket = work_order.job_docket
+    entry = (docket.calendar_entries or [None])[0]
+    scheduled_date = (
+        getattr(entry, "scheduled_date", None)
+        or docket.scheduled_date
+    )
+    start_time = getattr(entry, "start_time", None) or docket.start_time
+    end_time = getattr(entry, "end_time", None) or docket.end_time
+    engineer = getattr(entry, "assigned_engineer", None) or docket.assigned_engineer
+    team = getattr(entry, "assigned_team", None) or docket.assigned_team
+    return {
+        "scheduled": bool(scheduled_date),
+        "status": getattr(entry, "calendar_status", None) or docket.status,
+        "job_docket_id": docket.id,
+        "docket_number": docket.docket_number,
+        "calendar_entry_id": getattr(entry, "id", None),
+        "scheduled_date": _iso_date(scheduled_date),
+        "start_time": _time_payload(start_time),
+        "end_time": _time_payload(end_time),
+        "engineer_name": engineer.full_name if engineer else None,
+        "team_name": team.name if team else None,
+        "location": getattr(entry, "location", None),
+        "source_reference": {
+            "model": "JobDocket",
+            "record_id": docket.id,
+            "module": "Contractor Logix",
+        },
+    }
+
+
 def build_work_order_return_context(work_order: WorkOrder | None) -> dict:
     if not work_order:
         return {"returned": False}
@@ -1149,6 +1190,7 @@ def _work_order_payload(
             "evidence_reference": work_order.completion.external_reference if work_order.completion else None,
         },
         "completion_evidence": build_completion_evidence_pack(work_order.completion),
+        "contractor_schedule": _work_order_schedule_payload(work_order),
         "return_context": build_work_order_return_context(work_order),
         "review_cycle": build_work_order_review_cycle(work_order),
         "quality_review_signal": build_work_order_quality_review_signal(work_order),

@@ -58,6 +58,8 @@ The Contractor Calendar has an `.ics` feed. This allows the schedule to be opene
 
 The Contractor Calendar also exposes a read-only app feed at `/contractor/calendar/feed.json`. This feed returns the contractor-scoped unscheduled dockets, scheduled entries, today, overdue and upcoming schedule data for future mobile Contractor Logix clients. It does not mutate records; all operational actions still route through Contractor Logix web actions and Works Logix services.
 
+When a contractor schedules a job docket, Works Logix management views show the scheduled visit beside the open work order. PM/Admin/Assistant users can therefore see the planned attendance date, time and engineer from the Works command centre without entering Contractor Logix.
+
 ## Updates
 
 Contractors can add updates while a work order is active. Updates can be marked as either `Progress Update` or `Completion`.

@@ -37,6 +37,31 @@
   {% endif %}
 {%- endmacro %}
 
+{% macro scheduled_visit(work_order) -%}
+  {% set docket = work_order.job_docket if work_order else none %}
+  {% set entry = docket.calendar_entries[0] if docket and docket.calendar_entries else none %}
+  {% set visit_date = entry.scheduled_date if entry else (docket.scheduled_date if docket else none) %}
+  {% set start_time = entry.start_time if entry else (docket.start_time if docket else none) %}
+  {% set end_time = entry.end_time if entry else (docket.end_time if docket else none) %}
+  {% set engineer = entry.assigned_engineer if entry else (docket.assigned_engineer if docket else none) %}
+  {% if visit_date %}
+    <div class="works-schedule-cell">
+      <strong>{{ visit_date.strftime('%d %b %Y') }}</strong>
+      <span>
+        {% if start_time %}{{ start_time.strftime('%H:%M') }}{% else %}Any time{% endif %}
+        {% if end_time %} - {{ end_time.strftime('%H:%M') }}{% endif %}
+      </span>
+      {% if engineer %}
+        <small>{{ engineer.full_name }}</small>
+      {% endif %}
+    </div>
+  {% elif docket %}
+    <span class="contract-alert-pill contract-alert-warning">Awaiting Schedule</span>
+  {% else %}
+    <span class="contract-alert-pill contract-alert-muted">Not Scheduled</span>
+  {% endif %}
+{%- endmacro %}
+
 {% set dashboard_endpoint = dashboard_endpoint|default('super_admin.dashboard') %}
 {% set dashboard_label = dashboard_label|default('Dashboard') %}
 {% set convert_endpoint = convert_endpoint|default('super_admin.convert_member_request_to_work_order') %}
@@ -390,13 +415,14 @@
     <div class="contract-manager-table-wrap">
       <table class="table contract-manager-table works-manager-table mb-0">
         <colgroup>
-          <col style="width: 18%;">
-          <col style="width: 15%;">
+          <col style="width: 16%;">
+          <col style="width: 13%;">
+          <col style="width: 11%;">
+          <col style="width: 9%;">
+          <col style="width: 9%;">
+          <col style="width: 14%;">
           <col style="width: 12%;">
-          <col style="width: 11%;">
-          <col style="width: 11%;">
-          <col style="width: 15%;">
-          <col style="width: 10%;">
+          <col style="width: 8%;">
           <col style="width: 8%;">
         </colgroup>
         <thead>
@@ -407,6 +433,7 @@
             <th>Category</th>
             <th>Status</th>
             <th>Contractor</th>
+            <th>Scheduled Visit</th>
             <th>Created</th>
             <th>Action</th>
           </tr>
@@ -451,6 +478,7 @@
                   </form>
                 {% endif %}
               </td>
+              <td>{{ scheduled_visit(item) }}</td>
               <td>{{ item.created_at.strftime('%d %b %Y') if item.created_at else '-' }}</td>
               <td>
                 {% if item.unit %}
@@ -462,7 +490,7 @@
             </tr>
           {% else %}
             <tr>
-              <td colspan="8" class="contract-manager-empty">No open work orders match this view.</td>
+              <td colspan="9" class="contract-manager-empty">No open work orders match this view.</td>
             </tr>
           {% endfor %}
         </tbody>
