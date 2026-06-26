@@ -25,6 +25,18 @@ These records sit underneath every module:
 | Audit logs | `app/models/audit`, `app/models/core/audit.py` | Accountability, change history and GAR review trace |
 | Notifications and communication | `app/models/core/notification.py`, `app/models/communication` | Cross-module alerts and external communication logs |
 
+## Organisation Identity And Connections
+
+Each organisation/company must have a platform-owned `organisation_uid`. This is the permanent identity for the organisation across LogixPM, Contractor Logix, Members Logix, Finance Logix, HR Logix and GAR.
+
+Separate module purchases should be represented by `ModuleSubscription` records. A company can therefore run only the modules it has enabled, while still using the same core identity if more modules are added later.
+
+When two organisations need to work together, such as a management company and a contractor company, they should connect through a governed `OrganisationConnectionInvite` and accepted `OrganisationConnection`. Email addresses can be used for notification and invitation delivery, but email must not be the source-of-truth link between organisations.
+
+Organisation connections define which records may be shared between modules. For example, Works Logix can offer a work order to a connected contractor organisation without copying the contractor's company profile into the management company's tenant.
+
+GAR must respect these same connection boundaries. It may summarise connected records only when the user, company, module subscription and organisation connection allow that visibility.
+
 ## Module Layer
 
 Each module should be able to operate independently, but should use shared IDs to connect to the rest of the platform:
@@ -154,6 +166,8 @@ This protects the platform from hidden coupling by confirming models stay persis
 7. Documents and evidence should be linked to the thing they prove, such as a unit, work order, contract, invoice, contractor, client or member.
 8. Completed legal or governed documents should be immutable unless a controlled amendment or renewal workflow is used.
 9. Cross-module workflow history should be recorded once in the owning module, then exposed through services and role-aware views.
+10. Organisations must connect through `organisation_uid`, module subscriptions and governed organisation connections, not email addresses or duplicated company records.
+11. GAR must treat organisation connections as visibility boundaries for connected-company intelligence.
 
 ## Phase 1 Outcome
 

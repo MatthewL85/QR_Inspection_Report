@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
+from uuid import uuid4
 
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import validates
@@ -16,6 +17,7 @@ class Company(db.Model):
     __tablename__ = 'companies'
 
     id = db.Column(db.Integer, primary_key=True)
+    organisation_uid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid4()), index=True)
 
     # 🔖 Basic Identity
     name = db.Column(db.String(255), nullable=False)
@@ -146,6 +148,42 @@ class Company(db.Model):
     )
 
     # ⚖️ Integrations
+    module_subscriptions = db.relationship(
+        "ModuleSubscription",
+        back_populates="company",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+        foreign_keys="ModuleSubscription.company_id",
+    )
+
+    sent_connection_invites = db.relationship(
+        "OrganisationConnectionInvite",
+        back_populates="source_company",
+        lazy="dynamic",
+        foreign_keys="OrganisationConnectionInvite.source_company_id",
+    )
+
+    received_connection_invites = db.relationship(
+        "OrganisationConnectionInvite",
+        back_populates="target_company",
+        lazy="dynamic",
+        foreign_keys="OrganisationConnectionInvite.target_company_id",
+    )
+
+    outgoing_organisation_connections = db.relationship(
+        "OrganisationConnection",
+        back_populates="source_company",
+        lazy="dynamic",
+        foreign_keys="OrganisationConnection.source_company_id",
+    )
+
+    incoming_organisation_connections = db.relationship(
+        "OrganisationConnection",
+        back_populates="target_company",
+        lazy="dynamic",
+        foreign_keys="OrganisationConnection.target_company_id",
+    )
+
     integrations = db.Column(JSON, nullable=True)
     sync_status = db.Column(db.String(50), nullable=True)
 

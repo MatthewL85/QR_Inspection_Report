@@ -17,6 +17,11 @@ from app.models.core.user import User
 from app.models.core.role import Role
 from app.models.core.role_permissions import RolePermission
 from app.models.core.notification import Notification
+from app.models.core.organisation_connection import (
+    ModuleSubscription,
+    OrganisationConnection,
+    OrganisationConnectionInvite,
+)
 from app.models.core.document import Document
 from app.models.core.media_file import MediaFile
 from app.models.exports.exported_file_log import ExportedFileLog

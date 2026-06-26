@@ -2,7 +2,7 @@
 
 Status: Phase 3 operating guide
 
-Last updated: 2026-05-28
+Last updated: 2026-06-26
 
 ## Purpose
 
@@ -17,6 +17,8 @@ The Core Platform holds the shared identity, company, document, notification and
 - audit logs
 - notifications
 - shared navigation and UI shell
+- organisation identity and module subscriptions
+- governed organisation connection invites
 
 ## User Impact
 
@@ -25,3 +27,32 @@ Most users do not work directly inside the Core Platform. They experience it thr
 ## Important Rule
 
 Operational modules should link to core records by ID. They should not create separate user, company or document records for their own isolated use.
+
+## Organisation Identity
+
+Every company/organisation has a permanent platform identity called an organisation UID. This is used behind the scenes so LogixPM can recognise the same management company, contractor company, HR organisation or other connected business across modules.
+
+Users should not normally need to type or remember this UID. Setup screens should show plain company names and controlled invite codes.
+
+## Module Subscriptions
+
+Each organisation can have one or more enabled modules, such as Property Management, Contractor Logix, Members Logix, HR Logix, Finance Logix or GAR.
+
+This lets an organisation use one module independently, then add another module later without creating a second identity.
+
+## Connecting Organisations
+
+When two organisations need to work together, the platform should use a controlled connection invite.
+
+Example:
+
+1. A contractor company buys Contractor Logix.
+2. The contractor receives its own organisation identity.
+3. A management company sends or accepts a connection invite.
+4. Once accepted, the two organisations can share only the approved connected records, such as assigned work orders and job dockets.
+
+Email can be used to deliver an invite, but the email address is not the permanent link. The accepted organisation connection is the controlled link.
+
+## GAR Visibility Rule
+
+GAR should only use records the logged-in user is allowed to see. If GAR answers questions across companies, that visibility must come from active module subscriptions, role permissions and accepted organisation connections.
