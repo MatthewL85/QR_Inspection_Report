@@ -97,6 +97,80 @@
     </div>
   </section>
 
+  <section class="contract-manager-panel" id="field-actions">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Field Actions</h2>
+        <p>Start attendance, add site updates or submit completion from the job docket.</p>
+      </div>
+      <span class="contract-alert-pill contract-alert-muted">{{ work_order.status or job_docket.status }}</span>
+    </div>
+
+    {% set work_status = (work_order.status or '')|lower %}
+    {% if work_status in ['accepted', 'scheduled'] %}
+      <div class="contract-manager-actions-row contractor-pack-actions-row">
+        <form method="post" action="{{ url_for('contractor.update_work_order', work_order_id=work_order.id, action='start') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="return_to" value="docket">
+          <input type="hidden" name="docket_id" value="{{ job_docket.id }}">
+          <button type="submit" class="btn btn-sm btn-primary">Start Job</button>
+        </form>
+      </div>
+    {% endif %}
+
+    {% if work_status not in ['closed', 'completed', 'resolved', 'cancelled'] %}
+      <form method="post"
+            action="{{ url_for('contractor.add_progress_update', work_order_id=work_order.id) }}"
+            enctype="multipart/form-data"
+            class="contractor-progress-form"
+            data-app-action="contractor-job-docket-update"
+            data-app-requires-online="true"
+            data-app-requires-csrf="true"
+            data-app-offline-queue="false"
+            data-app-source-record="JobDocket:{{ job_docket.id }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="return_to" value="docket">
+        <input type="hidden" name="docket_id" value="{{ job_docket.id }}">
+        <div class="contractor-progress-note">
+          <label class="unit-detail-label" for="docket_progress_note">Update Note</label>
+          <textarea id="docket_progress_note" name="progress_note" rows="6" required placeholder="Add a site update, access issue, delay note or completion summary."></textarea>
+        </div>
+        <div class="contractor-progress-actions">
+          <div>
+            <label class="unit-detail-label" for="docket_update_type">Update Type</label>
+            <select id="docket_update_type" name="update_type" required data-completion-visibility-target="docket_visibility_scope">
+              <option value="" selected disabled>Select update type</option>
+              <option value="progress">Progress Update</option>
+              <option value="completion">Completion</option>
+            </select>
+          </div>
+          <div>
+            <label class="unit-detail-label" for="docket_visibility_scope">Visibility</label>
+            <select id="docket_visibility_scope" name="visibility_scope" required>
+              <option value="" selected disabled>Select visibility</option>
+              <option value="management">Contractor + Management</option>
+              <option value="contractor_internal">Contractor Only</option>
+              <option value="reporter_visible">All Parties</option>
+            </select>
+          </div>
+          <div>
+            <label class="unit-detail-label" for="docket_progress_files">Photos / Videos / Documents</label>
+            <input id="docket_progress_files"
+                   type="file"
+                   name="progress_files"
+                   multiple
+                   accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx"
+                   data-app-media-context="contractor_job_docket_update"
+                   data-app-media-source-model="JobDocket">
+          </div>
+          <button type="submit" class="btn btn-sm btn-primary" data-update-submit>Add Update</button>
+        </div>
+      </form>
+    {% else %}
+      <p class="contract-manager-empty">This job is closed. Updates are read-only.</p>
+    {% endif %}
+  </section>
+
   <section class="contract-manager-panel">
     <div class="contract-manager-section-heading">
       <div>
@@ -141,7 +215,7 @@
         <h2>Updates</h2>
         <p>Latest contractor progress and completion notes.</p>
       </div>
-      <a class="contract-manager-link" href="{{ url_for('contractor.work_order_detail', work_order_id=work_order.id) }}#updates">Add Update</a>
+      <a class="contract-manager-link" href="#field-actions">Add Update</a>
     </div>
     <div class="contract-manager-table-wrap contractor-pack-table-wrap">
       <table class="contract-manager-table">
@@ -179,4 +253,33 @@
     {% include "works/_lifecycle_timeline.html" %}
   </section>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+  document.addEventListener("change", function (event) {
+    var source = event.target;
+    if (!source || source.name !== "update_type") {
+      return;
+    }
+    var targetId = source.getAttribute("data-completion-visibility-target");
+    var visibility = targetId ? document.getElementById(targetId) : null;
+    if (visibility && source.value === "completion") {
+      visibility.value = "reporter_visible";
+      visibility.dataset.userChanged = "false";
+    }
+    var form = source.closest("form");
+    var submitButton = form ? form.querySelector("[data-update-submit]") : null;
+    if (submitButton) {
+      submitButton.textContent = source.value === "completion" ? "Submit Completion Notes" : "Add Update";
+    }
+  });
+
+  document.addEventListener("change", function (event) {
+    if (event.target && event.target.name === "visibility_scope") {
+      event.target.dataset.userChanged = "true";
+    }
+  });
+</script>
 {% endblock %}

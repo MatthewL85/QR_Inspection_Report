@@ -133,6 +133,15 @@ def _contractor_filter_args():
     }
 
 
+def _contractor_detail_redirect(work_order: WorkOrder, *, fallback_args: dict | None = None):
+    return_to = (request.form.get("return_to") or request.args.get("return_to") or "").strip()
+    if return_to == "docket" and work_order.job_docket:
+        return redirect(url_for("contractor.job_docket_detail", docket_id=work_order.job_docket.id))
+    if return_to == "detail":
+        return redirect(url_for("contractor.work_order_detail", work_order_id=work_order.id))
+    return redirect(url_for("contractor.work_orders", **(fallback_args or _contractor_filter_args())))
+
+
 def _form_int(name: str) -> int | None:
     value = (request.form.get(name) or request.args.get(name) or "").strip()
     if not value:
@@ -288,6 +297,9 @@ def update_work_order(work_order_id, action):
     )
     if unsupported_filenames:
         flash('One or more evidence files are not supported.', 'warning')
+        docket_id = _form_int("docket_id")
+        if request.form.get('return_to') == 'docket' and docket_id:
+            return redirect(url_for('contractor.job_docket_detail', docket_id=docket_id))
         if request.form.get('return_to') == 'detail':
             return redirect(url_for('contractor.work_order_detail', work_order_id=work_order_id))
         return redirect(url_for('contractor.work_orders', **_contractor_filter_args()))
@@ -312,9 +324,7 @@ def update_work_order(work_order_id, action):
         'complete': 'Completion submitted to Works Logix.',
     }
     flash(messages[action], 'success')
-    if request.form.get('return_to') == 'detail':
-        return redirect(url_for('contractor.work_order_detail', work_order_id=work_order.id))
-    return redirect(url_for('contractor.work_orders', **_contractor_filter_args()))
+    return _contractor_detail_redirect(work_order)
 
 
 @contractor_bp.route('/work-orders/<int:work_order_id>/progress', methods=['POST'], endpoint='add_progress_update')
@@ -329,6 +339,9 @@ def add_progress_update(work_order_id):
     visibility_scope = (request.form.get('visibility_scope') or '').strip()
     if update_type not in WORK_ORDER_UPDATE_TYPES or visibility_scope not in WORK_ORDER_PROGRESS_VISIBILITY:
         flash('Please select an update type and visibility before submitting.', 'warning')
+        docket_id = _form_int("docket_id")
+        if request.form.get('return_to') == 'docket' and docket_id:
+            return redirect(url_for('contractor.job_docket_detail', docket_id=docket_id))
         if request.form.get('return_to') == 'detail':
             return redirect(url_for('contractor.work_order_detail', work_order_id=work_order_id))
         return redirect(url_for('contractor.work_orders', **_contractor_filter_args()))
@@ -339,6 +352,9 @@ def add_progress_update(work_order_id):
     )
     if unsupported_filenames:
         flash('One or more progress files are not supported.', 'warning')
+        docket_id = _form_int("docket_id")
+        if request.form.get('return_to') == 'docket' and docket_id:
+            return redirect(url_for('contractor.job_docket_detail', docket_id=docket_id))
         if request.form.get('return_to') == 'detail':
             return redirect(url_for('contractor.work_order_detail', work_order_id=work_order_id))
         return redirect(url_for('contractor.work_orders', **_contractor_filter_args()))
@@ -357,8 +373,9 @@ def add_progress_update(work_order_id):
     else:
         flash('Completion submitted for review.' if progress_update.update_type == 'completion' else 'Update added.', 'success')
 
-    if request.form.get('return_to') == 'detail':
-        return redirect(url_for('contractor.work_order_detail', work_order_id=work_order_id))
+    work_order = WorkOrder.query.get(work_order_id)
+    if work_order:
+        return _contractor_detail_redirect(work_order)
     return redirect(url_for('contractor.work_orders', **_contractor_filter_args()))
 
 

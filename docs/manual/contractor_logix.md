@@ -44,6 +44,8 @@ Each job docket has its own operational detail page. The page shows the linked w
 
 The contractor dashboard links scheduled and overdue operational tiles into the mobile-ready Today's Jobs view at `/contractor/today`. This view groups scheduled job dockets into Today, Overdue and Upcoming, shows the field essentials for each visit, and links directly to the job docket or update area. It is designed as the first engineer-friendly schedule surface before the later full mobile app build.
 
+Once a job is accepted and scheduled, the Job Docket page becomes the contractor's main field workspace. Contractors can start the job, add progress updates, upload multiple photos/videos/documents and submit completion notes from the docket itself. The original Work Order Pack remains available for pre-acceptance review and PDF download, but active job handling should happen from the Job Docket.
+
 Scheduling a job docket:
 
 - records the scheduled date/time
