@@ -161,6 +161,7 @@ def calendar_context(contractor_id: int, *, filters: dict | None = None) -> dict
         "stats": {
             "unscheduled": len(unscheduled),
             "scheduled": sum(1 for entry in scheduled_entries if entry.calendar_status == SCHEDULED_STATUS),
+            "scheduled_today": sum(1 for entry in scheduled_entries if entry.scheduled_date == today and entry.calendar_status == SCHEDULED_STATUS),
             "overdue": sum(1 for entry in scheduled_entries if entry.scheduled_date < today and entry.calendar_status == SCHEDULED_STATUS),
             "completed": sum(1 for entry in scheduled_entries if entry.calendar_status in {"Completed", "Approved"}),
         },

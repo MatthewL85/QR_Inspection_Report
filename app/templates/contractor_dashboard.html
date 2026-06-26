@@ -17,23 +17,46 @@
   {% set dashboard_notification_title = 'Notification Action Queue' %}
   {% include 'notifications/_dashboard_action_strip.html' %}
 
-  <section class="works-command-grid">
-    <article class="works-kpi-card">
-      <span>Assigned</span>
-      <strong>{{ work_data.stats.assigned if work_data else 0 }}</strong>
-    </article>
-    <article class="works-kpi-card">
-      <span>Active</span>
-      <strong class="text-primary">{{ work_data.stats.active if work_data else 0 }}</strong>
-    </article>
-    <article class="works-kpi-card">
-      <span>Submitted</span>
-      <strong>{{ work_data.stats.submitted if work_data else 0 }}</strong>
-    </article>
-    <article class="works-kpi-card">
-      <span>Closed</span>
-      <strong class="text-success">{{ work_data.stats.closed if work_data else 0 }}</strong>
-    </article>
+  <section class="contract-manager-panel contractor-dashboard-ops">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Operations</h2>
+        <p>Accept, schedule and complete work from one contractor control point.</p>
+      </div>
+      <span class="contract-alert-pill contract-alert-muted">Calendar centred</span>
+    </div>
+    <div class="contractor-dashboard-ops-grid">
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.work_orders', status='Assigned') }}">
+        <span>Awaiting Acceptance</span>
+        <strong>{{ work_data.stats.assigned if work_data else 0 }}</strong>
+        <small>Review and accept or reject new work orders.</small>
+      </a>
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.calendar') }}#unscheduled-jobs">
+        <span>Accepted, Not Scheduled</span>
+        <strong class="text-warning">{{ calendar_data.stats.unscheduled if calendar_data else 0 }}</strong>
+        <small>Assign engineer/team and add jobs to the calendar.</small>
+      </a>
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.calendar') }}#scheduled-jobs">
+        <span>Scheduled Today</span>
+        <strong class="text-primary">{{ calendar_data.stats.scheduled_today if calendar_data else 0 }}</strong>
+        <small>Jobs due to be attended today.</small>
+      </a>
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.calendar') }}#scheduled-jobs">
+        <span>Overdue Scheduled</span>
+        <strong class="text-danger">{{ calendar_data.stats.overdue if calendar_data else 0 }}</strong>
+        <small>Scheduled jobs past their date and still open.</small>
+      </a>
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.work_orders', status='Completion Submitted') }}">
+        <span>Completion Review</span>
+        <strong>{{ work_data.stats.submitted if work_data else 0 }}</strong>
+        <small>Submitted completion notes waiting for PM/Admin review.</small>
+      </a>
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.work_orders', status='Returned') }}">
+        <span>Returned Work</span>
+        <strong class="text-danger">{{ work_data.stats.returned if work_data else 0 }}</strong>
+        <small>Jobs returned by management for further action.</small>
+      </a>
+    </div>
   </section>
   {% set gar_ask_title = 'Ask GAR' %}
   {% set gar_ask_subtitle = 'Source-backed answers from your assigned Contractor Logix queue only.' %}

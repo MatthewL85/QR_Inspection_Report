@@ -89,6 +89,7 @@ def _save_contractor_evidence_uploads(file_storages, work_order_id: int) -> tupl
 def contractor_dashboard():
     user = User.query.get(session.get('user_id'))
     work_data = get_contractor_work_orders(user.contractor_id, user.id) if user and user.contractor_id else None
+    calendar_data = calendar_context(user.contractor_id) if user and user.contractor_id else None
     gar_question = (request.args.get("gar_question") or "").strip()
     gar_inquiry_response = None
     if gar_question:
@@ -102,6 +103,7 @@ def contractor_dashboard():
     return render_template(
         'contractor_dashboard.html',
         work_data=work_data,
+        calendar_data=calendar_data,
         gar_question=gar_question,
         gar_inquiry_response=gar_inquiry_response,
     )

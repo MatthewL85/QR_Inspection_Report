@@ -4163,6 +4163,62 @@ body.sidebar-collapsed .main-content {
   width: auto;
 }
 
+.contractor-dashboard-ops {
+  margin-top: 0.9rem;
+}
+
+.contractor-dashboard-ops-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.65rem;
+  padding: 0 1rem 1rem;
+}
+
+.contractor-dashboard-op-card {
+  border: 1px solid #e4e9f1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #17233c;
+  min-height: 116px;
+  padding: 0.75rem;
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.contractor-dashboard-op-card:hover {
+  border-color: #b8c5d8;
+  box-shadow: 0 10px 24px rgba(23, 35, 60, 0.08);
+  color: #17233c;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.contractor-dashboard-op-card span {
+  display: block;
+  color: #55657a;
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.contractor-dashboard-op-card strong {
+  display: block;
+  color: #17233c;
+  font-size: 1.45rem;
+  font-weight: 900;
+  line-height: 1;
+  margin-top: 0.32rem;
+}
+
+.contractor-dashboard-op-card small {
+  display: block;
+  color: #667386;
+  font-size: 0.76rem;
+  line-height: 1.3;
+  margin-top: 0.4rem;
+}
+
 .contractor-progress-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(300px, 0.42fr);
@@ -5486,6 +5542,10 @@ body.sidebar-collapsed .main-content {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .contractor-dashboard-ops-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .works-form-wide {
     grid-column: span 1;
   }
@@ -5564,6 +5624,7 @@ body.sidebar-collapsed .main-content {
   }
 
   .dashboard-contract-metrics,
+  .contractor-dashboard-ops-grid,
   .works-command-grid,
   .works-gar-signal-grid,
   .works-gar-recommendation-strip,
