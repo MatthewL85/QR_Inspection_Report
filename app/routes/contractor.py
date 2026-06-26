@@ -395,7 +395,6 @@ def calendar():
     }
     return render_template(
         'contractor/calendar.html',
-        filters=filters,
         **calendar_context(user.contractor_id, filters=filters),
     )
 
