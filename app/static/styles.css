@@ -4221,7 +4221,7 @@ body.sidebar-collapsed .main-content {
 
 .contractor-docket-summary-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.65rem;
   padding: 0 1rem 1rem;
 }
@@ -4282,10 +4282,6 @@ body.sidebar-collapsed .main-content {
   align-self: end;
   display: flex;
   justify-content: flex-start;
-}
-
-.contractor-scheduled-summary .contractor-docket-summary-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .contractor-today-card-grid {

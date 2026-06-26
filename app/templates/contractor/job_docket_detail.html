@@ -93,33 +93,6 @@
         </div>
       </form>
     </section>
-  {% elif is_scheduled %}
-    <section class="contract-manager-panel contractor-scheduled-summary" id="scheduled-visit">
-      <div class="contract-manager-section-heading">
-        <div>
-          <h2>Scheduled Visit</h2>
-          <p>The job is now on the calendar. Field actions are available below.</p>
-        </div>
-        <span class="contract-alert-pill contract-alert-success">Scheduled</span>
-      </div>
-      <div class="contractor-docket-summary-grid">
-        <article>
-          <span>Date</span>
-          <strong>{{ job_docket.scheduled_date.strftime('%d %b %Y') if job_docket.scheduled_date else '-' }}</strong>
-          <small>{{ time_range(job_docket) if job_docket.scheduled_date else '-' }}</small>
-        </article>
-        <article>
-          <span>Engineer</span>
-          <strong>{{ job_docket.assigned_engineer.full_name if job_docket.assigned_engineer else 'No Engineer' }}</strong>
-          <small>{{ job_docket.assigned_team.name if job_docket.assigned_team else 'No team assigned' }}</small>
-        </article>
-        <article>
-          <span>Duration</span>
-          <strong>{{ (job_docket.estimated_duration_minutes ~ ' mins') if job_docket.estimated_duration_minutes else '-' }}</strong>
-          <small>{{ job_docket.scheduling_notes or 'No appointment notes' }}</small>
-        </article>
-      </div>
-    </section>
   {% endif %}
 
   <section class="contract-manager-panel">
@@ -150,6 +123,11 @@
         <span>Priority / Trade</span>
         <strong>{{ job_docket.priority or 'Normal' }}</strong>
         <small>{{ job_docket.required_trade or work_order.business_type or 'Trade not set' }}</small>
+      </article>
+      <article>
+        <span>Duration / Notes</span>
+        <strong>{{ (job_docket.estimated_duration_minutes ~ ' mins') if job_docket.estimated_duration_minutes else '-' }}</strong>
+        <small>{{ job_docket.scheduling_notes or 'No appointment notes' }}</small>
       </article>
     </div>
   </section>
