@@ -56,6 +56,8 @@ Scheduling a job docket:
 
 The Contractor Calendar has an `.ics` feed. This allows the schedule to be opened or subscribed to from Outlook, Google Calendar, Apple Calendar and phone calendars. This is the Phase 1 integration approach because it is standard, lightweight and avoids prematurely adding full OAuth/two-way sync. Later phases can add direct Google/Microsoft calendar connections, conflict detection, drag-and-drop scheduling and GAR scheduling recommendations.
 
+The Contractor Calendar also exposes a read-only app feed at `/contractor/calendar/feed.json`. This feed returns the contractor-scoped unscheduled dockets, scheduled entries, today, overdue and upcoming schedule data for future mobile Contractor Logix clients. It does not mutate records; all operational actions still route through Contractor Logix web actions and Works Logix services.
+
 ## Updates
 
 Contractors can add updates while a work order is active. Updates can be marked as either `Progress Update` or `Completion`.

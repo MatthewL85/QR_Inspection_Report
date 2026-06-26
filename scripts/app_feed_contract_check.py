@@ -29,6 +29,7 @@ EXPECTED_FEEDS = {
     "property_manager.work_orders_feed": "/pm/work-orders/feed.json",
     "assistant.work_orders_feed": "/assistant/work-orders/feed.json",
     "contractor.work_orders_feed": "/contractor/work-orders/feed.json",
+    "contractor.calendar_feed": "/contractor/calendar/feed.json",
     "members.works_feed": "/members/works/feed.json",
     "notifications.feed": "/notifications/feed.json",
 }
@@ -394,6 +395,16 @@ def main() -> int:
             role_digest_keys = ("summary", "priority_actions", "source_references", "capability_registry")
             works_keys = ("stats", "next_actions", "queues", "gar")
             contractor_keys = ("stats", "next_actions", "queues")
+            contractor_schedule_keys = (
+                "stats",
+                "unscheduled_dockets",
+                "scheduled_entries",
+                "today",
+                "overdue",
+                "upcoming",
+                "source_references",
+                "app_contract",
+            )
             member_keys = ("linked_units", "next_actions", "attention_queues", "requests", "open_work_orders")
             notification_keys = ("summary", "filters", "notifications", "action_queue", "source_references")
             app_home_keys = (
@@ -466,6 +477,7 @@ def main() -> int:
                 ("property_manager.work_orders_feed", pm, "works_command_centre", works_keys),
                 ("assistant.work_orders_feed", assistant, "works_command_centre", works_keys),
                 ("contractor.work_orders_feed", contractor_user, "contractor_work_queue", contractor_keys),
+                ("contractor.calendar_feed", contractor_user, "contractor_schedule", contractor_schedule_keys),
                 ("members.works_feed", member_user, "member_works_queue", member_keys),
                 ("notifications.feed", super_admin, "notification_queue", notification_keys),
             )

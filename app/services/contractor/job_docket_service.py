@@ -18,6 +18,14 @@ def _display(value, fallback="-"):
     return value if value not in (None, "") else fallback
 
 
+def _date_value(value):
+    return value.isoformat() if value else None
+
+
+def _time_value(value):
+    return value.strftime("%H:%M") if value else None
+
+
 def _unit_reference(unit) -> str:
     if not unit:
         return "-"
@@ -154,6 +162,8 @@ def calendar_context(contractor_id: int, *, filters: dict | None = None) -> dict
         .all()
     )
     return {
+        "contractor_id": contractor_id,
+        "filters": filters,
         "unscheduled_dockets": unscheduled,
         "scheduled_entries": scheduled_entries,
         "engineers": engineers,
@@ -205,6 +215,133 @@ def contractor_today_schedule_context(
             "today": len(today_entries),
             "upcoming": len(upcoming_entries),
             "total_visible": len(scheduled_entries),
+        },
+    }
+
+
+def _job_docket_payload(docket: JobDocket) -> dict:
+    return {
+        "id": docket.id,
+        "docket_number": docket.docket_number,
+        "work_order_id": docket.work_order_id,
+        "work_order_reference": f"WO-{docket.work_order_id}" if docket.work_order_id else None,
+        "title": getattr(docket.work_order, "title", None) or "Work Order",
+        "status": docket.status,
+        "priority": docket.priority or "Normal",
+        "required_trade": docket.required_trade,
+        "client": {
+            "id": docket.client_id,
+            "name": docket.client.name if docket.client else None,
+        },
+        "unit": {
+            "id": docket.unit_id,
+            "reference": _unit_reference(docket.unit),
+            "block": getattr(docket.unit, "block_name", None),
+            "core": getattr(docket.unit, "core_name", None),
+            "unit_number": getattr(docket.unit, "unit_number", None),
+        },
+        "schedule": {
+            "scheduled_date": _date_value(docket.scheduled_date),
+            "start_time": _time_value(docket.start_time),
+            "end_time": _time_value(docket.end_time),
+            "estimated_duration_minutes": docket.estimated_duration_minutes,
+        },
+        "assignment": {
+            "engineer_id": docket.assigned_engineer_id,
+            "engineer_name": docket.assigned_engineer.full_name if docket.assigned_engineer else None,
+            "team_id": docket.assigned_team_id,
+            "team_name": docket.assigned_team.name if docket.assigned_team else None,
+        },
+        "contact": {
+            "name": docket.contact_name,
+            "phone": docket.contact_phone,
+            "email": docket.contact_email,
+        },
+        "source_reference": {
+            "model": "JobDocket",
+            "record_id": docket.id,
+            "module": "Contractor Logix",
+        },
+    }
+
+
+def _calendar_entry_payload(entry: ContractorCalendarEntry) -> dict:
+    return {
+        "id": entry.id,
+        "job_docket_id": entry.job_docket_id,
+        "docket_number": entry.job_docket.docket_number if entry.job_docket else None,
+        "work_order_id": entry.work_order_id,
+        "title": entry.title,
+        "calendar_status": entry.calendar_status,
+        "priority": entry.priority or "Normal",
+        "scheduled_date": _date_value(entry.scheduled_date),
+        "start_time": _time_value(entry.start_time),
+        "end_time": _time_value(entry.end_time),
+        "estimated_duration_minutes": entry.estimated_duration_minutes,
+        "location": entry.location,
+        "notes": entry.notes,
+        "client": {
+            "id": entry.client_id,
+            "name": entry.client.name if entry.client else None,
+        },
+        "unit": {
+            "id": entry.unit_id,
+            "reference": _unit_reference(entry.unit),
+            "block": getattr(entry.unit, "block_name", None),
+            "core": getattr(entry.unit, "core_name", None),
+            "unit_number": getattr(entry.unit, "unit_number", None),
+        },
+        "assignment": {
+            "engineer_id": entry.assigned_engineer_id,
+            "engineer_name": entry.assigned_engineer.full_name if entry.assigned_engineer else None,
+            "team_id": entry.assigned_team_id,
+            "team_name": entry.assigned_team.name if entry.assigned_team else None,
+        },
+        "source_reference": {
+            "model": "ContractorCalendarEntry",
+            "record_id": entry.id,
+            "module": "Contractor Logix",
+        },
+    }
+
+
+def contractor_schedule_feed_payload(context: dict) -> dict:
+    today_context = contractor_today_schedule_context(
+        context["contractor_id"],
+        days_ahead=context.get("days_ahead", 7),
+    )
+    unscheduled = [_job_docket_payload(docket) for docket in context.get("unscheduled_dockets", [])]
+    scheduled = [_calendar_entry_payload(entry) for entry in context.get("scheduled_entries", [])]
+    overdue = [_calendar_entry_payload(entry) for entry in today_context["overdue_entries"]]
+    today = [_calendar_entry_payload(entry) for entry in today_context["today_entries"]]
+    upcoming = [_calendar_entry_payload(entry) for entry in today_context["upcoming_entries"]]
+    source_references = [
+        item["source_reference"]
+        for item in [*unscheduled, *scheduled]
+        if item.get("source_reference")
+    ]
+    return {
+        "context_type": "contractor_schedule",
+        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "contractor_id": context["contractor_id"],
+        "stats": {
+            **context.get("stats", {}),
+            "today": len(today),
+            "upcoming_7_days": len(upcoming),
+            "visible_schedule_items": len(scheduled),
+        },
+        "unscheduled_dockets": unscheduled,
+        "scheduled_entries": scheduled,
+        "today": today,
+        "overdue": overdue,
+        "upcoming": upcoming,
+        "filters": context.get("filters", {}),
+        "source_references": source_references,
+        "app_contract": {
+            "read_only": True,
+            "mobile_ready": True,
+            "offline_policy": "static-shell-only",
+            "actions_route_to": "Contractor Logix web actions",
         },
     }
 

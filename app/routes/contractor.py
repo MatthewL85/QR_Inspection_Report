@@ -34,6 +34,7 @@ from app.services.contractor.job_docket_service import (
     build_contractor_calendar_ics,
     calendar_context,
     contractor_calendar_entries_for_ics,
+    contractor_schedule_feed_payload,
     contractor_today_schedule_context,
     schedule_job_docket,
 )
@@ -397,6 +398,23 @@ def calendar():
         filters=filters,
         **calendar_context(user.contractor_id, filters=filters),
     )
+
+
+@contractor_bp.route('/calendar/feed.json', endpoint='calendar_feed')
+@login_required(role='Contractor')
+def calendar_feed():
+    user = _current_contractor_user()
+    if not user:
+        return jsonify({"error": "contractor_profile_not_linked"}), 403
+
+    filters = {
+        "engineer_id": _form_int("engineer_id"),
+        "team_id": _form_int("team_id"),
+        "status": (request.args.get("status") or "").strip(),
+    }
+    context = calendar_context(user.contractor_id, filters=filters)
+    context["days_ahead"] = _form_int("days_ahead") or 7
+    return jsonify(contractor_schedule_feed_payload(context))
 
 
 @contractor_bp.route('/today', endpoint='today')
