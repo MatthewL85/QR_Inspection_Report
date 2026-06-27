@@ -62,6 +62,7 @@ from app.routes.super_admin.agms.upcoming_agms import *      # noqa: E402,F401,F
 from app.routes.super_admin.gar.gar_insights import *        # noqa: E402,F401,F403
 from app.routes.super_admin.client.capex import *            # noqa: E402,F401,F403
 from app.routes.super_admin.work_orders.work_orders import * # noqa: E402,F401,F403
+from app.routes.super_admin.organisation_connections import * # noqa: E402,F401,F403
 
 # NEW: Contract Audits (uses the SAME super_admin_bp)
 # Ensure your audits module routes look like: @super_admin_bp.route("/contracts/audits", ...)

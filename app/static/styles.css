@@ -1252,6 +1252,105 @@ body.sidebar-collapsed .main-content {
   display: block;
 }
 
+.organisation-connections-workspace {
+  max-width: 100%;
+}
+
+.organisation-identity-panel {
+  margin-bottom: 1rem;
+}
+
+.organisation-identity-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .75rem;
+}
+
+.organisation-identity-grid > div {
+  border: 1px solid #d7dfec;
+  border-radius: 8px;
+  padding: .85rem 1rem;
+  background: #f8fafc;
+}
+
+.organisation-identity-grid span,
+.organisation-connection-form label,
+.organisation-module-checks span {
+  display: block;
+  margin-bottom: .35rem;
+  color: #53657d;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.organisation-identity-grid strong {
+  display: block;
+  color: #071733;
+  font-size: .95rem;
+  overflow-wrap: anywhere;
+}
+
+.organisation-setup-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.organisation-connection-form {
+  display: grid;
+  gap: .65rem;
+}
+
+.organisation-connection-form .form-control {
+  min-height: 42px;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.organisation-connection-form .btn {
+  justify-self: start;
+  margin-top: .25rem;
+}
+
+.organisation-module-checks {
+  display: grid;
+  gap: .35rem;
+  padding: .75rem;
+  border: 1px solid #d7dfec;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.organisation-module-checks label {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  margin: 0;
+  color: #071733;
+  font-size: .88rem;
+}
+
+.organisation-connections-table td,
+.organisation-connections-table th {
+  vertical-align: middle;
+}
+
+@media (max-width: 1199.98px) {
+  .organisation-setup-grid,
+  .organisation-identity-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767.98px) {
+  .organisation-setup-grid,
+  .organisation-identity-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .user-form-panel {
   margin-top: 1rem;
   border: 1px solid #d8dee8;

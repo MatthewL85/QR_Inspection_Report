@@ -53,6 +53,20 @@ Example:
 
 Email can be used to deliver an invite, but the email address is not the permanent link. The accepted organisation connection is the controlled link.
 
+## Super Admin: Organisation Connections
+
+Super Admin users can open Organisation Connections from the Super Admin sidebar or dashboard.
+
+Use this page to:
+
+- confirm the current organisation UID
+- enable module subscriptions for an organisation
+- create a connection invite code
+- accept a received connection invite code
+- review pending invites and active organisation links
+
+This is the controlled setup area for future independent module purchases. For example, a contractor using Contractor Logix can be connected to a management company using LogixPM without duplicating company records or using email as the source of truth.
+
 ## GAR Visibility Rule
 
 GAR should only use records the logged-in user is allowed to see. If GAR answers questions across companies, that visibility must come from active module subscriptions, role permissions and accepted organisation connections.

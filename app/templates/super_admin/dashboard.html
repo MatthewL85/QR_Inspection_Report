@@ -104,6 +104,19 @@
     </div>
     <div class="dashboard-module-grid">
       <div class="dashboard-module-tile">
+        <div class="dashboard-module-icon text-primary"><i class="material-icons">hub</i></div>
+        <div>
+          <strong>Organisation Connections</strong>
+          <span>Module subscriptions and governed company links</span>
+        </div>
+        {% if 'super_admin.organisation_connections' in current_app.view_functions %}
+          <a href="{{ url_for('super_admin.organisation_connections') }}">Open</a>
+        {% else %}
+          <span class="dashboard-muted-action">Pending</span>
+        {% endif %}
+      </div>
+
+      <div class="dashboard-module-tile">
         <div class="dashboard-module-icon text-warning"><i class="fas fa-tools"></i></div>
         <div>
           <strong>Works Logix</strong>

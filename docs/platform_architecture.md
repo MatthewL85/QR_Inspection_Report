@@ -83,6 +83,7 @@ Current registered route groups include:
 - `client_key_info`
 - `super_admin_contracts`
 - `super_admin_simple_contracts`
+- `super_admin.organisation_connections`
 
 ## Target Shape
 
