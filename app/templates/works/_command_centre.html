@@ -471,7 +471,12 @@
                     <select name="contractor_id" aria-label="Assign contractor">
                       <option value="">Assign</option>
                       {% for contractor in contractors %}
-                        <option value="{{ contractor.id }}">{{ contractor.company_name }}</option>
+                        {% set routing_option = contractor_routing_by_id.get(contractor.id) if contractor_routing_by_id is defined else none %}
+                        <option value="{{ contractor.id }}">
+                          {{ contractor.company_name }}
+                          {% if routing_option and routing_option.is_connected %} - Connected{% endif %}
+                          {% if routing_option and routing_option.open_work_orders %} - {{ routing_option.open_work_orders }} open{% endif %}
+                        </option>
                       {% endfor %}
                     </select>
                     <button type="submit">Route</button>

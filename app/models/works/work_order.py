@@ -10,6 +10,7 @@ class WorkOrder(db.Model):
 
     # 🔧 Core Info
     contractor_id = db.Column(db.Integer, db.ForeignKey('contractors.id'), nullable=True)
+    organisation_connection_id = db.Column(db.Integer, db.ForeignKey('organisation_connections.id'), nullable=True, index=True)
     title = db.Column(db.String(255))
     request_type = db.Column(db.String(50), default='Work Order')  # Work Order, Quote Request, Emergency Callout
     description = db.Column(db.Text, nullable=False)
@@ -84,6 +85,7 @@ class WorkOrder(db.Model):
     completion = db.relationship('WorkOrderCompletion', back_populates='work_order', uselist=False)
     feedback = db.relationship('ContractorFeedback', back_populates='work_order', uselist=False)
     job_docket = db.relationship('JobDocket', back_populates='work_order', uselist=False)
+    organisation_connection = db.relationship('OrganisationConnection')
 
 
     # 📎 External/API Fields

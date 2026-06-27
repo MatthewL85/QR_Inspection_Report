@@ -15,6 +15,7 @@ from app.models.core.organisation_connection import (
     OrganisationConnectionInvite,
 )
 from app.models.onboarding.company import Company
+from app.models.works.work_order import WorkOrder
 from app.services.core.module_registry import module_contract_by_key
 from app.services.core.organisation_identity import (
     DEFAULT_CONNECTION_PERMISSIONS,
@@ -39,6 +40,8 @@ def main() -> int:
 
         if not hasattr(Company, "organisation_uid"):
             failures.append("Company is missing organisation_uid.")
+        if not hasattr(WorkOrder, "organisation_connection_id"):
+            failures.append("WorkOrder is missing organisation_connection_id.")
 
         core_contract = module_contract_by_key("core")
         if not core_contract:

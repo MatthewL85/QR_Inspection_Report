@@ -67,6 +67,14 @@ Use this page to:
 
 This is the controlled setup area for future independent module purchases. For example, a contractor using Contractor Logix can be connected to a management company using LogixPM without duplicating company records or using email as the source of truth.
 
+## Works Logix Routing Impact
+
+When a work order is routed to a contractor, the platform now checks whether the contractor belongs to a connected organisation.
+
+If a connection exists, the work order stores the organisation connection ID. This allows the job docket, contractor updates, completion evidence, GAR summaries and future finance links to know which two organisations are allowed to share that job information.
+
+Legacy contractors can still be selected during this build phase, but connected contractors are marked in the routing selector and should become the preferred setup route.
+
 ## GAR Visibility Rule
 
 GAR should only use records the logged-in user is allowed to see. If GAR answers questions across companies, that visibility must come from active module subscriptions, role permissions and accepted organisation connections.

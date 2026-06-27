@@ -10,6 +10,7 @@ from app.models.client.client import Client
 from app.models.contractor.contractor import Contractor
 from app.models.contractor.contractor_feedback import ContractorFeedback
 from app.models.core.notification import Notification
+from app.models.core.organisation_connection import OrganisationConnection
 from app.models.core.role import Role
 from app.models.core.user import User
 from app.models.maintenance.maintenance_request import MaintenanceRequest
@@ -76,6 +77,59 @@ class ContractorWorkFilters:
 
 def _normalise_status(value: str | None) -> str:
     return (value or "").strip().lower()
+
+
+def _contractor_company_ids(contractor: Contractor | None) -> tuple[int, ...]:
+    if not contractor:
+        return ()
+    return tuple(
+        sorted(
+            {
+                user.company_id
+                for user in getattr(contractor, "users", []) or []
+                if getattr(user, "company_id", None)
+            }
+        )
+    )
+
+
+def _organisation_connection_for_contractor(
+    *,
+    company_id: int | None,
+    contractor: Contractor | None,
+) -> OrganisationConnection | None:
+    contractor_company_ids = _contractor_company_ids(contractor)
+    if not company_id or not contractor_company_ids:
+        return None
+
+    return (
+        OrganisationConnection.query
+        .filter(
+            OrganisationConnection.status == "active",
+            or_(
+                (
+                    (OrganisationConnection.source_company_id == company_id)
+                    & (OrganisationConnection.target_company_id.in_(contractor_company_ids))
+                ),
+                (
+                    (OrganisationConnection.target_company_id == company_id)
+                    & (OrganisationConnection.source_company_id.in_(contractor_company_ids))
+                ),
+            ),
+        )
+        .order_by(OrganisationConnection.accepted_at.desc(), OrganisationConnection.created_at.desc())
+        .first()
+    )
+
+
+def _organisation_connection_payload(company_id: int | None, contractor: Contractor | None) -> dict:
+    contractor_company_ids = _contractor_company_ids(contractor)
+    connection = _organisation_connection_for_contractor(company_id=company_id, contractor=contractor)
+    return {
+        "organisation_connection_id": connection.id if connection else None,
+        "organisation_connection_status": "connected" if connection else "not_connected",
+        "contractor_company_ids": list(contractor_company_ids),
+    }
 
 
 def is_open_status(value: str | None) -> bool:
@@ -423,6 +477,7 @@ def build_contractor_routing_options(
     options: list[dict] = []
 
     for contractor in contractors:
+        connection_payload = _organisation_connection_payload(company_id, contractor)
         open_query = WorkOrder.query.filter(WorkOrder.contractor_id == contractor.id)
         if company_id:
             open_query = open_query.filter(_work_order_company_filter(company_id))
@@ -438,8 +493,11 @@ def build_contractor_routing_options(
                 or contractor_type in request_category
             )
         )
-        suggested = bool(matches_category or contractor.is_gar_preferred)
+        is_connected = connection_payload["organisation_connection_status"] == "connected"
+        suggested = bool(is_connected or matches_category or contractor.is_gar_preferred)
         reason_parts = []
+        if is_connected:
+            reason_parts.append("connected organisation")
         if matches_category:
             reason_parts.append("category match")
         if contractor.is_gar_preferred:
@@ -451,6 +509,10 @@ def build_contractor_routing_options(
             "contractor": contractor,
             "open_work_orders": open_count,
             "matches_category": matches_category,
+            "is_connected": is_connected,
+            "organisation_connection_id": connection_payload["organisation_connection_id"],
+            "organisation_connection_status": connection_payload["organisation_connection_status"],
+            "contractor_company_ids": connection_payload["contractor_company_ids"],
             "is_suggested": suggested,
             "suggestion_reason": ", ".join(reason_parts) or "available",
         })
@@ -458,6 +520,7 @@ def build_contractor_routing_options(
     return sorted(
         options,
         key=lambda item: (
+            not item["is_connected"],
             not item["is_suggested"],
             item["open_work_orders"],
             item["contractor"].company_name or "",
@@ -761,12 +824,8 @@ def build_command_centre(
 
     open_work_orders = [item for item in filtered_work_orders if is_open_status(item.status)]
     closed_work_orders = [item for item in filtered_work_orders if is_closed_status(item.status)]
-    contractors = (
-        Contractor.query
-        .filter(Contractor.is_active.is_(True))
-        .order_by(Contractor.company_name.asc())
-        .all()
-    )
+    contractor_routing_options = build_contractor_routing_options(company_id=company_id)
+    contractors = [option["contractor"] for option in contractor_routing_options]
 
     open_member_requests = (
         MaintenanceRequest.query
@@ -962,6 +1021,11 @@ def build_command_centre(
     return {
         "clients": clients,
         "contractors": contractors,
+        "contractor_routing_options": contractor_routing_options,
+        "contractor_routing_by_id": {
+            option["contractor"].id: option
+            for option in contractor_routing_options
+        },
         "status_options": sorted({item.status for item in all_work_orders if item.status}),
         "work_orders": filtered_work_orders,
         "open_work_orders": open_work_orders,
@@ -1374,12 +1438,17 @@ def convert_member_request_to_work_order(
         ).first()
         if not contractor:
             return None
+    connection_payload = _organisation_connection_payload(company_id, contractor) if contractor else {}
 
     existing_work_order = WorkOrder.query.filter_by(maintenance_request_id=member_request.id).first()
     if existing_work_order:
         needs_commit = False
+        if contractor and existing_work_order.organisation_connection_id != connection_payload.get("organisation_connection_id"):
+            existing_work_order.organisation_connection_id = connection_payload.get("organisation_connection_id")
+            needs_commit = True
         if contractor and existing_work_order.contractor_id != contractor.id:
             existing_work_order.contractor_id = contractor.id
+            existing_work_order.organisation_connection_id = connection_payload.get("organisation_connection_id")
             needs_commit = True
             if _normalise_status(existing_work_order.status) in {"", "open", "pending"}:
                 existing_work_order.status = "Assigned"
@@ -1398,6 +1467,7 @@ def convert_member_request_to_work_order(
                     "contractor_name": contractor.company_name,
                     "access_context": access_context,
                     "allowed_client_scope": "restricted" if allowed_client_ids is not None else "company",
+                    **connection_payload,
                 },
             )
             _notify_contractor_users(
@@ -1440,6 +1510,7 @@ def convert_member_request_to_work_order(
         company_id=company_id,
         unit_id=unit.id,
         contractor_id=contractor.id if contractor else None,
+        organisation_connection_id=connection_payload.get("organisation_connection_id") if contractor else None,
         maintenance_request_id=member_request.id,
         occupant_name=occupant_name,
         occupant_phone=occupant_phone,
@@ -1479,6 +1550,7 @@ def convert_member_request_to_work_order(
             "allowed_client_scope": "restricted" if allowed_client_ids is not None else "company",
             "contractor_id": contractor.id if contractor else None,
             "contractor_name": contractor.company_name if contractor else None,
+            **connection_payload,
         },
         occurred_at=work_order.created_at,
     )
@@ -1499,6 +1571,7 @@ def convert_member_request_to_work_order(
                 "contractor_name": contractor.company_name,
                 "access_context": access_context,
                 "allowed_client_scope": "restricted" if allowed_client_ids is not None else "company",
+                **connection_payload,
             },
             occurred_at=work_order.created_at,
         )
@@ -1542,7 +1615,9 @@ def assign_contractor_to_work_order(
     if not work_order or not contractor:
         return None
 
+    connection_payload = _organisation_connection_payload(company_id, contractor)
     work_order.contractor_id = contractor.id
+    work_order.organisation_connection_id = connection_payload.get("organisation_connection_id")
     if not work_order.business_type and contractor.business_type:
         work_order.business_type = contractor.business_type
     if _normalise_status(work_order.status) in {"", "open", "pending"}:
@@ -1563,6 +1638,7 @@ def assign_contractor_to_work_order(
             "contractor_name": contractor.company_name,
             "access_context": access_context,
             "allowed_client_scope": "restricted" if allowed_client_ids is not None else "company",
+            **connection_payload,
         },
     )
 

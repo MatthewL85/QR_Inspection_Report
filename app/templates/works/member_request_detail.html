@@ -151,6 +151,7 @@
                 <option value="{{ contractor.id }}">
                   {{ contractor.company_name }}
                   {% if contractor.business_type %} - {{ contractor.business_type }}{% endif %}
+                  {% if option.is_connected %} - Connected{% endif %}
                   {% if option.is_suggested %} (Suggested: {{ option.suggestion_reason }}){% endif %}
                   {% if option.open_work_orders %} - {{ option.open_work_orders }} open{% endif %}
                 </option>
