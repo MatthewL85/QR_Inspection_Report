@@ -61,11 +61,14 @@ Use this page to:
 
 - confirm the current organisation UID
 - enable module subscriptions for an organisation
+- link contractor profiles to their organisation identity
 - create a connection invite code
 - accept a received connection invite code
 - review pending invites and active organisation links
 
 This is the controlled setup area for future independent module purchases. For example, a contractor using Contractor Logix can be connected to a management company using LogixPM without duplicating company records or using email as the source of truth.
+
+Contractor profiles should be linked to their real organisation identity before they are used for connected Works Logix routing. When a new contractor user is created from a linked contractor profile, the user inherits that organisation link.
 
 ## Works Logix Routing Impact
 

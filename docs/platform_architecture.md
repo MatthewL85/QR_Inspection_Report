@@ -37,6 +37,8 @@ Organisation connections define which records may be shared between modules. For
 
 Works Logix work orders should store `organisation_connection_id` when a contractor is routed through an accepted organisation connection. This gives Contractor Logix, GAR and future Finance Logix a governed company-to-company link for the job docket, updates, completion evidence and future invoice readiness.
 
+Contractor profiles should have their own `company_id` link to the contractor organisation identity. Works Logix can then route through a real company-to-company connection instead of inferring the contractor organisation from user email or free-text contractor names.
+
 GAR must respect these same connection boundaries. It may summarise connected records only when the user, company, module subscription and organisation connection allow that visibility.
 
 ## Module Layer

@@ -9,6 +9,7 @@ if str(ROOT) not in sys.path:
 
 from app import create_app
 from app.extensions import db
+from app.models.contractor.contractor import Contractor
 from app.models.core.organisation_connection import (
     ModuleSubscription,
     OrganisationConnection,
@@ -40,6 +41,8 @@ def main() -> int:
 
         if not hasattr(Company, "organisation_uid"):
             failures.append("Company is missing organisation_uid.")
+        if not hasattr(Contractor, "company_id"):
+            failures.append("Contractor is missing company_id.")
         if not hasattr(WorkOrder, "organisation_connection_id"):
             failures.append("WorkOrder is missing organisation_connection_id.")
 

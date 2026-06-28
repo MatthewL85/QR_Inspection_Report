@@ -81,6 +81,38 @@
     <section class="client-manager-panel">
       <div class="client-manager-heading">
         <div>
+          <h6>Link Contractor Profile</h6>
+          <span>Attach a contractor record to its organisation identity.</span>
+        </div>
+      </div>
+      <form method="POST" action="{{ url_for('super_admin.link_contractor_organisation') }}" class="organisation-connection-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="contractor_id">Contractor Profile</label>
+        <select id="contractor_id" name="contractor_id" class="form-control" required>
+          <option value="">Select contractor</option>
+          {% for contractor in contractors %}
+            <option value="{{ contractor.id }}">
+              {{ contractor.company_name }}
+              {% if contractor.organisation_company %} - {{ contractor.organisation_company.name }}{% endif %}
+            </option>
+          {% endfor %}
+        </select>
+
+        <label for="contractor_company_id">Organisation</label>
+        <select id="contractor_company_id" name="company_id" class="form-control" required>
+          <option value="">Select organisation</option>
+          {% for item in companies %}
+            <option value="{{ item.id }}">{{ item.name }}</option>
+          {% endfor %}
+        </select>
+
+        <button class="btn btn-outline-primary btn-sm" type="submit">Link Contractor</button>
+      </form>
+    </section>
+
+    <section class="client-manager-panel">
+      <div class="client-manager-heading">
+        <div>
           <h6>Create Connection Invite</h6>
           <span>Create a controlled code for another organisation to connect.</span>
         </div>
@@ -148,6 +180,50 @@
       </form>
     </section>
   </div>
+
+  <section class="client-manager-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Contractor Organisation Links</h6>
+        <span>Contractor profiles mapped to real organisation identities.</span>
+      </div>
+    </div>
+    <div class="client-manager-table-wrap">
+      <table class="client-manager-table organisation-connections-table">
+        <thead>
+          <tr>
+            <th>Contractor</th>
+            <th>Organisation</th>
+            <th>Trade</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for contractor in contractors %}
+            <tr>
+              <td><strong>{{ contractor.company_name }}</strong></td>
+              <td>
+                {% if contractor.organisation_company %}
+                  {{ contractor.organisation_company.name }}
+                  <span class="client-manager-subtext">{{ contractor.organisation_company.organisation_uid }}</span>
+                {% else %}
+                  <span class="text-muted">Not linked</span>
+                {% endif %}
+              </td>
+              <td>{{ contractor.business_type or '-' }}</td>
+              <td>
+                <span class="user-manager-status-pill {% if contractor.company_id %}is-active{% endif %}">
+                  {{ 'Linked' if contractor.company_id else 'Pending' }}
+                </span>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="client-manager-empty">No contractor profiles found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
 
   <section class="client-manager-panel">
     <div class="client-manager-heading">

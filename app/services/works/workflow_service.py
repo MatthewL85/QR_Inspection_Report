@@ -82,15 +82,15 @@ def _normalise_status(value: str | None) -> str:
 def _contractor_company_ids(contractor: Contractor | None) -> tuple[int, ...]:
     if not contractor:
         return ()
-    return tuple(
-        sorted(
-            {
-                user.company_id
-                for user in getattr(contractor, "users", []) or []
-                if getattr(user, "company_id", None)
-            }
-        )
+    company_ids = set()
+    if contractor.company_id:
+        company_ids.add(contractor.company_id)
+    company_ids.update(
+        user.company_id
+        for user in getattr(contractor, "users", []) or []
+        if getattr(user, "company_id", None)
     )
+    return tuple(sorted(company_ids))
 
 
 def _organisation_connection_for_contractor(

@@ -6,6 +6,7 @@ from sqlalchemy import or_
 
 from app.decorators.role import super_admin_required
 from app.extensions import db
+from app.models.contractor.contractor import Contractor
 from app.models.core.organisation_connection import (
     ModuleSubscription,
     OrganisationConnection,
@@ -41,6 +42,7 @@ def _parse_company_id(value: str | None) -> int | None:
 def organisation_connections():
     company = _current_company()
     companies = Company.query.order_by(Company.name.asc()).all()
+    contractors = Contractor.query.order_by(Contractor.company_name.asc()).all()
 
     subscriptions = []
     pending_invites = []
@@ -94,6 +96,7 @@ def organisation_connections():
         "super_admin/organisation_connections.html",
         company=company,
         companies=companies,
+        contractors=contractors,
         available_modules=available_modules,
         subscriptions=subscriptions,
         pending_invites=pending_invites,
@@ -128,6 +131,33 @@ def enable_organisation_module():
         db.session.rollback()
         flash(str(exc), "danger")
 
+    return redirect(url_for("super_admin.organisation_connections"))
+
+
+@super_admin_bp.post("/organisation-connections/contractors/link", endpoint="link_contractor_organisation")
+@login_required
+@super_admin_required
+def link_contractor_organisation():
+    contractor_id = _parse_company_id(request.form.get("contractor_id"))
+    company_id = _parse_company_id(request.form.get("company_id"))
+
+    if not contractor_id or not company_id:
+        flash("Select both a contractor profile and an organisation.", "warning")
+        return redirect(url_for("super_admin.organisation_connections"))
+
+    contractor = Contractor.query.get(contractor_id)
+    company = Company.query.get(company_id)
+    if not contractor or not company:
+        flash("That contractor or organisation could not be found.", "danger")
+        return redirect(url_for("super_admin.organisation_connections"))
+
+    contractor.company_id = company.id
+    for user in contractor.users:
+        if not user.company_id:
+            user.company_id = company.id
+
+    db.session.commit()
+    flash("Contractor profile linked to organisation identity.", "success")
     return redirect(url_for("super_admin.organisation_connections"))
 
 

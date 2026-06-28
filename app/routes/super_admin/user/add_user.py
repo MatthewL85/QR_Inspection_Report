@@ -146,8 +146,9 @@ def add_user():
         if role.name.lower() == "contractor":
             contractor_id = request.form.get("contractor_id")
             if contractor_id:
-                user.contractor_id = int(contractor_id)
-                user.company_id = None
+                contractor = Contractor.query.get(int(contractor_id))
+                user.contractor_id = contractor.id if contractor else int(contractor_id)
+                user.company_id = contractor.company_id if contractor else None
             else:
                 flash("Please select a contractor company.", "warning")
                 return render_template(
