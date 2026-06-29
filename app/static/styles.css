@@ -4642,6 +4642,74 @@ body.sidebar-collapsed .main-content {
   justify-self: start;
 }
 
+.contractor-standalone-docket-form {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0 1rem 1rem;
+}
+
+.contractor-form-section {
+  border-top: 1px solid #e6ebf2;
+  padding-top: 0.85rem;
+}
+
+.contractor-form-section:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.contractor-form-section h3 {
+  margin: 0 0 0.65rem;
+  color: #071733;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.contractor-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.contractor-form-grid label {
+  display: grid;
+  gap: 0.28rem;
+  color: #43536a;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.contractor-form-grid input,
+.contractor-form-grid select,
+.contractor-form-grid textarea {
+  width: 100%;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #17233c;
+  font-size: 0.86rem;
+  padding: 0.58rem 0.7rem;
+}
+
+.contractor-form-wide {
+  grid-column: span 2;
+}
+
+.contractor-form-future-note {
+  border: 1px solid #d7dfec;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #53657d;
+  font-size: 0.86rem;
+  padding: 0.75rem 0.85rem;
+}
+
+.contractor-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
 .works-schedule-cell {
   display: grid;
   gap: 0.12rem;
@@ -5940,6 +6008,7 @@ body.sidebar-collapsed .main-content {
   }
 
   .contractor-docket-summary-grid,
+  .contractor-form-grid,
   .contractor-dashboard-ops-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -5950,6 +6019,10 @@ body.sidebar-collapsed .main-content {
 
   .works-form-wide {
     grid-column: span 1;
+  }
+
+  .contractor-form-wide {
+    grid-column: span 2;
   }
 
   .user-form-actions {
@@ -6027,6 +6100,7 @@ body.sidebar-collapsed .main-content {
 
   .dashboard-contract-metrics,
   .contractor-docket-summary-grid,
+  .contractor-form-grid,
   .contractor-dashboard-ops-grid,
   .works-command-grid,
   .works-gar-signal-grid,
@@ -6051,6 +6125,15 @@ body.sidebar-collapsed .main-content {
 
   .user-form-grid--four {
     grid-template-columns: 1fr;
+  }
+
+  .contractor-form-wide {
+    grid-column: span 1;
+  }
+
+  .contractor-form-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .user-form-field--wide {

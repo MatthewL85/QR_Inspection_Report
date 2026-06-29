@@ -14,6 +14,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 EXPECTED_FEEDS = {
     "app_home.capabilities_feed": "/app/capabilities/feed.json",
+    "app_home.company_setup_feed": "/app/company-setup/feed.json",
     "app_home.feed": "/app/home/feed.json",
     "app_home.health_feed": "/app/health/feed.json",
     "super_admin.gar_insights_feed": "/super-admin/gar-insights/feed.json",

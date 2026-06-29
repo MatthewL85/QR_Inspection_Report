@@ -8,7 +8,7 @@ class ContractorCalendarEntry(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     job_docket_id = db.Column(db.Integer, db.ForeignKey("job_dockets.id", ondelete="CASCADE"), nullable=False, index=True)
-    work_order_id = db.Column(db.Integer, db.ForeignKey("work_orders.id", ondelete="CASCADE"), nullable=False, index=True)
+    work_order_id = db.Column(db.Integer, db.ForeignKey("work_orders.id", ondelete="CASCADE"), nullable=True, index=True)
     contractor_id = db.Column(db.Integer, db.ForeignKey("contractors.id"), nullable=False, index=True)
     company_id = db.Column(db.Integer, db.ForeignKey("companies.id"), nullable=True, index=True)
     client_id = db.Column(db.Integer, db.ForeignKey("clients.id"), nullable=True, index=True)

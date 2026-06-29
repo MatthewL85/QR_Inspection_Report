@@ -31,11 +31,13 @@ from app.services.works.workflow_service import (
     record_work_order_lifecycle_event,
 )
 from app.services.contractor.job_docket_service import (
+    build_standalone_job_docket_pack,
     build_contractor_calendar_ics,
     calendar_context,
     contractor_calendar_entries_for_ics,
     contractor_schedule_feed_payload,
     contractor_today_schedule_context,
+    create_standalone_job_docket,
     schedule_job_docket,
 )
 from app.services.works.audit_pack_service import build_completion_evidence_pack
@@ -151,6 +153,53 @@ def _form_int(name: str) -> int | None:
         return int(value)
     except ValueError:
         return None
+
+
+@contractor_bp.route('/job-dockets/new', methods=['GET', 'POST'], endpoint='new_job_docket')
+@login_required(role='Contractor')
+def new_job_docket():
+    user = _current_contractor_user()
+    if not user:
+        flash('Your contractor profile is not linked yet.', 'warning')
+        return redirect(url_for('contractor.contractor_dashboard'))
+
+    if request.method == 'POST':
+        client_name = (request.form.get('client_name') or '').strip()
+        scope_of_works = (request.form.get('scope_of_works') or '').strip()
+        if not client_name or not scope_of_works:
+            flash('Client name and work details are required before creating a standalone job docket.', 'warning')
+            return render_template('contractor/job_docket_form.html', form=request.form)
+
+        docket = create_standalone_job_docket(
+            contractor_id=user.contractor_id,
+            company_id=getattr(user, "company_id", None),
+            created_by_id=user.id,
+            contractor_job_number=(request.form.get('contractor_job_number') or '').strip(),
+            client_name=client_name,
+            property_name=(request.form.get('property_name') or '').strip(),
+            address_line_1=(request.form.get('address_line_1') or '').strip(),
+            address_line_2=(request.form.get('address_line_2') or '').strip(),
+            town_city=(request.form.get('town_city') or '').strip(),
+            region=(request.form.get('region') or '').strip(),
+            postal_code=(request.form.get('postal_code') or '').strip(),
+            country=(request.form.get('country') or '').strip(),
+            block_name=(request.form.get('block_name') or '').strip(),
+            core_name=(request.form.get('core_name') or '').strip(),
+            unit_number=(request.form.get('unit_number') or '').strip(),
+            required_trade=(request.form.get('required_trade') or '').strip(),
+            priority=(request.form.get('priority') or '').strip(),
+            scope_of_works=scope_of_works,
+            access_notes=(request.form.get('access_notes') or '').strip(),
+            contact_name=(request.form.get('contact_name') or '').strip(),
+            contact_phone=(request.form.get('contact_phone') or '').strip(),
+            contact_email=(request.form.get('contact_email') or '').strip(),
+            instruction_source=(request.form.get('instruction_source') or 'Manual Instruction').strip(),
+        )
+        db.session.commit()
+        flash('Standalone job docket created. Add it to the Contractor Calendar when ready.', 'success')
+        return redirect(url_for('contractor.job_docket_detail', docket_id=docket.id))
+
+    return render_template('contractor/job_docket_form.html', form={})
 
 
 @contractor_bp.route('/work-orders')
@@ -443,7 +492,11 @@ def job_docket_detail(docket_id):
         contractor_id=user.contractor_id,
     ).first_or_404()
     work_order = job_docket.work_order
-    work_pack = build_contractor_work_order_docket(work_order, audience="contractor")
+    work_pack = (
+        build_contractor_work_order_docket(work_order, audience="contractor")
+        if work_order
+        else build_standalone_job_docket_pack(job_docket)
+    )
     engineers = (
         User.query
         .filter(User.contractor_id == user.contractor_id, User.is_active.is_(True))
@@ -461,7 +514,7 @@ def job_docket_detail(docket_id):
         job_docket=job_docket,
         work_order=work_order,
         work_pack=work_pack,
-        progress_updates=progress_updates_for_audience(work_order, "contractor"),
+        progress_updates=progress_updates_for_audience(work_order, "contractor") if work_order else [],
         engineers=engineers,
         teams=teams,
     )
@@ -534,25 +587,26 @@ def schedule_docket(docket_id):
             return redirect(url_for('contractor.job_docket_detail', docket_id=docket_id))
         return redirect(url_for('contractor.calendar'))
 
-    record_work_order_lifecycle_event(
-        work_order=docket.work_order,
-        event_type="job_docket_scheduled",
-        title="Job docket scheduled",
-        source_module="Contractor Logix",
-        actor_user_id=user.id,
-        actor_label="Contractor",
-        note=f"{docket.docket_number} scheduled for {entry.scheduled_date:%d %b %Y}.",
-        status_snapshot=docket.work_order.status,
-        visibility_scope="Admin,PM,Contractor,Member,GAR",
-        event_metadata={
-            "job_docket_id": docket.id,
-            "job_docket_number": docket.docket_number,
-            "calendar_entry_id": entry.id,
-            "scheduled_date": entry.scheduled_date.isoformat(),
-            "assigned_engineer_id": entry.assigned_engineer_id,
-            "assigned_team_id": entry.assigned_team_id,
-        },
-    )
+    if docket.work_order:
+        record_work_order_lifecycle_event(
+            work_order=docket.work_order,
+            event_type="job_docket_scheduled",
+            title="Job docket scheduled",
+            source_module="Contractor Logix",
+            actor_user_id=user.id,
+            actor_label="Contractor",
+            note=f"{docket.docket_number} scheduled for {entry.scheduled_date:%d %b %Y}.",
+            status_snapshot=docket.work_order.status,
+            visibility_scope="Admin,PM,Contractor,Member,GAR",
+            event_metadata={
+                "job_docket_id": docket.id,
+                "job_docket_number": docket.docket_number,
+                "calendar_entry_id": entry.id,
+                "scheduled_date": entry.scheduled_date.isoformat(),
+                "assigned_engineer_id": entry.assigned_engineer_id,
+                "assigned_team_id": entry.assigned_team_id,
+            },
+        )
     db.session.commit()
     flash('Job docket scheduled and added to Contractor Calendar.', 'success')
     if request.form.get('return_to') == 'docket':

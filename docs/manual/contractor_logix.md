@@ -38,6 +38,12 @@ Work Order -> Accept -> Job Docket -> Assign -> Schedule -> Complete -> Report -
 
 When a contractor accepts a work order, Contractor Logix now creates a real Job Docket linked back to the Works Logix work order. This gives the contractor an operational record without moving ownership of the original work order out of Works Logix.
 
+Contractor Logix also supports standalone job dockets. This is for contractors who use Contractor Logix even when the instructing property manager, client or management company does not use LogixPM. A contractor can create a docket manually from a phone call, email, WhatsApp message, site instruction or another external system.
+
+Standalone dockets use the same Job Docket and Contractor Calendar workflow as connected Works Logix jobs. They capture the client/customer name, property/site, address, block/core/unit or area, contact details, access notes, trade/category, priority, scope of works and optional contractor job number. They do not require a linked Works Logix work order.
+
+This keeps Contractor Logix independently useful while preserving future connection readiness. If that client later joins LogixPM, historic standalone dockets can be linked to the proper organisation connection rather than being lost in a separate workflow.
+
 Accepted job dockets appear in the Contractor Calendar as an Unscheduled Job Queue until the contractor assigns an engineer/team and chooses a calendar slot.
 
 Each job docket has its own operational detail page. The page shows the linked work order, schedule, engineer/team assignment, site and contact information, scope of works, evidence, contractor updates and the shared Works Logix lifecycle. This separates the contractor's operational file from the pre-acceptance work order pack while keeping both records linked.
@@ -59,6 +65,18 @@ The Contractor Calendar has an `.ics` feed. This allows the schedule to be opene
 The Contractor Calendar also exposes a read-only app feed at `/contractor/calendar/feed.json`. This feed returns the contractor-scoped unscheduled dockets, scheduled entries, today, overdue and upcoming schedule data for future mobile Contractor Logix clients. It does not mutate records; all operational actions still route through Contractor Logix web actions and Works Logix services.
 
 When a contractor schedules a job docket, Works Logix management views show the scheduled visit beside the open work order. PM/Admin/Assistant users can therefore see the planned attendance date, time and engineer from the Works command centre without entering Contractor Logix.
+
+For standalone job dockets, scheduling creates the Contractor Calendar entry without updating Works Logix. This is intentional because there may be no connected LogixPM company on the other side.
+
+## Future GAR Email Intake
+
+Standalone job dockets are designed for a future premium email intake product.
+
+The future flow should be:
+
+Email instruction -> GAR extracts a draft -> Contractor reviews -> Job Docket created -> Schedule -> Complete -> Report -> Invoice.
+
+Each contractor company could have a unique intake email address. Incoming emails and attachments would be saved as intake records. GAR would read the sender, subject, body and attachments, then draft the same structured fields used by the standalone job docket form. At first, GAR should prepare a draft for human approval rather than automatically creating live jobs. Trusted automation can be added later for known clients and low-risk instruction types.
 
 ## Updates
 

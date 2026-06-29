@@ -54,6 +54,27 @@ def _job_location(work_order: WorkOrder) -> str:
     return ", ".join(str(part) for part in address_parts if part) or _unit_reference(unit)
 
 
+def _standalone_location(docket: JobDocket) -> str:
+    address_parts = [
+        docket.standalone_address_line_1,
+        docket.standalone_address_line_2,
+        docket.standalone_town_city,
+        docket.standalone_region,
+        docket.standalone_postal_code,
+        docket.standalone_country,
+    ]
+    return ", ".join(str(part) for part in address_parts if part) or _standalone_unit_reference(docket)
+
+
+def _standalone_unit_reference(docket: JobDocket) -> str:
+    parts = [
+        docket.standalone_block_name,
+        docket.standalone_core_name,
+        docket.standalone_unit_number,
+    ]
+    return " / ".join(str(part) for part in parts if part) or "-"
+
+
 def _work_order_contact(work_order: WorkOrder) -> dict:
     request = work_order.maintenance_request
     reporter = getattr(request, "requested_by", None) if request else None
@@ -75,8 +96,70 @@ def _docket_reference(docket_id: int) -> str:
 
 
 def _entry_title(docket: JobDocket) -> str:
-    title = getattr(docket.work_order, "title", None) or f"Work Order #{docket.work_order_id}"
+    title = getattr(docket.work_order, "title", None) or docket.scope_of_works or "Standalone Job"
     return f"{docket.docket_number or 'Job Docket'} - {title}"
+
+
+def create_standalone_job_docket(
+    *,
+    contractor_id: int,
+    company_id: int | None = None,
+    created_by_id: int | None = None,
+    contractor_job_number: str | None = None,
+    client_name: str,
+    property_name: str | None = None,
+    address_line_1: str | None = None,
+    address_line_2: str | None = None,
+    town_city: str | None = None,
+    region: str | None = None,
+    postal_code: str | None = None,
+    country: str | None = None,
+    block_name: str | None = None,
+    core_name: str | None = None,
+    unit_number: str | None = None,
+    required_trade: str | None = None,
+    priority: str | None = None,
+    scope_of_works: str | None = None,
+    access_notes: str | None = None,
+    contact_name: str | None = None,
+    contact_phone: str | None = None,
+    contact_email: str | None = None,
+    instruction_source: str = "Manual Instruction",
+) -> JobDocket:
+    """Create a Contractor Logix job docket without requiring LogixPM/Works Logix."""
+
+    docket = JobDocket(
+        contractor_id=contractor_id,
+        company_id=company_id,
+        contractor_job_number=(contractor_job_number or "").strip() or None,
+        instruction_source=instruction_source,
+        standalone_client_name=(client_name or "").strip(),
+        standalone_property_name=(property_name or "").strip() or None,
+        standalone_address_line_1=(address_line_1 or "").strip() or None,
+        standalone_address_line_2=(address_line_2 or "").strip() or None,
+        standalone_town_city=(town_city or "").strip() or None,
+        standalone_region=(region or "").strip() or None,
+        standalone_postal_code=(postal_code or "").strip() or None,
+        standalone_country=(country or "").strip() or None,
+        standalone_block_name=(block_name or "").strip() or None,
+        standalone_core_name=(core_name or "").strip() or None,
+        standalone_unit_number=(unit_number or "").strip() or None,
+        assigned_engineer_id=created_by_id,
+        status=AWAITING_SCHEDULING_STATUS,
+        priority=(priority or "").strip() or "Normal",
+        required_trade=(required_trade or "").strip() or None,
+        scope_of_works=(scope_of_works or "").strip() or None,
+        access_notes=(access_notes or "").strip() or None,
+        contact_name=(contact_name or "").strip() or None,
+        contact_phone=(contact_phone or "").strip() or None,
+        contact_email=(contact_email or "").strip() or None,
+        source_module="Contractor Logix",
+        gar_chat_ready=True,
+    )
+    db.session.add(docket)
+    db.session.flush()
+    docket.docket_number = _docket_reference(docket.id)
+    return docket
 
 
 def ensure_job_docket_for_work_order(
@@ -220,25 +303,27 @@ def contractor_today_schedule_context(
 
 
 def _job_docket_payload(docket: JobDocket) -> dict:
+    work_order_title = getattr(docket.work_order, "title", None)
     return {
         "id": docket.id,
         "docket_number": docket.docket_number,
         "work_order_id": docket.work_order_id,
         "work_order_reference": f"WO-{docket.work_order_id}" if docket.work_order_id else None,
-        "title": getattr(docket.work_order, "title", None) or "Work Order",
+        "title": work_order_title or docket.scope_of_works or "Standalone Job",
         "status": docket.status,
         "priority": docket.priority or "Normal",
         "required_trade": docket.required_trade,
+        "instruction_source": docket.instruction_source,
         "client": {
             "id": docket.client_id,
-            "name": docket.client.name if docket.client else None,
+            "name": docket.client.name if docket.client else docket.standalone_client_name,
         },
         "unit": {
             "id": docket.unit_id,
-            "reference": _unit_reference(docket.unit),
-            "block": getattr(docket.unit, "block_name", None),
-            "core": getattr(docket.unit, "core_name", None),
-            "unit_number": getattr(docket.unit, "unit_number", None),
+            "reference": _unit_reference(docket.unit) if docket.unit else _standalone_unit_reference(docket),
+            "block": getattr(docket.unit, "block_name", None) or docket.standalone_block_name,
+            "core": getattr(docket.unit, "core_name", None) or docket.standalone_core_name,
+            "unit_number": getattr(docket.unit, "unit_number", None) or docket.standalone_unit_number,
         },
         "schedule": {
             "scheduled_date": _date_value(docket.scheduled_date),
@@ -346,6 +431,44 @@ def contractor_schedule_feed_payload(context: dict) -> dict:
     }
 
 
+def build_standalone_job_docket_pack(docket: JobDocket) -> dict:
+    """Build the read-only detail pack for a standalone Contractor Logix docket."""
+
+    address_lines = [
+        docket.standalone_address_line_1,
+        docket.standalone_address_line_2,
+        docket.standalone_town_city,
+        docket.standalone_region,
+        docket.standalone_postal_code,
+        docket.standalone_country,
+    ]
+    return {
+        "pdf_ready": False,
+        "location": {
+            "development": docket.standalone_client_name or "-",
+            "property": docket.standalone_property_name or docket.standalone_client_name or "-",
+            "unit": _standalone_unit_reference(docket),
+            "block": docket.standalone_block_name or "-",
+            "core": docket.standalone_core_name or "-",
+            "address_lines": [part for part in address_lines if part],
+            "access_notes": docket.access_notes or "-",
+        },
+        "classification": {
+            "request_type": docket.instruction_source or "Manual Instruction",
+        },
+        "request_context": {
+            "member_request_title": "Standalone contractor instruction",
+        },
+        "gar_history": {
+            "contractor_safe_summary": (
+                "Standalone Contractor Logix docket. Future GAR email intake can draft this data from inbound instructions."
+            ),
+        },
+        "evidence_items": [],
+        "lifecycle": [],
+    }
+
+
 def schedule_job_docket(
     *,
     docket_id: int,
@@ -402,7 +525,7 @@ def schedule_job_docket(
     entry.estimated_duration_minutes = estimated_duration_minutes
     entry.calendar_status = SCHEDULED_STATUS
     entry.priority = docket.priority
-    entry.location = _job_location(docket.work_order) if docket.work_order else None
+    entry.location = _job_location(docket.work_order) if docket.work_order else _standalone_location(docket)
     entry.notes = notes
     entry.updated_by_id = scheduled_by_id
     db.session.flush()

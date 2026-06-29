@@ -26,6 +26,9 @@
       <p>Accepted jobs, engineer scheduling and calendar export for Contractor Logix.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
+      <a class="contract-manager-button" href="{{ url_for('contractor.new_job_docket') }}">
+        <i class="fas fa-plus me-1"></i> New Job Docket
+      </a>
       <a class="contract-manager-link" href="{{ url_for('contractor.work_orders') }}">Work Queue</a>
       <a class="contract-manager-link" href="{{ url_for('contractor.today') }}">Today</a>
       <a class="contract-manager-button" href="{{ url_for('contractor.calendar_ics') }}">
@@ -76,12 +79,12 @@
                   <strong>
                     <a href="{{ url_for('contractor.job_docket_detail', docket_id=docket.id) }}">{{ docket.docket_number }}</a>
                   </strong>
-                  <span>WO-{{ docket.work_order_id }}</span>
+                  <span>{{ 'WO-' ~ docket.work_order_id if docket.work_order_id else docket.instruction_source }}</span>
                 </div>
               </td>
               <td>
                 <div class="contract-manager-cell-stack">
-                  <strong>{{ docket.work_order.title if docket.work_order else 'Work Order' }}</strong>
+                  <strong>{{ docket.work_order.title if docket.work_order else (docket.scope_of_works or 'Standalone Job') }}</strong>
                   <span>{{ docket.required_trade or 'Trade not set' }}</span>
                 </div>
               </td>
@@ -215,12 +218,10 @@
               </td>
               <td><span class="unit-status-pill is-active">{{ entry.calendar_status }}</span></td>
               <td>
-                {% if entry.work_order_id %}
-                  {% if entry.job_docket %}
-                    <a href="{{ url_for('contractor.job_docket_detail', docket_id=entry.job_docket.id) }}">Open Docket</a>
-                  {% else %}
-                    <a href="{{ url_for('contractor.work_order_detail', work_order_id=entry.work_order_id) }}">Open</a>
-                  {% endif %}
+                {% if entry.job_docket %}
+                  <a href="{{ url_for('contractor.job_docket_detail', docket_id=entry.job_docket.id) }}">Open Docket</a>
+                {% elif entry.work_order_id %}
+                  <a href="{{ url_for('contractor.work_order_detail', work_order_id=entry.work_order_id) }}">Open</a>
                 {% else %}
                   -
                 {% endif %}

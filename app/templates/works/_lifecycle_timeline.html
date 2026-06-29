@@ -1,11 +1,12 @@
 {% set timeline_title = timeline_title|default("Workflow Lifecycle") %}
+{% set timeline_subtitle = timeline_subtitle|default("Shared Works Logix history") %}
 {% set timeline_empty = timeline_empty|default("No lifecycle events have been recorded yet.") %}
 {% set timeline_compact = timeline_compact|default(false) %}
 
 <div class="works-lifecycle {{ 'works-lifecycle--compact' if timeline_compact else '' }}">
   <div class="works-lifecycle-heading">
     <h6>{{ timeline_title }}</h6>
-    <span>Shared Works Logix history</span>
+    <span>{{ timeline_subtitle }}</span>
   </div>
   <div class="works-lifecycle-list">
     {% for event in timeline_events %}

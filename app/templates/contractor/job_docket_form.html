@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% block title %}New Job Docket{% endblock %}
+
+{% macro value(name) -%}
+  {{ form.get(name, '') if form else '' }}
+{%- endmacro %}
+
+{% block page_content %}
+<div class="contract-manager app-ready-surface app-ready-surface--contractor"
+     data-app-mobile-ready="true"
+     data-app-source-backed="true">
+  <section class="contract-manager-hero">
+    <div>
+      <h1>New Job Docket</h1>
+      <p>Create a standalone Contractor Logix job from a phone call, email, WhatsApp, site instruction or external system.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="contract-manager-link" href="{{ url_for('contractor.calendar') }}">Back to Calendar</a>
+      <a class="contract-manager-link" href="{{ url_for('contractor.work_orders') }}">Work Queue</a>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Standalone Instruction</h2>
+        <p>This uses the same Job Docket and Contractor Calendar workflow as connected Works Logix jobs.</p>
+      </div>
+      <span class="contract-alert-pill contract-alert-muted">Contractor Logix</span>
+    </div>
+    <form method="post" class="contractor-standalone-docket-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="contractor-form-section">
+        <h3>Instruction Source</h3>
+        <div class="contractor-form-grid">
+          <label>
+            Source
+            <select name="instruction_source">
+              {% set selected_source = value('instruction_source') or 'Manual Instruction' %}
+              {% for source in ['Manual Instruction', 'Email Instruction', 'Phone Call', 'WhatsApp / Message', 'Site Visit', 'External System'] %}
+                <option value="{{ source }}" {% if selected_source == source %}selected{% endif %}>{{ source }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            Contractor Job No.
+            <input name="contractor_job_number" value="{{ value('contractor_job_number') }}" placeholder="Optional internal reference">
+          </label>
+          <label>
+            Priority
+            <select name="priority">
+              {% set selected_priority = value('priority') or 'Normal' %}
+              {% for priority in ['Normal', 'Urgent', 'Emergency', 'Low'] %}
+                <option value="{{ priority }}" {% if selected_priority == priority %}selected{% endif %}>{{ priority }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            Trade / Category
+            <input name="required_trade" value="{{ value('required_trade') }}" placeholder="e.g. Plumbing, Electrical, Cleaning">
+          </label>
+        </div>
+      </div>
+
+      <div class="contractor-form-section">
+        <h3>Client & Site</h3>
+        <div class="contractor-form-grid">
+          <label>
+            Client / Customer Name *
+            <input name="client_name" value="{{ value('client_name') }}" required>
+          </label>
+          <label>
+            Property / Site Name
+            <input name="property_name" value="{{ value('property_name') }}">
+          </label>
+          <label>
+            Address Line 1
+            <input name="address_line_1" value="{{ value('address_line_1') }}">
+          </label>
+          <label>
+            Address Line 2
+            <input name="address_line_2" value="{{ value('address_line_2') }}">
+          </label>
+          <label>
+            Town / City
+            <input name="town_city" value="{{ value('town_city') }}">
+          </label>
+          <label>
+            County / Region
+            <input name="region" value="{{ value('region') }}">
+          </label>
+          <label>
+            Eircode / Postal Code
+            <input name="postal_code" value="{{ value('postal_code') }}">
+          </label>
+          <label>
+            Country
+            <input name="country" value="{{ value('country') }}">
+          </label>
+          <label>
+            Block / Building
+            <input name="block_name" value="{{ value('block_name') }}">
+          </label>
+          <label>
+            Core / Stairwell
+            <input name="core_name" value="{{ value('core_name') }}">
+          </label>
+          <label>
+            Unit / Area
+            <input name="unit_number" value="{{ value('unit_number') }}">
+          </label>
+        </div>
+      </div>
+
+      <div class="contractor-form-section">
+        <h3>Contact & Work Details</h3>
+        <div class="contractor-form-grid">
+          <label>
+            Contact Name
+            <input name="contact_name" value="{{ value('contact_name') }}">
+          </label>
+          <label>
+            Contact Phone
+            <input name="contact_phone" value="{{ value('contact_phone') }}">
+          </label>
+          <label>
+            Contact Email
+            <input type="email" name="contact_email" value="{{ value('contact_email') }}">
+          </label>
+          <label class="contractor-form-wide">
+            Access Notes
+            <textarea name="access_notes" rows="3" placeholder="Keys, appointment arrangements, site restrictions or safety notes.">{{ value('access_notes') }}</textarea>
+          </label>
+          <label class="contractor-form-wide">
+            Work Details *
+            <textarea name="scope_of_works" rows="5" required placeholder="Describe the instruction, issue, scope of works and any known risks.">{{ value('scope_of_works') }}</textarea>
+          </label>
+        </div>
+      </div>
+
+      <div class="contractor-form-future-note">
+        <strong>Future GAR intake ready:</strong>
+        these fields are structured so a future email inbox can let GAR draft this docket from inbound emails and attachments before contractor review.
+      </div>
+
+      <div class="contractor-form-actions">
+        <a class="contract-manager-link" href="{{ url_for('contractor.calendar') }}">Cancel</a>
+        <button type="submit" class="contract-manager-button">Create Job Docket</button>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

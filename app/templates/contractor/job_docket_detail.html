@@ -12,21 +12,24 @@
 
 {% block page_content %}
 {% set docket_status = (job_docket.status or '')|lower %}
-{% set work_status = (work_order.status or '')|lower %}
+{% set work_status = (work_order.status if work_order else '')|lower %}
 {% set is_closed = work_status in ['closed', 'completed', 'resolved', 'cancelled'] or docket_status in ['approved', 'invoiced', 'cancelled'] %}
 {% set is_scheduled = job_docket.scheduled_date or docket_status in ['scheduled', 'in progress', 'awaiting parts', 'awaiting access', 'completed', 'completed - awaiting review', 'approved', 'invoiced'] %}
+{% set job_title = work_order.title if work_order else (job_docket.scope_of_works or 'Standalone Contractor Logix job docket') %}
 <div class="contract-manager app-ready-surface app-ready-surface--contractor"
      data-app-mobile-ready="true"
      data-app-source-backed="true">
   <section class="contract-manager-hero">
     <div>
       <h1>{{ job_docket.docket_number or 'Job Docket' }}</h1>
-      <p>{{ work_order.title or 'Contractor Logix job docket' }}</p>
+      <p>{{ job_title }}</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
       <a class="contract-manager-link" href="{{ url_for('contractor.calendar') }}">Back to Calendar</a>
-      <a class="contract-manager-link" href="{{ url_for('contractor.work_order_detail', work_order_id=work_order.id) }}">Work Order Pack</a>
-      {% if work_pack.pdf_ready %}
+      {% if work_order %}
+        <a class="contract-manager-link" href="{{ url_for('contractor.work_order_detail', work_order_id=work_order.id) }}">Work Order Pack</a>
+      {% endif %}
+      {% if work_order and work_pack.pdf_ready %}
         <a class="contract-manager-button" href="{{ url_for('contractor.work_order_pdf', work_order_id=work_order.id) }}">Download PDF</a>
       {% endif %}
     </div>
@@ -105,9 +108,9 @@
     </div>
     <div class="contractor-docket-summary-grid">
       <article>
-        <span>Work Order</span>
-        <strong>WO-{{ work_order.id }}</strong>
-        <small>{{ work_order.status or '-' }}</small>
+        <span>{{ 'Work Order' if work_order else 'Instruction Source' }}</span>
+        <strong>{{ 'WO-' ~ work_order.id if work_order else job_docket.instruction_source }}</strong>
+        <small>{{ work_order.status if work_order else 'Standalone Contractor Logix' }}</small>
       </article>
       <article>
         <span>Schedule</span>
@@ -122,7 +125,7 @@
       <article>
         <span>Priority / Trade</span>
         <strong>{{ job_docket.priority or 'Normal' }}</strong>
-        <small>{{ job_docket.required_trade or work_order.business_type or 'Trade not set' }}</small>
+        <small>{{ job_docket.required_trade or (work_order.business_type if work_order else none) or 'Trade not set' }}</small>
       </article>
       <article>
         <span>Duration / Notes</span>
@@ -160,16 +163,16 @@
       </div>
     </div>
     <div class="unit-detail-grid contractor-pack-detail-grid">
-      <div><span class="unit-detail-label">Scope of Works</span><strong>{{ job_docket.scope_of_works or work_order.description or '-' }}</strong></div>
+      <div><span class="unit-detail-label">Scope of Works</span><strong>{{ job_docket.scope_of_works or (work_order.description if work_order else none) or '-' }}</strong></div>
+      <div><span class="unit-detail-label">Contractor Job No.</span><strong>{{ job_docket.contractor_job_number or '-' }}</strong></div>
       <div><span class="unit-detail-label">Request Type</span><strong>{{ work_pack.classification.request_type }}</strong></div>
       <div><span class="unit-detail-label">Member Request</span><strong>{{ work_pack.request_context.member_request_title }}</strong></div>
       <div><span class="unit-detail-label">GAR Context</span><strong>{{ work_pack.gar_history.contractor_safe_summary if work_pack.gar_history and work_pack.gar_history.contractor_safe_summary else 'No related history flagged.' }}</strong></div>
       <div><span class="unit-detail-label">Scheduling Notes</span><strong>{{ job_docket.scheduling_notes or '-' }}</strong></div>
-      <div><span class="unit-detail-label">Contractor Job No.</span><strong>{{ job_docket.contractor_job_number or '-' }}</strong></div>
     </div>
   </section>
 
-  {% if is_scheduled or is_closed %}
+  {% if work_order and (is_scheduled or is_closed) %}
     <section class="contract-manager-panel" id="field-actions">
       <div class="contract-manager-section-heading">
         <div>
@@ -247,9 +250,19 @@
       <div class="contract-manager-section-heading">
         <div>
           <h2>Field Actions</h2>
-          <p>Field actions will open once this job has been scheduled.</p>
+          <p>
+            {% if work_order %}
+              Field actions will open once this job has been scheduled.
+            {% else %}
+              Standalone docket updates, completion evidence and invoice-ready actions will use this same docket in the next Contractor Logix build step.
+            {% endif %}
+          </p>
         </div>
-        <a class="contract-manager-link" href="#schedule-job">Schedule First</a>
+        {% if work_order %}
+          <a class="contract-manager-link" href="#schedule-job">Schedule First</a>
+        {% else %}
+          <span class="contract-alert-pill contract-alert-muted">Standalone</span>
+        {% endif %}
       </div>
     </section>
   {% endif %}
@@ -333,6 +346,8 @@
   <section class="contract-manager-panel">
     {% set timeline_events = work_pack.lifecycle %}
     {% set timeline_title = "Job Docket Lifecycle" %}
+    {% set timeline_subtitle = "Standalone Contractor Logix history" if not work_order else "Shared Works Logix history" %}
+    {% set timeline_empty = "No standalone lifecycle events have been recorded yet." if not work_order else "No lifecycle events have been recorded yet." %}
     {% include "works/_lifecycle_timeline.html" %}
   </section>
 </div>
