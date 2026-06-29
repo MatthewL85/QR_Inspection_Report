@@ -44,6 +44,57 @@
         </div>
       </div>
     </section>
+
+    {% if setup_payload %}
+      <section class="client-manager-panel organisation-governance-panel">
+        <div class="client-manager-heading">
+          <div>
+            <h6>Setup Governance</h6>
+            <span>Controlled setup actions for module access, company links and GAR-safe visibility.</span>
+          </div>
+          <span class="user-manager-status-pill">Super Admin Only</span>
+        </div>
+        <div class="organisation-governance-summary">
+          <div>
+            <span>Feed Mode</span>
+            <strong>{{ 'Read only' if setup_payload.mutation_policy.feed_allows_mutation == false else 'Mutation enabled' }}</strong>
+          </div>
+          <div>
+            <span>Setup Changes</span>
+            <strong>{{ 'POST routes + CSRF' if setup_payload.mutation_policy.requires_csrf else 'Review required' }}</strong>
+          </div>
+          <div>
+            <span>GAR Action Rights</span>
+            <strong>{{ 'Read-only context' if setup_payload.mutation_policy.gar_may_execute_actions == false else 'Can execute' }}</strong>
+          </div>
+        </div>
+        <div class="client-manager-table-wrap">
+          <table class="client-manager-table organisation-connections-table organisation-governance-table">
+            <thead>
+              <tr>
+                <th>Action</th>
+                <th>Purpose</th>
+                <th>Route</th>
+                <th>Protection</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for action in setup_payload.governed_actions %}
+                <tr>
+                  <td><strong>{{ action.label }}</strong></td>
+                  <td>{{ action.description }}</td>
+                  <td>{{ action.method }} {{ action.url }}</td>
+                  <td>
+                    <span class="user-manager-status-pill is-active">CSRF</span>
+                    <span class="user-manager-status-pill">Super Admin</span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {% endif %}
   {% endif %}
 
   <div class="organisation-setup-grid">

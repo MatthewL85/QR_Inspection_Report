@@ -60,6 +60,12 @@ REQUIRED_ACTIONS = {
     "create_connection_invite",
     "accept_connection_invite",
 }
+REQUIRED_ACTION_ENDPOINTS = {
+    "enable_module": "super_admin.enable_organisation_module",
+    "link_contractor_organisation": "super_admin.link_contractor_organisation",
+    "create_connection_invite": "super_admin.create_organisation_connection_invite",
+    "accept_connection_invite": "super_admin.accept_organisation_connection_invite",
+}
 
 
 def main() -> int:
@@ -238,6 +244,24 @@ def main() -> int:
                     failures.append(f"Company setup action {action.get('key')} must require Super Admin")
                 if not str(action.get("url") or "").startswith("/super-admin/organisation-connections"):
                     failures.append(f"Company setup action {action.get('key')} URL is outside setup boundary")
+                expected_endpoint = REQUIRED_ACTION_ENDPOINTS.get(action.get("key"))
+                if expected_endpoint and action.get("endpoint") != expected_endpoint:
+                    failures.append(
+                        f"Company setup action {action.get('key')} endpoint changed: {action.get('endpoint')}"
+                    )
+                action_rule = next(
+                    (item for item in app.url_map.iter_rules() if item.endpoint == action.get("endpoint")),
+                    None,
+                )
+                if not action_rule:
+                    failures.append(f"Company setup action {action.get('key')} route is missing")
+                else:
+                    if "POST" not in (action_rule.methods or set()):
+                        failures.append(f"Company setup action {action.get('key')} route must allow POST")
+                    if action_rule.rule != action.get("url"):
+                        failures.append(
+                            f"Company setup action {action.get('key')} URL does not match route map: {action_rule.rule}"
+                        )
 
             mutation_policy = payload.get("mutation_policy") or {}
             if mutation_policy.get("feed_allows_mutation") is not False:

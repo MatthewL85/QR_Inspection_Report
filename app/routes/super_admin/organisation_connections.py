@@ -14,6 +14,7 @@ from app.models.core.organisation_connection import (
 )
 from app.models.onboarding.company import Company
 from app.routes.super_admin import super_admin_bp
+from app.services.core.company_setup_readiness import company_setup_readiness_feed_payload
 from app.services.core.module_registry import module_contracts
 from app.services.core.organisation_identity import (
     accept_organisation_connection_invite,
@@ -48,8 +49,10 @@ def organisation_connections():
     pending_invites = []
     active_connections = []
     received_invites = []
+    setup_payload = None
 
     if company:
+        setup_payload = company_setup_readiness_feed_payload(company)
         subscriptions = (
             ModuleSubscription.query
             .filter(ModuleSubscription.company_id == company.id)
@@ -102,6 +105,7 @@ def organisation_connections():
         pending_invites=pending_invites,
         received_invites=received_invites,
         active_connections=active_connections,
+        setup_payload=setup_payload,
     )
 
 
