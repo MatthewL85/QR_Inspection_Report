@@ -109,6 +109,55 @@ def build_company_setup_readiness(company: Company) -> CompanySetupReadiness:
     )
 
 
+def _governed_setup_actions() -> list[dict]:
+    return [
+        {
+            "key": "enable_module",
+            "label": "Enable Module",
+            "method": "POST",
+            "endpoint": "super_admin.enable_organisation_module",
+            "url": "/super-admin/organisation-connections/modules",
+            "requires_csrf": True,
+            "required_roles": ["Super Admin"],
+            "mutates": ["ModuleSubscription"],
+            "source_service": "enable_module_subscription",
+        },
+        {
+            "key": "link_contractor_organisation",
+            "label": "Link Contractor Organisation",
+            "method": "POST",
+            "endpoint": "super_admin.link_contractor_organisation",
+            "url": "/super-admin/organisation-connections/contractors/link",
+            "requires_csrf": True,
+            "required_roles": ["Super Admin"],
+            "mutates": ["Contractor", "User"],
+            "source_service": "link_contractor_organisation",
+        },
+        {
+            "key": "create_connection_invite",
+            "label": "Create Organisation Connection Invite",
+            "method": "POST",
+            "endpoint": "super_admin.create_organisation_connection_invite",
+            "url": "/super-admin/organisation-connections/invites",
+            "requires_csrf": True,
+            "required_roles": ["Super Admin"],
+            "mutates": ["OrganisationConnectionInvite"],
+            "source_service": "create_organisation_connection_invite",
+        },
+        {
+            "key": "accept_connection_invite",
+            "label": "Accept Organisation Connection Invite",
+            "method": "POST",
+            "endpoint": "super_admin.accept_organisation_connection_invite",
+            "url": "/super-admin/organisation-connections/accept",
+            "requires_csrf": True,
+            "required_roles": ["Super Admin"],
+            "mutates": ["OrganisationConnection", "OrganisationConnectionInvite"],
+            "source_service": "accept_organisation_connection_invite",
+        },
+    ]
+
+
 def company_setup_readiness_feed_payload(company: Company) -> dict:
     readiness = build_company_setup_readiness(company)
     return {
@@ -122,6 +171,14 @@ def company_setup_readiness_feed_payload(company: Company) -> dict:
             "server_side_visibility": True,
         },
         "readiness": readiness.to_payload(),
+        "governed_actions": _governed_setup_actions(),
+        "mutation_policy": {
+            "feed_allows_mutation": False,
+            "requires_governed_post_route": True,
+            "requires_csrf": True,
+            "requires_super_admin": True,
+            "gar_may_execute_actions": False,
+        },
         "source_references": [
             {
                 "model": "Company",

@@ -19,6 +19,8 @@ REQUIRED_TOP_LEVEL_KEYS = (
     "read_only",
     "scope",
     "readiness",
+    "governed_actions",
+    "mutation_policy",
     "source_references",
 )
 REQUIRED_SCOPE_KEYS = ("company_id", "company_name", "organisation_uid", "server_side_visibility")
@@ -41,6 +43,23 @@ REQUIRED_MODULE_KEYS = (
     "requires_connection",
     "dashboard_endpoint",
 )
+REQUIRED_ACTION_KEYS = (
+    "key",
+    "label",
+    "method",
+    "endpoint",
+    "url",
+    "requires_csrf",
+    "required_roles",
+    "mutates",
+    "source_service",
+)
+REQUIRED_ACTIONS = {
+    "enable_module",
+    "link_contractor_organisation",
+    "create_connection_invite",
+    "accept_connection_invite",
+}
 
 
 def main() -> int:
@@ -201,6 +220,36 @@ def main() -> int:
                 failures.append("Company setup source_references missing ModuleContract")
             if not any(source.get("model") == "OrganisationConnection" for source in sources):
                 failures.append("Company setup source_references missing OrganisationConnection")
+
+            actions = payload.get("governed_actions") or []
+            action_keys = {action.get("key") for action in actions if isinstance(action, dict)}
+            missing_actions = REQUIRED_ACTIONS - action_keys
+            if missing_actions:
+                failures.append(f"Company setup governed_actions missing: {', '.join(sorted(missing_actions))}")
+            for action in actions:
+                for key in REQUIRED_ACTION_KEYS:
+                    if key not in action:
+                        failures.append(f"Company setup action {action.get('key')} missing: {key}")
+                if action.get("method") != "POST":
+                    failures.append(f"Company setup action {action.get('key')} must use POST")
+                if action.get("requires_csrf") is not True:
+                    failures.append(f"Company setup action {action.get('key')} must require CSRF")
+                if "Super Admin" not in (action.get("required_roles") or []):
+                    failures.append(f"Company setup action {action.get('key')} must require Super Admin")
+                if not str(action.get("url") or "").startswith("/super-admin/organisation-connections"):
+                    failures.append(f"Company setup action {action.get('key')} URL is outside setup boundary")
+
+            mutation_policy = payload.get("mutation_policy") or {}
+            if mutation_policy.get("feed_allows_mutation") is not False:
+                failures.append("Company setup feed must not allow mutations")
+            if mutation_policy.get("requires_governed_post_route") is not True:
+                failures.append("Company setup mutations must require governed POST routes")
+            if mutation_policy.get("requires_csrf") is not True:
+                failures.append("Company setup mutations must require CSRF")
+            if mutation_policy.get("requires_super_admin") is not True:
+                failures.append("Company setup mutations must require Super Admin")
+            if mutation_policy.get("gar_may_execute_actions") is not False:
+                failures.append("GAR must not execute company setup actions")
 
         finally:
             db.session.rollback()

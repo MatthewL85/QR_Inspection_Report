@@ -40,6 +40,8 @@ The same setup state is built by the Core Platform readiness service, so the Com
 
 The same readiness state is also available to authenticated app clients through the read-only `/app/company-setup/feed.json` feed. This feed is for display, onboarding and GAR context only; module subscriptions and organisation connections still change through governed setup actions.
 
+The company setup feed also lists the governed setup action contract. These actions show where Super Admin users can enable modules, link contractor profiles to organisation identities, create connection invites and accept connection invites. The feed itself remains read-only: every setup change must use the listed POST route, CSRF protection and Super Admin permission checks.
+
 ## Module Subscriptions
 
 Each organisation can have one or more enabled modules, such as Property Management, Contractor Logix, Members Logix, HR Logix, Finance Logix or GAR.

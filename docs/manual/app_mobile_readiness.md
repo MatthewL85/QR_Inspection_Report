@@ -89,6 +89,8 @@ The app capabilities feed is the read-only capability map for future PWA/native 
 
 The company setup feed is the read-only organisation readiness contract for future module onboarding and GAR company context. It exposes the current organisation UID, enabled module state, active connection count, module setup map and source references. It must not be used to mutate module subscriptions, connection invites or company records.
 
+The same feed exposes a `governed_actions` list and `mutation_policy`. App clients may use this to show the correct setup controls for permitted Super Admin users, but the app must submit setup changes only through the listed POST endpoints with CSRF protection. GAR and app feed clients must never mutate setup directly from the feed payload.
+
 ## Mobile Surface UX Contract
 
 App-ready screens must declare their mobile surface contract in the template. Members Works, Contractor Work Queue, Notification Centre and the GAR ask panel now mark themselves as `data-app-mobile-ready`, `data-app-source-backed` and `data-app-offline="static-shell-only"`. Full app surfaces also mark safe-area support so installed PWA and future native shells can respect phone browser chrome and not hide buttons behind device controls.

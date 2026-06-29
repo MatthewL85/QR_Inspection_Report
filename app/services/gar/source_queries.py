@@ -406,6 +406,8 @@ def build_platform_setup_source_query(
                 }
                 for subscription in subscriptions[:30]
             ],
+            "governed_actions": readiness_payload.get("governed_actions") or [],
+            "mutation_policy": readiness_payload.get("mutation_policy") or {},
         },
         "visibility": {
             "management_setup_only": True,

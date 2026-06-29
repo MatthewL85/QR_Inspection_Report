@@ -239,11 +239,19 @@ def main() -> int:
 
         company_id = company.id if company else (user.company_id if user else None)
         if company_id:
+            platform_setup_result = build_platform_setup_source_query(company_id=company_id, role_context="super_admin")
             _check_ready_envelope(
                 "Platform setup",
-                build_platform_setup_source_query(company_id=company_id, role_context="super_admin"),
+                platform_setup_result,
                 "gar_platform_setup_source_query",
             )
+            setup_records = platform_setup_result.get("records") or {}
+            setup_actions = setup_records.get("governed_actions") or []
+            if not any(action.get("key") == "create_connection_invite" for action in setup_actions):
+                failures.append("Platform setup source query did not expose governed setup actions")
+            setup_mutation_policy = setup_records.get("mutation_policy") or {}
+            if setup_mutation_policy.get("gar_may_execute_actions") is not False:
+                failures.append("Platform setup source query allowed GAR to execute setup actions")
             _check_ready_envelope(
                 "Team",
                 build_team_source_query(company_id=company_id, role_context="super_admin"),
