@@ -16,10 +16,17 @@ from app.models.client.client import Client
 from app.models.client.client_compliance_document import ClientComplianceDocument
 from app.models.core.document import Document
 from app.models.core.media_file import MediaFile
+from app.models.core.organisation_connection import (
+    ModuleSubscription,
+    OrganisationConnection,
+    OrganisationConnectionInvite,
+)
 from app.models.core.user import User
 from app.models.exports.exported_file_log import ExportedFileLog
 from app.models.members.unit import Unit
 from app.models.members.unit_membership import UnitMembership
+from app.models.onboarding.company import Company
+from app.services.core.company_setup_readiness import company_setup_readiness_feed_payload
 from app.services.core.notification_feed import (
     NotificationFilters,
     build_notification_context,
@@ -254,6 +261,185 @@ def _compact_team_member(user: User) -> dict:
             "total": pm_clients + fc_clients + assistant_clients,
         },
         "gar_chat_ready": bool(user.gar_chat_ready),
+    }
+
+
+def _compact_organisation_connection(connection: OrganisationConnection, company_id: int) -> dict:
+    other_company_id = connection.other_company_id(company_id)
+    other_company = Company.query.get(other_company_id) if other_company_id else None
+    return {
+        "id": connection.id,
+        "connection_type": connection.connection_type,
+        "status": connection.status,
+        "other_company_id": other_company_id,
+        "other_company": other_company.name if other_company else None,
+        "gar_visibility_scope": connection.gar_visibility_scope,
+        "accepted_at": connection.accepted_at.isoformat() if connection.accepted_at else None,
+    }
+
+
+def build_platform_setup_source_query(
+    *,
+    company_id: int | None,
+    role_context: str,
+    allowed_client_ids: tuple[int, ...] | None = None,
+    question: str = "",
+) -> dict:
+    """Build a source-backed platform setup query result for GAR."""
+    role_key = _normalise_role_context(role_context)
+    if role_key not in {"super_admin", "admin"}:
+        return {
+            "context_type": "gar_platform_setup_source_query",
+            "query_ready": False,
+            "error": "permission_blocked",
+            "source_references": [],
+        }
+    if not company_id:
+        return {
+            "context_type": "gar_platform_setup_source_query",
+            "query_ready": False,
+            "error": "company_context_missing",
+            "source_references": [],
+        }
+
+    company = Company.query.get(company_id)
+    if not company:
+        return {
+            "context_type": "gar_platform_setup_source_query",
+            "query_ready": False,
+            "error": "company_not_found",
+            "source_references": [],
+        }
+
+    readiness_payload = company_setup_readiness_feed_payload(company)
+    readiness = readiness_payload.get("readiness") or {}
+    modules = readiness.get("modules") or []
+    enabled_modules = [module for module in modules if module.get("is_enabled")]
+    modules_requiring_connections = [
+        module for module in modules
+        if module.get("requires_connection")
+    ]
+    inactive_or_missing_modules = [
+        module for module in modules
+        if not module.get("is_enabled")
+    ]
+
+    connections = (
+        OrganisationConnection.query
+        .filter(
+            OrganisationConnection.status == "active",
+            or_(
+                OrganisationConnection.source_company_id == company_id,
+                OrganisationConnection.target_company_id == company_id,
+            ),
+        )
+        .order_by(OrganisationConnection.created_at.desc())
+        .all()
+    )
+    pending_invites = (
+        OrganisationConnectionInvite.query
+        .filter(
+            OrganisationConnectionInvite.status == "pending",
+            OrganisationConnectionInvite.source_company_id == company_id,
+        )
+        .order_by(OrganisationConnectionInvite.created_at.desc())
+        .all()
+    )
+    subscriptions = (
+        ModuleSubscription.query
+        .filter(ModuleSubscription.company_id == company_id)
+        .order_by(ModuleSubscription.module_key.asc())
+        .all()
+    )
+
+    safe_summary = (
+        f"Platform setup source query found organisation identity "
+        f"{'ready' if readiness.get('identity_ready') else 'not ready'}, "
+        f"{len(enabled_modules)} enabled module(s), {len(connections)} active organisation connection(s), "
+        f"and {len(pending_invites)} pending connection invite(s) for {company.name}."
+    )
+
+    return {
+        "context_type": "gar_platform_setup_source_query",
+        "query_ready": True,
+        "question": question or "",
+        "role_context": role_context,
+        "safe_summary": safe_summary,
+        "stats": {
+            "identity_ready": bool(readiness.get("identity_ready")),
+            "enabled_modules": len(enabled_modules),
+            "inactive_or_missing_modules": len(inactive_or_missing_modules),
+            "active_connections": len(connections),
+            "pending_connection_invites": len(pending_invites),
+            "modules_requiring_connections": len(modules_requiring_connections),
+        },
+        "records": {
+            "company": {
+                "id": company.id,
+                "name": company.name,
+                "organisation_uid": readiness_payload.get("scope", {}).get("organisation_uid"),
+            },
+            "modules": modules,
+            "connections": [
+                _compact_organisation_connection(connection, company_id)
+                for connection in connections[:20]
+            ],
+            "pending_invites": [
+                {
+                    "id": invite.id,
+                    "connection_type": invite.connection_type,
+                    "target_company_id": invite.target_company_id,
+                    "target_email": invite.target_email,
+                    "expires_at": invite.expires_at.isoformat() if invite.expires_at else None,
+                    "allowed_modules": invite.allowed_modules_json or [],
+                }
+                for invite in pending_invites[:20]
+            ],
+            "subscriptions": [
+                {
+                    "id": subscription.id,
+                    "module_key": subscription.module_key,
+                    "status": subscription.status,
+                    "plan": subscription.plan,
+                    "source_module": subscription.source_module,
+                    "enabled_at": subscription.enabled_at.isoformat() if subscription.enabled_at else None,
+                }
+                for subscription in subscriptions[:30]
+            ],
+        },
+        "visibility": {
+            "management_setup_only": True,
+            "owner_resident_data_included": False,
+            "contractor_queue_data_included": False,
+            "mutating_actions_allowed": False,
+        },
+        "source_references": [
+            {
+                "model": "Company",
+                "record_id": company.id,
+                "fields": ["id", "name", "organisation_uid", "company_type"],
+            },
+            {
+                "model": "ModuleSubscription",
+                "record_id": None,
+                "fields": ["company_id", "module_key", "status", "plan", "enabled_at"],
+            },
+            {
+                "model": "OrganisationConnection",
+                "record_id": None,
+                "fields": ["source_company_id", "target_company_id", "connection_type", "status"],
+            },
+            {
+                "model": "OrganisationConnectionInvite",
+                "record_id": None,
+                "fields": ["source_company_id", "target_company_id", "connection_type", "status", "expires_at"],
+            },
+            {
+                "model": "ModuleContract",
+                "record_id": "registry",
+                "fields": ["key", "name", "status", "owned_data", "shared_links"],
+            },
+        ],
     }
 
 

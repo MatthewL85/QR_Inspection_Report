@@ -120,6 +120,30 @@ CAPABILITIES: tuple[GarCapability, ...] = (
         role_visibility=("super_admin", "admin", "property_manager", "assistant", "finance", "director"),
     ),
     GarCapability(
+        key="platform_setup",
+        name="Platform Setup and Organisation Connections",
+        status="available",
+        answer_mode="source_summary",
+        source_backed=True,
+        source_records=(
+            "Company",
+            "ModuleSubscription",
+            "OrganisationConnection",
+            "OrganisationConnectionInvite",
+            "ModuleContract",
+        ),
+        can_answer_examples=(
+            "Which Logix modules are enabled for this organisation?",
+            "Is this organisation connected to another company?",
+            "Show the platform setup readiness for this company.",
+        ),
+        limitation=(
+            "GAR can summarise setup readiness and connection state only. "
+            "Module subscriptions, invite creation and organisation connection changes remain governed actions."
+        ),
+        role_visibility=("super_admin", "admin"),
+    ),
+    GarCapability(
         key="finance",
         name="Finance Logix",
         status="foundation_present_not_query_ready",
@@ -272,6 +296,27 @@ QUESTION_KEYWORDS = {
         "fee increase",
         "out of contract",
     ),
+    "platform_setup": (
+        "platform setup",
+        "setup",
+        "onboarding",
+        "module",
+        "modules",
+        "module subscription",
+        "subscriptions",
+        "enabled module",
+        "enabled modules",
+        "organisation uid",
+        "organization uid",
+        "organisation connection",
+        "organization connection",
+        "organisation connections",
+        "organization connections",
+        "connected organisation",
+        "connected organization",
+        "company profile",
+        "readiness",
+    ),
     "clients_units": (
         "client",
         "development",
@@ -323,10 +368,11 @@ DOMAIN_PRIORITY = {
     "notifications": 2,
     "works": 3,
     "contracts": 4,
-    "documents": 5,
-    "governance": 6,
-    "team_hr": 7,
-    "clients_units": 8,
+    "platform_setup": 5,
+    "documents": 6,
+    "governance": 7,
+    "team_hr": 8,
+    "clients_units": 9,
 }
 
 ROLE_ALIASES = {

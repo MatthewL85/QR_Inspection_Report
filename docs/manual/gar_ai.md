@@ -188,6 +188,7 @@ Each feed accepts an optional `question` query parameter. The response then incl
 
 Current readiness rules:
 
+- Platform setup, enabled modules and organisation connections are source-backed for Super Admin/Admin users.
 - Clients, developments and units are source-backed.
 - Works Logix questions are source-backed, including relevant-history summaries.
 - Contract renewal and expiry questions are partially source-backed.
@@ -231,6 +232,8 @@ The source policy always requires source records, source references and role vis
 In the response envelope this is expressed as `allow_model_only_answer: false`. Future GAR screens, chat surfaces and mobile clients should treat that as a hard rule, not a display preference.
 
 Source references should be structured enough for a user or later AI layer to trace the answer back to the owning record. Each ready source-query adapter should return references with a model name, record id field and source field list.
+
+GAR can answer setup-readiness questions from the Core Platform source records. For example, a Super Admin can ask which modules are enabled, whether the organisation UID exists, how many active organisation connections exist and whether connection invites are pending. These answers come from `Company`, `ModuleSubscription`, `OrganisationConnection`, `OrganisationConnectionInvite` and the module contract registry. GAR must not create invites, enable modules or connect companies directly from this answer surface; those remain governed setup actions.
 
 For notification questions, GAR should use the Notification Centre source references. This means an alert can be traced back to the underlying Work Order, Maintenance Request, Unit, Client, Contract or other source record instead of only citing the notification message itself.
 

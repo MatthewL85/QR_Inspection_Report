@@ -14,6 +14,7 @@ SOURCE_ADAPTERS = {
     "works": "gar.works_source_query",
     "notifications": "gar.notification_source_query",
     "contracts": "gar.contract_source_query",
+    "platform_setup": "gar.platform_setup_source_query",
     "finance": "finance.gar_finance_query_service",
     "documents": "gar.document_source_query",
     "team_hr": "gar.team_source_query",
@@ -104,6 +105,15 @@ def _execute_source_query(
         from .source_queries import build_contract_source_query
 
         return build_contract_source_query(
+            company_id=company_id,
+            role_context=role_context,
+            allowed_client_ids=allowed_client_ids,
+            question=question,
+        )
+    if domain == "platform_setup":
+        from .source_queries import build_platform_setup_source_query
+
+        return build_platform_setup_source_query(
             company_id=company_id,
             role_context=role_context,
             allowed_client_ids=allowed_client_ids,

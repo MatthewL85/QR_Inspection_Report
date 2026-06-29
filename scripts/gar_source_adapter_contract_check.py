@@ -42,6 +42,7 @@ def main() -> int:
         build_governance_source_query,
         build_member_works_source_query,
         build_notification_source_query,
+        build_platform_setup_source_query,
         build_team_source_query,
         build_works_source_query,
     )
@@ -101,6 +102,23 @@ def main() -> int:
         failures.append("GAR source policy allowed model-only answers")
     if finance_inquiry.get("source_policy", {}).get("allow_mutating_actions"):
         failures.append("GAR source policy allowed mutating actions")
+
+    setup_readiness = build_gar_answer_readiness(
+        "Show the platform setup readiness and enabled modules for this organisation",
+        role_context="super_admin",
+    )
+    if setup_readiness.get("domain") != "platform_setup":
+        failures.append("Platform setup question did not classify as platform_setup")
+    if not setup_readiness.get("answer_ready"):
+        failures.append("Platform setup readiness was not marked answer-ready for Super Admin")
+
+    contractor_setup_inquiry = build_gar_inquiry_response(
+        "Show organisation connections and enabled modules",
+        role_context="contractor",
+        execute_source_query=True,
+    )
+    if contractor_setup_inquiry.get("response_status") != "permission_blocked":
+        failures.append("Contractor setup inquiry was not permission blocked")
 
     notification_references = _notification_source_references([
         {
@@ -166,6 +184,11 @@ def main() -> int:
         "gar_team_source_query",
     )
     _check_failure_envelope(
+        "Platform setup",
+        build_platform_setup_source_query(company_id=None, role_context="super_admin"),
+        "gar_platform_setup_source_query",
+    )
+    _check_failure_envelope(
         "Governance",
         build_governance_source_query(company_id=None, role_context="super_admin"),
         "gar_governance_source_query",
@@ -216,6 +239,11 @@ def main() -> int:
 
         company_id = company.id if company else (user.company_id if user else None)
         if company_id:
+            _check_ready_envelope(
+                "Platform setup",
+                build_platform_setup_source_query(company_id=company_id, role_context="super_admin"),
+                "gar_platform_setup_source_query",
+            )
             _check_ready_envelope(
                 "Team",
                 build_team_source_query(company_id=company_id, role_context="super_admin"),
