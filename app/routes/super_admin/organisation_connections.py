@@ -23,7 +23,7 @@ from app.services.core.organisation_identity import (
 
 
 def _current_company() -> Company | None:
-    company_id = getattr(current_user, "company_id", None)
+    company_id = request.args.get("company_id", type=int) or getattr(current_user, "company_id", None)
     return Company.query.get(company_id) if company_id else None
 
 

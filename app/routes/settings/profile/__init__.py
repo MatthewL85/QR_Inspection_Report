@@ -7,8 +7,10 @@ from flask_login import login_required, current_user
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.extensions import db
+from app.models.core.organisation_connection import ModuleSubscription
 from app.models.onboarding.company import Company
 from app.routes.settings import settings_bp  # use existing blueprint
+from app.services.core.organisation_identity import active_connections_for_company, ensure_company_organisation_uid
 
 # Optional WTForms support (use if you have it, otherwise fallback to manual)
 try:
@@ -72,7 +74,23 @@ def _resolve_company() -> Company:
 @login_required
 def profile_index():
     company = _resolve_company()
-    return render_template("settings/company_profile/index.html", company=company)
+    ensure_company_organisation_uid(company)
+    db.session.commit()
+
+    subscriptions = (
+        ModuleSubscription.query
+        .filter_by(company_id=company.id)
+        .order_by(ModuleSubscription.module_key.asc())
+        .all()
+    )
+    active_connections = active_connections_for_company(company.id)
+
+    return render_template(
+        "settings/company_profile/index.html",
+        company=company,
+        subscriptions=subscriptions,
+        active_connections=active_connections,
+    )
 
 
 @settings_bp.route("/company-profile/edit", methods=["GET", "POST"], endpoint="profile_edit")

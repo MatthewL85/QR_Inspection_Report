@@ -18,6 +18,7 @@ from app.decorators import super_admin_required
 
 # Adjust if your model lives elsewhere
 from app.models.onboarding.company import Company
+from app.services.core.organisation_identity import ensure_company_organisation_uid
 
 try:
     from app.forms.company.company_onboarding_form import CompanyOnboardingForm
@@ -141,6 +142,7 @@ def company_get():
 
             # ensure linkage so Settings can find it
             _attach_company_to_user(company)
+            ensure_company_organisation_uid(company)
 
             db.session.commit()
             session["onboarding_company_id"] = company.id
@@ -213,6 +215,7 @@ def company_get():
 
             # ensure linkage so Settings can find it
             _attach_company_to_user(company)
+            ensure_company_organisation_uid(company)
 
             db.session.commit()
             session["onboarding_company_id"] = company.id

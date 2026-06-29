@@ -80,6 +80,15 @@ def main() -> int:
             if field_name not in boundary_fields:
                 failures.append(f"Organisation visibility boundary missing field: {field_name}")
 
+        company_profile_template = ROOT / "app" / "templates" / "settings" / "company_profile" / "index.html"
+        if not company_profile_template.exists():
+            failures.append("Company Profile setup surface is missing.")
+        else:
+            template_text = company_profile_template.read_text(encoding="utf-8")
+            for marker in ("Organisation UID", "Enabled Modules", "Active Connections", "Module & Connection Readiness"):
+                if marker not in template_text:
+                    failures.append(f"Company Profile setup surface is missing marker: {marker}")
+
     if failures:
         print("Core platform identity check failed:")
         for failure in failures:
