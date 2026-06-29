@@ -9,6 +9,7 @@ class JobDocket(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     docket_number = db.Column(db.String(40), unique=True, nullable=True, index=True)
     contractor_job_number = db.Column(db.String(80), nullable=True)
+    external_work_order_reference = db.Column(db.String(120), nullable=True, index=True)
 
     work_order_id = db.Column(db.Integer, db.ForeignKey("work_orders.id", ondelete="CASCADE"), nullable=True, unique=True, index=True)
     contractor_id = db.Column(db.Integer, db.ForeignKey("contractors.id"), nullable=False, index=True)

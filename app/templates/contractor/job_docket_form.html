@@ -48,6 +48,10 @@
             <input name="contractor_job_number" value="{{ value('contractor_job_number') }}" placeholder="Optional internal reference">
           </label>
           <label>
+            Source / External WO Ref
+            <input name="external_work_order_reference" value="{{ value('external_work_order_reference') }}" placeholder="e.g. WO-12345, Ticket 8842">
+          </label>
+          <label>
             Priority
             <select name="priority">
               {% set selected_priority = value('priority') or 'Normal' %}

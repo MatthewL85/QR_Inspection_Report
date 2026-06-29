@@ -175,6 +175,7 @@ def new_job_docket():
             company_id=getattr(user, "company_id", None),
             created_by_id=user.id,
             contractor_job_number=(request.form.get('contractor_job_number') or '').strip(),
+            external_work_order_reference=(request.form.get('external_work_order_reference') or '').strip(),
             client_name=client_name,
             property_name=(request.form.get('property_name') or '').strip(),
             address_line_1=(request.form.get('address_line_1') or '').strip(),

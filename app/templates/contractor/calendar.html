@@ -79,7 +79,15 @@
                   <strong>
                     <a href="{{ url_for('contractor.job_docket_detail', docket_id=docket.id) }}">{{ docket.docket_number }}</a>
                   </strong>
-                  <span>{{ 'WO-' ~ docket.work_order_id if docket.work_order_id else docket.instruction_source }}</span>
+                  <span>
+                    {% if docket.work_order_id %}
+                      WO-{{ docket.work_order_id }}
+                    {% elif docket.external_work_order_reference %}
+                      {{ docket.external_work_order_reference }}
+                    {% else %}
+                      {{ docket.instruction_source }}
+                    {% endif %}
+                  </span>
                 </div>
               </td>
               <td>

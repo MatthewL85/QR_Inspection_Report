@@ -40,7 +40,9 @@ When a contractor accepts a work order, Contractor Logix now creates a real Job 
 
 Contractor Logix also supports standalone job dockets. This is for contractors who use Contractor Logix even when the instructing property manager, client or management company does not use LogixPM. A contractor can create a docket manually from a phone call, email, WhatsApp message, site instruction or another external system.
 
-Standalone dockets use the same Job Docket and Contractor Calendar workflow as connected Works Logix jobs. They capture the client/customer name, property/site, address, block/core/unit or area, contact details, access notes, trade/category, priority, scope of works and optional contractor job number. They do not require a linked Works Logix work order.
+Standalone dockets use the same Job Docket and Contractor Calendar workflow as connected Works Logix jobs. They capture the client/customer name, property/site, address, block/core/unit or area, contact details, access notes, trade/category, priority, scope of works, optional contractor job number and optional source/external work order reference. They do not require a linked Works Logix work order.
+
+The contractor job number is the contractor's internal reference. The source/external work order reference is for a WO, ticket or instruction number received from another management company, email, client system or other communication channel.
 
 This keeps Contractor Logix independently useful while preserving future connection readiness. If that client later joins LogixPM, historic standalone dockets can be linked to the proper organisation connection rather than being lost in a separate workflow.
 

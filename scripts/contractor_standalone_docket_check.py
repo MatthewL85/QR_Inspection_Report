@@ -22,6 +22,7 @@ def main() -> int:
     app.config["WTF_CSRF_ENABLED"] = False
     failures: list[str] = []
     marker = "Codex Standalone Smoke"
+    external_reference = "EXT-WO-8842"
 
     with app.app_context():
         with app.test_client() as client:
@@ -44,6 +45,7 @@ def main() -> int:
                 data={
                     "client_name": marker,
                     "property_name": "Standalone Site",
+                    "external_work_order_reference": external_reference,
                     "address_line_1": "1 Test Street",
                     "town_city": "Dublin",
                     "postal_code": "D01TEST",
@@ -71,6 +73,8 @@ def main() -> int:
                 failures.append("Standalone docket should not require a Works Logix work order")
             elif not docket.docket_number:
                 failures.append("Standalone docket did not receive a docket number")
+            elif docket.external_work_order_reference != external_reference:
+                failures.append("Standalone docket did not preserve the external work order reference")
 
             if docket:
                 detail_response = client.get(f"/contractor/job-dockets/{docket.id}")

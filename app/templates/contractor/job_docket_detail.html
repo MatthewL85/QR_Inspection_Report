@@ -109,8 +109,8 @@
     <div class="contractor-docket-summary-grid">
       <article>
         <span>{{ 'Work Order' if work_order else 'Instruction Source' }}</span>
-        <strong>{{ 'WO-' ~ work_order.id if work_order else job_docket.instruction_source }}</strong>
-        <small>{{ work_order.status if work_order else 'Standalone Contractor Logix' }}</small>
+        <strong>{{ 'WO-' ~ work_order.id if work_order else (job_docket.external_work_order_reference or job_docket.instruction_source) }}</strong>
+        <small>{{ work_order.status if work_order else (job_docket.instruction_source or 'Standalone Contractor Logix') }}</small>
       </article>
       <article>
         <span>Schedule</span>
@@ -165,6 +165,7 @@
     <div class="unit-detail-grid contractor-pack-detail-grid">
       <div><span class="unit-detail-label">Scope of Works</span><strong>{{ job_docket.scope_of_works or (work_order.description if work_order else none) or '-' }}</strong></div>
       <div><span class="unit-detail-label">Contractor Job No.</span><strong>{{ job_docket.contractor_job_number or '-' }}</strong></div>
+      <div><span class="unit-detail-label">Source / External WO Ref</span><strong>{{ job_docket.external_work_order_reference or '-' }}</strong></div>
       <div><span class="unit-detail-label">Request Type</span><strong>{{ work_pack.classification.request_type }}</strong></div>
       <div><span class="unit-detail-label">Member Request</span><strong>{{ work_pack.request_context.member_request_title }}</strong></div>
       <div><span class="unit-detail-label">GAR Context</span><strong>{{ work_pack.gar_history.contractor_safe_summary if work_pack.gar_history and work_pack.gar_history.contractor_safe_summary else 'No related history flagged.' }}</strong></div>
