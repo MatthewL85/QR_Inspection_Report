@@ -17,6 +17,7 @@ from app.models.core.organisation_connection import (
 )
 from app.models.onboarding.company import Company
 from app.models.works.work_order import WorkOrder
+from app.services.core.company_setup_readiness import build_company_setup_readiness
 from app.services.core.module_registry import module_contract_by_key
 from app.services.core.organisation_identity import (
     DEFAULT_CONNECTION_PERMISSIONS,
@@ -45,6 +46,16 @@ def main() -> int:
             failures.append("Contractor is missing company_id.")
         if not hasattr(WorkOrder, "organisation_connection_id"):
             failures.append("WorkOrder is missing organisation_connection_id.")
+
+        first_company = Company.query.order_by(Company.id.asc()).first()
+        if first_company:
+            readiness = build_company_setup_readiness(first_company)
+            if readiness.company_id != first_company.id:
+                failures.append("Company setup readiness returned the wrong company ID.")
+            if not readiness.organisation_uid:
+                failures.append("Company setup readiness did not expose organisation_uid.")
+            if not readiness.modules:
+                failures.append("Company setup readiness did not expose module setup states.")
 
         core_contract = module_contract_by_key("core")
         if not core_contract:
@@ -85,7 +96,7 @@ def main() -> int:
             failures.append("Company Profile setup surface is missing.")
         else:
             template_text = company_profile_template.read_text(encoding="utf-8")
-            for marker in ("Organisation UID", "Enabled Modules", "Active Connections", "Module & Connection Readiness"):
+            for marker in ("Organisation UID", "Enabled Modules", "Active Connections", "Module & Connection Readiness", "Module Setup Map"):
                 if marker not in template_text:
                     failures.append(f"Company Profile setup surface is missing marker: {marker}")
 

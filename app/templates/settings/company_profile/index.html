@@ -31,7 +31,7 @@
     <div class="organisation-identity-grid">
       <div>
         <span>Organisation UID</span>
-        <strong>{{ company.organisation_uid }}</strong>
+        <strong>{{ readiness.organisation_uid }}</strong>
       </div>
       <div>
         <span>Organisation Type</span>
@@ -39,11 +39,11 @@
       </div>
       <div>
         <span>Enabled Modules</span>
-        <strong>{{ subscriptions|selectattr('is_active')|list|length }}</strong>
+        <strong>{{ readiness.enabled_module_count }}</strong>
       </div>
       <div>
         <span>Active Connections</span>
-        <strong>{{ active_connections|length }}</strong>
+        <strong>{{ readiness.active_connection_count }}</strong>
       </div>
     </div>
   </section>
@@ -167,15 +167,15 @@
           <tr>
             <td><strong>Organisation Identity</strong></td>
             <td><span class="user-manager-status-pill is-active">Ready</span></td>
-            <td>{{ company.organisation_uid }}</td>
+            <td>{{ readiness.organisation_uid }}</td>
           </tr>
           <tr>
             <td><strong>Enabled Modules</strong></td>
-            <td><span class="user-manager-status-pill {% if subscriptions %}is-active{% endif %}">{{ subscriptions|length }}</span></td>
+            <td><span class="user-manager-status-pill {% if readiness.enabled_module_count %}is-active{% endif %}">{{ readiness.enabled_module_count }}</span></td>
             <td>
-              {% if subscriptions %}
-                {% for subscription in subscriptions %}
-                  {{ subscription.module_key|replace('_', ' ')|title }}{% if not loop.last %}, {% endif %}
+              {% if readiness.enabled_module_names %}
+                {% for module_name in readiness.enabled_module_names %}
+                  {{ module_name }}{% if not loop.last %}, {% endif %}
                 {% endfor %}
               {% else %}
                 No modules enabled yet.
@@ -184,15 +184,50 @@
           </tr>
           <tr>
             <td><strong>Organisation Connections</strong></td>
-            <td><span class="user-manager-status-pill {% if active_connections %}is-active{% endif %}">{{ active_connections|length }}</span></td>
+            <td><span class="user-manager-status-pill {% if readiness.has_connections %}is-active{% endif %}">{{ readiness.active_connection_count }}</span></td>
             <td>
-              {% if active_connections %}
+              {% if readiness.has_connections %}
                 Governed cross-organisation links are active.
               {% else %}
                 No connected organisations yet.
               {% endif %}
             </td>
           </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="client-manager-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Module Setup Map</h6>
+        <span>Structured readiness view used by setup screens, module onboarding and future GAR context.</span>
+      </div>
+    </div>
+    <div class="client-manager-table-wrap">
+      <table class="client-manager-table organisation-connections-table">
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>Subscription</th>
+            <th>Contract</th>
+            <th>Connection</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for module in readiness.modules %}
+            <tr>
+              <td><strong>{{ module.name }}</strong></td>
+              <td>
+                <span class="user-manager-status-pill {% if module.is_enabled %}is-active{% endif %}">
+                  {{ 'Enabled' if module.is_enabled else 'Not Enabled' }}
+                </span>
+              </td>
+              <td>{{ module.contract_status|replace('_', ' ')|title }}</td>
+              <td>{{ 'Required for sharing' if module.requires_connection else 'Independent' }}</td>
+            </tr>
+          {% endfor %}
         </tbody>
       </table>
     </div>

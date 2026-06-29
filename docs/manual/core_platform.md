@@ -36,6 +36,8 @@ Users should not normally need to type or remember this UID. Setup screens shoul
 
 The Company Profile page shows the organisation UID, enabled module count and active connection count. This is the day-to-day setup surface for confirming that the organisation is ready to operate independently and connect to other Logix modules.
 
+The same setup state is built by the Core Platform readiness service, so the Company Profile, future module onboarding screens and GAR can all use one source of setup truth instead of duplicating logic in each module.
+
 ## Module Subscriptions
 
 Each organisation can have one or more enabled modules, such as Property Management, Contractor Logix, Members Logix, HR Logix, Finance Logix or GAR.
