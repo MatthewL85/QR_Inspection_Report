@@ -36,7 +36,15 @@ REQUIRED_TOP_LEVEL_KEYS = (
     "source_references",
 )
 
-REQUIRED_FEED_KEYS = ("home", "capabilities", "notifications", "works", "gar", "gar_inquiry")
+REQUIRED_FEED_KEYS = (
+    "home",
+    "capabilities",
+    "company_setup",
+    "notifications",
+    "works",
+    "gar",
+    "gar_inquiry",
+)
 REQUIRED_APP_SCOPE_KEYS = (
     "contract_version",
     "role",
@@ -379,6 +387,8 @@ def main() -> int:
                 failures.append(f"app home self-feed changed: {feeds.get('home')}")
             if feeds.get("capabilities") != "/app/capabilities/feed.json":
                 failures.append(f"app home capabilities feed changed: {feeds.get('capabilities')}")
+            if feeds.get("company_setup") != "/app/company-setup/feed.json":
+                failures.append(f"app home company setup feed changed: {feeds.get('company_setup')}")
             if feeds.get("notifications") != "/notifications/feed.json":
                 failures.append("app home notifications feed missing or changed")
 
@@ -831,7 +841,7 @@ def main() -> int:
             if app_sync.get("mode") != "session_bound_polling":
                 failures.append(f"app_sync mode changed: {app_sync.get('mode')}")
             read_only_feed_keys = set(app_sync.get("read_only_feed_keys") or [])
-            for required_feed in ("home", "capabilities", "notifications", "works", "gar"):
+            for required_feed in ("home", "capabilities", "company_setup", "notifications", "works", "gar"):
                 if required_feed not in read_only_feed_keys:
                     failures.append(f"app_sync read_only_feed_keys missing: {required_feed}")
             refresh_seconds = app_sync.get("refresh_seconds") or {}

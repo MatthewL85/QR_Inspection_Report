@@ -40,6 +40,7 @@ Current key feeds include:
 - `/app/health/feed.json`
 - `/app/home/feed.json`
 - `/app/capabilities/feed.json`
+- `/app/company-setup/feed.json`
 - `/notifications/feed.json`
 - `/members/works/feed.json`
 - `/members/gar/feed.json`
@@ -85,6 +86,8 @@ The app home feed also exposes an `app_media` section. This is the mobile eviden
 The app media contract supports four governed evidence contexts: member maintenance request evidence, contractor completion evidence, member work order feedback evidence and member reopen request evidence. Each context declares its owning module, action key, related table and required context fields so the app cannot submit loose media without a unit, work order, request, feedback or completion record. GAR may process evidence only after the source record exists and must keep parsed summaries, extracted data and classifications source-backed.
 
 The app capabilities feed is the read-only capability map for future PWA/native clients. It exposes module contracts, app-ready module signals, GAR capability readiness, app policy, app session rules, app notification rules, app resilience rules, app observability rules, app compatibility rules, app media rules, the same source-backed surfaces, the safe deep-link contract and source references. It should be used by app clients to decide which surfaces to show, what diagnostics are allowed and which versioned features are safe to enable, not to make business decisions or mutate records.
+
+The company setup feed is the read-only organisation readiness contract for future module onboarding and GAR company context. It exposes the current organisation UID, enabled module state, active connection count, module setup map and source references. It must not be used to mutate module subscriptions, connection invites or company records.
 
 ## Mobile Surface UX Contract
 
@@ -188,3 +191,11 @@ The app capabilities feed contract is checked by:
 ```
 
 This verifies the app capability map preserves module contracts, GAR capability readiness, app policy, source references and read-only route behaviour.
+
+The company setup feed contract is checked by:
+
+```text
+.\venv\Scripts\python.exe scripts\app_company_setup_feed_contract_check.py
+```
+
+This verifies the organisation readiness feed remains authenticated, read-only, company-scoped and source-backed.

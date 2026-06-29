@@ -1054,6 +1054,7 @@ def build_app_health_payload(user=None) -> dict:
             "health": _safe_url("app_home.health_feed"),
             "home": _safe_url("app_home.feed"),
             "capabilities": _safe_url("app_home.capabilities_feed"),
+            "company_setup": _safe_url("app_home.company_setup_feed"),
             "notifications": _safe_url("notifications.feed"),
             "service_worker": _safe_url("app_shell_service_worker"),
             "manifest": "/static/manifest.webmanifest",
@@ -1216,6 +1217,7 @@ def build_app_home_payload(user) -> dict:
     feeds = {
         "home": _safe_url("app_home.feed"),
         "capabilities": _safe_url("app_home.capabilities_feed"),
+        "company_setup": _safe_url("app_home.company_setup_feed"),
         "notifications": notifications_feed_url,
         "works": works_feed_url,
         "gar": gar_feed_url,

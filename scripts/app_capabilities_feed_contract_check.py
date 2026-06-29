@@ -286,6 +286,8 @@ def main() -> int:
                 failures.append("capabilities feed lost home feed link")
             if feeds.get("capabilities") != "/app/capabilities/feed.json":
                 failures.append("capabilities feed lost self link")
+            if feeds.get("company_setup") != "/app/company-setup/feed.json":
+                failures.append("capabilities feed lost company setup feed link")
 
             policy = payload.get("app_policy") or {}
             if not (policy.get("offline") or {}).get("static_shell_cache_only"):
@@ -559,6 +561,10 @@ def main() -> int:
                     failures.append(f"capabilities app_sync missing: {key}")
             if app_sync.get("contract_version") != "phase3e-app-sync-v1":
                 failures.append(f"capabilities app_sync contract_version changed: {app_sync.get('contract_version')}")
+            read_only_feed_keys = set(app_sync.get("read_only_feed_keys") or [])
+            for required_feed in ("home", "capabilities", "company_setup", "notifications", "works", "gar"):
+                if required_feed not in read_only_feed_keys:
+                    failures.append(f"capabilities app_sync read_only_feed_keys missing: {required_feed}")
             cache_policy = app_sync.get("cache_policy") or {}
             if cache_policy.get("business_records") or cache_policy.get("gar_answers"):
                 failures.append("capabilities app_sync must not cache business records or GAR answers")

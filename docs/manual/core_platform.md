@@ -38,6 +38,8 @@ The Company Profile page shows the organisation UID, enabled module count and ac
 
 The same setup state is built by the Core Platform readiness service, so the Company Profile, future module onboarding screens and GAR can all use one source of setup truth instead of duplicating logic in each module.
 
+The same readiness state is also available to authenticated app clients through the read-only `/app/company-setup/feed.json` feed. This feed is for display, onboarding and GAR context only; module subscriptions and organisation connections still change through governed setup actions.
+
 ## Module Subscriptions
 
 Each organisation can have one or more enabled modules, such as Property Management, Contractor Logix, Members Logix, HR Logix, Finance Logix or GAR.

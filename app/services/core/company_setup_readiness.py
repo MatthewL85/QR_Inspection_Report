@@ -18,6 +18,17 @@ class ModuleSetupReadiness:
     requires_connection: bool
     dashboard_endpoint: str | None
 
+    def to_payload(self) -> dict:
+        return {
+            "key": self.key,
+            "name": self.name,
+            "contract_status": self.contract_status,
+            "is_enabled": self.is_enabled,
+            "subscription_status": self.subscription_status,
+            "requires_connection": self.requires_connection,
+            "dashboard_endpoint": self.dashboard_endpoint,
+        }
+
 
 @dataclass(frozen=True)
 class CompanySetupReadiness:
@@ -35,6 +46,18 @@ class CompanySetupReadiness:
     @property
     def has_connections(self) -> bool:
         return self.active_connection_count > 0
+
+    def to_payload(self) -> dict:
+        return {
+            "company_id": self.company_id,
+            "organisation_uid": self.organisation_uid,
+            "identity_ready": self.identity_ready,
+            "enabled_module_count": self.enabled_module_count,
+            "active_connection_count": self.active_connection_count,
+            "has_connections": self.has_connections,
+            "enabled_module_names": list(self.enabled_module_names),
+            "modules": [module.to_payload() for module in self.modules],
+        }
 
 
 def _module_readiness(
@@ -84,3 +107,36 @@ def build_company_setup_readiness(company: Company) -> CompanySetupReadiness:
         enabled_module_names=enabled_module_names,
         modules=modules,
     )
+
+
+def company_setup_readiness_feed_payload(company: Company) -> dict:
+    readiness = build_company_setup_readiness(company)
+    return {
+        "context_type": "company_setup_readiness",
+        "contract_version": "phase3-company-setup-readiness-v1",
+        "read_only": True,
+        "scope": {
+            "company_id": company.id,
+            "company_name": company.name,
+            "organisation_uid": readiness.organisation_uid,
+            "server_side_visibility": True,
+        },
+        "readiness": readiness.to_payload(),
+        "source_references": [
+            {
+                "model": "Company",
+                "record_id": company.id,
+                "label": company.name,
+            },
+            {
+                "model": "ModuleContract",
+                "record_id": "registry",
+                "label": "Core module registry",
+            },
+            {
+                "model": "OrganisationConnection",
+                "record_id": "company_scope",
+                "label": "Active organisation connections",
+            },
+        ],
+    }

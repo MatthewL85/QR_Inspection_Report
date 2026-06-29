@@ -45,6 +45,7 @@ REQUIRED_ENDPOINT_KEYS = (
     "health",
     "home",
     "capabilities",
+    "company_setup",
     "notifications",
     "service_worker",
     "manifest",
@@ -157,6 +158,8 @@ def main() -> int:
                 failures.append(f"app health endpoints missing: {key}")
         if endpoints.get("health") != "/app/health/feed.json":
             failures.append(f"app health self endpoint changed: {endpoints.get('health')}")
+        if endpoints.get("company_setup") != "/app/company-setup/feed.json":
+            failures.append(f"app health company setup endpoint changed: {endpoints.get('company_setup')}")
         if endpoints.get("service_worker") != "/app-shell-sw.js":
             failures.append("app health service worker endpoint changed")
 
