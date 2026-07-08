@@ -14,8 +14,8 @@
       <p>Source-backed contractor payment request for Works Logix and future Finance Logix review.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-      <a class="contract-manager-link" href="{{ url_for('unit_bp.work_order_review', unit_id=unit.id, work_order_id=work_order.id) }}">Back to Work Order</a>
-      <a class="contract-manager-link" href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='works') }}">Unit Works</a>
+      <a class="contract-manager-link" href="{{ back_url or url_for('unit_bp.work_order_review', unit_id=unit.id, work_order_id=work_order.id) }}">{{ back_label or "Back to Work Order" }}</a>
+      <a class="contract-manager-link" href="{{ secondary_url or url_for('unit_bp.view', unit_id=unit.id, tab='works') }}">{{ secondary_label or "Unit Works" }}</a>
     </div>
   </section>
 
@@ -93,8 +93,8 @@
     <aside class="contract-manager-panel document-template-preview-side">
       <div class="client-manager-heading">
         <div>
-          <h6>Review Context</h6>
-          <span>Visible to authorised Works Logix management users only.</span>
+          <h6>{{ review_surface_label or "Review Context" }}</h6>
+          <span>{{ review_surface_note or "Visible to authorised Works Logix management users only." }}</span>
         </div>
       </div>
       <div class="document-template-context-list">
@@ -128,7 +128,10 @@
 
       {% set invoice_status_key = (job_docket.invoice_status or "")|lower %}
       {% set payment_status_key = (job_docket.payment_status or "")|lower %}
-      {% if invoice_status_key in ["invoice prepared", "invoiced"] and payment_status_key not in ["paid", "settled", "closed paid"] %}
+      {% if show_finance_handoff_action is not defined %}
+        {% set show_finance_handoff_action = true %}
+      {% endif %}
+      {% if show_finance_handoff_action and invoice_status_key in ["invoice prepared", "invoiced"] and payment_status_key not in ["paid", "settled", "closed paid"] %}
         <form method="post"
               action="{{ url_for('unit_bp.work_order_payment_request_ready_for_finance', unit_id=unit.id, work_order_id=work_order.id) }}"
               class="document-template-context-table mt-3">

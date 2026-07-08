@@ -40,7 +40,7 @@ ROLE_SURFACES = {
         "endpoint": "finance.dashboard",
         "route": "/finance/dashboard",
         "template": "app/templates/finance/dashboard.html",
-        "tokens": ("Finance Logix", "notifications/_dashboard_action_strip.html", "gar/_ask_panel.html", "Finance Client View"),
+        "tokens": ("Finance Logix", "notifications/_dashboard_action_strip.html", "gar/_ask_panel.html", "Payment Request Intake", "Finance Client View"),
     },
     "director": {
         "endpoint": "director.dashboard",

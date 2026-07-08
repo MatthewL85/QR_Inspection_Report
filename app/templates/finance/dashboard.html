@@ -46,6 +46,74 @@
     </div>
   </div>
 
+  <section class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+        <div>
+          <h2 class="h6 mb-1">Payment Request Intake</h2>
+          <p class="text-muted mb-0">Works Logix-reviewed contractor payment requests ready for Finance Logix processing.</p>
+        </div>
+        <span class="badge rounded-pill bg-light text-dark">{{ payment_request_intake_count or 0 }} Ready</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Request</th>
+              <th>Development</th>
+              <th>Unit</th>
+              <th>Contractor</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for work_order in payment_request_intake %}
+              {% set docket = work_order.job_docket %}
+              <tr>
+                <td>
+                  <strong>{{ docket.docket_number if docket and docket.docket_number else work_order.display_reference }}</strong>
+                  <div class="text-muted small">{{ work_order.display_reference }}</div>
+                </td>
+                <td>{{ work_order.client.name if work_order.client else '-' }}</td>
+                <td>
+                  {% if work_order.unit %}
+                    {{ work_order.unit.block_name ~ ' / ' if work_order.unit.block_name else '' }}{{ work_order.unit.unit_number or work_order.unit.unit_label or '-' }}
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+                <td>
+                  {% if work_order.contractor_company %}
+                    {{ work_order.contractor_company.company_name }}
+                  {% elif docket and docket.contractor %}
+                    {{ docket.contractor.company_name }}
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge rounded-pill bg-info-subtle text-info-emphasis">{{ docket.invoice_status if docket else 'Ready for Finance' }}</span>
+                  <div class="text-muted small">{{ docket.payment_status if docket else 'Awaiting Finance Review' }}</div>
+                </td>
+                <td>
+                  <a class="btn btn-sm btn-outline-primary" href="{{ url_for('finance.payment_request_review', work_order_id=work_order.id) }}">Review Pack</a>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="6" class="text-center text-muted py-4">No payment requests are waiting for Finance Logix intake.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <small class="d-block text-muted mt-3">
+        This is an intake queue only. Finance Logix invoice approval, ledger posting and payment runs are still governed by the future finance workflow.
+      </small>
+    </div>
+  </section>
+
   {% set gar_ask_action = url_for('finance.dashboard') %}
   {% set gar_ask_clear_url = url_for('finance.dashboard') %}
   {% set gar_ask_subtitle = 'Source-backed answers for finance-visible developments. Live debtor and budget answers remain blocked until Finance Logix query services are ready.' %}

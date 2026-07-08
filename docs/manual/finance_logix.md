@@ -41,6 +41,8 @@ Financial Controllers are scoped to their assigned developments through `assigne
 
 The Finance dashboard now surfaces a GAR Finance Digest using source-backed portfolio, development health and Works intelligence signals. This is only a digest; Finance Logix remains the owner of ledgers, invoices, service charges, arrears and financial reporting.
 
+The Finance dashboard also includes a read-only Payment Request Intake. This shows contractor Payment Requests only after Works Logix has reviewed them and marked them `Ready for Finance`. The intake links back to the shared source-backed review pack, but it does not create an invoice, approve an invoice, post a ledger entry or mark a payment as made.
+
 The Finance dashboard also includes Ask GAR. Finance users can ask source-backed questions in their permitted finance scope. Where the question relies on live debtor, arrears, budget, payment or ledger services that are not ready yet, GAR should explain that the module is not query-ready rather than inventing an answer.
 
 ## GAR Readiness
@@ -60,3 +62,5 @@ The current GAR capability registry marks Finance Logix as `foundation_present_n
 ## Important Rule
 
 Finance Logix should own ledgers and transaction records. Unit and client screens should show summaries, not duplicate finance records.
+
+Works Logix can hand a contractor Payment Request into Finance readiness, but Finance Logix must remain the owner of invoice approval, ledger posting, payment runs and supplier reconciliation when those workflows are built.
