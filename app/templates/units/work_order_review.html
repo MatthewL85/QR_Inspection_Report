@@ -15,6 +15,11 @@
       <strong>{{ work_order.display_reference }}</strong>
     </div>
     <div class="unit-actions">
+      {% if work_order.job_docket %}
+        <a href="{{ url_for('unit_bp.work_order_payment_request_document', unit_id=unit.id, work_order_id=work_order.id) }}" class="unit-link-action">
+          <i class="material-icons">receipt_long</i> Payment Request Preview
+        </a>
+      {% endif %}
       <a href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='works') }}" class="unit-link-action">
         <i class="material-icons">arrow_back</i> Back to Works
       </a>

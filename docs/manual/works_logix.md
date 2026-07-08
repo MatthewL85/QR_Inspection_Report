@@ -79,7 +79,7 @@ Management users can select one submitted quote from the Quote Requests queue. S
 
 Later phases can add Director Logix comparison/voting and Finance Logix approval/invoice readiness on top of the same source records.
 
-Payment requests should be accessed through the Payment Requests tile. When a contractor completes work and sends a Payment Request from the linked Job Docket, Works Logix surfaces that record for PM/Admin/Assistant/Finance review without giving property-management-company users access to Contractor Logix.
+Payment requests should be accessed through the Payment Requests tile. When a contractor completes work and sends a Payment Request from the linked Job Docket, Works Logix surfaces that record for PM/Admin/Assistant/Finance review without giving property-management-company users access to Contractor Logix. Authorised management users can preview the source-backed Payment Request document from the Works Logix queue or the work-order review page before the future Finance Logix payment workflow takes over.
 
 Work orders, quotation requests and payment request review packs should use the shared Core Document Template foundation for branding, terms, numbering and future PDF output. Works Logix owns the operational workflow and review queues; Documents Logix owns the governed document-template foundation.
 

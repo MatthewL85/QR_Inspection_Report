@@ -6,8 +6,10 @@ from flask_login import current_user, login_required
 from app.models.client.client import Client
 from app.models.members.member import Member
 from app.models.members.unit import Unit
+from app.models.works.work_order import WorkOrder
 from app.models.works.work_order_reopen_request import WorkOrderReopenRequest
 from app.services.gar import build_work_order_context
+from app.services.contractor.job_docket_service import build_payment_request_document_payload
 from app.services.unit_access_service import create_unit_access_invite
 from app.services.unit_service import UnitService
 from app.services.work_order_reopen_service import WorkOrderReopenService
@@ -200,6 +202,40 @@ def work_order_review(unit_id, work_order_id):
         work_order_audit_pack=build_work_order_audit_pack(work_order),
         workflow_timeline=build_work_order_lifecycle(work_order),
         progress_updates=progress_updates_for_audience(work_order, "management"),
+    )
+
+
+@unit_bp.route(
+    "/<int:unit_id>/work-orders/<int:work_order_id>/payment-request-document",
+    methods=["GET"],
+    endpoint="work_order_payment_request_document",
+)
+@login_required
+def work_order_payment_request_document(unit_id, work_order_id):
+    company_id = _company_id()
+    if not company_id:
+        abort(403)
+
+    data = UnitService.get_unit(unit_id)
+    if not data or data["unit"].company_id != company_id:
+        abort(404)
+
+    work_order = WorkOrder.query.filter_by(id=work_order_id, unit_id=unit_id).first()
+    if not work_order:
+        abort(404)
+    if not can_manage_work_order(current_user, work_order, company_id):
+        abort(403)
+    if not work_order.job_docket:
+        abort(404)
+
+    return render_template(
+        "units/work_order_payment_request_document.html",
+        unit=data["unit"],
+        client=data["client"],
+        company=data["company"],
+        work_order=work_order,
+        job_docket=work_order.job_docket,
+        payload=build_payment_request_document_payload(work_order.job_docket),
     )
 
 

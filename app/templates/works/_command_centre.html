@@ -478,7 +478,12 @@
               </td>
               <td>
                 {% if item.unit %}
-                  <a class="user-manager-action-link" href="{{ url_for('unit_bp.work_order_review', unit_id=item.unit.id, work_order_id=item.id) }}">Review</a>
+                  <div class="contract-manager-cell-stack">
+                    <a class="user-manager-action-link" href="{{ url_for('unit_bp.work_order_review', unit_id=item.unit.id, work_order_id=item.id) }}">Review</a>
+                    {% if docket %}
+                      <a class="user-manager-action-link" href="{{ url_for('unit_bp.work_order_payment_request_document', unit_id=item.unit.id, work_order_id=item.id) }}">Preview Request</a>
+                    {% endif %}
+                  </div>
                 {% else %}
                   <span class="text-muted">Unlinked</span>
                 {% endif %}

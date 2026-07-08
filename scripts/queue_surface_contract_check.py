@@ -204,6 +204,11 @@ def _check_works_command_centre(text: str, failures: list[str]) -> None:
         failures,
     )
     _require(
+        "work_order_payment_request_document" in text and "Preview Request" in text,
+        "Works Payment Requests queue must expose a management-safe payment request document preview.",
+        failures,
+    )
+    _require(
         _count(r"^\s*<section class=\"contract-manager-panel\"", text) <= 7,
         "Works command centre should not stack every queue list on one page.",
         failures,
