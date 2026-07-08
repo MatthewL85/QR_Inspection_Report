@@ -264,7 +264,7 @@
         <tbody>
           {% for item in open_work_orders %}
             <tr id="work-order-{{ item.id }}">
-              <td>WO-{{ item.id }}</td>
+              <td>{{ item.display_reference }}</td>
               <td>{{ (item.unit.unit_name or item.unit.unit_label) if item.unit else '-' }}</td>
               <td><strong>{{ item.title or 'Work Order' }}</strong></td>
               <td><span class="contract-alert-pill">{{ item.status or 'Open' }}</span></td>
@@ -372,7 +372,7 @@
         <tbody>
           {% for item in closed_work_orders %}
             <tr id="closed-work-order-{{ item.id }}">
-              <td>WO-{{ item.id }}</td>
+              <td>{{ item.display_reference }}</td>
               <td>{{ (item.unit.unit_name or item.unit.unit_label) if item.unit else '-' }}</td>
               <td><strong>{{ item.title or 'Work Order' }}</strong></td>
               <td><span class="contract-alert-pill contract-alert-success">{{ item.status or 'Closed' }}</span></td>
@@ -442,7 +442,7 @@
         <tbody>
           {% for item in reopen_requests %}
             <tr id="reopen-request-{{ item.id }}">
-              <td>WO-{{ item.work_order_id }}</td>
+              <td>{{ item.work_order.display_reference if item.work_order else 'WO-' ~ item.work_order_id }}</td>
               <td>{{ (item.unit.unit_name or item.unit.unit_label) if item.unit else '-' }}</td>
               <td>
                 <strong>{{ item.reason or 'Reopen requested' }}</strong>

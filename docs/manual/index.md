@@ -8,6 +8,17 @@ Purpose: explain how each part of LogixPM is used day to day by the people worki
 
 This manual is separate from the architecture documents. Architecture documents explain how the system is built. This manual explains how the platform should be used.
 
+## Architecture And Governance Notes
+
+The main platform architecture and active build guardrails are recorded in:
+
+| Document | Purpose |
+| --- | --- |
+| `docs/platform_architecture.md` | Shared source-of-truth records, module boundaries and cross-module linking rules |
+| `docs/platform_stabilisation_register.md` | Current stabilisation rules, verification gates and next cleanup priorities |
+| `docs/role_dashboard_surface_standard.md` | Shared dashboard UX rules for all role surfaces |
+| `docs/module_contracts.md` | Module-level ownership, shared links and GAR visibility boundaries |
+
 ## Manual Structure
 
 | Area | Manual page | Primary users |
@@ -143,6 +154,39 @@ The wider Phase 3 cross-module readiness suite is checked by:
 
 ```text
 .\venv\Scripts\python.exe scripts\phase3_readiness_check.py
+```
+
+For day-to-day iteration, use the faster contract-focused form:
+
+```text
+.\venv\Scripts\python.exe scripts\phase3_readiness_check.py --quick
+```
+
+To run only the role dashboard and operational surface render smoke checks:
+
+```text
+.\venv\Scripts\python.exe scripts\phase3_readiness_check.py --smoke-only
+```
+
+To see the selected checks without running them:
+
+```text
+.\venv\Scripts\python.exe scripts\phase3_readiness_check.py --quick --list
+.\venv\Scripts\python.exe scripts\phase3_readiness_check.py --smoke-only --list
+```
+
+Full mode includes both the fast contracts and the slower role dashboard / operational surface render smoke checks. A failed child check is retried once by default to absorb transient local database disconnects; repeated failures still fail the suite.
+
+The readiness runner mode split is protected by:
+
+```text
+.\venv\Scripts\python.exe scripts\phase3_runner_contract_check.py
+```
+
+The architecture/manual/stabilisation documentation spine is protected by:
+
+```text
+.\venv\Scripts\python.exe scripts\platform_documentation_contract_check.py
 ```
 
 The module dependency boundary check is:

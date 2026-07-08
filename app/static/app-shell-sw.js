@@ -1,4 +1,4 @@
-const LOGIXPM_APP_SHELL_CACHE = "logixpm-app-shell-v14";
+const LOGIXPM_APP_SHELL_CACHE = "logixpm-app-shell-v21";
 
 const STATIC_ASSETS = [
   "/static/manifest.webmanifest",

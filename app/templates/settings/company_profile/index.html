@@ -16,6 +16,9 @@
       <a class="unit-link-action" href="{{ url_for('settings.branding_view') }}">
         <i class="material-icons">palette</i> Branding
       </a>
+      <a class="unit-link-action" href="{{ url_for('settings.document_templates_index', company_id=company.id) }}">
+        <i class="material-icons">description</i> Document Templates
+      </a>
       <a class="btn btn-primary btn-sm" href="{{ url_for('settings.profile_edit', id=company.id) }}">Edit Profile</a>
     </div>
   </div>
@@ -32,6 +35,10 @@
       <div>
         <span>Organisation UID</span>
         <strong>{{ readiness.organisation_uid }}</strong>
+      </div>
+      <div>
+        <span>WO Prefix</span>
+        <strong>{{ company.work_order_prefix or company.work_order_code or '-' }}</strong>
       </div>
       <div>
         <span>Organisation Type</span>
@@ -146,6 +153,35 @@
       </div>
     </section>
   </div>
+
+  <section class="client-manager-panel company-document-setup-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Document & Template Setup</h6>
+        <span>Module-owned document rules for branding, numbering, terms and future PDF output.</span>
+      </div>
+      <a class="unit-link-action" href="{{ url_for('settings.document_templates_index', company_id=company.id) }}">
+        <i class="material-icons">description</i> Open Document Templates
+      </a>
+    </div>
+    <div class="company-document-setup-grid">
+      {% for template in document_templates %}
+        {% if template.module_key and template.document_type %}
+          <a class="company-document-setup-tile"
+             href="{{ url_for('settings.document_templates_edit', module_key=template.module_key, document_type=template.document_type, company_id=company.id) }}">
+            <span>{{ template.owner_module }}</span>
+            <strong>{{ template.name }}</strong>
+            <small>{{ template.description or template.created_by }}</small>
+            <em>{{ 'Company template' if template.has_company_template else 'System default' }}</em>
+          </a>
+        {% endif %}
+      {% else %}
+        <div class="company-document-setup-empty">
+          Document templates are available once setup context is ready.
+        </div>
+      {% endfor %}
+    </div>
+  </section>
 
   <section class="client-manager-panel">
     <div class="client-manager-heading">

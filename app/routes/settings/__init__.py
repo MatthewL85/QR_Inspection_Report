@@ -18,6 +18,11 @@ except Exception as e:
     print(f"[settings] branding routes not loaded: {e}")
 
 try:
+    from . import document_templates  # noqa: F401
+except Exception as e:
+    print(f"[settings] document template routes not loaded: {e}")
+
+try:
     from .bank import *  # noqa
 except Exception as e:
     print(f"[settings] bank routes not loaded: {e}")

@@ -15,4 +15,8 @@ def make_shell_context():
         "CapexRequest": CapexRequest
     }
 
+
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=5000)
+
 # ✅ Optional: Add custom CLI commands (e.g., seed, health check) here if needed

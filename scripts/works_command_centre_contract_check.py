@@ -16,6 +16,7 @@ EXPECTED_OPERATIONAL_QUEUES = {
     "unassigned_work_orders",
     "completion_review",
     "reopen_requests",
+    "payment_requests",
     "contractor_follow_up",
     "repeated_returns",
 }
@@ -36,6 +37,7 @@ EXPECTED_STATS = {
     "closed_work_orders",
     "total_work_orders",
     "pending_reopen_requests",
+    "payment_requests",
     "unassigned_work_orders",
     "completion_review",
     "returned_work_orders",
@@ -54,6 +56,7 @@ EXPECTED_FEED_QUEUES = {
     "contractor_follow_up",
     "repeated_returns",
     "reopen_requests",
+    "payment_requests",
 }
 
 EXPECTED_GAR_KEYS = {

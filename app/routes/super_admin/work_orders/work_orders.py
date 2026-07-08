@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
@@ -10,6 +12,8 @@ from app.services.works.workflow_service import (
     build_contractor_routing_options,
     convert_member_request_to_work_order,
     get_member_request_for_triage,
+    request_quotes_for_work_order,
+    select_quote_response_for_work_order,
     update_member_request_triage,
     works_command_centre_payload,
 )
@@ -208,3 +212,84 @@ def assign_work_order_contractor(work_order_id):
 
     flash("Work order assigned to contractor.", "success")
     return redirect(url_for("super_admin.work_orders", **_works_filter_args()))
+
+
+@super_admin_bp.route(
+    "/work-orders/<int:work_order_id>/request-quotes",
+    methods=["POST"],
+    endpoint="request_work_order_quotes",
+)
+@super_admin_required
+@login_required
+def request_work_order_quotes(work_order_id):
+    company_id = _company_id()
+    if not company_id:
+        abort(403)
+
+    contractor_ids = [
+        int(value)
+        for value in request.form.getlist("contractor_ids")
+        if value and value.isdigit()
+    ]
+    if not contractor_ids:
+        flash("Select at least one contractor before requesting quotations.", "warning")
+        return redirect(url_for("super_admin.work_orders", queue="open", **_works_filter_args()))
+
+    deadline = None
+    deadline_value = (request.form.get("quote_deadline") or "").strip()
+    if deadline_value:
+        try:
+            deadline = datetime.strptime(deadline_value, "%Y-%m-%d")
+        except ValueError:
+            flash("Quote deadline was not a valid date, so it was not saved.", "warning")
+
+    summary = request_quotes_for_work_order(
+        work_order_id=work_order_id,
+        company_id=company_id,
+        contractor_ids=contractor_ids,
+        requested_by_id=current_user.id,
+        quote_deadline=deadline,
+        notes=(request.form.get("quote_notes") or "").strip(),
+        visible_to_directors=bool(request.form.get("visible_to_directors")),
+        access_context="super_admin",
+    )
+    if not summary.get("work_order"):
+        abort(404)
+
+    created = summary.get("created", 0)
+    skipped = summary.get("skipped_existing", 0)
+    errors = summary.get("errors") or []
+    if created or skipped:
+        flash(f"Quotation request sent: {created} new invite(s), {skipped} already existed.", "success")
+    if errors:
+        flash(" ".join(errors), "warning")
+
+    return redirect(url_for("super_admin.work_orders", queue="quote_requests", **_works_filter_args()))
+
+
+@super_admin_bp.route(
+    "/work-orders/<int:work_order_id>/quotes/<int:quote_response_id>/select",
+    methods=["POST"],
+    endpoint="select_work_order_quote",
+)
+@super_admin_required
+@login_required
+def select_work_order_quote(work_order_id, quote_response_id):
+    company_id = _company_id()
+    if not company_id:
+        abort(403)
+
+    quote_response = select_quote_response_for_work_order(
+        work_order_id=work_order_id,
+        quote_response_id=quote_response_id,
+        company_id=company_id,
+        selected_by_id=current_user.id,
+        decision_note=(request.form.get("decision_note") or "").strip(),
+        access_context="super_admin",
+    )
+    if not quote_response:
+        flash("That quotation could not be selected.", "danger")
+        return redirect(url_for("super_admin.work_orders", queue="quote_requests", **_works_filter_args()))
+
+    flash("Quotation selected and the contractor has been assigned.", "success")
+    return redirect(url_for("super_admin.work_orders", queue="open", **_works_filter_args()))

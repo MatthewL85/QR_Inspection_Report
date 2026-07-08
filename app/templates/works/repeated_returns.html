@@ -149,7 +149,7 @@
                 <td>
                   <div class="contract-manager-cell-stack">
                     <strong>{{ item.title or 'Work Order #' ~ item.id }}</strong>
-                    <span>{{ item.external_reference or 'WO-' ~ item.id }}</span>
+                    <span>{{ item.external_reference or item.display_reference }}</span>
                     {{ status_pill(item.status) }}
                     {% if history and history.summary.related_count %}
                       <span class="works-gar-row-chip">GAR history {{ history.summary.related_count }}</span>

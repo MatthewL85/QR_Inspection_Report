@@ -412,7 +412,7 @@
             {% for reopen_request in pending_reopen_requests %}
               <div class="unit-reopen-request-row">
                 <div>
-                  <strong>WO-{{ reopen_request.work_order_id }}</strong>
+                  <strong>{{ reopen_request.work_order.display_reference if reopen_request.work_order else 'WO-' ~ reopen_request.work_order_id }}</strong>
                   <span>{{ reopen_request.reason or "No reason supplied" }}</span>
                   <p>{{ reopen_request.additional_details or "No additional detail supplied." }}</p>
                 </div>
@@ -457,11 +457,11 @@
                 {% set ns = namespace(matches=0) %}
                 {% if closed_work_orders and closed_work_orders|length %}
                   {% for wo in closed_work_orders %}
-                    {% set haystack = ('WO-' ~ wo.id ~ ' ' ~ (wo.title or '') ~ ' ' ~ (wo.request_type or '') ~ ' ' ~ (wo.business_type or '') ~ ' ' ~ (wo.status or ''))|lower %}
+                    {% set haystack = (wo.display_reference ~ ' ' ~ (wo.title or '') ~ ' ' ~ (wo.request_type or '') ~ ' ' ~ (wo.business_type or '') ~ ' ' ~ (wo.status or ''))|lower %}
                     {% if not closed_work_search or closed_work_search|lower in haystack %}
                       {% set ns.matches = ns.matches + 1 %}
                       <tr>
-                        <td>WO-{{ wo.id }}</td>
+                        <td>{{ wo.display_reference }}</td>
                         <td>{{ wo.title or "-" }}</td>
                         <td>{{ wo.request_type or wo.business_type or "-" }}</td>
                         <td><span class="unit-status-pill">{{ wo.status or "Closed" }}</span></td>
@@ -507,7 +507,7 @@
                 {% if all_work_orders and all_work_orders|length %}
                   {% for wo in all_work_orders %}
                     <tr>
-                      <td>WO-{{ wo.id }}</td>
+                      <td>{{ wo.display_reference }}</td>
                       <td>{{ wo.title or "-" }}</td>
                       <td>{{ wo.request_type or wo.business_type or "-" }}</td>
                       <td><span class="unit-status-pill {{ 'is-active' if wo in work_orders else '' }}">{{ wo.status or "Open" }}</span></td>
@@ -541,7 +541,7 @@
                 {% if work_orders and work_orders|length %}
                   {% for wo in work_orders %}
                     <tr>
-                      <td>WO-{{ wo.id }}</td>
+                      <td>{{ wo.display_reference }}</td>
                       <td>{{ wo.title or "-" }}</td>
                       <td>{{ wo.request_type or wo.business_type or "-" }}</td>
                       <td><span class="unit-status-pill is-active">{{ wo.status or "Open" }}</span></td>

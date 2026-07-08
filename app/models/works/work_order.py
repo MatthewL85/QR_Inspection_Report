@@ -147,3 +147,10 @@ class WorkOrder(db.Model):
 
     def __repr__(self):
         return f"<WorkOrder id={self.id} title='{self.title}' status={self.status}>"
+
+    @property
+    def display_reference(self) -> str:
+        company_code = getattr(getattr(self, "company", None), "work_order_code", None)
+        if company_code:
+            return f"WO-{company_code}-{self.id:06d}"
+        return f"WO-{self.id:06d}"

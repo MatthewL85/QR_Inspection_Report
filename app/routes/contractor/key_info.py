@@ -10,6 +10,7 @@ from app.extensions import db
 from app.models.client.client import Client
 from app.models.client.key_info import ClientKeyInfo
 from app.models.client.key_info import ClientKeyInfoShare
+from app.services.core.contractor_access import can_access_contractor_portal
 
 bp_contractor = Blueprint(
     "contractor_key_info",
@@ -17,14 +18,12 @@ bp_contractor = Blueprint(
     url_prefix="/contractor/clients/<int:client_id>/key-info",
 )
 
-CONTRACTOR_ROLES = {"Contractor", "Admin Contractor"}  # adjust to your roles
-
 def _current_contractor_id() -> Optional[int]:
     """
     Tries common attributes to resolve the contractor id for the logged-in user.
     Adapt if your user model uses a different field.
     """
-    for attr in ("contractor_id", "company_id", "contractorId"):
+    for attr in ("contractor_id", "contractorId"):
         cid = getattr(current_user, attr, None)
         if cid:
             try:
@@ -37,7 +36,7 @@ def _current_contractor_id() -> Optional[int]:
 @bp_contractor.get("/")
 @login_required
 def list_shared(client_id: int):
-    if getattr(current_user, "role", None) not in CONTRACTOR_ROLES:
+    if not can_access_contractor_portal(current_user):
         abort(403)
     contractor_id = _current_contractor_id()
     if not contractor_id:

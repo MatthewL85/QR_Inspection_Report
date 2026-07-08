@@ -7,7 +7,7 @@ from .contractor import Contractor
 from .contractor_assignment import ContractorAssignment
 from .contractor_feedback import ContractorFeedback
 from .contractor_team import ContractorTeam
-from .job_docket import JobDocket
+from .job_docket import JobDocket, JobDocketPrivateWorkLog
 from .contractor_calendar_entry import ContractorCalendarEntry
 from .team_schedule import TeamSchedule
 from .team_message import TeamMessage

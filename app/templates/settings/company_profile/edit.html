@@ -46,7 +46,7 @@
             {% endif %}
           </div>
 
-          <div class="col-md-6">
+          <div class="col-md-3">
             <label class="form-label">Company Type</label>
             {% if form %} {{ form.company_type(class="form-select") }}
             {% else %}
@@ -57,6 +57,18 @@
                 <option value="omc" {{ 'selected' if company.company_type=='omc' else '' }}>OMC / Director</option>
               </select>
             {% endif %}
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Work Order Prefix</label>
+            <input
+              name="work_order_prefix"
+              class="form-control text-uppercase"
+              maxlength="8"
+              pattern="[A-Za-z0-9]{2,8}"
+              value="{{ company.work_order_prefix or '' }}"
+              placeholder="{{ company.work_order_code or 'BH' }}">
+            <div class="form-text">Used in references like WO-{{ company.work_order_code or 'BH' }}-000123.</div>
           </div>
 
           <div class="col-md-4">

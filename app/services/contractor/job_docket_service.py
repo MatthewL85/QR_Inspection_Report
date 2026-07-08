@@ -7,6 +7,7 @@ from app.models.contractor.contractor_calendar_entry import ContractorCalendarEn
 from app.models.contractor.contractor_team import ContractorTeam
 from app.models.contractor.job_docket import JobDocket
 from app.models.core.user import User
+from app.models.works.quote_response import QuoteResponse
 from app.models.works.work_order import WorkOrder
 
 
@@ -95,6 +96,10 @@ def _docket_reference(docket_id: int) -> str:
     return f"JD-{datetime.utcnow().year}-{docket_id:05d}"
 
 
+def _contractor_job_reference(docket_id: int) -> str:
+    return f"CJ-{datetime.utcnow().year}-{docket_id:05d}"
+
+
 def _entry_title(docket: JobDocket) -> str:
     title = getattr(docket.work_order, "title", None) or docket.scope_of_works or "Standalone Job"
     return f"{docket.docket_number or 'Job Docket'} - {title}"
@@ -122,6 +127,7 @@ def create_standalone_job_docket(
     priority: str | None = None,
     scope_of_works: str | None = None,
     access_notes: str | None = None,
+    evidence_links: list[str] | None = None,
     contact_name: str | None = None,
     contact_phone: str | None = None,
     contact_email: str | None = None,
@@ -152,6 +158,8 @@ def create_standalone_job_docket(
         required_trade=(required_trade or "").strip() or None,
         scope_of_works=(scope_of_works or "").strip() or None,
         access_notes=(access_notes or "").strip() or None,
+        evidence_links=[link for link in (evidence_links or []) if link] or None,
+        attachments_count=len([link for link in (evidence_links or []) if link]),
         contact_name=(contact_name or "").strip() or None,
         contact_phone=(contact_phone or "").strip() or None,
         contact_email=(contact_email or "").strip() or None,
@@ -161,6 +169,7 @@ def create_standalone_job_docket(
     db.session.add(docket)
     db.session.flush()
     docket.docket_number = _docket_reference(docket.id)
+    docket.contractor_job_number = docket.contractor_job_number or _contractor_job_reference(docket.id)
     return docket
 
 
@@ -176,6 +185,11 @@ def ensure_job_docket_for_work_order(
 
     contact = _work_order_contact(work_order)
     unit = work_order.unit
+    selected_quote = (
+        QuoteResponse.query
+        .filter_by(work_order_id=work_order.id, is_selected=True)
+        .first()
+    )
     docket = JobDocket(
         work_order_id=work_order.id,
         contractor_id=work_order.contractor_id,
@@ -194,10 +208,14 @@ def ensure_job_docket_for_work_order(
         contact_email=contact["email"],
         source_module="Contractor Logix",
         gar_chat_ready=True,
+        chargeable=bool(selected_quote),
+        quotation_reference=f"Quote #{selected_quote.id}" if selected_quote else None,
+        invoice_status="Quote Approved" if selected_quote else "Not Ready",
     )
     db.session.add(docket)
     db.session.flush()
     docket.docket_number = _docket_reference(docket.id)
+    docket.contractor_job_number = docket.contractor_job_number or _contractor_job_reference(docket.id)
     return docket, True
 
 
@@ -310,7 +328,7 @@ def _job_docket_payload(docket: JobDocket) -> dict:
         "id": docket.id,
         "docket_number": docket.docket_number,
         "work_order_id": docket.work_order_id,
-        "work_order_reference": f"WO-{docket.work_order_id}" if docket.work_order_id else None,
+        "work_order_reference": docket.work_order.display_reference if docket.work_order else None,
         "external_work_order_reference": docket.external_work_order_reference,
         "title": work_order_title or docket.scope_of_works or "Standalone Job",
         "status": docket.status,
@@ -467,7 +485,16 @@ def build_standalone_job_docket_pack(docket: JobDocket) -> dict:
                 "Standalone Contractor Logix docket. Future GAR email intake can draft this data from inbound instructions."
             ),
         },
-        "evidence_items": [],
+        "evidence_items": [
+            {
+                "source": "Contractor Logix",
+                "label": f"Standalone docket attachment {index}",
+                "reference_url": reference,
+                "display_reference": reference,
+                "reference_type": "upload",
+            }
+            for index, reference in enumerate(docket.evidence_links or [], start=1)
+        ],
         "lifecycle": [],
     }
 

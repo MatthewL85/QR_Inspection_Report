@@ -39,6 +39,8 @@ class JobDocket(db.Model):
     required_trade = db.Column(db.String(100), nullable=True)
     scope_of_works = db.Column(db.Text, nullable=True)
     access_notes = db.Column(db.Text, nullable=True)
+    evidence_links = db.Column(db.JSON, nullable=True)
+    attachments_count = db.Column(db.Integer, nullable=False, default=0)
     contact_name = db.Column(db.String(120), nullable=True)
     contact_phone = db.Column(db.String(50), nullable=True)
     contact_email = db.Column(db.String(120), nullable=True)
@@ -74,6 +76,42 @@ class JobDocket(db.Model):
         cascade="all, delete-orphan",
         order_by="ContractorCalendarEntry.scheduled_date",
     )
+    private_work_logs = db.relationship(
+        "JobDocketPrivateWorkLog",
+        back_populates="job_docket",
+        cascade="all, delete-orphan",
+        order_by="desc(JobDocketPrivateWorkLog.work_date), desc(JobDocketPrivateWorkLog.created_at)",
+    )
 
     def __repr__(self):
         return f"<JobDocket {self.docket_number or self.id} status={self.status}>"
+
+
+class JobDocketPrivateWorkLog(db.Model):
+    __tablename__ = "job_docket_private_work_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    job_docket_id = db.Column(db.Integer, db.ForeignKey("job_dockets.id", ondelete="CASCADE"), nullable=False, index=True)
+    contractor_id = db.Column(db.Integer, db.ForeignKey("contractors.id"), nullable=False, index=True)
+    company_id = db.Column(db.Integer, db.ForeignKey("companies.id"), nullable=True, index=True)
+    created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
+
+    work_date = db.Column(db.Date, nullable=False, default=lambda: datetime.utcnow().date(), index=True)
+    labour_hours = db.Column(db.Numeric(8, 2), nullable=True)
+    material_description = db.Column(db.String(255), nullable=True)
+    material_quantity = db.Column(db.Numeric(10, 2), nullable=True)
+    material_unit = db.Column(db.String(40), nullable=True)
+    material_cost = db.Column(db.Numeric(10, 2), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+
+    visibility_scope = db.Column(db.String(40), nullable=False, default="contractor_private")
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    job_docket = db.relationship("JobDocket", back_populates="private_work_logs")
+    contractor = db.relationship("Contractor")
+    company = db.relationship("Company")
+    created_by = db.relationship("User", foreign_keys=[created_by_id])
+
+    def __repr__(self):
+        return f"<JobDocketPrivateWorkLog docket={self.job_docket_id} date={self.work_date}>"

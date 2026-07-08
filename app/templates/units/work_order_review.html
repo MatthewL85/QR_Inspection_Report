@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}
-  Work Order WO-{{ work_order.id }} | {{ unit.unit_label }}
+  Work Order {{ work_order.display_reference }} | {{ unit.unit_label }}
 {% endblock %}
 
 {% block page_content %}
@@ -12,7 +12,7 @@
       <span>/</span>
       <span>{{ client.name if client else "Development" }}</span>
       <span>/</span>
-      <strong>WO-{{ work_order.id }}</strong>
+      <strong>{{ work_order.display_reference }}</strong>
     </div>
     <div class="unit-actions">
       <a href="{{ url_for('unit_bp.view', unit_id=unit.id, tab='works') }}" class="unit-link-action">
@@ -35,7 +35,7 @@
     <div class="unit-detail-grid">
       <div>
         <span>Reference</span>
-        <strong>WO-{{ work_order.id }}</strong>
+        <strong>{{ work_order.display_reference }}</strong>
       </div>
       <div>
         <span>Unit</span>

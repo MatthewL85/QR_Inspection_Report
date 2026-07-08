@@ -1719,7 +1719,7 @@ def _related_work_record(work_order: WorkOrder, reasons: list[str], audience: st
 
     return {
         "work_order_id": work_order.id,
-        "reference": f"WO-{work_order.id}",
+        "reference": work_order.display_reference,
         "title": _trim_text(work_order.title, 110),
         "status": work_order.status or "Open",
         "created_at": _iso(work_order.created_at),

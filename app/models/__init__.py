@@ -23,6 +23,7 @@ from app.models.core.organisation_connection import (
     OrganisationConnectionInvite,
 )
 from app.models.core.document import Document
+from app.models.core.document_template import CoreDocumentTemplate
 from app.models.core.media_file import MediaFile
 from app.models.exports.exported_file_log import ExportedFileLog
 

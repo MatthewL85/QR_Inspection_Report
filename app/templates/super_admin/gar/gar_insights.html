@@ -207,18 +207,18 @@
               </td>
               <td>{{ row.generated_units }} / {{ row.expected_units }}</td>
               <td>
-                <a class="user-manager-action-link" href="{{ url_for('super_admin.work_orders', client_id=row.client_id) }}#open-work-orders">
+                <a class="user-manager-action-link" href="{{ url_for('super_admin.work_orders', client_id=row.client_id, queue='open') }}">
                   {{ row.open_work_orders }}
                 </a>
               </td>
               <td>
-                <a class="user-manager-action-link" href="{{ url_for('super_admin.work_orders', client_id=row.client_id) }}#member-requests">
+                <a class="user-manager-action-link" href="{{ url_for('super_admin.work_orders', client_id=row.client_id, queue='member_requests') }}">
                   {{ row.resident_signals }}
                 </a>
               </td>
               <td>{{ row.finance_ready_units }}</td>
               <td>
-                <a class="user-manager-action-link" href="{{ url_for('super_admin.work_orders', client_id=row.client_id) }}#gar-works-intelligence">
+                <a class="user-manager-action-link" href="{{ url_for('super_admin.work_orders', client_id=row.client_id, queue='gar') }}">
                   {{ row.pattern_memory_groups }}
                 </a>
               </td>

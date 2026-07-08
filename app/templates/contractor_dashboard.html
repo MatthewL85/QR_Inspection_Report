@@ -29,15 +29,15 @@
       <span class="contract-alert-pill contract-alert-muted">Calendar centred</span>
     </div>
     <div class="contractor-dashboard-ops-grid">
-      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.new_job_docket') }}">
-        <span>Manual Job Docket</span>
-        <strong>+</strong>
-        <small>Create a standalone job from an email, phone call, WhatsApp or external WO reference.</small>
-      </a>
       <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.work_orders', status='Assigned') }}">
         <span>Awaiting Acceptance</span>
         <strong>{{ work_data.stats.assigned if work_data else 0 }}</strong>
         <small>Review and accept or reject new work orders.</small>
+      </a>
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.work_orders', queue='quote_requests') }}">
+        <span>Quotation Requests</span>
+        <strong class="text-warning">{{ work_data.stats.quote_requests if work_data else 0 }}</strong>
+        <small>Respond to quote invitations from Works Logix or future manual quote intake.</small>
       </a>
       <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.calendar') }}#unscheduled-jobs">
         <span>Accepted, Not Scheduled</span>
@@ -58,6 +58,11 @@
         <span>Completion Review</span>
         <strong>{{ work_data.stats.submitted if work_data else 0 }}</strong>
         <small>Submitted completion notes waiting for PM/Admin review.</small>
+      </a>
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.work_orders', queue='to_be_invoiced') }}">
+        <span>To Be Invoiced</span>
+        <strong class="text-warning">{{ work_data.stats.to_be_invoiced if work_data else 0 }}</strong>
+        <small>Completed work ready for invoice preparation.</small>
       </a>
       <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.work_orders', status='Returned') }}">
         <span>Returned Work</span>

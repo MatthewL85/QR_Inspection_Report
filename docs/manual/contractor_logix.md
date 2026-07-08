@@ -27,8 +27,23 @@ Contractors can:
 - submit completion notes
 - submit evidence reference
 - resubmit returned completion work
+- review quotation requests from Works Logix
+- decline quotation requests with a reason
+- submit quote files, supporting evidence, totals and quote notes back to Works Logix
 
 When a Members Logix request is approved by Works Logix triage, the PM/Admin/Assistant selects the contractor before conversion. The created work order is assigned immediately, so it appears in the selected contractor's queue without needing a second routing step.
+
+Works Logix can also send quote requests to one or more contractors before choosing who will carry out the work. These appear in the Contractor Work Queue behind the `Quotation Requests` tile. A quote request is not the same as an assigned work order: the contractor can open the pack, review the issue, location and evidence, mark the request as being priced, or decline to quote with a reason.
+
+This keeps quotation handling separate from the accept/schedule/complete job workflow while using the same source work order, lifecycle history and contractor-safe pack. Submitting a quote does not accept the job. It sends the quote package back to Works Logix and moves the source record to `Quote Submitted`.
+
+If Works Logix selects the contractor's quote, the contractor is notified and the source work order becomes assigned work in the contractor queue. If a different quote is selected, the contractor is notified that their quote was not selected. The submitted quotation remains part of the controlled lifecycle history.
+
+After a quote decision, Contractor Logix must not keep showing the live quote submission controls. The selected contractor should see the work order as assigned and can accept/schedule it. Non-selected contractors should see the quotation outcome only, not an active assignment.
+
+When the selected contractor accepts the work order, the Job Docket should carry the selected quote as its approved quote basis. The docket should show the quote reference, total, submitted date and quote file so the contractor can see the awarded pricing context without returning to the quotation queue. This also creates a cleaner future handoff into invoice readiness and Finance Logix.
+
+Future phases can add comparison scoring, Director Logix voting, quote acceptance, conversion into a scheduled job docket and Finance Logix invoice readiness without changing the queue foundation.
 
 ## Calendar-Centred Job Dockets
 
@@ -69,6 +84,30 @@ The Contractor Calendar also exposes a read-only app feed at `/contractor/calend
 When a contractor schedules a job docket, Works Logix management views show the scheduled visit beside the open work order. PM/Admin/Assistant users can therefore see the planned attendance date, time and engineer from the Works command centre without entering Contractor Logix.
 
 For standalone job dockets, scheduling creates the Contractor Calendar entry without updating Works Logix. This is intentional because there may be no connected LogixPM company on the other side.
+
+## Payment Requests
+
+The `To Be Invoiced` queue is a Contractor Logix payment-request preparation state, not a full Finance Logix invoice.
+
+When a job has been completed or closed, the contractor can send a Payment Request from the Job Docket. This records the docket as `Invoice Prepared` behind the scenes, sends the item into the management-side Works Logix Payment Requests queue and creates a lifecycle event for Finance Logix readiness and GAR context.
+
+Property management company users do not enter Contractor Logix to view this. They review the payment request from Works Logix, and a future Finance Logix payment workflow can process it from the same linked work order and job docket source records.
+
+Payment Requests, Job Dockets and contractor quote responses should use the shared Core Document Template foundation for logos, terms, numbering, footer text and future PDF output. This keeps Contractor Logix documents configurable without letting Contractor Logix own the whole document governance layer.
+
+This action does not create a formal invoice, approve an invoice or mark payment as received. Those controls should remain in Finance Logix when that module is built. Contractor Logix only records the operational handoff: the contractor has requested payment for the completed docket.
+
+If a Job Docket came from an approved quote, the invoice readiness panel should retain the quote reference and quote basis so the future Finance Logix workflow can compare the prepared invoice against the accepted quotation.
+
+## Materials Used & Time Log
+
+Each Job Docket includes a contractor-private Materials Used & Time Log.
+
+This is for daily labour hours, materials used, quantities, units, cost notes and internal job notes. It supports jobs that take more than one day because each attendance or material entry should be recorded as its own dated line.
+
+The Materials Used & Time Log is visible only to the contracting company. It should not be shown to Members Logix, Directors Logix, the reporting resident, the owner, or the management company unless a later invoice/report workflow deliberately publishes selected information.
+
+This keeps the contractor's operational record useful without leaking internal labour notes, supplier references, margin-sensitive material information or private scheduling notes. Future Finance Logix and invoice workflows can use this structured data through a controlled handoff instead of exposing the raw contractor-private log by default.
 
 ## Future GAR Email Intake
 

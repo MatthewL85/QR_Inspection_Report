@@ -49,7 +49,8 @@
       </div>
       <div class="works-attention-grid">
         {% for key, queue in works_operational_queues.items() %}
-          {% set queue_href = url_for('admin_portal.work_orders_repeated_returns') if key == 'repeated_returns' else url_for('admin_portal.work_orders') ~ '#' ~ queue.anchor %}
+          {% set queue_name = 'member_requests' if queue.anchor == 'member-requests' else ('reopen' if queue.anchor == 'reopen-requests' else ('closed' if queue.anchor == 'closed-work-orders' else ('gar' if queue.anchor == 'gar-works-intelligence' else 'open'))) %}
+          {% set queue_href = url_for('admin_portal.work_orders_repeated_returns') if key == 'repeated_returns' else url_for('admin_portal.work_orders', queue=queue_name) %}
           <a class="works-attention-card works-attention-{{ queue.tone }}" href="{{ queue_href }}">
             <span>{{ queue.label }}</span>
             <strong>{{ queue.count }}</strong>

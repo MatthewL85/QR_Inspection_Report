@@ -4,6 +4,15 @@ Status: Phase 1 architecture control document
 
 Purpose: define the shared platform spine so LogixPM can grow as separate modules that can also work together through common source-of-truth records.
 
+## Related Control Documents
+
+| Document | Purpose |
+| --- | --- |
+| `docs/platform_stabilisation_register.md` | Active stabilisation register, verification gates and cleanup priorities |
+| `docs/role_dashboard_surface_standard.md` | Shared dashboard surface rules for Super Admin, PM, Assistant, Finance, Director, Contractor and Members views |
+| `docs/module_contracts.md` | Module ownership and integration contract reference |
+| `docs/manual/index.md` | User-facing operating manual index |
+
 ## Architecture Principle
 
 LogixPM should not be built as disconnected features. Each Logix module should own its own workflows, screens, services and rules, while sharing a small number of core platform records.
@@ -141,6 +150,39 @@ Phase 3 cross-module readiness is checked by:
 
 ```text
 .\venv\Scripts\python.exe scripts\phase3_readiness_check.py
+```
+
+During active development, use:
+
+```text
+.\venv\Scripts\python.exe scripts\phase3_readiness_check.py --quick
+```
+
+Quick mode keeps the contract and architecture checks fast. Use this command when only the UI smoke layer needs review:
+
+```text
+.\venv\Scripts\python.exe scripts\phase3_readiness_check.py --smoke-only
+```
+
+To list selected checks without executing them:
+
+```text
+.\venv\Scripts\python.exe scripts\phase3_readiness_check.py --quick --list
+.\venv\Scripts\python.exe scripts\phase3_readiness_check.py --smoke-only --list
+```
+
+Full mode retains both the contract checks and the slower render/login smoke checks for higher-confidence review. Failed child checks retry once by default to handle transient local database disconnects without hiding repeated failures.
+
+The runner mode split is protected by:
+
+```text
+.\venv\Scripts\python.exe scripts\phase3_runner_contract_check.py
+```
+
+The architecture/manual/stabilisation documentation spine is protected by:
+
+```text
+.\venv\Scripts\python.exe scripts\platform_documentation_contract_check.py
 ```
 
 Active route namespace boundaries are checked by:

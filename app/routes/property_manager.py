@@ -13,6 +13,8 @@ from app.services.works.workflow_service import (
     build_contractor_routing_options,
     convert_member_request_to_work_order,
     get_member_request_for_triage,
+    request_quotes_for_work_order,
+    select_quote_response_for_work_order,
     update_member_request_triage,
     works_command_centre_payload,
 )
@@ -326,6 +328,72 @@ def assign_work_order_contractor(work_order_id):
 
     flash("Work order assigned to contractor.", "success")
     return redirect(url_for('property_manager.work_orders', **_works_filter_args()))
+
+
+@property_manager_bp.route('/work-orders/<int:work_order_id>/request-quotes', methods=['POST'])
+@login_required(role='Property Manager')
+def request_work_order_quotes(work_order_id):
+    company_id = session.get('company_id')
+    if not company_id:
+        flash("Company context is missing. Please log in again.", "danger")
+        return redirect(url_for('auth.login'))
+
+    quote_deadline = None
+    quote_deadline_raw = (request.form.get("quote_deadline") or "").strip()
+    if quote_deadline_raw:
+        try:
+            quote_deadline = datetime.strptime(quote_deadline_raw, "%Y-%m-%d")
+        except ValueError:
+            flash("Enter a valid quote deadline.", "warning")
+            return redirect(url_for('property_manager.work_orders', **_works_filter_args()))
+
+    summary = request_quotes_for_work_order(
+        work_order_id=work_order_id,
+        company_id=company_id,
+        contractor_ids=request.form.getlist("contractor_ids", type=int),
+        requested_by_id=session.get('user_id'),
+        allowed_client_ids=_pm_client_ids(),
+        access_context="assigned_property_manager",
+        quote_deadline=quote_deadline,
+        notes=(request.form.get("quote_notes") or "").strip(),
+        visible_to_directors=bool(request.form.get("visible_to_directors")),
+    )
+    if not summary.get("work_order"):
+        flash("That work order could not be found for your assigned developments.", "danger")
+        return redirect(url_for('property_manager.work_orders', **_works_filter_args()))
+
+    if summary["created"]:
+        flash(f"Quotation request sent to {summary['created']} contractor user(s).", "success")
+    elif summary["skipped_existing"]:
+        flash("Those quotation requests already exist.", "info")
+    else:
+        flash("No connected contractor users could receive that quotation request.", "warning")
+    return redirect(url_for('property_manager.work_orders', queue="quote_requests", **_works_filter_args()))
+
+
+@property_manager_bp.route('/work-orders/<int:work_order_id>/quotes/<int:quote_response_id>/select', methods=['POST'])
+@login_required(role='Property Manager')
+def select_work_order_quote(work_order_id, quote_response_id):
+    company_id = session.get('company_id')
+    if not company_id:
+        flash("Company context is missing. Please log in again.", "danger")
+        return redirect(url_for('auth.login'))
+
+    quote_response = select_quote_response_for_work_order(
+        work_order_id=work_order_id,
+        quote_response_id=quote_response_id,
+        company_id=company_id,
+        selected_by_id=session.get('user_id'),
+        decision_note=(request.form.get("decision_note") or "").strip(),
+        allowed_client_ids=_pm_client_ids(),
+        access_context="assigned_property_manager",
+    )
+    if not quote_response:
+        flash("That quotation could not be selected for your assigned developments.", "danger")
+        return redirect(url_for('property_manager.work_orders', queue="quote_requests", **_works_filter_args()))
+
+    flash("Quotation selected and the contractor has been assigned.", "success")
+    return redirect(url_for('property_manager.work_orders', queue="open", **_works_filter_args()))
 
 @property_manager_bp.route('/add-task', methods=['GET', 'POST'])
 @login_required(role='Property Manager')

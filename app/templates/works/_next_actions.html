@@ -4,6 +4,19 @@
 {% set prefix = works_next_actions_prefix|default('') %}
 {% set repeated_prefix = works_next_actions_repeated_returns_prefix|default('') %}
 {% set extra_class = works_next_actions_class|default('') %}
+{% set queue_by_anchor = {
+  'member-requests': 'member_requests',
+  'reopen-requests': 'reopen',
+  'closed-work-orders': 'closed',
+  'completed-work': 'closed',
+  'gar-works-intelligence': 'gar',
+  'returned-work': 'returned',
+  'assigned-work': 'assigned',
+  'quote-requests': 'quote_requests',
+  'active-work': 'active',
+  'submitted-work': 'submitted',
+  'to-be-invoiced': 'to_be_invoiced'
+} %}
 
 {% if actions %}
   <div class="works-next-actions {{ extra_class }}">
@@ -12,7 +25,8 @@
       <strong>{{ subtitle }}</strong>
     </div>
     {% for action in actions %}
-      {% set action_href = repeated_prefix if action.key == 'repeated_returns' and repeated_prefix else prefix ~ '#' ~ action.anchor %}
+      {% set action_queue = queue_by_anchor.get(action.anchor, 'open') %}
+      {% set action_href = repeated_prefix if action.key == 'repeated_returns' and repeated_prefix else prefix ~ ('&' if '?' in prefix else '?') ~ 'queue=' ~ action_queue %}
       <a class="works-next-action works-next-action-{{ action.tone }}" href="{{ action_href }}">
         <span>{{ action.label }}</span>
         <strong>{{ action.action }}</strong>

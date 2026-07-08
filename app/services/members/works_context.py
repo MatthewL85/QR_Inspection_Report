@@ -81,7 +81,7 @@ def _member_work_order_payload(item):
     progress_updates = progress_updates_for_audience(item, "member")
     return {
         "id": item.id,
-        "reference": f"WO-{item.id}",
+        "reference": item.display_reference,
         "title": item.title or f"Work Order #{item.id}",
         "status": item.status or "Open",
         "created_at": _iso_date(item.created_at),

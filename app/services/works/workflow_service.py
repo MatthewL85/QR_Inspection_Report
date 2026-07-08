@@ -16,6 +16,8 @@ from app.models.core.user import User
 from app.models.maintenance.maintenance_request import MaintenanceRequest
 from app.models.members.unit import Unit
 from app.models.members.unit_membership import UnitMembership
+from app.models.works.quote_recipient import QuoteRecipient
+from app.models.works.quote_response import QuoteResponse
 from app.models.works.work_order import WorkOrder
 from app.models.works.work_order_completion import WorkOrderCompletion
 from app.models.works.work_order_lifecycle_event import WorkOrderLifecycleEvent
@@ -216,6 +218,10 @@ def _works_repeated_returns_link_for_user(user: User | None) -> str:
 
 def _contractor_work_order_link(work_order: WorkOrder) -> str:
     return _with_anchor(CONTRACTOR_WORKS_LINK, f"work-order-{work_order.id}")
+
+
+def _contractor_quote_request_link(work_order: WorkOrder) -> str:
+    return _with_anchor(f"{CONTRACTOR_WORKS_LINK}?queue=quote_requests", f"quote-request-{work_order.id}")
 
 
 def _member_work_order_link(work_order: WorkOrder, anchor_prefix: str = "work-order") -> str:
@@ -551,7 +557,7 @@ def _notify_linked_members_of_completion(work_order: WorkOrder) -> int:
         created += int(
             _queue_notification(
                 recipient_id=member.user_id,
-                message=f"Work order WO-{work_order.id} has been submitted for completion review. Please add feedback if needed.",
+                message=f"Work order {work_order.display_reference} has been submitted for completion review. Please add feedback if needed.",
                 notification_type="works_completion",
                 link_url=_member_work_order_link(work_order),
                 priority_level="Normal",
@@ -591,7 +597,7 @@ def _notify_linked_members_of_closure(work_order: WorkOrder) -> int:
         created += int(
             _queue_notification(
                 recipient_id=member.user_id,
-                message=f"Work order WO-{work_order.id} has been approved and closed by Works Logix.",
+                message=f"Work order {work_order.display_reference} has been approved and closed by Works Logix.",
                 notification_type="works_closed",
                 link_url=_member_work_order_link(work_order, "closed-work-order"),
                 priority_level="Normal",
@@ -631,7 +637,7 @@ def _notify_linked_members_of_progress(work_order: WorkOrder, progress_update: W
         created += int(
             _queue_notification(
                 recipient_id=member.user_id,
-                message=f"Progress update added to work order WO-{work_order.id}.",
+                message=f"Progress update added to work order {work_order.display_reference}.",
                 notification_type="works_progress_update",
                 link_url=_member_work_order_link(work_order),
                 priority_level="Normal",
@@ -787,7 +793,7 @@ def notify_work_order_reopen_requested(reopen_request: WorkOrderReopenRequest) -
     created = _notify_work_managers(
         work_order=work_order,
         notification_type="works_reopen_request",
-        message=f"A member/resident requested WO-{work_order.id} be reopened.",
+        message=f"A member/resident requested {work_order.display_reference} be reopened.",
         suggested_action="Review the reopen request and approve or reject it.",
         priority_level="High",
     )
@@ -822,7 +828,15 @@ def build_command_centre(
     all_work_orders = scoped_work_query.order_by(WorkOrder.created_at.desc()).all()
     filtered_work_orders = filtered_work_query.order_by(WorkOrder.created_at.desc()).all()
 
-    open_work_orders = [item for item in filtered_work_orders if is_open_status(item.status)]
+    quote_request_statuses = {"quote requested", "quote submitted"}
+    quote_request_work_orders = [
+        item for item in filtered_work_orders
+        if _normalise_status(item.status) in quote_request_statuses
+    ]
+    open_work_orders = [
+        item for item in filtered_work_orders
+        if is_open_status(item.status) and _normalise_status(item.status) not in quote_request_statuses
+    ]
     closed_work_orders = [item for item in filtered_work_orders if is_closed_status(item.status)]
     contractor_routing_options = build_contractor_routing_options(company_id=company_id)
     contractors = [option["contractor"] for option in contractor_routing_options]
@@ -876,15 +890,25 @@ def build_command_centre(
             if item.unit and item.unit.client_id == filters.client_id
         ]
 
-    open_total = len([item for item in filtered_work_orders if is_open_status(item.status)])
+    open_total = len(open_work_orders)
     closed_total = len([item for item in filtered_work_orders if is_closed_status(item.status)])
     unassigned_work_orders = [
         item for item in filtered_work_orders
-        if is_open_status(item.status) and not item.contractor_id
+        if is_open_status(item.status)
+        and _normalise_status(item.status) not in quote_request_statuses
+        and not item.contractor_id
     ]
     completion_review_work_orders = [
         item for item in filtered_work_orders
         if _normalise_status(item.status) == "completion submitted"
+    ]
+    payment_request_invoice_statuses = {"invoice prepared", "invoiced"}
+    paid_statuses = {"paid", "settled"}
+    payment_request_work_orders = [
+        item for item in filtered_work_orders
+        if getattr(item, "job_docket", None)
+        and _normalise_status(getattr(item.job_docket, "invoice_status", None)) in payment_request_invoice_statuses
+        and _normalise_status(getattr(item.job_docket, "payment_status", None)) not in paid_statuses
     ]
     returned_work_orders = [
         item for item in filtered_work_orders
@@ -934,6 +958,15 @@ def build_command_centre(
             "description": "Member or resident reopen requests waiting for a decision.",
             "next_action": "Review evidence and decide whether to reopen.",
             "priority_rank": 5,
+        },
+        "payment_requests": {
+            "label": "Payment Requests",
+            "count": len(payment_request_work_orders),
+            "anchor": "payment-requests",
+            "tone": "success",
+            "description": "Contractor payment requests prepared after completed work.",
+            "next_action": "Review the completed work pack and prepare Finance Logix payment processing.",
+            "priority_rank": 3,
         },
         "contractor_follow_up": {
             "label": "Contractor Follow-up",
@@ -1029,9 +1062,11 @@ def build_command_centre(
         "status_options": sorted({item.status for item in all_work_orders if item.status}),
         "work_orders": filtered_work_orders,
         "open_work_orders": open_work_orders,
+        "quote_request_work_orders": quote_request_work_orders,
         "closed_work_orders": closed_work_orders,
         "unassigned_work_orders": unassigned_work_orders,
         "completion_review_work_orders": completion_review_work_orders,
+        "payment_request_work_orders": payment_request_work_orders,
         "returned_work_orders": returned_work_orders,
         "contractor_follow_up_work_orders": contractor_follow_up_work_orders,
         "repeated_return_work_orders": repeated_return_work_orders,
@@ -1056,12 +1091,14 @@ def build_command_centre(
         },
         "stats": {
             "open_work_orders": open_total,
+            "quote_requests": len(quote_request_work_orders),
             "open_member_requests": len(open_member_requests),
             "closed_work_orders": closed_total,
             "total_work_orders": len(filtered_work_orders),
             "pending_reopen_requests": len(pending_reopen_requests),
             "unassigned_work_orders": len(unassigned_work_orders),
             "completion_review": len(completion_review_work_orders),
+            "payment_requests": len(payment_request_work_orders),
             "returned_work_orders": len(returned_work_orders),
             "contractor_follow_up": len(contractor_follow_up_work_orders),
             "repeated_returns": len(repeated_return_work_orders),
@@ -1239,7 +1276,7 @@ def _work_order_payload(
     progress_updates = progress_updates_for_audience(work_order, gar_audience)
     payload = {
         "id": work_order.id,
-        "reference": f"WO-{work_order.id}",
+        "reference": work_order.display_reference,
         "title": work_order.title or f"Work Order #{work_order.id}",
         "description": work_order.description,
         "status": work_order.status or "Open",
@@ -1249,6 +1286,41 @@ def _work_order_payload(
         "client": _client_payload(work_order.client),
         "unit": _unit_payload(work_order.unit),
         "contractor_id": work_order.contractor_id,
+        "quote": {
+            "requested": bool(work_order.quote_requested),
+            "status": work_order.quote_status,
+            "deadline": _iso_date(work_order.quote_deadline),
+            "recipients": [
+                {
+                    "id": recipient.id,
+                    "contractor_user_id": recipient.contractor_id,
+                    "contractor_name": recipient.contractor.full_name if recipient.contractor else None,
+                    "status": recipient.status,
+                    "response_status": recipient.response_status,
+                    "submitted": bool(recipient.has_submitted_response),
+                    "viewed": bool(recipient.contractor_viewed),
+                    "responded_at": _iso_date(recipient.responded_at),
+                    "visible_to_directors": bool(recipient.visible_to_directors),
+                }
+                for recipient in work_order.quote_recipients
+                if recipient.visible_to_contractor and not recipient.archived_by_admin
+            ],
+            "responses": [
+                {
+                    "id": response.id,
+                    "contractor_user_id": response.contractor_id,
+                    "submitted_by": response.submitted_by.full_name if response.submitted_by else None,
+                    "submitted_at": _iso_date(response.submitted_at),
+                    "status": response.status,
+                    "quote_file_path": response.quote_file_path,
+                    "additional_files": (response.additional_files or {}).get("attachments", []),
+                    "total": str(response.parsed_total) if response.parsed_total is not None else None,
+                    "summary": response.parsed_summary,
+                }
+                for response in work_order.quote_responses
+                if response.visible_to_admin
+            ],
+        },
         "completion": {
             "notes": work_order.completion.completion_notes if work_order.completion else None,
             "evidence_reference": work_order.completion.external_reference if work_order.completion else None,
@@ -1363,9 +1435,11 @@ def works_command_centre_payload(
         "queues": {
             "member_requests": [_member_request_payload(item) for item in data.get("open_member_requests", [])],
             "open_work_orders": [_work_order_payload(item, include_gar_history=True, gar_audience=role_context) for item in data.get("open_work_orders", [])],
+            "quote_request_work_orders": [_work_order_payload(item, include_gar_history=True, gar_audience=role_context) for item in data.get("quote_request_work_orders", [])],
             "closed_work_orders": [_work_order_payload(item, include_gar_history=True, gar_audience=role_context) for item in data.get("closed_work_orders", [])],
             "unassigned_work_orders": [_work_order_payload(item, include_gar_history=True, gar_audience=role_context) for item in data.get("unassigned_work_orders", [])],
             "completion_review": [_work_order_payload(item, include_gar_history=True, gar_audience=role_context) for item in data.get("completion_review_work_orders", [])],
+            "payment_requests": [_work_order_payload(item, include_gar_history=True, gar_audience=role_context) for item in data.get("payment_request_work_orders", [])],
             "returned_work_orders": [_work_order_payload(item, include_gar_history=True, gar_audience=role_context) for item in data.get("returned_work_orders", [])],
             "contractor_follow_up": [_work_order_payload(item, include_gar_history=True, gar_audience=role_context) for item in data.get("contractor_follow_up_work_orders", [])],
             "repeated_returns": [_work_order_payload(item, include_gar_history=True, gar_audience=role_context) for item in data.get("repeated_return_work_orders", [])],
@@ -1398,9 +1472,11 @@ def contractor_work_queue_payload(data: dict, filters: ContractorWorkFilters) ->
         "next_actions": data.get("next_actions", []),
         "queues": {
             "assigned": [_work_order_payload(item, include_gar_history=True, gar_audience="contractor") for item in data.get("assigned_work_orders", [])],
+            "quote_requests": [_work_order_payload(item, include_gar_history=True, gar_audience="contractor") for item in data.get("quote_request_work_orders", [])],
             "active": [_work_order_payload(item, include_gar_history=True, gar_audience="contractor") for item in data.get("active_work_orders", [])],
             "submitted": [_work_order_payload(item, include_gar_history=True, gar_audience="contractor") for item in data.get("submitted_work_orders", [])],
             "returned": [_work_order_payload(item, include_gar_history=True, gar_audience="contractor") for item in data.get("returned_work_orders", [])],
+            "to_be_invoiced": [_work_order_payload(item, include_gar_history=True, gar_audience="contractor") for item in data.get("to_be_invoiced_work_orders", [])],
             "closed": [_work_order_payload(item, include_gar_history=True, gar_audience="contractor") for item in data.get("closed_work_orders", [])],
         },
     }
@@ -1473,7 +1549,7 @@ def convert_member_request_to_work_order(
             _notify_contractor_users(
                 work_order=existing_work_order,
                 notification_type="works_assignment",
-                message=f"Work order WO-{existing_work_order.id} has been assigned to your contractor queue.",
+                message=f"Work order {existing_work_order.display_reference} has been assigned to your contractor queue.",
                 suggested_action="Review the job details and accept or start the work.",
                 priority_level="Normal",
             )
@@ -1578,7 +1654,7 @@ def convert_member_request_to_work_order(
         _notify_contractor_users(
             work_order=work_order,
             notification_type="works_assignment",
-            message=f"Work order WO-{work_order.id} has been assigned to your contractor queue.",
+            message=f"Work order {work_order.display_reference} has been assigned to your contractor queue.",
             suggested_action="Review the job details and accept or start the work.",
             priority_level="Normal",
         )
@@ -1645,13 +1721,428 @@ def assign_contractor_to_work_order(
     _notify_contractor_users(
         work_order=work_order,
         notification_type="works_assignment",
-        message=f"Work order WO-{work_order.id} has been assigned to your contractor queue.",
+        message=f"Work order {work_order.display_reference} has been assigned to your contractor queue.",
         suggested_action="Review the job details and accept or start the work.",
         priority_level="Normal",
     )
 
     db.session.commit()
     return work_order
+
+
+def _quote_recipient_users_for_contractor(contractor: Contractor | None) -> list[User]:
+    if not contractor:
+        return []
+    users = [
+        user for user in (contractor.users or [])
+        if getattr(user, "is_active", True) and getattr(user, "id", None)
+    ]
+    return sorted(users, key=lambda user: ((user.full_name or "").lower(), user.id))
+
+
+def request_quotes_for_work_order(
+    *,
+    work_order_id: int,
+    company_id: int,
+    contractor_ids: list[int],
+    requested_by_id: int | None = None,
+    quote_deadline=None,
+    notes: str = "",
+    visible_to_directors: bool = False,
+    allowed_client_ids: tuple[int, ...] | None = None,
+    access_context: str = "direct",
+) -> dict:
+    query = WorkOrder.query.filter(
+        WorkOrder.id == work_order_id,
+        _work_order_company_filter(company_id),
+    )
+    if allowed_client_ids is not None:
+        query = query.filter(WorkOrder.client_id.in_(allowed_client_ids))
+
+    work_order = query.first()
+    if not work_order:
+        return {"work_order": None, "created": 0, "skipped_existing": 0, "errors": ["Work order not found."]}
+
+    unique_contractor_ids = []
+    for contractor_id in contractor_ids or []:
+        if contractor_id and contractor_id not in unique_contractor_ids:
+            unique_contractor_ids.append(contractor_id)
+
+    errors: list[str] = []
+    created = 0
+    skipped_existing = 0
+    invited_user_ids: list[int] = []
+    invited_contractor_names: list[str] = []
+    now = datetime.utcnow()
+
+    contractors = (
+        Contractor.query
+        .filter(Contractor.id.in_(unique_contractor_ids), Contractor.is_active.is_(True))
+        .order_by(Contractor.company_name.asc())
+        .all()
+        if unique_contractor_ids else []
+    )
+    contractors_by_id = {contractor.id: contractor for contractor in contractors}
+
+    for contractor_id in unique_contractor_ids:
+        contractor = contractors_by_id.get(contractor_id)
+        if not contractor:
+            errors.append(f"Contractor {contractor_id} is not active or could not be found.")
+            continue
+
+        recipient_users = _quote_recipient_users_for_contractor(contractor)
+        if not recipient_users:
+            errors.append(f"{contractor.company_name} has no active Contractor Logix user to receive the quote request.")
+            continue
+
+        invited_contractor_names.append(contractor.company_name)
+        for user in recipient_users:
+            existing = QuoteRecipient.query.filter_by(
+                work_order_id=work_order.id,
+                contractor_id=user.id,
+            ).first()
+            if existing:
+                existing.archived_by_admin = False
+                existing.visible_to_contractor = True
+                existing.visible_to_directors = visible_to_directors
+                existing.notes = notes or existing.notes
+                skipped_existing += 1
+                invited_user_ids.append(user.id)
+                continue
+
+            invite = QuoteRecipient(
+                work_order_id=work_order.id,
+                contractor_id=user.id,
+                invited_by_id=requested_by_id,
+                invited_at=now,
+                status="Invited",
+                response_status="No Response",
+                notes=notes,
+                invitation_message=(
+                    f"Quotation requested for {work_order.display_reference}. "
+                    "Review the work pack before deciding whether to price."
+                ),
+                visible_to_directors=visible_to_directors,
+                visible_to_contractor=True,
+                visibility_scope="Shared" if visible_to_directors else "Private",
+            )
+            db.session.add(invite)
+            created += 1
+            invited_user_ids.append(user.id)
+
+            _queue_notification(
+                recipient_id=user.id,
+                message=f"Quotation requested for {work_order.display_reference}.",
+                notification_type="works_quote_request",
+                link_url=_contractor_quote_request_link(work_order),
+                priority_level="Normal",
+                suggested_action="Review the request and decide whether to submit a quotation.",
+                extracted_data={
+                    "work_order_id": work_order.id,
+                    "client_id": work_order.client_id,
+                    "unit_id": work_order.unit_id,
+                    "contractor_entity_id": contractor.id,
+                    "quote_request": True,
+                },
+            )
+
+    if created or skipped_existing:
+        work_order.quote_requested = True
+        work_order.quote_deadline = quote_deadline
+        work_order.quote_status = "Requested"
+        work_order.status = "Quote Requested"
+        record_work_order_lifecycle_event(
+            work_order=work_order,
+            event_type="quote_requested",
+            title="Quotation requested",
+            source_module="Works Logix",
+            actor_user_id=requested_by_id,
+            actor_label=_actor_label(requested_by_id, "Works Logix"),
+            note=notes or "Quotation request sent to selected Contractor Logix users.",
+            status_snapshot=work_order.status,
+            visibility_scope="Admin,PM,Contractor,Director,GAR" if visible_to_directors else "Admin,PM,Contractor,GAR",
+            event_metadata={
+                "quote_recipient_user_ids": sorted(set(invited_user_ids)),
+                "contractor_entity_ids": unique_contractor_ids,
+                "contractor_names": sorted(set(invited_contractor_names)),
+                "quote_deadline": quote_deadline.isoformat() if quote_deadline else None,
+                "visible_to_directors": visible_to_directors,
+                "access_context": access_context,
+                "created": created,
+                "skipped_existing": skipped_existing,
+            },
+        )
+
+    db.session.commit()
+    return {
+        "work_order": work_order,
+        "created": created,
+        "skipped_existing": skipped_existing,
+        "errors": errors,
+    }
+
+
+def update_quote_recipient_decision(
+    *,
+    work_order_id: int,
+    contractor_user_id: int,
+    action: str,
+    note: str = "",
+) -> QuoteRecipient | None:
+    recipient = QuoteRecipient.query.filter_by(
+        work_order_id=work_order_id,
+        contractor_id=contractor_user_id,
+        visible_to_contractor=True,
+    ).first()
+    if not recipient:
+        return None
+
+    action_key = (action or "").strip().lower()
+    if action_key == "decline":
+        recipient.status = "Responded"
+        recipient.response_status = "Declined"
+        recipient.responded_at = datetime.utcnow()
+        recipient.decision_feedback = note or recipient.decision_feedback
+        event_type = "quote_declined"
+        event_title = "Contractor declined quotation request"
+    elif action_key == "pricing":
+        recipient.status = "Pricing"
+        recipient.response_status = "Pricing"
+        recipient.contractor_viewed = True
+        recipient.contractor_viewed_at = recipient.contractor_viewed_at or datetime.utcnow()
+        recipient.responded_at = datetime.utcnow()
+        recipient.decision_feedback = note or recipient.decision_feedback
+        event_type = "quote_pricing"
+        event_title = "Contractor reviewing quotation request"
+    else:
+        return None
+
+    work_order = recipient.work_order
+    if work_order:
+        if action_key == "pricing":
+            work_order.quote_status = "Pricing"
+        record_work_order_lifecycle_event(
+            work_order=work_order,
+            event_type=event_type,
+            title=event_title,
+            source_module="Contractor Logix",
+            actor_user_id=contractor_user_id,
+            actor_label=_actor_label(contractor_user_id, "Contractor"),
+            note=note or event_title,
+            status_snapshot=work_order.status,
+            visibility_scope="Admin,PM,Contractor,GAR",
+            event_metadata={
+                "quote_recipient_id": recipient.id,
+                "response_status": recipient.response_status,
+            },
+        )
+    db.session.commit()
+    return recipient
+
+
+def submit_quote_response(
+    *,
+    work_order_id: int,
+    contractor_user_id: int,
+    quote_file_path: str,
+    additional_files: list[str] | None = None,
+    parsed_total=None,
+    parsed_summary: str = "",
+    decision_note: str = "",
+) -> QuoteResponse | None:
+    recipient = QuoteRecipient.query.filter_by(
+        work_order_id=work_order_id,
+        contractor_id=contractor_user_id,
+        visible_to_contractor=True,
+        archived_by_admin=False,
+    ).first()
+    if not recipient or not quote_file_path:
+        return None
+
+    now = datetime.utcnow()
+    response = QuoteResponse.query.filter_by(
+        work_order_id=work_order_id,
+        contractor_id=contractor_user_id,
+    ).first()
+    if not response:
+        response = QuoteResponse(
+            work_order_id=work_order_id,
+            contractor_id=contractor_user_id,
+            submitted_by_id=contractor_user_id,
+            quote_file_path=quote_file_path,
+        )
+        db.session.add(response)
+
+    response.submitted_by_id = contractor_user_id
+    response.submitted_at = now
+    response.status = "Submitted"
+    response.quote_file_path = quote_file_path
+    response.additional_files = {"attachments": additional_files or []}
+    response.parsed_total = parsed_total
+    response.parsed_summary = parsed_summary
+    response.decision_note = decision_note
+    response.visible_to_admin = True
+    response.visible_to_creator = True
+    response.visibility_scope = "AssignedOnly"
+
+    recipient.status = "Responded"
+    recipient.response_status = "Submitted"
+    recipient.has_submitted_response = True
+    recipient.responded_at = now
+    recipient.decision_feedback = decision_note or recipient.decision_feedback
+
+    work_order = recipient.work_order
+    if work_order:
+        work_order.quote_status = "Submitted"
+        work_order.status = "Quote Submitted"
+        record_work_order_lifecycle_event(
+            work_order=work_order,
+            event_type="quote_submitted",
+            title="Contractor submitted quotation",
+            source_module="Contractor Logix",
+            actor_user_id=contractor_user_id,
+            actor_label=_actor_label(contractor_user_id, "Contractor"),
+            note=parsed_summary or decision_note or "Quotation submitted for management review.",
+            status_snapshot=work_order.status,
+            visibility_scope="Admin,PM,Contractor,Director,GAR" if recipient.visible_to_directors else "Admin,PM,Contractor,GAR",
+            event_metadata={
+                "quote_recipient_id": recipient.id,
+                "quote_file_path": quote_file_path,
+                "additional_file_count": len(additional_files or []),
+                "parsed_total": str(parsed_total) if parsed_total is not None else None,
+                "visible_to_directors": recipient.visible_to_directors,
+            },
+        )
+        _notify_work_managers(
+            work_order=work_order,
+            notification_type="works_quote_submitted",
+            message=f"Quotation submitted for {work_order.display_reference}.",
+            suggested_action="Review the submitted quotation and decide the next action.",
+            priority_level="Normal",
+            extra_data={
+                "quote_response": True,
+                "quote_recipient_id": recipient.id,
+                "quote_file_path": quote_file_path,
+            },
+        )
+
+    db.session.commit()
+    return response
+
+
+def select_quote_response_for_work_order(
+    *,
+    work_order_id: int,
+    quote_response_id: int,
+    company_id: int,
+    selected_by_id: int | None = None,
+    decision_note: str = "",
+    allowed_client_ids: tuple[int, ...] | None = None,
+    access_context: str = "direct",
+) -> QuoteResponse | None:
+    query = WorkOrder.query.filter(
+        WorkOrder.id == work_order_id,
+        _work_order_company_filter(company_id),
+    )
+    if allowed_client_ids is not None:
+        query = query.filter(WorkOrder.client_id.in_(allowed_client_ids))
+
+    work_order = query.first()
+    quote_response = QuoteResponse.query.filter_by(
+        id=quote_response_id,
+        work_order_id=work_order_id,
+    ).first()
+    if not work_order or not quote_response:
+        return None
+
+    contractor_user = User.query.get(quote_response.contractor_id)
+    contractor = getattr(contractor_user, "contractor", None)
+    if not contractor or not getattr(contractor, "id", None) or not contractor.is_active:
+        return None
+
+    now = datetime.utcnow()
+    connection_payload = _organisation_connection_payload(company_id, contractor)
+
+    for response in work_order.quote_responses:
+        if response.id == quote_response.id:
+            response.status = "Approved"
+            response.is_selected = True
+            response.decision_note = decision_note or response.decision_note
+        else:
+            response.status = "Not Selected"
+            response.is_selected = False
+            if not response.decision_note:
+                response.decision_note = "Another contractor quotation was selected."
+
+    for recipient in work_order.quote_recipients:
+        recipient.status = "Closed"
+        if recipient.contractor_id == quote_response.contractor_id:
+            recipient.response_status = "Approved"
+            recipient.decision_feedback = decision_note or recipient.decision_feedback
+        elif recipient.has_submitted_response:
+            recipient.response_status = "Not Selected"
+        elif recipient.response_status not in {"Declined", "Withdrawn"}:
+            recipient.response_status = "No Response"
+
+    work_order.contractor_id = contractor.id
+    work_order.organisation_connection_id = connection_payload.get("organisation_connection_id")
+    if not work_order.business_type and contractor.business_type:
+        work_order.business_type = contractor.business_type
+    work_order.status = "Assigned"
+    work_order.quote_status = "Approved"
+    work_order.quote_approved_by_id = selected_by_id
+    work_order.quote_approved_at = now
+    work_order.converted_to_work_order = True
+
+    record_work_order_lifecycle_event(
+        work_order=work_order,
+        event_type="quote_selected",
+        title="Quotation selected and contractor assigned",
+        source_module="Works Logix",
+        actor_user_id=selected_by_id,
+        actor_label=_actor_label(selected_by_id, "Works Logix"),
+        note=decision_note or f"Selected quotation from {contractor.company_name}.",
+        status_snapshot=work_order.status,
+        contractor_id=contractor.id,
+        visibility_scope="Admin,PM,Contractor,Director,GAR",
+        event_metadata={
+            "quote_response_id": quote_response.id,
+            "contractor_user_id": quote_response.contractor_id,
+            "contractor_id": contractor.id,
+            "contractor_name": contractor.company_name,
+            "quote_total": str(quote_response.parsed_total) if quote_response.parsed_total is not None else None,
+            "access_context": access_context,
+            **connection_payload,
+        },
+    )
+
+    _notify_contractor_users(
+        work_order=work_order,
+        notification_type="works_quote_selected",
+        message=f"Your quotation was selected for {work_order.display_reference}.",
+        suggested_action="Review the assigned work order and accept or schedule the job.",
+        priority_level="Normal",
+    )
+
+    for response in work_order.quote_responses:
+        if response.id == quote_response.id:
+            continue
+        _queue_notification(
+            recipient_id=response.contractor_id,
+            message=f"Another quotation was selected for {work_order.display_reference}.",
+            notification_type="works_quote_not_selected",
+            link_url=_contractor_quote_request_link(work_order),
+            priority_level="Normal",
+            suggested_action="Review the quotation outcome in Contractor Logix.",
+            extracted_data={
+                "work_order_id": work_order.id,
+                "quote_response_id": response.id,
+                "selected_quote_response_id": quote_response.id,
+            },
+        )
+
+    db.session.commit()
+    return quote_response
 
 
 def get_contractor_work_orders(
@@ -1679,6 +2170,17 @@ def get_contractor_work_orders(
         )
         by_id = {item.id: item for item in work_orders}
         by_id.update({item.id: item for item in user_orders})
+        quote_order_ids = [
+            invite.work_order_id
+            for invite in QuoteRecipient.query.filter_by(
+                contractor_id=user_id,
+                visible_to_contractor=True,
+                archived_by_admin=False,
+            ).all()
+        ]
+        if quote_order_ids:
+            quote_orders = WorkOrder.query.filter(WorkOrder.id.in_(quote_order_ids)).all()
+            by_id.update({item.id: item for item in quote_orders})
         work_orders = sorted(by_id.values(), key=lambda item: item.created_at or datetime.min, reverse=True)
 
     if filters.search:
@@ -1705,28 +2207,81 @@ def get_contractor_work_orders(
             if _normalise_status(item.status) == status_filter
         ]
 
-    assigned_statuses = {"assigned", "open", "quote requested", "quote submitted"}
+    assigned_statuses = {"assigned", "open"}
+    quote_request_statuses = {"quote requested", "quote submitted"}
     active_statuses = {"accepted", "in progress"}
+
+    def _is_assigned_to_current_contractor(item: WorkOrder) -> bool:
+        if item.contractor_id == contractor_id:
+            return True
+        if user_id and (
+            item.accepted_contractor_id == user_id
+            or item.assigned_user_id == user_id
+        ):
+            return True
+        return False
+
+    def _has_live_quote_invite(item: WorkOrder) -> bool:
+        if _normalise_status(item.status) not in quote_request_statuses:
+            return False
+        return any(
+            recipient.contractor_id == user_id
+            and recipient.visible_to_contractor
+            and not recipient.archived_by_admin
+            and recipient.response_status not in {"Not Selected", "Approved", "No Response"}
+            for recipient in getattr(item, "quote_recipients", [])
+        )
 
     assigned_work_orders = [
         item for item in work_orders
-        if _normalise_status(item.status) in assigned_statuses
+        if _is_assigned_to_current_contractor(item)
+        and _normalise_status(item.status) in assigned_statuses
+    ]
+    quote_request_work_orders = [
+        item for item in work_orders
+        if _has_live_quote_invite(item)
     ]
     active_work_orders = [
         item for item in work_orders
-        if _normalise_status(item.status) in active_statuses
+        if _is_assigned_to_current_contractor(item)
+        and _normalise_status(item.status) in active_statuses
+    ]
+    closed_candidates = [
+        item for item in work_orders
+        if _is_assigned_to_current_contractor(item)
+        and is_closed_status(item.status)
+    ]
+    paid_statuses = {"paid", "settled", "payment complete", "payment completed"}
+
+    def _contractor_payment_complete(item: WorkOrder) -> bool:
+        docket = getattr(item, "job_docket", None)
+        invoice = getattr(item, "invoice", None)
+        docket_payment_status = _normalise_status(getattr(docket, "payment_status", None))
+        docket_invoice_status = _normalise_status(getattr(docket, "invoice_status", None))
+        invoice_status = _normalise_status(getattr(invoice, "status", None))
+        return (
+            docket_payment_status in paid_statuses
+            or docket_invoice_status in paid_statuses
+            or invoice_status in paid_statuses
+        )
+
+    to_be_invoiced_work_orders = [
+        item for item in closed_candidates
+        if not _contractor_payment_complete(item)
     ]
     closed_work_orders = [
-        item for item in work_orders
-        if is_closed_status(item.status)
+        item for item in closed_candidates
+        if _contractor_payment_complete(item)
     ]
     submitted_work_orders = [
         item for item in work_orders
-        if _normalise_status(item.status) == "completion submitted"
+        if _is_assigned_to_current_contractor(item)
+        and _normalise_status(item.status) == "completion submitted"
     ]
     returned_work_orders = [
         item for item in work_orders
-        if _normalise_status(item.status) == "returned"
+        if _is_assigned_to_current_contractor(item)
+        and _normalise_status(item.status) == "returned"
     ]
     contractor_next_actions = [
         {
@@ -1746,12 +2301,28 @@ def get_contractor_work_orders(
             "priority_rank": 4,
         },
         {
+            "label": "Quotation Requests",
+            "count": len(quote_request_work_orders),
+            "anchor": "quote-requests",
+            "tone": "warning",
+            "action": "Review quote invitations and decide whether to price.",
+            "priority_rank": 4,
+        },
+        {
             "label": "Active Work",
             "count": len(active_work_orders),
             "anchor": "active-work",
             "tone": "info",
             "action": "Update progress or submit completion evidence.",
             "priority_rank": 3,
+        },
+        {
+            "label": "To Be Invoiced",
+            "count": len(to_be_invoiced_work_orders),
+            "anchor": "to-be-invoiced",
+            "tone": "success",
+            "action": "Prepare invoice details for completed work.",
+            "priority_rank": 2,
         },
     ]
     contractor_next_actions = [
@@ -1763,16 +2334,20 @@ def get_contractor_work_orders(
     return {
         "work_orders": work_orders,
         "assigned_work_orders": assigned_work_orders,
+        "quote_request_work_orders": quote_request_work_orders,
         "active_work_orders": active_work_orders,
         "submitted_work_orders": submitted_work_orders,
+        "to_be_invoiced_work_orders": to_be_invoiced_work_orders,
         "closed_work_orders": closed_work_orders,
         "returned_work_orders": returned_work_orders,
         "next_actions": contractor_next_actions[:3],
         "status_options": status_options,
         "stats": {
             "assigned": len(assigned_work_orders),
+            "quote_requests": len(quote_request_work_orders),
             "active": len(active_work_orders),
             "submitted": len(submitted_work_orders),
+            "to_be_invoiced": len(to_be_invoiced_work_orders),
             "closed": len(closed_work_orders),
             "returned": len(returned_work_orders),
             "total": len(work_orders),
@@ -1929,7 +2504,7 @@ def add_work_order_progress_update(
         _notify_work_managers(
             work_order=work_order,
             notification_type="works_completion_review",
-            message=f"Contractor completion submitted for WO-{work_order.id}.",
+            message=f"Contractor completion submitted for {work_order.display_reference}.",
             suggested_action="Review contractor evidence, member feedback and approve or return the work.",
             priority_level="High",
         )
@@ -2023,7 +2598,7 @@ def contractor_update_work_order(
         _notify_work_managers(
             work_order=work_order,
             notification_type="works_contractor_rejected",
-            message=f"Contractor rejected WO-{work_order.id}.",
+            message=f"Contractor rejected {work_order.display_reference}.",
             suggested_action="Review the contractor reason and reroute the work order if required.",
             priority_level="High",
             extra_data={"contractor_rejection_reason": completion_notes or None},
@@ -2103,7 +2678,7 @@ def contractor_update_work_order(
         _notify_work_managers(
             work_order=work_order,
             notification_type="works_completion_review",
-            message=f"Contractor completion submitted for WO-{work_order.id}.",
+            message=f"Contractor completion submitted for {work_order.display_reference}.",
             suggested_action="Review contractor evidence, member feedback and approve or return the work.",
             priority_level="High",
         )
@@ -2171,7 +2746,7 @@ def submit_member_work_order_feedback(
     _notify_work_managers(
         work_order=work_order,
         notification_type="works_member_feedback",
-        message=f"Member/resident feedback was submitted for WO-{work_order.id}.",
+        message=f"Member/resident feedback was submitted for {work_order.display_reference}.",
         suggested_action="Review the feedback before closing or returning the work order.",
         priority_level="Normal",
     )
@@ -2230,7 +2805,7 @@ def review_contractor_completion(
         _notify_contractor_users(
             work_order=work_order,
             notification_type="works_returned",
-            message=f"WO-{work_order.id} has been returned by Works Logix for further action.",
+            message=f"{work_order.display_reference} has been returned by Works Logix for further action.",
             suggested_action="Review the return notes and resubmit completion when resolved.",
             priority_level="High",
         )
@@ -2238,7 +2813,7 @@ def review_contractor_completion(
             _notify_work_managers(
                 work_order=work_order,
                 notification_type="works_quality_review",
-                message=f"WO-{work_order.id} has been returned {return_count} times and needs quality review.",
+                message=f"{work_order.display_reference} has been returned {return_count} times and needs quality review.",
                 suggested_action="Open the repeated returns queue and review the evidence pack.",
                 priority_level="High",
                 extra_data={

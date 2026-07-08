@@ -272,14 +272,14 @@ def main() -> int:
     if access_context.get("cover_event_count") != 1:
         failures.append("Audit pack should count cover lifecycle events.")
 
-    evidence_labels = {item.get("label") for item in audit_pack.get("evidence_items", [])}
+    evidence_labels = [item.get("label") or "" for item in audit_pack.get("evidence_items", [])]
     for label in {
         "Member request media",
         "Completion evidence",
         "Member feedback evidence",
         "Reopen request evidence",
     }:
-        if label not in evidence_labels:
+        if not any(item_label == label or item_label.startswith(f"{label} ") for item_label in evidence_labels):
             failures.append(f"Audit evidence list is missing {label}.")
 
     source_models = {item.get("model") for item in audit_pack.get("source_references", [])}

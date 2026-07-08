@@ -81,6 +81,253 @@ body.sidebar-collapsed .sidenav {
   }
 }
 
+.document-template-tabs {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 16px;
+}
+
+.document-template-tab {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d6dfec;
+  border-radius: 999px;
+  color: #40516d;
+  display: inline-flex;
+  font-size: 0.86rem;
+  font-weight: 700;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 14px;
+}
+
+.document-template-tab span {
+  align-items: center;
+  background: #eef3fa;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.75rem;
+  height: 22px;
+  justify-content: center;
+  min-width: 22px;
+  padding: 0 7px;
+}
+
+.document-template-tab.active {
+  background: #111c34;
+  border-color: #111c34;
+  color: #fff;
+}
+
+.document-template-tab.active span {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.document-template-owner-panel {
+  display: none;
+}
+
+.document-template-owner-panel.active {
+  display: block;
+}
+
+.document-template-table td:first-child a {
+  display: block;
+  font-weight: 800;
+}
+
+.document-template-table td:first-child span {
+  color: #5c6a82;
+  display: block;
+  font-size: 0.82rem;
+  margin-top: 3px;
+}
+
+.document-template-rule-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.document-template-rule-grid div {
+  background: #f8fafd;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.document-template-rule-grid strong,
+.document-template-rule-grid span {
+  display: block;
+}
+
+.document-template-rule-grid span {
+  color: #52627a;
+  font-size: 0.88rem;
+  margin-top: 6px;
+}
+
+.company-document-setup-panel {
+  margin-top: 18px;
+}
+
+.company-document-setup-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.company-document-setup-tile {
+  background: #f8fafd;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  color: #10213f;
+  display: flex;
+  flex-direction: column;
+  min-height: 142px;
+  padding: 14px;
+  text-decoration: none;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.company-document-setup-tile:hover {
+  border-color: #2554ff;
+  box-shadow: 0 10px 24px rgba(16, 33, 63, 0.08);
+  color: #10213f;
+  transform: translateY(-1px);
+}
+
+.company-document-setup-tile span {
+  color: #5c6a82;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.company-document-setup-tile strong {
+  font-size: 0.98rem;
+  margin-top: 8px;
+}
+
+.company-document-setup-tile small {
+  color: #52627a;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  margin-top: 8px;
+}
+
+.company-document-setup-tile em {
+  align-self: flex-start;
+  background: #eef3fa;
+  border-radius: 999px;
+  color: #40516d;
+  font-size: 0.74rem;
+  font-style: normal;
+  font-weight: 800;
+  margin-top: auto;
+  padding: 4px 9px;
+}
+
+.company-document-setup-empty {
+  background: #f8fafd;
+  border: 1px dashed #cbd6e6;
+  border-radius: 8px;
+  color: #52627a;
+  font-size: 0.9rem;
+  font-weight: 700;
+  grid-column: 1 / -1;
+  padding: 18px;
+}
+
+.document-template-form-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.document-template-form-grid label,
+.document-template-wide-field,
+.document-template-content-grid label {
+  display: block;
+}
+
+.document-template-form-grid span,
+.document-template-wide-field span,
+.document-template-content-grid span {
+  color: #43536d;
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.document-template-wide-field {
+  margin-top: 14px;
+}
+
+.document-template-content-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+}
+
+.document-template-content-grid .tox-tinymce,
+.document-template-wide-field .tox-tinymce {
+  border-color: #d8dee8;
+  border-radius: 8px;
+}
+
+.document-template-content-grid .tox .tox-toolbar,
+.document-template-content-grid .tox .tox-toolbar__overflow,
+.document-template-content-grid .tox .tox-toolbar__primary {
+  background: #f8fafc;
+}
+
+.document-template-side-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.document-template-switch-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 14px;
+}
+
+.document-template-switch-row label {
+  align-items: center;
+  color: #263755;
+  display: inline-flex;
+  font-weight: 700;
+  gap: 8px;
+}
+
+@media (max-width: 1100px) {
+  .document-template-form-grid,
+  .document-template-rule-grid,
+  .company-document-setup-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .document-template-content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .document-template-form-grid,
+  .document-template-rule-grid,
+  .company-document-setup-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Legacy base.html Super Admin sidebar: keep labels readable when the drawer is
    open, and from tablet width upward. This layout is used by Units pages. */
 body.superadmin-darkblue.sidebar-open #sidebar,
@@ -2088,6 +2335,108 @@ body.sidebar-collapsed .main-content {
   line-height: 1;
 }
 
+.contractor-work-summary-grid {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.contractor-work-queue-tile {
+  display: block;
+  color: #17233c;
+  text-decoration: none;
+}
+
+.contractor-work-queue-tile:hover {
+  border-color: #2152ff;
+  color: #17233c;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.contractor-work-queue-tile.is-active {
+  border-color: #17233c;
+  box-shadow: inset 0 0 0 1px #17233c, 0 10px 24px rgba(23, 35, 60, 0.08);
+}
+
+.contractor-work-filter-form {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.4fr) minmax(180px, 0.7fr) auto;
+  align-items: end;
+  gap: 0.65rem;
+  padding: 0 1rem 1rem;
+}
+
+.contractor-work-filter-form label {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #43536a;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.contractor-work-filter-form .form-control,
+.contractor-work-filter-form .form-select {
+  min-height: 42px;
+  border-color: #d8dee8;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  color: #17233c;
+  font-size: 0.9rem;
+}
+
+.contractor-work-filter-form .contract-filter-actions {
+  justify-content: flex-start;
+}
+
+.contractor-docket-reference {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  min-height: 24px;
+  margin-top: 0.35rem;
+  border: 1px solid #d8dee8;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #17233c;
+  font-size: 0.74rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0.35rem 0.6rem;
+  text-decoration: none;
+}
+
+.contractor-docket-reference:hover {
+  border-color: #2152ff;
+  color: #0d6efd;
+  text-decoration: none;
+}
+
+.contractor-docket-reference.is-muted {
+  color: #8b98aa;
+}
+
+.contractor-invoice-reference {
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.contractor-invoice-reference .contractor-docket-reference {
+  margin-top: 0;
+}
+
+.contractor-invoice-reference a:not(.contractor-docket-reference) {
+  color: #526174;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.contractor-invoice-reference a:not(.contractor-docket-reference):hover {
+  color: #0d6efd;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .members-works-actions {
   align-items: center;
   display: flex;
@@ -2410,6 +2759,107 @@ body.sidebar-collapsed .main-content {
   padding: 0;
 }
 
+.works-row-action-details {
+  margin-top: 0.35rem;
+}
+
+.works-row-action-details > summary {
+  cursor: pointer;
+  color: #0d6efd;
+  font-size: 0.78rem;
+  font-weight: 800;
+  list-style: none;
+}
+
+.works-row-action-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.works-quote-request-form {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+  min-width: 14rem;
+  padding: 0.65rem;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.works-quote-request-form label {
+  margin: 0;
+  color: #53647c;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.works-quote-request-form select,
+.works-quote-request-form input,
+.works-quote-request-form textarea {
+  width: 100%;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #fff;
+  color: #17233c;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.45rem;
+}
+
+.works-quote-request-form select {
+  min-height: 5.2rem;
+}
+
+.works-quote-request-form button {
+  justify-self: start;
+  border: 0;
+  border-radius: 8px;
+  background: #2454ff;
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 0.45rem 0.7rem;
+  box-shadow: 0 8px 18px rgba(36, 84, 255, 0.16);
+}
+
+.works-select-quote-form {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.works-select-quote-form input {
+  width: 100%;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #17233c;
+  font-size: 0.78rem;
+  padding: 0.42rem 0.55rem;
+}
+
+.works-select-quote-form button {
+  width: fit-content;
+  border: 0;
+  border-radius: 8px;
+  background: #10213f;
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 0.42rem 0.75rem;
+}
+
+.works-inline-check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-transform: none !important;
+}
+
+.works-inline-check input {
+  width: auto;
+}
+
 .contract-form-grid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -2464,8 +2914,97 @@ body.sidebar-collapsed .main-content {
 }
 
 /* Works Logix command centre */
+.works-command-overview {
+  margin-top: 1rem;
+}
+
 .works-alert-grid {
   grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 0;
+}
+
+.works-alert-grid .contract-alert-card {
+  min-height: 70px;
+  padding: 0.65rem 0.75rem;
+}
+
+.works-alert-grid .contract-alert-card strong {
+  font-size: 1.35rem;
+}
+
+.works-filter-disclosure {
+  margin-top: 0.65rem;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(23, 35, 60, 0.04);
+}
+
+.works-filter-disclosure summary {
+  cursor: pointer;
+  list-style: none;
+  color: #0d6efd;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 0.62rem 0.75rem;
+}
+
+.works-filter-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.works-filter-disclosure summary::after {
+  content: "+";
+  display: inline-block;
+  margin-left: 0.4rem;
+}
+
+.works-filter-disclosure[open] summary {
+  border-bottom: 1px solid #eef1f5;
+}
+
+.works-filter-disclosure[open] summary::after {
+  content: "-";
+}
+
+.works-quick-filter {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.3fr) minmax(190px, 1fr) minmax(160px, 0.8fr) auto;
+  align-items: end;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.works-quick-filter label {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #43536a;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.works-quick-filter .form-control,
+.works-quick-filter .form-select {
+  min-height: 36px;
+  border-color: #d8dee8;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  color: #17233c;
+  font-size: 0.84rem;
+}
+
+.works-quick-filter .contract-filter-actions {
+  justify-content: stretch;
+}
+
+.works-quick-filter .contract-filter-actions .btn {
+  flex: 1 1 auto;
+  min-height: 34px;
+}
+
+.works-compact-panel .contract-manager-heading {
+  padding-bottom: 0.55rem;
 }
 
 .works-filter-bar {
@@ -2526,6 +3065,10 @@ body.sidebar-collapsed .main-content {
   gap: 0.65rem;
 }
 
+.works-attention-grid-compact {
+  padding: 0 1rem 0.85rem;
+}
+
 .works-attention-card {
   display: flex;
   flex-direction: column;
@@ -2538,6 +3081,62 @@ body.sidebar-collapsed .main-content {
   color: #17233c;
   padding: 0.75rem 0.8rem;
   text-decoration: none;
+}
+
+.works-attention-grid-compact .works-attention-card {
+  min-height: 82px;
+  padding: 0.62rem 0.72rem;
+}
+
+.works-attention-grid-compact .works-attention-card strong {
+  font-size: 1.28rem;
+}
+
+.works-attention-grid-compact .works-attention-card small {
+  display: none;
+}
+
+.works-inline-disclosure {
+  border-top: 1px solid #eef1f5;
+  padding: 0.72rem 1rem 0.9rem;
+}
+
+.works-inline-disclosure summary,
+.works-collapsible-panel summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.works-inline-disclosure summary::-webkit-details-marker,
+.works-collapsible-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.works-inline-disclosure summary {
+  color: #0d6efd;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.works-collapsible-panel summary.contract-manager-heading {
+  margin: 0;
+}
+
+.works-collapsible-panel summary.contract-manager-heading::after {
+  content: "Open";
+  margin-left: auto;
+  border: 1px solid #d8dee8;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #43536a;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.25rem 0.55rem;
+  text-transform: uppercase;
+}
+
+.works-collapsible-panel[open] summary.contract-manager-heading::after {
+  content: "Hide";
 }
 
 .works-attention-card:hover {
@@ -3866,6 +4465,316 @@ body.sidebar-collapsed .main-content {
   margin-bottom: 1rem;
 }
 
+.client-key-site-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.client-key-site-tabs {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.key-info-proposal-modal .modal-dialog {
+  max-height: calc(100vh - 2rem);
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.key-info-proposal-modal .modal-content {
+  max-height: calc(100vh - 2rem);
+  overflow: hidden;
+}
+
+.key-info-proposal-modal .modal-header,
+.key-info-proposal-modal .modal-footer {
+  flex: 0 0 auto;
+}
+
+.key-info-proposal-modal .modal-body {
+  max-height: calc(100vh - 11rem);
+  overflow-y: auto;
+  padding-right: 1.15rem;
+}
+
+.key-info-proposal-modal textarea.form-control {
+  min-height: 190px;
+}
+
+.key-info-proposal-modal .tox-tinymce {
+  max-height: 380px;
+}
+
+.client-key-site-tablist {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.client-key-site-tabs .client-key-site-tablist {
+  align-items: center;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #f5f7fa;
+  flex-wrap: nowrap;
+  gap: 0 !important;
+  padding: 0.55rem 1rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.client-key-site-tab {
+  align-items: center;
+  border: 1px solid #d8dee8 !important;
+  border-radius: 999px !important;
+  background: #ffffff !important;
+  color: #526174 !important;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 34px;
+  max-width: 152px;
+  min-width: 42px;
+  margin-left: -0.95rem !important;
+  padding: 0.4rem 0.95rem;
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, max-width 0.15s ease;
+}
+
+.client-key-site-tab:first-child {
+  margin-left: 0;
+}
+
+.client-key-site-tab span {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.client-key-site-tab:hover,
+.client-key-site-tab.active,
+.client-key-site-tab.is-active {
+  border-color: #17233c !important;
+  background: #17233c !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 14px rgba(23, 35, 60, 0.14);
+  max-width: 340px;
+  z-index: 5;
+}
+
+.client-key-site-tab:hover span,
+.client-key-site-tab.active span,
+.client-key-site-tab.is-active span {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.client-key-site-empty {
+  border: 1px dashed #d8dee8;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #526174;
+  font-size: 0.86rem;
+  font-weight: 700;
+  padding: 0.9rem 1rem;
+}
+
+.client-key-site-panel {
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.client-key-site-panel-heading {
+  align-items: center;
+  border-bottom: 1px solid #eef1f5;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 0.8rem 0.95rem;
+}
+
+.client-key-site-panel-heading h6 {
+  color: #17233c;
+  font-size: 0.95rem;
+  font-weight: 900;
+  margin: 0;
+}
+
+.client-key-site-panel-heading span:not(.client-key-site-status) {
+  color: #637083;
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 0.16rem;
+}
+
+.client-key-site-card {
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.client-key-site-card summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  list-style: none;
+  padding: 0.78rem 0.95rem;
+}
+
+.client-key-site-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.client-key-site-card summary strong,
+.client-key-site-card summary small {
+  display: block;
+}
+
+.client-key-site-card summary strong {
+  color: #17233c;
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+.client-key-site-card summary small {
+  color: #637083;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 0.16rem;
+}
+
+.client-key-site-status {
+  border-radius: 999px;
+  background: #e7f7ee;
+  color: #07823f;
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 0.25rem 0.55rem;
+  text-transform: uppercase;
+}
+
+.client-key-site-content {
+  border-top: 1px solid #eef1f5;
+  color: #17233c;
+  padding: 0.85rem 0.95rem 0.95rem;
+}
+
+.client-key-site-content p {
+  margin: 0 0 0.42rem;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.client-key-site-content ul,
+.client-key-site-content ol {
+  margin: 0 0 0.75rem 1.15rem;
+  padding-left: 1rem;
+}
+
+.client-key-site-content li {
+  margin-bottom: 0.28rem;
+}
+
+.client-key-site-content h2,
+.client-key-site-content h3,
+.client-key-site-content h4 {
+  color: #17233c;
+  font-weight: 900;
+  margin: 0.85rem 0 0.45rem;
+}
+
+.client-key-site-content h2 {
+  font-size: 1.05rem;
+}
+
+.client-key-site-content h3 {
+  font-size: 0.98rem;
+}
+
+.client-key-site-content h4 {
+  font-size: 0.92rem;
+}
+
+.client-key-site-content a {
+  color: #0d6efd;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.client-key-site-content a:hover {
+  text-decoration: underline;
+}
+
+.client-key-site-content table {
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  width: 100%;
+}
+
+.client-key-site-content th,
+.client-key-site-content td {
+  border: 1px solid #d8dee8;
+  padding: 0.45rem 0.55rem;
+  vertical-align: top;
+}
+
+.client-key-site-content th {
+  background: #f5f7fa;
+  font-weight: 900;
+}
+
+.client-key-site-content img,
+.client-key-site-content video {
+  border-radius: 8px;
+  display: block;
+  height: auto;
+  margin: 0.65rem 0;
+  max-width: 100%;
+}
+
+.client-key-site-rich-content p {
+  margin-bottom: 0.7rem;
+}
+
+.client-key-site-rich-content span[style] {
+  font-weight: 800;
+}
+
+.client-key-site-content p:last-child {
+  margin-bottom: 0;
+}
+
+.client-key-site-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.client-key-site-tags span {
+  border-radius: 999px;
+  background: #eef2f7;
+  color: #526174;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.22rem 0.5rem;
+}
+
 .unit-form-subheading {
   display: flex;
   align-items: center;
@@ -4360,6 +5269,14 @@ body.sidebar-collapsed .main-content {
   min-width: 128px;
 }
 
+.contractor-pack-reject-toggle {
+  border: 0;
+  background: transparent;
+  color: #dc3545;
+  cursor: pointer;
+  padding: 0.35rem 0;
+}
+
 .contractor-pack-reject-panel {
   width: min(520px, 100%);
 }
@@ -4386,13 +5303,103 @@ body.sidebar-collapsed .main-content {
   width: auto;
 }
 
+.contractor-quote-submit-panel {
+  border-top: 1px solid #eef1f5;
+  margin: 0 1rem;
+  padding: 0.8rem 0 0.9rem;
+}
+
+.contractor-quote-outcome-panel {
+  border-top: 1px solid #eef1f5;
+  margin: 0 1rem;
+  padding: 0.8rem 0 0.9rem;
+}
+
+.contractor-approved-quote-panel {
+  border-top: 1px solid #eef1f5;
+  margin: 0 1rem;
+  padding: 0.8rem 0 0.9rem;
+}
+
+.contractor-invoice-readiness-panel {
+  border-left: 4px solid #20c997;
+}
+
+.contractor-invoice-readiness-actions {
+  align-items: center;
+  border-top: 1px solid #eef1f5;
+  display: flex;
+  justify-content: flex-end;
+  margin: 0.8rem 1rem 0;
+  padding-top: 0.8rem;
+}
+
+.contractor-invoice-readiness-actions .contract-manager-empty {
+  margin: 0;
+  text-align: right;
+}
+
+.contractor-queue-action-stack {
+  align-items: flex-start;
+}
+
+.contractor-queue-action-stack form {
+  margin: 0.2rem 0 0;
+}
+
+.contractor-quote-form {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.7fr) minmax(220px, 1fr) minmax(220px, 1fr);
+  gap: 0.7rem;
+  margin-top: 0.65rem;
+}
+
+.contractor-quote-form input,
+.contractor-quote-form textarea {
+  width: 100%;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #17233c;
+  font-size: 0.88rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.contractor-quote-form textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.contractor-quote-form-wide {
+  grid-column: span 3;
+}
+
+.contractor-quote-submit-actions {
+  align-items: center;
+  display: flex;
+  justify-content: flex-end;
+  grid-column: span 3;
+}
+
+@media (max-width: 900px) {
+  .contractor-quote-form,
+  .contractor-quote-form-wide,
+  .contractor-quote-submit-actions {
+    grid-column: 1;
+  }
+
+  .contractor-quote-form {
+    grid-template-columns: 1fr;
+  }
+}
+
 .contractor-dashboard-ops {
   margin-top: 0.9rem;
 }
 
 .contractor-dashboard-ops-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
   gap: 0.65rem;
   padding: 0 1rem 1rem;
 }
@@ -4642,6 +5649,78 @@ body.sidebar-collapsed .main-content {
   justify-self: start;
 }
 
+.contractor-private-log-panel {
+  border-color: #dfe7f2;
+}
+
+.contractor-private-work-log-form {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.2rem 1rem 1rem;
+}
+
+.contractor-private-log-fields {
+  display: grid;
+  grid-template-columns: 1fr 0.65fr 1.7fr 0.65fr 0.65fr 0.8fr;
+  gap: 0.65rem;
+}
+
+.contractor-private-log-fields label,
+.contractor-private-log-notes-row label {
+  display: grid;
+  gap: 0.28rem;
+  color: #43536a;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.contractor-private-log-fields label > span,
+.contractor-private-log-notes-row label > span {
+  text-transform: uppercase;
+}
+
+.contractor-private-log-fields input,
+.contractor-private-log-notes-row textarea {
+  width: 100%;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #17233c;
+  font-size: 0.86rem;
+  min-height: 40px;
+  padding: 0.58rem 0.7rem;
+}
+
+.contractor-private-log-notes-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.contractor-private-log-notes-row textarea {
+  min-height: 82px;
+  resize: vertical;
+}
+
+.contractor-private-log-notes-row .contract-manager-button {
+  min-height: 40px;
+  white-space: nowrap;
+}
+
+.contractor-private-log-table td:nth-child(2),
+.contractor-private-log-table td:nth-child(4),
+.contractor-private-log-table td:nth-child(5) {
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .contractor-private-log-fields,
+  .contractor-private-log-notes-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .contractor-standalone-docket-form {
   display: grid;
   gap: 0.85rem;
@@ -4708,6 +5787,145 @@ body.sidebar-collapsed .main-content {
   display: flex;
   justify-content: flex-end;
   gap: 0.55rem;
+}
+
+.contractor-standalone-intake .contractor-standalone-docket-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.contractor-standalone-intake .contract-manager-panel {
+  margin-bottom: 0;
+}
+
+.contractor-standalone-intake .contract-manager-form-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 0 1rem 1rem;
+}
+
+.contractor-standalone-intake .contract-manager-form-grid label {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.contractor-intake-source-grid label:first-child,
+.contractor-intake-source-grid label:nth-child(2),
+.contractor-intake-source-grid label:nth-child(3) {
+  grid-column: span 1;
+}
+
+.contractor-intake-source-grid label:last-child {
+  grid-column: span 2;
+}
+
+.contractor-auto-reference-card {
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #f8fafc;
+  min-height: 66px;
+  padding: 0.58rem 0.7rem;
+}
+
+.contractor-auto-reference-card span {
+  display: block;
+  color: #43536a;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.contractor-auto-reference-card strong {
+  display: block;
+  color: #17233c;
+  font-size: 0.92rem;
+  font-weight: 900;
+  margin-top: 0.12rem;
+}
+
+.contractor-auto-reference-card small {
+  color: #667386;
+  display: block;
+  font-size: 0.74rem;
+  line-height: 1.25;
+  margin-top: 0.1rem;
+}
+
+.contractor-intake-span-2 {
+  grid-column: span 2;
+}
+
+.contractor-intake-half {
+  grid-column: span 2;
+}
+
+.contractor-standalone-intake .contractor-intake-contact-layout {
+  display: grid;
+  gap: 0.72rem;
+  padding: 0 1rem 1rem;
+}
+
+.contractor-standalone-intake .contractor-intake-contact-row,
+.contractor-standalone-intake .contractor-intake-notes-row {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.contractor-standalone-intake .contractor-intake-contact-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.contractor-standalone-intake .contractor-intake-notes-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.contractor-standalone-intake .contractor-intake-contact-layout label {
+  display: grid;
+  gap: 0.28rem;
+  color: #43536a;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.contractor-standalone-intake .contractor-intake-contact-layout input,
+.contractor-standalone-intake .contractor-intake-contact-layout textarea {
+  width: 100%;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #17233c;
+  font-size: 0.86rem;
+  padding: 0.58rem 0.7rem;
+}
+
+.contractor-standalone-intake .contractor-intake-contact-layout textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+.contractor-standalone-intake .contractor-intake-files {
+  max-width: 50%;
+}
+
+.contractor-standalone-intake .contractor-intake-files small {
+  color: #667386;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.contractor-standalone-intake .contractor-intake-files input[type="file"] {
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.contractor-intake-footer-panel .contract-manager-section-heading {
+  align-items: center;
+}
+
+.contractor-intake-footer-panel .contractor-form-actions {
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .works-schedule-cell {
@@ -4821,6 +6039,79 @@ body.sidebar-collapsed .main-content {
   color: #637083;
   font-size: 0.78rem;
   font-weight: 700;
+}
+
+.works-lifecycle--collapsible {
+  margin-bottom: 1rem;
+}
+
+.works-lifecycle-summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  list-style: none;
+  padding: 0.72rem 0.9rem;
+}
+
+.works-lifecycle-summary::-webkit-details-marker {
+  display: none;
+}
+
+.works-lifecycle-summary strong,
+.works-lifecycle-summary small {
+  display: block;
+}
+
+.works-lifecycle-summary strong {
+  color: #17233c;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.works-lifecycle-summary small {
+  color: #637083;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-top: 0.1rem;
+}
+
+.works-lifecycle-summary-meta {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.works-lifecycle-summary-meta > span:first-child {
+  border-radius: 999px;
+  background: #eef2f7;
+  color: #526174;
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 0.25rem 0.55rem;
+}
+
+.works-lifecycle-summary-action {
+  color: #0d6efd;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.works-lifecycle-summary-action::after {
+  content: "+";
+  display: inline-block;
+  margin-left: 0.35rem;
+}
+
+.works-lifecycle--collapsible[open] .works-lifecycle-summary {
+  border-bottom: 1px solid #eef1f5;
+}
+
+.works-lifecycle--collapsible[open] .works-lifecycle-summary-action::after {
+  content: "-";
 }
 
 .works-lifecycle-list {
@@ -5928,6 +7219,7 @@ body.sidebar-collapsed .main-content {
   .dashboard-contract-strip,
   .dashboard-module-grid,
   .contract-alert-grid,
+  .contractor-work-summary-grid,
   .works-attention-grid,
   .works-gar-quality-dashboard-grid,
   .works-next-actions,
@@ -6005,6 +7297,18 @@ body.sidebar-collapsed .main-content {
 
   .works-command-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .works-command-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .works-alert-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .works-quick-filter {
+    grid-template-columns: 1fr;
   }
 
   .contractor-docket-summary-grid,
@@ -6144,6 +7448,10 @@ body.sidebar-collapsed .main-content {
     align-self: auto;
   }
 
+  .works-alert-grid {
+    grid-template-columns: 1fr;
+  }
+
   .unit-actions {
     align-items: flex-start;
     flex-direction: column;
@@ -6182,6 +7490,15 @@ body.sidebar-collapsed .main-content {
 
   .contract-manager-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .contractor-standalone-intake .contractor-intake-contact-row,
+  .contractor-standalone-intake .contractor-intake-notes-row {
+    grid-template-columns: 1fr;
+  }
+
+  .contractor-standalone-intake .contractor-intake-files {
+    max-width: 100%;
   }
 
   .contractor-progress-form {

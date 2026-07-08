@@ -12,6 +12,8 @@ from sqlalchemy.orm import joinedload
 
 from app.models import db
 from app.models.client.client import Client          # concrete model path
+from app.models.client.key_info import ClientKeyInfo
+from app.models.contractor.contractor import Contractor
 from app.models.contracts import ClientContract
 from app.models.core.user import User
 from app.models.finance.outstanding_balance import OutstandingBalance
@@ -23,6 +25,8 @@ from app.models.works.work_order import WorkOrder
 from app.routes.super_admin import super_admin_bp
 from app.decorators import super_admin_required
 from app.services.gar import build_client_context
+from app.services.key_info import can_approve as can_approve_key_info
+from app.services.key_info import can_propose as can_propose_key_info
 from app.services.unit_access_service import (
     bulk_create_unit_access_invites_for_client,
     cancel_unit_access_invite,
@@ -499,7 +503,23 @@ def _client_unit_access_invite_summary(client_id: int):
     return summary
 
 
+def _client_key_site_sections(client_id: int):
+    return (
+        ClientKeyInfo.query
+        .filter(
+            ClientKeyInfo.client_id == client_id,
+            ClientKeyInfo.status == "active",
+        )
+        .order_by(ClientKeyInfo.title.asc())
+        .all()
+    )
+
+
 # 🧭 Manage Clients – list view (now includes `today` for expiry badges)
+def _client_key_site_contractors():
+    return Contractor.query.order_by(Contractor.company_name.asc()).all()
+
+
 @super_admin_bp.route('/clients', methods=['GET'], endpoint='manage_clients')
 @super_admin_required
 @login_required
@@ -582,6 +602,10 @@ def view_client(client_id: int):
         gar_client_context=build_client_context(client.id, getattr(current_user, "id", None)),
         grouped_units=grouped_units_for_client(client.id),
         unit_directory=_client_unit_directory(client.id),
+        key_site_sections=_client_key_site_sections(client.id),
+        key_site_contractors=_client_key_site_contractors(),
+        can_propose_key_site=can_propose_key_info(current_user),
+        can_approve_key_site=can_approve_key_info(current_user),
         unit_access_invites=_client_unit_access_invites(client.id),
         unit_access_invite_summary=_client_unit_access_invite_summary(client.id),
         unit_count=client.units.count(),

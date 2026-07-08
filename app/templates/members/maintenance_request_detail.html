@@ -46,7 +46,7 @@
         <span>Works Status</span>
         <strong>
           {% if maintenance_request.work_order %}
-            WO-{{ maintenance_request.work_order.id }} - {{ maintenance_request.work_order.status or 'Open' }}
+            {{ maintenance_request.work_order.display_reference }} - {{ maintenance_request.work_order.status or 'Open' }}
           {% else %}
             Awaiting triage
           {% endif %}

@@ -29,6 +29,27 @@ SUPPORTED_TYPES = {"management", "contractor", "omc"}
 
 
 # ---------- helpers ----------
+def _save_work_order_prefix(company: Company) -> bool:
+    raw_prefix = (request.form.get("work_order_prefix") or "").strip()
+    prefix = Company._normalise_work_order_prefix(raw_prefix)
+
+    if raw_prefix and len(prefix) < 2:
+        flash("Work order prefix must contain at least 2 letters or numbers.", "danger")
+        return False
+
+    if prefix:
+        duplicate = Company.query.filter(
+            Company.work_order_prefix == prefix,
+            Company.id != company.id,
+        ).first()
+        if duplicate:
+            flash("That work order prefix is already in use by another organisation.", "danger")
+            return False
+
+    company.work_order_prefix = prefix or None
+    return True
+
+
 def _attach_company_to_user(company: Company) -> None:
     """Best-effort link so Settings pages can find it."""
     # Link on the company if the column exists
@@ -140,6 +161,9 @@ def company_get():
                 flash("Invalid company type.", "danger")
                 return redirect(url_for("onboarding.company_get", id=(company.id if company else None)))
 
+            if not _save_work_order_prefix(company):
+                return render_template("onboarding/company_details.html", form=form, company=company)
+
             # ensure linkage so Settings can find it
             _attach_company_to_user(company)
             ensure_company_organisation_uid(company)
@@ -188,6 +212,8 @@ def company_get():
                 return redirect(url_for("onboarding.company_get", id=cid))
 
             company = company or _get_or_create_company(cid, name)
+            if not _save_work_order_prefix(company):
+                return render_template("onboarding/company_details.html", company=company)
 
             def _set(field: str, value):
                 if hasattr(company, field):

@@ -2,12 +2,29 @@
 {% set timeline_subtitle = timeline_subtitle|default("Shared Works Logix history") %}
 {% set timeline_empty = timeline_empty|default("No lifecycle events have been recorded yet.") %}
 {% set timeline_compact = timeline_compact|default(false) %}
+{% set timeline_collapsible = timeline_collapsible|default(not timeline_compact) %}
+{% set timeline_expanded = timeline_expanded|default(false) %}
+{% set timeline_event_count = timeline_events|length %}
 
+{% if timeline_collapsible %}
+<details class="works-lifecycle works-lifecycle--collapsible" {% if timeline_expanded %}open{% endif %}>
+  <summary class="works-lifecycle-summary">
+    <span>
+      <strong>{{ timeline_title }}</strong>
+      <small>{{ timeline_subtitle }}</small>
+    </span>
+    <span class="works-lifecycle-summary-meta">
+      <span>{{ timeline_event_count }} event{{ '' if timeline_event_count == 1 else 's' }}</span>
+      <span class="works-lifecycle-summary-action">View history</span>
+    </span>
+  </summary>
+{% else %}
 <div class="works-lifecycle {{ 'works-lifecycle--compact' if timeline_compact else '' }}">
   <div class="works-lifecycle-heading">
     <h6>{{ timeline_title }}</h6>
     <span>{{ timeline_subtitle }}</span>
   </div>
+{% endif %}
   <div class="works-lifecycle-list">
     {% for event in timeline_events %}
       <article class="works-lifecycle-event">
@@ -34,4 +51,8 @@
       <p class="unit-empty">{{ timeline_empty }}</p>
     {% endfor %}
   </div>
+{% if timeline_collapsible %}
+</details>
+{% else %}
 </div>
+{% endif %}

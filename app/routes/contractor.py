@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 
 from flask import Blueprint, Response, render_template, session, request, current_app, flash, redirect, url_for, jsonify, abort, send_file
 from werkzeug.utils import secure_filename
@@ -8,7 +9,7 @@ from app.extensions import db
 from app.helpers.decorators import login_required
 from app.models import ContractorComplianceDocument
 from app.models.contractor.contractor_team import ContractorTeam
-from app.models.contractor.job_docket import JobDocket
+from app.models.contractor.job_docket import JobDocket, JobDocketPrivateWorkLog
 from app.models.core.user import User
 from app.services.gar import (
     attach_gar_capability_readiness,
@@ -16,6 +17,7 @@ from app.services.gar import (
     build_contractor_role_digest,
     build_work_order_relevant_history,
 )
+from app.services.core.contractor_access import contractor_portal_denial_reason
 from app.services.works.workflow_service import (
     ContractorWorkFilters,
     WORK_ORDER_PROGRESS_VISIBILITY,
@@ -29,6 +31,8 @@ from app.services.works.workflow_service import (
     get_contractor_work_orders,
     progress_updates_for_audience,
     record_work_order_lifecycle_event,
+    submit_quote_response,
+    update_quote_recipient_decision,
 )
 from app.services.contractor.job_docket_service import (
     build_standalone_job_docket_pack,
@@ -41,6 +45,8 @@ from app.services.contractor.job_docket_service import (
     schedule_job_docket,
 )
 from app.services.works.audit_pack_service import build_completion_evidence_pack
+from app.models.works.quote_recipient import QuoteRecipient
+from app.models.works.quote_response import QuoteResponse
 from app.models.works.work_order import WorkOrder
 from app.services.works.work_order_docket_service import (
     build_contractor_work_order_docket,
@@ -52,7 +58,7 @@ contractor_bp = Blueprint('contractor', __name__)
 CONTRACTOR_EVIDENCE_UPLOAD_EXTENSIONS = {
     "jpg", "jpeg", "png", "gif", "webp", "heic",
     "mp4", "mov", "webm", "avi", "m4v",
-    "pdf", "doc", "docx",
+    "pdf", "doc", "docx", "xls", "xlsx", "csv",
 }
 
 
@@ -89,10 +95,80 @@ def _save_contractor_evidence_uploads(file_storages, work_order_id: int) -> tupl
     return uploaded_references, unsupported_filenames
 
 
+def _save_contractor_docket_upload(file_storage, docket_id: int) -> str | None:
+    if not file_storage or not file_storage.filename:
+        return None
+
+    filename = secure_filename(file_storage.filename)
+    if not filename or "." not in filename:
+        return None
+
+    extension = filename.rsplit(".", 1)[-1].lower()
+    if extension not in CONTRACTOR_EVIDENCE_UPLOAD_EXTENSIONS:
+        return None
+
+    upload_dir = os.path.join(current_app.static_folder, "uploads", "contractor_dockets", str(docket_id))
+    os.makedirs(upload_dir, exist_ok=True)
+    stored_name = f"{os.urandom(8).hex()}.{extension}"
+    file_storage.save(os.path.join(upload_dir, stored_name))
+    return f"/static/uploads/contractor_dockets/{docket_id}/{stored_name}"
+
+
+def _save_contractor_docket_uploads(file_storages, docket_id: int) -> tuple[list[str], list[str]]:
+    uploaded_references: list[str] = []
+    unsupported_filenames: list[str] = []
+    for file_storage in file_storages or []:
+        if not file_storage or not file_storage.filename:
+            continue
+        uploaded_reference = _save_contractor_docket_upload(file_storage, docket_id)
+        if uploaded_reference:
+            uploaded_references.append(uploaded_reference)
+        else:
+            unsupported_filenames.append(file_storage.filename)
+    return uploaded_references, unsupported_filenames
+
+
+def _save_contractor_quote_upload(file_storage, work_order_id: int) -> str | None:
+    if not file_storage or not file_storage.filename:
+        return None
+
+    filename = secure_filename(file_storage.filename)
+    if not filename or "." not in filename:
+        return None
+
+    extension = filename.rsplit(".", 1)[-1].lower()
+    if extension not in CONTRACTOR_EVIDENCE_UPLOAD_EXTENSIONS:
+        return None
+
+    upload_dir = os.path.join(current_app.static_folder, "uploads", "contractor_quotes", str(work_order_id))
+    os.makedirs(upload_dir, exist_ok=True)
+    stored_name = f"{os.urandom(8).hex()}.{extension}"
+    file_storage.save(os.path.join(upload_dir, stored_name))
+    return f"/static/uploads/contractor_quotes/{work_order_id}/{stored_name}"
+
+
+def _save_contractor_quote_uploads(file_storages, work_order_id: int) -> tuple[list[str], list[str]]:
+    uploaded_references: list[str] = []
+    unsupported_filenames: list[str] = []
+    for file_storage in file_storages or []:
+        if not file_storage or not file_storage.filename:
+            continue
+        uploaded_reference = _save_contractor_quote_upload(file_storage, work_order_id)
+        if uploaded_reference:
+            uploaded_references.append(uploaded_reference)
+        else:
+            unsupported_filenames.append(file_storage.filename)
+    return uploaded_references, unsupported_filenames
+
+
 @contractor_bp.route('/dashboard')
 @login_required(role='Contractor')
 def contractor_dashboard():
     user = User.query.get(session.get('user_id'))
+    if contractor_portal_denial_reason(user):
+        flash('Contractor Logix is only available to contractor company users.', 'danger')
+        return redirect(url_for('auth.login'))
+
     work_data = get_contractor_work_orders(user.contractor_id, user.id) if user and user.contractor_id else None
     calendar_data = calendar_context(user.contractor_id) if user and user.contractor_id else None
     gar_question = (request.args.get("gar_question") or "").strip()
@@ -116,7 +192,7 @@ def contractor_dashboard():
 
 def _current_contractor_user():
     user = User.query.get(session.get('user_id'))
-    if not user or not user.contractor_id:
+    if contractor_portal_denial_reason(user):
         return None
     return user
 
@@ -131,7 +207,7 @@ def _contractor_work_filters():
 def _contractor_filter_args():
     return {
         key: value
-        for key in ("search", "status")
+        for key in ("search", "status", "queue")
         if (value := (request.form.get(key) or request.args.get(key) or "").strip())
     }
 
@@ -155,6 +231,17 @@ def _form_int(name: str) -> int | None:
         return None
 
 
+def _form_decimal(name: str) -> Decimal | None:
+    value = (request.form.get(name) or "").strip()
+    if not value:
+        return None
+    try:
+        parsed = Decimal(value)
+    except InvalidOperation:
+        return None
+    return parsed if parsed >= 0 else None
+
+
 @contractor_bp.route('/job-dockets/new', methods=['GET', 'POST'], endpoint='new_job_docket')
 @login_required(role='Contractor')
 def new_job_docket():
@@ -174,7 +261,6 @@ def new_job_docket():
             contractor_id=user.contractor_id,
             company_id=getattr(user, "company_id", None),
             created_by_id=user.id,
-            contractor_job_number=(request.form.get('contractor_job_number') or '').strip(),
             external_work_order_reference=(request.form.get('external_work_order_reference') or '').strip(),
             client_name=client_name,
             property_name=(request.form.get('property_name') or '').strip(),
@@ -196,6 +282,18 @@ def new_job_docket():
             contact_email=(request.form.get('contact_email') or '').strip(),
             instruction_source=(request.form.get('instruction_source') or 'Manual Instruction').strip(),
         )
+        uploaded_references, unsupported_filenames = _save_contractor_docket_uploads(
+            request.files.getlist("docket_files"),
+            docket.id,
+        )
+        if uploaded_references:
+            docket.evidence_links = uploaded_references
+            docket.attachments_count = len(uploaded_references)
+        if unsupported_filenames:
+            flash(
+                f"Some files were not attached because their type is not supported: {', '.join(unsupported_filenames)}.",
+                'warning',
+            )
         db.session.commit()
         flash('Standalone job docket created. Add it to the Contractor Calendar when ready.', 'success')
         return redirect(url_for('contractor.job_docket_detail', docket_id=docket.id))
@@ -212,6 +310,9 @@ def work_orders():
         return redirect(url_for('contractor.contractor_dashboard'))
 
     filters = _contractor_work_filters()
+    selected_queue = (request.args.get("queue") or request.form.get("queue") or "assigned").strip().lower()
+    if selected_queue not in {"assigned", "quote_requests", "active", "submitted", "returned", "to_be_invoiced", "closed"}:
+        selected_queue = "assigned"
     data = get_contractor_work_orders(user.contractor_id, user.id, filters=filters)
     data["lifecycle_by_work_order"] = {
         item.id: build_work_order_lifecycle_for_audience(item, "contractor")
@@ -241,7 +342,7 @@ def work_orders():
         item.id: progress_updates_for_audience(item, "contractor")
         for item in data.get("work_orders", [])
     }
-    return render_template('contractor/work_orders.html', filters=filters, **data)
+    return render_template('contractor/work_orders.html', filters=filters, selected_queue=selected_queue, **data)
 
 
 def _contractor_work_order_or_404(work_order_id: int) -> tuple[User, WorkOrder]:
@@ -249,23 +350,149 @@ def _contractor_work_order_or_404(work_order_id: int) -> tuple[User, WorkOrder]:
     if not user:
         abort(403)
 
-    work_order = WorkOrder.query.filter(
-        WorkOrder.id == work_order_id,
-        WorkOrder.contractor_id == user.contractor_id,
-    ).first_or_404()
+    work_order = WorkOrder.query.filter(WorkOrder.id == work_order_id).first_or_404()
+    has_direct_assignment = work_order.contractor_id == user.contractor_id
+    has_quote_invite = QuoteRecipient.query.filter_by(
+        work_order_id=work_order.id,
+        contractor_id=user.id,
+        visible_to_contractor=True,
+        archived_by_admin=False,
+    ).first() is not None
+    if not has_direct_assignment and not has_quote_invite:
+        abort(404)
     return user, work_order
 
 
 @contractor_bp.route('/work-orders/<int:work_order_id>', endpoint='work_order_detail')
 @login_required(role='Contractor')
 def work_order_detail(work_order_id):
-    _user, work_order = _contractor_work_order_or_404(work_order_id)
+    user, work_order = _contractor_work_order_or_404(work_order_id)
+    can_manage_work_order = work_order.contractor_id == user.contractor_id
+    quote_invite = QuoteRecipient.query.filter_by(
+        work_order_id=work_order.id,
+        contractor_id=user.id,
+        visible_to_contractor=True,
+        archived_by_admin=False,
+    ).first()
+    if quote_invite and not quote_invite.contractor_viewed:
+        quote_invite.contractor_viewed = True
+        quote_invite.contractor_viewed_at = datetime.utcnow()
+        db.session.commit()
+    quote_response = QuoteResponse.query.filter_by(
+        work_order_id=work_order.id,
+        contractor_id=user.id,
+    ).first() if quote_invite else None
+    quote_response_status = (getattr(quote_response, "status", "") or "").strip()
+    quote_invite_response = (getattr(quote_invite, "response_status", "") or "").strip()
+    quote_is_terminal = bool(
+        quote_invite
+        and (
+            quote_invite.status == "Closed"
+            or quote_invite_response in {"Approved", "Not Selected", "No Response", "Withdrawn"}
+            or quote_response_status in {"Approved", "Not Selected", "Archived", "Recalled"}
+            or (work_order.quote_status or "") == "Approved"
+        )
+    )
+    active_quote_invite = bool(quote_invite and not quote_is_terminal)
+    quote_outcome = None
+    if quote_invite and quote_is_terminal:
+        if quote_invite_response == "Approved" or quote_response_status == "Approved" or (
+            can_manage_work_order and (work_order.quote_status or "") == "Approved"
+        ):
+            quote_outcome = "selected"
+        elif quote_invite_response == "No Response":
+            quote_outcome = "closed"
+        else:
+            quote_outcome = "not_selected"
     docket = build_contractor_work_order_docket(work_order, audience="contractor")
     return render_template(
         'contractor/work_order_detail.html',
         docket=docket,
+        quote_invite=quote_invite,
+        quote_response=quote_response,
+        active_quote_invite=active_quote_invite,
+        quote_outcome=quote_outcome,
+        can_manage_work_order=can_manage_work_order,
         progress_updates=progress_updates_for_audience(work_order, "contractor"),
     )
+
+
+@contractor_bp.route('/work-orders/<int:work_order_id>/quote-invite/<action>', methods=['POST'], endpoint='quote_invite_action')
+@login_required(role='Contractor')
+def quote_invite_action(work_order_id, action):
+    user, work_order = _contractor_work_order_or_404(work_order_id)
+    quote_invite = QuoteRecipient.query.filter_by(
+        work_order_id=work_order.id,
+        contractor_id=user.id,
+        visible_to_contractor=True,
+        archived_by_admin=False,
+    ).first()
+    if not quote_invite or quote_invite.status == "Closed" or (work_order.quote_status or "") == "Approved":
+        flash('That quotation request has already been decided.', 'info')
+        return redirect(url_for('contractor.work_order_detail', work_order_id=work_order.id))
+
+    recipient = update_quote_recipient_decision(
+        work_order_id=work_order.id,
+        contractor_user_id=user.id,
+        action=action,
+        note=(request.form.get("decision_feedback") or "").strip(),
+    )
+    if not recipient:
+        flash('That quotation request could not be updated.', 'warning')
+    elif action == "decline":
+        flash('Quotation request declined and returned to Works Logix.', 'success')
+    else:
+        flash('Quotation request marked as under review.', 'success')
+    return redirect(url_for('contractor.work_orders', queue='quote_requests'))
+
+
+@contractor_bp.route('/work-orders/<int:work_order_id>/submit-quote', methods=['POST'], endpoint='submit_quote')
+@login_required(role='Contractor')
+def submit_quote(work_order_id):
+    user, work_order = _contractor_work_order_or_404(work_order_id)
+    quote_invite = QuoteRecipient.query.filter_by(
+        work_order_id=work_order.id,
+        contractor_id=user.id,
+        visible_to_contractor=True,
+        archived_by_admin=False,
+    ).first()
+    if not quote_invite:
+        flash('That quotation request could not be found.', 'warning')
+        return redirect(url_for('contractor.work_orders', queue='quote_requests'))
+    if quote_invite.status == "Closed" or (work_order.quote_status or "") == "Approved":
+        flash('That quotation request has already been decided.', 'info')
+        return redirect(url_for('contractor.work_order_detail', work_order_id=work_order.id))
+
+    quote_file_path = _save_contractor_quote_upload(request.files.get("quote_file"), work_order.id)
+    if not quote_file_path:
+        flash('Attach the main quote file before submitting.', 'warning')
+        return redirect(url_for('contractor.work_order_detail', work_order_id=work_order.id))
+
+    additional_files, unsupported_filenames = _save_contractor_quote_uploads(
+        request.files.getlist("quote_supporting_files"),
+        work_order.id,
+    )
+    if unsupported_filenames:
+        flash(
+            f"Some supporting files were not attached because their type is not supported: {', '.join(unsupported_filenames)}.",
+            'warning',
+        )
+
+    response = submit_quote_response(
+        work_order_id=work_order.id,
+        contractor_user_id=user.id,
+        quote_file_path=quote_file_path,
+        additional_files=additional_files,
+        parsed_total=_form_decimal("quote_total"),
+        parsed_summary=(request.form.get("quote_summary") or "").strip(),
+        decision_note=(request.form.get("quote_note") or "").strip(),
+    )
+    if not response:
+        flash('That quotation could not be submitted.', 'danger')
+        return redirect(url_for('contractor.work_order_detail', work_order_id=work_order.id))
+
+    flash('Quotation submitted to Works Logix for review.', 'success')
+    return redirect(url_for('contractor.work_orders', queue='quote_requests'))
 
 
 @contractor_bp.route('/work-orders/<int:work_order_id>/pdf', endpoint='work_order_pdf')
@@ -282,7 +509,7 @@ def work_order_pdf(work_order_id):
         pdf_stream,
         mimetype='application/pdf',
         as_attachment=True,
-        download_name=f"WO-{work_order.id}-contractor-pack.pdf",
+        download_name=f"{work_order.display_reference}-contractor-pack.pdf",
     )
 
 
@@ -430,6 +657,55 @@ def add_progress_update(work_order_id):
     return redirect(url_for('contractor.work_orders', **_contractor_filter_args()))
 
 
+@contractor_bp.route('/job-dockets/<int:docket_id>/private-work-log', methods=['POST'], endpoint='add_private_work_log')
+@login_required(role='Contractor')
+def add_private_work_log(docket_id):
+    user = _current_contractor_user()
+    if not user:
+        flash('Your contractor profile is not linked yet.', 'warning')
+        return redirect(url_for('contractor.contractor_dashboard'))
+
+    job_docket = JobDocket.query.filter_by(
+        id=docket_id,
+        contractor_id=user.contractor_id,
+    ).first_or_404()
+
+    try:
+        work_date = datetime.strptime(request.form.get('work_date') or '', "%Y-%m-%d").date()
+    except ValueError:
+        flash('Choose a valid date for the private work log.', 'warning')
+        return redirect(url_for('contractor.job_docket_detail', docket_id=docket_id))
+
+    labour_hours = _form_decimal("labour_hours")
+    material_quantity = _form_decimal("material_quantity")
+    material_cost = _form_decimal("material_cost")
+    material_description = (request.form.get("material_description") or "").strip() or None
+    material_unit = (request.form.get("material_unit") or "").strip() or None
+    notes = (request.form.get("private_notes") or "").strip() or None
+
+    if not any([labour_hours, material_description, material_quantity, material_cost, notes]):
+        flash('Add hours, materials or an internal note before saving the materials and time entry.', 'warning')
+        return redirect(url_for('contractor.job_docket_detail', docket_id=docket_id))
+
+    private_log = JobDocketPrivateWorkLog(
+        job_docket_id=job_docket.id,
+        contractor_id=user.contractor_id,
+        company_id=getattr(user, "company_id", None),
+        created_by_id=user.id,
+        work_date=work_date,
+        labour_hours=labour_hours,
+        material_description=material_description,
+        material_quantity=material_quantity,
+        material_unit=material_unit,
+        material_cost=material_cost,
+        notes=notes,
+    )
+    db.session.add(private_log)
+    db.session.commit()
+    flash('Materials and time entry saved.', 'success')
+    return redirect(url_for('contractor.job_docket_detail', docket_id=docket_id))
+
+
 @contractor_bp.route('/calendar', endpoint='calendar')
 @login_required(role='Contractor')
 def calendar():
@@ -498,6 +774,14 @@ def job_docket_detail(docket_id):
         if work_order
         else build_standalone_job_docket_pack(job_docket)
     )
+    selected_quote_response = (
+        QuoteResponse.query.filter_by(
+            work_order_id=work_order.id,
+            is_selected=True,
+        ).first()
+        if work_order
+        else None
+    )
     engineers = (
         User.query
         .filter(User.contractor_id == user.contractor_id, User.is_active.is_(True))
@@ -515,10 +799,65 @@ def job_docket_detail(docket_id):
         job_docket=job_docket,
         work_order=work_order,
         work_pack=work_pack,
+        selected_quote_response=selected_quote_response,
         progress_updates=progress_updates_for_audience(work_order, "contractor") if work_order else [],
+        private_work_logs=job_docket.private_work_logs,
+        today=datetime.utcnow().date(),
         engineers=engineers,
         teams=teams,
     )
+
+
+@contractor_bp.route('/job-dockets/<int:docket_id>/invoice-prepared', methods=['POST'], endpoint='mark_job_docket_invoice_prepared')
+@login_required(role='Contractor')
+def mark_job_docket_invoice_prepared(docket_id):
+    user = _current_contractor_user()
+    if not user:
+        flash('Your contractor profile is not linked yet.', 'warning')
+        return redirect(url_for('contractor.contractor_dashboard'))
+
+    job_docket = JobDocket.query.filter_by(
+        id=docket_id,
+        contractor_id=user.contractor_id,
+    ).first_or_404()
+
+    protected_statuses = {"invoice prepared", "invoiced", "paid", "settled"}
+    invoice_status_key = (job_docket.invoice_status or "").strip().lower()
+    if invoice_status_key in protected_statuses:
+        flash('Invoice preparation is already recorded for this job docket.', 'info')
+    else:
+        job_docket.invoice_status = "Invoice Prepared"
+        if (job_docket.payment_status or "").strip().lower() in {"", "not invoiced"}:
+            job_docket.payment_status = "Not Paid"
+
+        if job_docket.work_order:
+            record_work_order_lifecycle_event(
+                work_order=job_docket.work_order,
+                event_type="contractor_invoice_prepared",
+                title="Contractor payment request sent",
+                source_module="Contractor Logix",
+                actor_user_id=user.id,
+                actor_label="Contractor",
+                note="Contractor sent the completed job docket as a payment request for management and future Finance Logix review.",
+                status_snapshot=job_docket.work_order.status,
+                visibility_scope="Admin,PM,Contractor,Finance,GAR",
+                event_metadata={
+                    "job_docket_id": job_docket.id,
+                    "job_docket_number": job_docket.docket_number,
+                    "invoice_status": job_docket.invoice_status,
+                    "payment_status": job_docket.payment_status,
+                    "quotation_reference": job_docket.quotation_reference,
+                },
+            )
+
+        db.session.commit()
+        flash('Payment request sent for this job docket.', 'success')
+
+    if request.form.get('return_to') == 'queue':
+        filter_args = _contractor_filter_args()
+        filter_args["queue"] = "to_be_invoiced"
+        return redirect(url_for('contractor.work_orders', **filter_args))
+    return redirect(url_for('contractor.job_docket_detail', docket_id=job_docket.id))
 
 
 @contractor_bp.route('/job-dockets/<int:docket_id>/schedule', methods=['POST'], endpoint='schedule_job_docket')

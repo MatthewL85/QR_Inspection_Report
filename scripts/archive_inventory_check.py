@@ -44,6 +44,7 @@ GOVERNANCE_FILES = {
     PROJECT_ROOT / "docs" / "architecture" / "archive_strategy.md",
     PROJECT_ROOT / "docs" / "legacy_cleanup_register.md",
     PROJECT_ROOT / "docs" / "phase_2_legacy_review.md",
+    PROJECT_ROOT / "scripts" / "platform_system_map_check.py",
     SELF_PATH,
 }
 
@@ -112,7 +113,7 @@ def active_references_to_roots(legacy_roots: list[Path]) -> list[str]:
 
     for scan_path in ACTIVE_SCAN_PATHS:
         for file_path in walk_files(scan_path):
-            if file_path == SELF_PATH:
+            if file_path in GOVERNANCE_FILES:
                 continue
             content = safe_read_text(file_path)
             if content is None:

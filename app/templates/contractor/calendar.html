@@ -81,7 +81,7 @@
                   </strong>
                   <span>
                     {% if docket.work_order_id %}
-                      WO-{{ docket.work_order_id }}
+                      {{ docket.work_order.display_reference }}
                     {% elif docket.external_work_order_reference %}
                       {{ docket.external_work_order_reference }}
                     {% else %}

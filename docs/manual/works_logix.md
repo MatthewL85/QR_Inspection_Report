@@ -59,6 +59,8 @@ Works Logix should separate:
 - open work orders
 - closed work orders
 - member maintenance requests
+- quote requests
+- payment requests
 - returned contractor work
 - repeated completion returns
 - reopen requests
@@ -66,6 +68,22 @@ Works Logix should separate:
 - a short Next Actions strip that ranks the most urgent operational queue items
 
 Closed work orders should be accessed through the closed work orders tile or section. This keeps the page readable and avoids mixing closed history into the active work queue.
+
+Quote requests should be accessed through the Quote Requests tile. A PM/Admin can request quotations from one or more active Contractor Logix contractors from an open work order. Works Logix creates `QuoteRecipient` records for the selected contractor users, records a lifecycle event, sends contractor notifications and moves the work order into `Quote Requested` so it is separated from the normal open work order queue.
+
+This is the first foundation for the future quotation workflow. The work order remains owned by Works Logix. Contractor Logix receives the quotation invitation and can review or decline it without becoming the assigned contractor for the job.
+
+Contractors can submit a quote response from the Contractor Logix work pack. The response stores the main quote file, optional supporting files, quoted total, summary and contractor note against the existing `QuoteResponse` model. Works Logix updates the source work order to `Quote Submitted`, records the lifecycle event and notifies management users. The Quote Requests tile shows submitted quote files and totals so management can review them without mixing quotation records into the normal open work order queue.
+
+Management users can select one submitted quote from the Quote Requests queue. Selecting a quote marks that response as approved, marks the other submitted quotes as not selected, assigns the chosen contractor to the source work order and moves the work order back into the live `Assigned` workflow. Selected and non-selected contractors are notified, and the decision is recorded in the work order lifecycle for audit and GAR context.
+
+Later phases can add Director Logix comparison/voting and Finance Logix approval/invoice readiness on top of the same source records.
+
+Payment requests should be accessed through the Payment Requests tile. When a contractor completes work and sends a Payment Request from the linked Job Docket, Works Logix surfaces that record for PM/Admin/Assistant/Finance review without giving property-management-company users access to Contractor Logix.
+
+Work orders, quotation requests and payment request review packs should use the shared Core Document Template foundation for branding, terms, numbering and future PDF output. Works Logix owns the operational workflow and review queues; Documents Logix owns the governed document-template foundation.
+
+This is a Finance Logix readiness handoff, not a full invoice ledger yet. The source remains the Works Logix work order and linked Contractor Logix job docket. The management user should review the completed work pack, evidence, docket number, contractor and invoice/payment state before the future Finance Logix payment workflow takes over.
 
 The Next Actions strip is derived from the same source queues. It does not create new workflow state. It helps PM/Admin/Assistant users decide whether to route unassigned work, triage member requests, review reopen requests, check contractor follow-up or approve/return completion evidence.
 

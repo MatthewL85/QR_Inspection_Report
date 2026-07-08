@@ -61,7 +61,136 @@
       </div>
     </div>
 
-    {% if docket.status_key in ['assigned', 'open', 'quote requested', 'quote submitted'] %}
+    {% if quote_outcome %}
+      <div class="contractor-quote-outcome-panel">
+        <div class="contract-manager-section-heading">
+          <div>
+            <h2>Quote Outcome</h2>
+            {% if quote_outcome == 'selected' %}
+              <p>Your quote has been selected. This is now an assigned work order.</p>
+            {% elif quote_outcome == 'not_selected' %}
+              <p>Another quotation was selected for this work order.</p>
+            {% else %}
+              <p>This quotation request has been closed.</p>
+            {% endif %}
+          </div>
+          {% if quote_outcome == 'selected' %}
+            <span class="contract-alert-pill contract-alert-success">Selected</span>
+          {% elif quote_outcome == 'not_selected' %}
+            <span class="contract-alert-pill contract-alert-muted">Not Selected</span>
+          {% else %}
+            <span class="contract-alert-pill contract-alert-muted">Closed</span>
+          {% endif %}
+        </div>
+        {% if quote_response %}
+          <div class="works-command-grid">
+            <article class="works-kpi-card">
+              <span>Submitted</span>
+              <strong>{{ quote_response.submitted_at.strftime('%d %b %Y %H:%M') if quote_response.submitted_at else '-' }}</strong>
+            </article>
+            <article class="works-kpi-card">
+              <span>Total</span>
+              <strong>{% if quote_response.parsed_total is not none %}EUR {{ "{:,.2f}".format(quote_response.parsed_total) }}{% else %}-{% endif %}</strong>
+            </article>
+            <article class="works-kpi-card">
+              <span>Quote File</span>
+              <strong><a class="works-evidence-link" href="{{ quote_response.quote_file_path }}" target="_blank" rel="noopener">Open Quote</a></strong>
+            </article>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    {% if active_quote_invite %}
+      <div class="contract-manager-actions-row contractor-pack-actions-row">
+        <div class="contractor-pack-action-buttons">
+          <form method="post" action="{{ url_for('contractor.quote_invite_action', work_order_id=work_order.id, action='pricing') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-primary">Review / Prepare Quote</button>
+          </form>
+          <button type="button"
+                  class="contract-manager-link contractor-pack-reject-toggle"
+                  data-reject-toggle="contractor_quote_decline_panel"
+                  aria-controls="contractor_quote_decline_panel"
+                  aria-expanded="false">
+            Decline to quote
+          </button>
+        </div>
+        <div id="contractor_quote_decline_panel" class="contractor-pack-reject-panel" hidden>
+          <form method="post" action="{{ url_for('contractor.quote_invite_action', work_order_id=work_order.id, action='decline') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <textarea name="decision_feedback" rows="3" required placeholder="Tell Works Logix why you cannot quote this request."></textarea>
+            <button type="submit" class="btn btn-sm btn-outline-danger">Decline Quote Request</button>
+          </form>
+        </div>
+      </div>
+      <div class="contractor-quote-submit-panel">
+        <div class="contract-manager-section-heading">
+          <div>
+            <h2>Submit Quote</h2>
+            <p>Send pricing back to Works Logix without accepting the job yet.</p>
+          </div>
+          {% if quote_response %}
+            <span class="contract-alert-pill contract-alert-success">Submitted</span>
+          {% else %}
+            <span class="contract-alert-pill contract-alert-warning">Awaiting quote</span>
+          {% endif %}
+        </div>
+        {% if quote_response %}
+          <div class="works-command-grid">
+            <article class="works-kpi-card">
+              <span>Submitted</span>
+              <strong>{{ quote_response.submitted_at.strftime('%d %b %Y %H:%M') if quote_response.submitted_at else '-' }}</strong>
+            </article>
+            <article class="works-kpi-card">
+              <span>Total</span>
+              <strong>{% if quote_response.parsed_total is not none %}EUR {{ "{:,.2f}".format(quote_response.parsed_total) }}{% else %}-{% endif %}</strong>
+            </article>
+            <article class="works-kpi-card">
+              <span>Quote File</span>
+              <strong><a class="works-evidence-link" href="{{ quote_response.quote_file_path }}" target="_blank" rel="noopener">Open Quote</a></strong>
+            </article>
+          </div>
+          {% if quote_response.parsed_summary or quote_response.decision_note %}
+            <div class="unit-detail-grid contractor-pack-detail-grid">
+              <div><span class="unit-detail-label">Summary</span><strong>{{ quote_response.parsed_summary or '-' }}</strong></div>
+              <div><span class="unit-detail-label">Note</span><strong>{{ quote_response.decision_note or '-' }}</strong></div>
+            </div>
+          {% endif %}
+        {% endif %}
+        <form method="post"
+              action="{{ url_for('contractor.submit_quote', work_order_id=work_order.id) }}"
+              enctype="multipart/form-data"
+              class="contractor-quote-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div>
+            <label class="unit-detail-label" for="quote_total">Quote Total</label>
+            <input id="quote_total" name="quote_total" type="number" min="0" step="0.01" placeholder="0.00">
+          </div>
+          <div>
+            <label class="unit-detail-label" for="quote_file">Main Quote File</label>
+            <input id="quote_file" name="quote_file" type="file" required accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.webp">
+          </div>
+          <div>
+            <label class="unit-detail-label" for="quote_supporting_files">Supporting Files</label>
+            <input id="quote_supporting_files" name="quote_supporting_files" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.webp,.mp4,.mov,.webm">
+          </div>
+          <div class="contractor-quote-form-wide">
+            <label class="unit-detail-label" for="quote_summary">Quote Summary</label>
+            <textarea id="quote_summary" name="quote_summary" rows="3" placeholder="Briefly summarise the quotation, exclusions, lead time or assumptions."></textarea>
+          </div>
+          <div class="contractor-quote-form-wide">
+            <label class="unit-detail-label" for="quote_note">Contractor Note</label>
+            <textarea id="quote_note" name="quote_note" rows="3" placeholder="Optional note for the management team."></textarea>
+          </div>
+          <div class="contractor-quote-submit-actions">
+            <button type="submit" class="btn btn-sm btn-primary">{{ 'Replace Submitted Quote' if quote_response else 'Submit Quote' }}</button>
+          </div>
+        </form>
+      </div>
+    {% endif %}
+
+    {% if can_manage_work_order and not active_quote_invite and docket.status_key in ['assigned', 'open'] %}
       <div class="contract-manager-actions-row contractor-pack-actions-row">
         <div class="contractor-pack-action-buttons">
           <form method="post" action="{{ url_for('contractor.update_work_order', work_order_id=work_order.id, action='accept') }}">
@@ -70,11 +199,11 @@
             <button type="submit" class="btn btn-sm btn-primary">Accept Work Order</button>
           </form>
           <button type="button"
-                  class="btn btn-sm btn-outline-danger"
+                  class="contract-manager-link contractor-pack-reject-toggle"
                   data-reject-toggle="contractor_reject_panel"
                   aria-controls="contractor_reject_panel"
                   aria-expanded="false">
-            Reject Work Order
+            Cannot accept this job?
           </button>
         </div>
         <div id="contractor_reject_panel" class="contractor-pack-reject-panel" hidden>
@@ -82,7 +211,7 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="return_to" value="detail">
             <textarea name="completion_notes" rows="3" required placeholder="Tell Works Logix why this cannot be accepted."></textarea>
-            <button type="submit" class="btn btn-sm btn-outline-danger">Return to Works Logix</button>
+            <button type="submit" class="btn btn-sm btn-outline-danger">Reject Work Order</button>
           </form>
         </div>
       </div>

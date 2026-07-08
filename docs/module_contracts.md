@@ -28,6 +28,12 @@ Module dependency boundaries are validated by:
 scripts/module_dependency_boundary_check.py
 ```
 
+Role dashboard surface consistency is validated by:
+
+```text
+scripts/role_dashboard_surface_check.py
+```
+
 ## Rule
 
 Each module should have:

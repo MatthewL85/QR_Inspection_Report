@@ -1,0 +1,128 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block page_content %}
+<div class="container-fluid client-manager-workspace">
+  <div class="client-manager-command-bar">
+    <div>
+      <h5>Edit Document Template</h5>
+      <span>{{ payload.owner_module if payload.owner_module is defined else template.module_key|replace('_', ' ')|title }} setup for {{ template.document_type|replace('_', ' ')|title }}.</span>
+    </div>
+    <div class="client-manager-actions">
+      <a class="unit-link-action" href="{{ url_for('settings.document_templates_index', company_id=company.id) }}">
+        <i class="material-icons">arrow_back</i> Templates
+      </a>
+      <button form="documentTemplateForm" type="submit" class="btn btn-primary btn-sm">Save Template</button>
+    </div>
+  </div>
+
+  <form id="documentTemplateForm" method="post" action="{{ url_for('settings.document_templates_edit', module_key=template.module_key, document_type=template.document_type, company_id=company.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <section class="client-manager-panel">
+      <div class="client-manager-heading">
+        <div>
+          <h6>Template Identity</h6>
+          <span>Controls how this document is labelled, numbered and branded.</span>
+        </div>
+        <span class="user-manager-status-pill is-active">{{ template.module_key|replace('_', ' ')|title }}</span>
+      </div>
+      <div class="document-template-form-grid">
+        <label>
+          <span>Template Name</span>
+          <input name="name" class="form-control" value="{{ template.name or '' }}" required>
+        </label>
+        <label>
+          <span>Number Prefix</span>
+          <input name="number_prefix" class="form-control text-uppercase" value="{{ template.number_prefix or '' }}" maxlength="30">
+        </label>
+        <label>
+          <span>Logo Mode</span>
+          <select name="logo_mode" class="form-select">
+            {% for option in ['company', 'contractor', 'dual', 'none'] %}
+              <option value="{{ option }}" {{ 'selected' if template.logo_mode == option else '' }}>{{ option|title }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>
+          <span>Primary Brand Source</span>
+          <select name="primary_brand_source" class="form-select">
+            {% for option in ['company', 'contractor'] %}
+              <option value="{{ option }}" {{ 'selected' if template.primary_brand_source == option else '' }}>{{ option|title }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+      <label class="document-template-wide-field">
+        <span>Description</span>
+        <textarea name="description" class="form-control" rows="2">{{ template.description or '' }}</textarea>
+      </label>
+    </section>
+
+    <section class="client-manager-panel">
+      <div class="client-manager-heading">
+        <div>
+          <h6>Document Content</h6>
+          <span>Reusable wording that will feed future HTML/PDF generation.</span>
+        </div>
+      </div>
+      <div class="document-template-content-grid">
+        <label>
+          <span>Template Body</span>
+          <textarea name="html_body" class="form-control js-document-template-editor" rows="8" placeholder="Optional document body wrapper or HTML-ready wording.">{{ template.html_body or '' }}</textarea>
+        </label>
+        <div class="document-template-side-stack">
+          <label>
+            <span>Terms & Conditions</span>
+            <textarea name="terms_body" class="form-control js-document-template-editor" rows="5">{{ template.terms_body or '' }}</textarea>
+          </label>
+          <label>
+            <span>Footer</span>
+            <textarea name="footer_body" class="form-control js-document-template-editor" rows="4">{{ template.footer_body or '' }}</textarea>
+          </label>
+        </div>
+      </div>
+      <div class="document-template-switch-row">
+        <label>
+          <input type="checkbox" name="include_terms" {{ 'checked' if template.include_terms else '' }}>
+          Include terms
+        </label>
+        <label>
+          <input type="checkbox" name="include_signature_block" {{ 'checked' if template.include_signature_block else '' }}>
+          Include signature block
+        </label>
+      </div>
+    </section>
+  </form>
+</div>
+
+<script src="https://cdn.tiny.cloud/1/aexhg8zg7em9iyk8inv5pa5e3sqw27u8ca9ywdraam5tcgfe/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (!window.tinymce) return;
+
+    tinymce.init({
+      selector: 'textarea.js-document-template-editor',
+      menubar: false,
+      branding: false,
+      height: 260,
+      plugins: 'lists advlist link table code autoresize paste quickbars fullscreen',
+      toolbar:
+        'undo redo | styles | bold italic underline | forecolor backcolor | ' +
+        'alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | ' +
+        'table link | removeformat | fullscreen | code',
+      toolbar_mode: 'sliding',
+      quickbars_selection_toolbar: 'bold italic underline | forecolor backcolor | bullist numlist',
+      paste_data_images: false,
+      contextmenu: false,
+      content_style:
+        'body{font-family: Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; font-size:14px; line-height:1.5; color:#17233c;}',
+    });
+
+    const form = document.getElementById('documentTemplateForm');
+    if (form) {
+      form.addEventListener('submit', function () {
+        tinymce.triggerSave();
+      });
+    }
+  });
+</script>
+{% endblock %}

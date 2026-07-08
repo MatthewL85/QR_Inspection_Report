@@ -5,6 +5,7 @@ import html
 import re
 from datetime import datetime
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from html.parser import HTMLParser
 from typing import Any
 from markupsafe import Markup
 
@@ -169,6 +170,140 @@ def register_custom_filters(app):
             return Markup(s)
         except Exception:
             return Markup(html.escape(str(text)))
+
+    @app.template_filter("key_site_content")
+    def key_site_content(value: Any) -> Markup:
+        """
+        Render Key Site Info with a tiny allow-list for operational formatting.
+        Allows the rich text controls used by the Key Site editor while still
+        escaping scripts, arbitrary styles and unsafe URLs.
+        """
+        if value is None:
+            return Markup("")
+
+        raw = html.unescape(str(value).strip())
+        if not raw:
+            return Markup("")
+
+        color_pattern = re.compile(
+            r"^(#[0-9a-fA-F]{3,8}|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\)|[a-zA-Z]+)$"
+        )
+        safe_url_pattern = re.compile(r"^(https?:|mailto:|tel:|/|#)", re.IGNORECASE)
+        safe_text_alignments = {"left", "center", "right", "justify"}
+
+        block_tags = {"p", "ul", "ol", "li", "blockquote", "h2", "h3", "h4", "table", "thead", "tbody", "tr", "th", "td"}
+        inline_tags = {"strong", "b", "em", "i", "u", "span", "a", "br"}
+        media_tags = {"img", "video", "source"}
+        allowed_tags = block_tags | inline_tags | media_tags
+
+        def _safe_style(style: str | None) -> str:
+            if not style:
+                return ""
+            safe_parts: list[str] = []
+            for part in style.split(";"):
+                name, _, val = part.partition(":")
+                prop = name.strip().lower()
+                raw_value = val.strip()
+                if prop in {"color", "background-color"}:
+                    color = raw_value
+                    if color_pattern.match(color):
+                        safe_parts.append(f"{prop}: {html.escape(color, quote=True)}")
+                elif prop == "text-align" and raw_value.lower() in safe_text_alignments:
+                    safe_parts.append(f"text-align: {raw_value.lower()}")
+            return "; ".join(safe_parts)
+
+        def _safe_attrs(tag: str, attrs) -> str:
+            attr_map = {name.lower(): value for name, value in attrs}
+            safe: list[str] = []
+
+            style = _safe_style(attr_map.get("style"))
+            if style and tag in {"p", "span", "td", "th", "h2", "h3", "h4"}:
+                safe.append(f'style="{style}"')
+
+            if tag == "a":
+                href = (attr_map.get("href") or "").strip()
+                if href and safe_url_pattern.match(href):
+                    safe.append(f'href="{html.escape(href, quote=True)}"')
+                    safe.append('rel="noopener noreferrer"')
+                    safe.append('target="_blank"')
+
+            if tag in {"img", "video", "source"}:
+                src = (attr_map.get("src") or "").strip()
+                if src and safe_url_pattern.match(src):
+                    safe.append(f'src="{html.escape(src, quote=True)}"')
+                if tag == "img":
+                    alt = attr_map.get("alt") or ""
+                    safe.append(f'alt="{html.escape(alt, quote=True)}"')
+                if tag == "video":
+                    safe.append("controls")
+                    width = (attr_map.get("width") or "").strip()
+                    height = (attr_map.get("height") or "").strip()
+                    if width.isdigit():
+                        safe.append(f'width="{width}"')
+                    if height.isdigit():
+                        safe.append(f'height="{height}"')
+
+            return (" " + " ".join(safe)) if safe else ""
+
+        class _KeySiteParser(HTMLParser):
+            def __init__(self):
+                super().__init__(convert_charrefs=True)
+                self.parts: list[str] = []
+                self.suppressed_tag_depth = 0
+
+            def handle_starttag(self, tag, attrs):
+                tag = tag.lower()
+                if tag in {"script", "style"}:
+                    self.suppressed_tag_depth += 1
+                    return
+                if self.suppressed_tag_depth:
+                    return
+                if tag not in allowed_tags:
+                    return
+                if tag == "br":
+                    self.parts.append("<br>")
+                    return
+                self.parts.append(f"<{tag}{_safe_attrs(tag, attrs)}>")
+
+            def handle_startendtag(self, tag, attrs):
+                tag = tag.lower()
+                if self.suppressed_tag_depth:
+                    return
+                if tag not in allowed_tags:
+                    return
+                if tag in {"br", "img", "source"}:
+                    self.parts.append(f"<{tag}{_safe_attrs(tag, attrs)}>")
+
+            def handle_endtag(self, tag):
+                tag = tag.lower()
+                if tag in {"script", "style"} and self.suppressed_tag_depth:
+                    self.suppressed_tag_depth -= 1
+                    return
+                if self.suppressed_tag_depth:
+                    return
+                if tag in allowed_tags and tag not in {"br", "img", "source"}:
+                    self.parts.append(f"</{tag}>")
+
+            def handle_data(self, data):
+                if self.suppressed_tag_depth:
+                    return
+                self.parts.append(html.escape(data))
+
+        if "<" not in raw or ">" not in raw:
+            paragraphs = [
+                f"<p>{html.escape(line.strip())}</p>"
+                for line in raw.splitlines()
+                if line.strip()
+            ]
+            return Markup("".join(paragraphs))
+
+        parser = _KeySiteParser()
+        try:
+            parser.feed(raw)
+            rendered = "".join(parser.parts).strip()
+            return Markup(rendered or html.escape(raw))
+        except Exception:
+            return Markup(html.escape(raw))
 
     # ---------- New: safe 'format' override + simple 'money' helper ----------
 

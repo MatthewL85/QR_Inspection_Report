@@ -1,6 +1,16 @@
 {% extends 'layouts/super_admin_base.html' %}
 {% block page_content %}
 {% set active_tab = request.args.get("tab", "units") %}
+{% set key_site_common_sections = [
+  "Approved Contractor Rules",
+  "Blocks, Cores and Common Areas",
+  "Emergency Contacts and Escalation",
+  "Fire Safety and Life Safety",
+  "Parking, Deliveries and Site Restrictions",
+  "Site Access and Entry",
+  "Utilities, Plant and Isolation",
+  "Waste, Cleaning and Pest Control"
+] %}
 {% set contracts_sorted = client.contracts | sort(attribute='end_date') if client.contracts else [] %}
 {% set latest_contract = contracts_sorted[-1] if contracts_sorted|length else None %}
 {% set dte = latest_contract.days_to_expiry() if latest_contract else None %}
@@ -564,12 +574,194 @@
               <h5>Key Site Information</h5>
               <span class="unit-module-note">Gates, keys, access, vendors and safety notes</span>
             </div>
-            <a href="{% if 'client_key_info.list_sections' in current_app.view_functions %}{{ url_for('client_key_info.list_sections', client_id=client.id) }}{% else %}/clients/{{ client.id }}/key-info/{% endif %}" class="btn btn-outline-primary btn-sm">Open Key Site Info</a>
+            <div class="d-flex align-items-center gap-2">
+              {% if can_propose_key_site %}
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#keySiteAddModal">
+                  + Add Tab
+                </button>
+              {% endif %}
+              <a href="{% if 'client_key_info.list_sections' in current_app.view_functions %}{{ url_for('client_key_info.list_sections', client_id=client.id) }}{% else %}/clients/{{ client.id }}/key-info/{% endif %}" class="btn btn-outline-primary btn-sm">Advanced</a>
+            </div>
           </div>
-          <div class="unit-form-subcard mb-0">
-            Centralised site details can be proposed by Admin, FC, PM and contractors. Publishing is gated by PM or Super Admin.
-          </div>
+          {% if key_site_sections %}
+            <div class="client-key-site-tabs" data-key-site-tabs>
+              <div class="unit-top-tabs client-key-site-tablist" role="tablist" aria-label="Key Site Information sections">
+                {% for section in key_site_sections %}
+                  <button
+                    type="button"
+                    class="client-key-site-tab"
+                    data-key-site-tab="key-site-section-{{ section.id }}"
+                    aria-controls="key-site-section-{{ section.id }}"
+                    title="{{ section.title }}"
+                    aria-selected="false">
+                    <span>{{ section.title }}</span>
+                  </button>
+                {% endfor %}
+              </div>
+              <div class="client-key-site-empty" data-key-site-empty>
+                Select a key site heading to view the information.
+              </div>
+              {% for section in key_site_sections %}
+                <section id="key-site-section-{{ section.id }}" class="client-key-site-panel" data-key-site-panel hidden>
+                  <div class="client-key-site-panel-heading">
+                    <div>
+                      <h6>{{ section.title }}</h6>
+                      {% if section.ai_parsed_summary %}
+                        <span>{{ section.ai_parsed_summary|striptags }}</span>
+                      {% endif %}
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="client-key-site-status">Active</span>
+                      {% if can_propose_key_site %}
+                        <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#keySiteEditModal-{{ section.id }}">
+                          {% if can_approve_key_site %}Edit{% else %}Propose Edit{% endif %}
+                        </button>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="client-key-site-content client-key-site-rich-content">
+                    {{ section.content|key_site_content }}
+                    {% if section.ai_tags %}
+                      <div class="client-key-site-tags">
+                        {% for tag in section.ai_tags %}
+                          <span>{{ tag|replace("-", " ")|title }}</span>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+                </section>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="unit-form-subcard mb-0 text-muted">
+              No published Key Site Information has been added yet.
+              {% if can_propose_key_site %}
+                <button type="button" class="btn btn-primary btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#keySiteAddModal">
+                  + Add First Tab
+                </button>
+              {% endif %}
+            </div>
+          {% endif %}
+
+          {% if can_propose_key_site %}
+            <div class="modal fade key-info-proposal-modal" id="keySiteAddModal" tabindex="-1" aria-hidden="true">
+              <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                  <form method="post" action="{% if 'client_key_info.propose_change' in current_app.view_functions %}{{ url_for('client_key_info.propose_change', client_id=client.id) }}{% else %}/clients/{{ client.id }}/key-info/propose{% endif %}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="next" value="{{ url_for('super_admin.view_client', client_id=client.id, tab='site') }}">
+                    <div class="modal-header">
+                      <h6 class="modal-title">{% if can_approve_key_site %}Add Key Site Tab{% else %}Propose Key Site Tab{% endif %}</h6>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <div class="row g-3">
+                        <div class="col-md-6">
+                          <label class="form-label">Tab Heading</label>
+                          <input type="text" class="form-control" name="title" list="key-site-section-datalist" placeholder="e.g. Site Access and Entry" required>
+                          <datalist id="key-site-section-datalist">
+                            {% for name in key_site_common_sections %}<option value="{{ name }}"></option>{% endfor %}
+                          </datalist>
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label">Share with contractors</label>
+                          <select class="form-select" name="contractor_ids" multiple size="4">
+                            {% for contractor in key_site_contractors or [] %}
+                              <option value="{{ contractor.id }}">{{ contractor.company_name }}</option>
+                            {% endfor %}
+                          </select>
+                        </div>
+                        <div class="col-12">
+                          <label class="form-label">Information</label>
+                          <textarea id="key-site-add-content" class="form-control js-key-site-wysiwyg" name="content" rows="8" placeholder="Add access notes, codes, safety details, vendors or site instructions." required></textarea>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                      <button type="submit" class="btn btn-primary">{% if can_approve_key_site %}Create Tab{% else %}Submit Proposal{% endif %}</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            {% for section in key_site_sections %}
+              <div class="modal fade key-info-proposal-modal" id="keySiteEditModal-{{ section.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                  <div class="modal-content">
+                    <form method="post" action="{% if 'client_key_info.propose_change' in current_app.view_functions %}{{ url_for('client_key_info.propose_change', client_id=client.id) }}{% else %}/clients/{{ client.id }}/key-info/propose{% endif %}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <input type="hidden" name="next" value="{{ url_for('super_admin.view_client', client_id=client.id, tab='site') }}">
+                      <input type="hidden" name="key_info_id" value="{{ section.id }}">
+                      <div class="modal-header">
+                        <h6 class="modal-title">{% if can_approve_key_site %}Edit Key Site Tab{% else %}Propose Edit{% endif %} - {{ section.title }}</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div class="row g-3">
+                          <div class="col-md-6">
+                            <label class="form-label">Tab Heading</label>
+                            <input type="text" class="form-control" name="title" value="{{ section.title }}" list="key-site-section-datalist-{{ section.id }}" required>
+                            <datalist id="key-site-section-datalist-{{ section.id }}">
+                              {% for name in key_site_common_sections %}<option value="{{ name }}"></option>{% endfor %}
+                            </datalist>
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label">Share with contractors</label>
+                            <select class="form-select" name="contractor_ids" multiple size="4">
+                              {% for contractor in key_site_contractors or [] %}
+                                <option value="{{ contractor.id }}">{{ contractor.company_name }}</option>
+                              {% endfor %}
+                            </select>
+                          </div>
+                          <div class="col-12">
+                            <label class="form-label">Information</label>
+                            <textarea id="key-site-edit-content-{{ section.id }}" class="form-control js-key-site-wysiwyg" name="content" rows="8" required>{{ section.content }}</textarea>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">{% if can_approve_key_site %}Save Changes{% else %}Submit Proposal{% endif %}</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          {% endif %}
         </div>
+
+        <script>
+          document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll("[data-key-site-tabs]").forEach(function (tabs) {
+              const buttons = tabs.querySelectorAll("[data-key-site-tab]");
+              const panels = tabs.querySelectorAll("[data-key-site-panel]");
+              const empty = tabs.querySelector("[data-key-site-empty]");
+
+              buttons.forEach(function (button) {
+                button.addEventListener("click", function () {
+                  const targetId = button.getAttribute("data-key-site-tab");
+
+                  buttons.forEach(function (item) {
+                    item.classList.toggle("active", item === button);
+                    item.classList.toggle("is-active", item === button);
+                    item.setAttribute("aria-selected", item === button ? "true" : "false");
+                  });
+
+                  panels.forEach(function (panel) {
+                    panel.hidden = panel.id !== targetId;
+                  });
+
+                  if (empty) {
+                    empty.hidden = true;
+                  }
+                });
+              });
+            });
+          });
+        </script>
 
         <div class="{{ '' if active_tab == 'legal' else 'd-none' }}">
           <div class="unit-panel-heading">
@@ -839,5 +1031,145 @@ document.addEventListener('DOMContentLoaded', function () {
     unitSearch.addEventListener('input', applyUnitFilters);
   }
 });
+</script>
+
+<script>
+(function () {
+  const keySiteSelector = 'textarea.js-key-site-wysiwyg';
+  const csrfToken = '{{ csrf_token() }}';
+  const uploadUrl = '{% if "client_key_info.upload_asset" in current_app.view_functions %}{{ url_for("client_key_info.upload_asset", client_id=client.id) }}{% else %}/clients/{{ client.id }}/key-info/upload{% endif %}';
+
+  function ensureTinyMce(callback) {
+    if (window.tinymce) {
+      callback();
+      return;
+    }
+
+    if (document.querySelector('script[data-key-site-tinymce]')) {
+      document.querySelector('script[data-key-site-tinymce]').addEventListener('load', callback, { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://cdn.tiny.cloud/1/aexhg8zg7em9iyk8inv5pa5e3sqw27u8ca9ywdraam5tcgfe/tinymce/6/tinymce.min.js';
+    script.referrerPolicy = 'origin';
+    script.dataset.keySiteTinymce = 'true';
+    script.addEventListener('load', callback, { once: true });
+    document.head.appendChild(script);
+  }
+
+  function uploadBlob(blob, filename, progress, resolve, reject) {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', uploadUrl);
+    xhr.setRequestHeader('X-CSRFToken', csrfToken);
+    xhr.onload = function () {
+      if (xhr.status !== 200) {
+        reject('HTTP ' + xhr.status);
+        return;
+      }
+      let json = {};
+      try {
+        json = JSON.parse(xhr.responseText || '{}');
+      } catch (error) {
+        reject('Invalid server response');
+        return;
+      }
+      if (!json.location) {
+        reject('Invalid server response');
+        return;
+      }
+      resolve(json.location);
+    };
+    xhr.onerror = function () {
+      reject('Upload failed');
+    };
+    xhr.upload.onprogress = function (event) {
+      if (event.lengthComputable && progress) {
+        progress(event.loaded / event.total * 100);
+      }
+    };
+    const data = new FormData();
+    data.append('file', blob, filename);
+    xhr.send(data);
+  }
+
+  function initKeySiteEditor(textarea) {
+    if (!textarea || !window.tinymce) {
+      return;
+    }
+
+    if (!textarea.id) {
+      textarea.id = 'key-site-editor-' + Math.random().toString(36).slice(2);
+    }
+
+    if (tinymce.get(textarea.id)) {
+      return;
+    }
+
+    tinymce.init({
+      target: textarea,
+      menubar: false,
+      branding: false,
+      height: 320,
+      plugins: 'lists advlist link table code autoresize image media paste quickbars fullscreen autosave',
+      toolbar:
+        'undo redo | styles | bold italic underline | forecolor backcolor | ' +
+        'alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | ' +
+        'table | link image media | removeformat | fullscreen | code',
+      toolbar_mode: 'sliding',
+      quickbars_selection_toolbar: 'bold italic | forecolor backcolor | bullist numlist | h2 h3 blockquote',
+      content_style:
+        'body{font-family: Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; font-size:14px; line-height:1.5}',
+      contextmenu: false,
+      paste_data_images: true,
+      automatic_uploads: true,
+      images_upload_handler: function (blobInfo, progress) {
+        return new Promise(function (resolve, reject) {
+          uploadBlob(blobInfo.blob(), blobInfo.filename(), progress, resolve, reject);
+        });
+      },
+      file_picker_types: 'image media',
+      file_picker_callback: function (cb, value, meta) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = meta.filetype === 'image' ? 'image/*' : 'video/mp4,video/webm,video/ogg';
+        input.onchange = function () {
+          const file = this.files && this.files[0];
+          if (!file) {
+            return;
+          }
+          uploadBlob(file, file.name, null, function (location) {
+            cb(location, { title: file.name });
+          }, function () {
+            cb(null);
+          });
+        };
+        input.click();
+      },
+      media_live_embeds: true,
+      autosave_interval: '15s',
+      autosave_restore_when_empty: true,
+      autosave_prefix: 'client-profile-key-site-{{ client.id }}-'
+    });
+  }
+
+  function initEditorsInside(container) {
+    ensureTinyMce(function () {
+      container.querySelectorAll(keySiteSelector).forEach(initKeySiteEditor);
+    });
+  }
+
+  document.addEventListener('shown.bs.modal', function (event) {
+    if (event.target && event.target.querySelector(keySiteSelector)) {
+      initEditorsInside(event.target);
+    }
+  });
+
+  document.addEventListener('submit', function (event) {
+    if (event.target && event.target.querySelector(keySiteSelector) && window.tinymce) {
+      tinymce.triggerSave();
+    }
+  });
+})();
 </script>
 {% endblock %}

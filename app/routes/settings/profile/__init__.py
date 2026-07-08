@@ -1,6 +1,7 @@
 # app/routes/settings/profile/__init__.py
 from __future__ import annotations
 from datetime import datetime
+from types import SimpleNamespace
 
 from flask import render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
@@ -10,6 +11,7 @@ from app.extensions import db
 from app.models.onboarding.company import Company
 from app.routes.settings import settings_bp  # use existing blueprint
 from app.services.core.company_setup_readiness import build_company_setup_readiness
+from app.services.core.document_template_service import document_template_catalog
 
 # Optional WTForms support (use if you have it, otherwise fallback to manual)
 try:
@@ -26,6 +28,27 @@ PROFILE_FIELDS = (
     "address_line1", "address_line2", "city", "state", "postal_code", "country",
     "currency", "timezone", "preferred_language",
 )
+
+
+def _save_work_order_prefix(company: Company) -> bool:
+    raw_prefix = (request.form.get("work_order_prefix") or "").strip()
+    prefix = Company._normalise_work_order_prefix(raw_prefix)
+
+    if raw_prefix and len(prefix) < 2:
+        flash("Work order prefix must contain at least 2 letters or numbers.", "danger")
+        return False
+
+    if prefix:
+        duplicate = Company.query.filter(
+            Company.work_order_prefix == prefix,
+            Company.id != company.id,
+        ).first()
+        if duplicate:
+            flash("That work order prefix is already in use by another organisation.", "danger")
+            return False
+
+    company.work_order_prefix = prefix or None
+    return True
 
 def _attach_company_to_user(company: Company) -> None:
     # Link company -> user (best effort, only if fields exist)
@@ -73,13 +96,37 @@ def _resolve_company() -> Company:
 @login_required
 def profile_index():
     company = _resolve_company()
-    readiness = build_company_setup_readiness(company)
+    try:
+        readiness = build_company_setup_readiness(company)
+    except Exception:
+        current_app.logger.exception(
+            "Company setup readiness failed for company_id=%s",
+            getattr(company, "id", None),
+        )
+        readiness = SimpleNamespace(
+            organisation_uid=getattr(company, "organisation_uid", None) or "-",
+            enabled_module_count=0,
+            active_connection_count=0,
+            enabled_module_names=[],
+            has_connections=False,
+            modules=[],
+        )
+
+    try:
+        document_templates = document_template_catalog(company.id)
+    except Exception:
+        current_app.logger.exception(
+            "Document template catalog failed for company_id=%s",
+            getattr(company, "id", None),
+        )
+        document_templates = []
     db.session.commit()
 
     return render_template(
         "settings/company_profile/index.html",
         company=company,
         readiness=readiness,
+        document_templates=document_templates,
     )
 
 
@@ -95,6 +142,8 @@ def profile_edit():
             for f in PROFILE_FIELDS:
                 if hasattr(company, f):
                     setattr(company, f, (getattr(form, f).data or "").strip() or None)
+            if not _save_work_order_prefix(company):
+                return render_template("settings/company_profile/edit.html", form=form, company=company)
             _attach_company_to_user(company)
             db.session.commit()
             flash("Company profile updated.", "success")
@@ -113,6 +162,8 @@ def profile_edit():
             for f in PROFILE_FIELDS:
                 if hasattr(company, f):
                     setattr(company, f, g(f))
+            if not _save_work_order_prefix(company):
+                return render_template("settings/company_profile/edit.html", company=company)
             _attach_company_to_user(company)
             db.session.commit()
             flash("Company profile updated.", "success")

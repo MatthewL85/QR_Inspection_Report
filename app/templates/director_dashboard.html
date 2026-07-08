@@ -1,135 +1,147 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Director Dashboard</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body class="bg-light">
-  <div class="container mt-5">
-    <div class="text-center mb-4">
-      <h5 class="text-muted">Welcome to {{ company.name if company else 'Director Logix' }}</h5>
-      <h4 class="text-success">Director Dashboard</h4>
+{% extends 'base.html' %}
+{% block title %}Director Logix{% endblock %}
+
+{% block page_content %}
+<div class="contract-manager app-ready-surface app-ready-surface--director"
+     data-app-mobile-ready="true"
+     data-app-safe-area="required"
+     data-app-source-backed="true"
+     data-app-offline="static-shell-only"
+     data-app-surface="director-dashboard">
+  <section class="contract-manager-hero">
+    <div>
+      <h1>Director Logix</h1>
+      <p>Governance, CAPEX visibility, documents, Works summaries and GAR AI for authorised directors.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="contract-manager-link" href="{{ url_for('director.gar_feed') }}">GAR Governance Feed</a>
+      <a class="contract-manager-button" href="{{ url_for('director.director_capex_list') }}">Open CAPEX</a>
+    </div>
+  </section>
+
+  {% set dashboard_notification_title = 'Notification Action Queue' %}
+  {% include 'notifications/_dashboard_action_strip.html' %}
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Governance Snapshot</h2>
+        <p>Director-ready work areas linked back to the shared Client, Unit, Works and GAR source records.</p>
+      </div>
+      <span class="contract-alert-pill contract-alert-muted">{{ company.name if company else 'Director Logix' }}</span>
+    </div>
+    <div class="works-command-grid">
+      <a class="works-kpi-card" href="{{ url_for('director.director_capex_list') }}">
+        <span>CAPEX Requests</span>
+        <strong>{{ capex_requests|length if capex_requests else 0 }}</strong>
+      </a>
+      <a class="works-kpi-card" href="{{ url_for('director.director_documents') }}">
+        <span>Documents</span>
+        <strong>0</strong>
+      </a>
+      <a class="works-kpi-card" href="{{ url_for('director.director_view_inspections') }}">
+        <span>Inspections</span>
+        <strong>0</strong>
+      </a>
+      <a class="works-kpi-card" href="{{ url_for('director.director_messages') }}">
+        <span>Messages</span>
+        <strong>0</strong>
+      </a>
+    </div>
+  </section>
+
+  {% set gar_ask_title = 'Ask GAR' %}
+  {% set gar_ask_action = url_for('director.dashboard') %}
+  {% set gar_ask_clear_url = url_for('director.dashboard') %}
+  {% set gar_ask_subtitle = 'Source-backed governance answers for permitted Director Logix records.' %}
+  {% set gar_ask_placeholder = 'Ask about governance, compliance, documents, works summaries or contracts' %}
+  {% include 'gar/_ask_panel.html' %}
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>CAPEX Requests</h2>
+        <p>Director approvals and voting will use this source-backed queue as Director Logix expands.</p>
+      </div>
+      <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#directorCapexFilters" aria-expanded="false" aria-controls="directorCapexFilters">
+        Filter
+      </button>
     </div>
 
-    {% set dashboard_notification_title = 'Notification Action Queue' %}
-    {% include 'notifications/_dashboard_action_strip.html' %}
-
-    {% set gar_ask_action = url_for('director.dashboard') %}
-    {% set gar_ask_clear_url = url_for('director.dashboard') %}
-    {% set gar_ask_subtitle = 'Source-backed governance answers for permitted Director Logix records.' %}
-    {% set gar_ask_placeholder = 'Ask about governance, compliance, documents, works summaries or contracts' %}
-    {% include 'gar/_ask_panel.html' %}
-
-    <div class="card shadow">
-      <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-        <strong>CAPEX Requests</strong>
-        <button class="btn btn-sm btn-light ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
-          <i class="material-icons">filter_list</i>
-        </button>
-      </div>
-      <div class="card-body">
-        <div class="collapse mb-4" id="filterCollapse">
-        <form method="GET" class="row g-3">
-          <div class="col-md-3">
-            <label for="area" class="form-label">Filter by Area</label>
-            <select name="area" id="area" class="form-select">
-              <option value="">All Areas</option>
-              {% for area in areas %}
+    <div class="collapse mb-3" id="directorCapexFilters">
+      <form method="get" class="contract-manager-form-grid">
+        <label>
+          Area
+          <select name="area">
+            <option value="">All Areas</option>
+            {% for area in areas %}
               <option value="{{ area }}" {% if request.args.get('area') == area %}selected{% endif %}>{{ area }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div class="col-md-3">
-            <label for="status" class="form-label">Filter by Status</label>
-            <select name="status" id="status" class="form-select">
-              <option value="">All Statuses</option>
-              {% for s in statuses %}
-              <option value="{{ s }}" {% if request.args.get('status') == s %}selected{% endif %}>{{ s }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div class="col-md-3">
-            <label for="year" class="form-label">Filter by Year</label>
-            <select name="year" id="year" class="form-select">
-              <option value="">All Years</option>
-              {% for y in years %}
-              <option value="{{ y }}" {% if request.args.get('year') == y|string %}selected{% endif %}>{{ y }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div class="col-md-3 d-flex align-items-end">
-            <button type="submit" class="btn btn-outline-success w-100">Apply Filters</button>
-          </div>
-        </form>
-      </div>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-              </div>
             {% endfor %}
-          {% endif %}
-        {% endwith %}
-
-        {% if capex_requests %}
-          <table class="table table-bordered table-striped">
-            <thead class="table-light">
-              <tr>
-                <th>Area</th>
-                <th>Assigned To</th>
-                <th>Description</th>
-                <th>Status</th>
-                <th>Submitted By</th>
-                <th>Date</th>
-                <th>File</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for request in capex_requests %}
-              <tr>
-                <td>{{ request.area }}</td>
-                <td>
-                  {% set assigned = assignments[request.area] if request.area in assignments else None %}
-                  {% if assigned %}
-                    {{ assigned }}
-                  {% else %}
-                    <em>Unassigned</em>
-                  {% endif %}
-                </td>
-                <td>{{ request.description }}</td>
-                <td>{{ request.status }}</td>
-                <td>{{ request.submitted_by }}</td>
-                <td>{{ request.date_submitted.strftime('%Y-%m-%d') }}</td>
-                <td>
-                  {% if request.file_path %}
-                    <a href="{{ url_for('static', filename=request.file_path.replace('static/', '')) }}" target="_blank">View</a>
-                  {% else %}
-                    No file
-                  {% endif %}
-                </td>
-                <td>
-                  <a href="{{ url_for('capex.view_responses', capex_id=request.id) }}" class="btn btn-sm btn-outline-primary">View Responses</a>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        {% else %}
-          <p>No CAPEX requests found.</p>
-        {% endif %}
-      </div>
+          </select>
+        </label>
+        <label>
+          Status
+          <select name="status">
+            <option value="">All Statuses</option>
+            {% for status in statuses %}
+              <option value="{{ status }}" {% if request.args.get('status') == status %}selected{% endif %}>{{ status }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>
+          Year
+          <select name="year">
+            <option value="">All Years</option>
+            {% for year in years %}
+              <option value="{{ year }}" {% if request.args.get('year') == year|string %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <div class="contract-filter-actions">
+          <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('director.dashboard') }}">Reset</a>
+        </div>
+      </form>
     </div>
-  </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+    <div class="contract-manager-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr>
+            <th>Area</th>
+            <th>Assigned To</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Submitted By</th>
+            <th>Date</th>
+            <th>File</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for capex in capex_requests %}
+            <tr>
+              <td>{{ capex.area }}</td>
+              <td>{{ assignments[capex.area] if capex.area in assignments else 'Unassigned' }}</td>
+              <td>{{ capex.description }}</td>
+              <td><span class="contract-alert-pill contract-alert-muted">{{ capex.status }}</span></td>
+              <td>{{ capex.submitted_by }}</td>
+              <td>{{ capex.date_submitted.strftime('%Y-%m-%d') if capex.date_submitted else '-' }}</td>
+              <td>
+                {% if capex.file_path %}
+                  <a class="user-manager-action-link" href="{{ url_for('static', filename=capex.file_path.replace('static/', '')) }}" target="_blank" rel="noopener">View</a>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td><a class="user-manager-action-link" href="{{ url_for('capex.view_responses', capex_id=capex.id) }}">View Responses</a></td>
+            </tr>
+          {% else %}
+            <tr><td colspan="8" class="contract-manager-empty">No CAPEX requests are currently available for this Director view.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

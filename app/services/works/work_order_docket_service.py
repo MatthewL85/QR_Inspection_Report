@@ -206,7 +206,7 @@ def build_contractor_work_order_docket(work_order: WorkOrder, *, audience: str =
 
     return {
         "work_order": work_order,
-        "reference": f"WO-{work_order.id}",
+        "reference": work_order.display_reference,
         "status_key": (work_order.status or "").strip().lower(),
         "pdf_ready": (work_order.status or "").strip().lower() in PDF_READY_STATUSES,
         "client": client,
