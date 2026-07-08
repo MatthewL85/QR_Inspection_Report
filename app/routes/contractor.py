@@ -37,6 +37,7 @@ from app.services.works.workflow_service import (
 from app.services.contractor.job_docket_service import (
     build_standalone_job_docket_pack,
     build_job_docket_document_payload,
+    build_payment_request_document_payload,
     build_contractor_calendar_ics,
     calendar_context,
     contractor_calendar_entries_for_ics,
@@ -827,6 +828,29 @@ def job_docket_document(docket_id):
         job_docket=job_docket,
         payload=payload,
         company=payload["render"].get("company") or {},
+        document_heading="Job Docket Document Preview",
+    )
+
+
+@contractor_bp.route('/job-dockets/<int:docket_id>/payment-request-document', endpoint='job_docket_payment_request_document')
+@login_required(role='Contractor')
+def job_docket_payment_request_document(docket_id):
+    user = _current_contractor_user()
+    if not user:
+        flash('Your contractor profile is not linked yet.', 'warning')
+        return redirect(url_for('contractor.contractor_dashboard'))
+
+    job_docket = JobDocket.query.filter_by(
+        id=docket_id,
+        contractor_id=user.contractor_id,
+    ).first_or_404()
+    payload = build_payment_request_document_payload(job_docket)
+    return render_template(
+        'contractor/job_docket_document.html',
+        job_docket=job_docket,
+        payload=payload,
+        company=payload["render"].get("company") or {},
+        document_heading="Payment Request Preview",
     )
 
 

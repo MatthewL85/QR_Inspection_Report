@@ -610,6 +610,7 @@
                 {% if docket %}
                   <div class="contract-manager-cell-stack contractor-queue-action-stack">
                     <a class="user-manager-action-link" href="{{ url_for('contractor.job_docket_detail', docket_id=docket.id) }}">Open Docket</a>
+                    <a class="user-manager-action-link" href="{{ url_for('contractor.job_docket_payment_request_document', docket_id=docket.id) }}">Preview Request</a>
                     {% if not invoice_prepared_or_later %}
                       <form method="post"
                             action="{{ url_for('contractor.mark_job_docket_invoice_prepared', docket_id=docket.id) }}"

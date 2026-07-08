@@ -97,6 +97,8 @@ Payment Requests, Job Dockets and contractor quote responses should use the shar
 
 Job Dockets now expose a document preview from the docket page. This preview renders live docket data through the shared Core Document Template foundation, rather than using a separate Contractor Logix-only template. It is the controlled bridge toward future downloadable PDFs and locked final docket documents.
 
+Payment Requests also expose a preview before the contractor sends the request. This keeps the request clearly separate from a Finance Logix invoice: Contractor Logix prepares the payment request document, Works Logix reviews the handoff, and Finance Logix should later own invoice approval and payment state.
+
 This action does not create a formal invoice, approve an invoice or mark payment as received. Those controls should remain in Finance Logix when that module is built. Contractor Logix only records the operational handoff: the contractor has requested payment for the completed docket.
 
 If a Job Docket came from an approved quote, the invoice readiness panel should retain the quote reference and quote basis so the future Finance Logix workflow can compare the prepared invoice against the accepted quotation.

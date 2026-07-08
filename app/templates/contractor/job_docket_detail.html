@@ -242,6 +242,7 @@
       </article>
     </div>
     <div class="contractor-invoice-readiness-actions">
+      <a class="contract-manager-link" href="{{ url_for('contractor.job_docket_payment_request_document', docket_id=job_docket.id) }}">Preview Payment Request</a>
       {% if is_closed and not invoice_prepared_or_later %}
         <form method="post"
               action="{{ url_for('contractor.mark_job_docket_invoice_prepared', docket_id=job_docket.id) }}"

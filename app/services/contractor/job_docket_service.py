@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta
+from typing import Any
 
 from app.extensions import db
 from app.models.contractor.contractor_calendar_entry import ContractorCalendarEntry
 from app.models.contractor.contractor_team import ContractorTeam
 from app.models.contractor.job_docket import JobDocket
 from app.models.core.user import User
+from app.models.onboarding.company import Company
 from app.models.works.quote_response import QuoteResponse
 from app.models.works.work_order import WorkOrder
 from app.services.core.document_template_service import document_template_render_payload
@@ -129,9 +131,7 @@ def _entry_title(docket: JobDocket) -> str:
     return f"{docket.docket_number or 'Job Docket'} - {title}"
 
 
-def build_job_docket_document_payload(docket: JobDocket) -> dict:
-    """Build the shared document-renderer payload for a Contractor Logix Job Docket."""
-
+def _job_docket_document_context(docket: JobDocket) -> tuple[Company | None, Company | None, dict[str, Any]]:
     work_order = docket.work_order
     unit = docket.unit or getattr(work_order, "unit", None)
     client = docket.client or getattr(work_order, "client", None)
@@ -198,10 +198,42 @@ def build_job_docket_document_payload(docket: JobDocket) -> dict:
         "created_date": _date_display(getattr(docket, "created_at", None)),
         "source_summary": docket.instruction_source or "Contractor Logix",
     }
+    return template_company, contractor_company, extra_context
+
+
+def build_job_docket_document_payload(docket: JobDocket) -> dict:
+    """Build the shared document-renderer payload for a Contractor Logix Job Docket."""
+
+    template_company, contractor_company, extra_context = _job_docket_document_context(docket)
     return document_template_render_payload(
         template_company,
         "contractor_logix",
         "job_docket",
+        source_record=docket,
+        contractor_company=contractor_company,
+        extra_context=extra_context,
+    )
+
+
+def build_payment_request_document_payload(docket: JobDocket) -> dict:
+    """Build the shared document-renderer payload for a Contractor Logix Payment Request."""
+
+    template_company, contractor_company, extra_context = _job_docket_document_context(docket)
+    extra_context.update(
+        {
+            "document_ref": f"PR-{docket.id:05d}",
+            "payment_request_ref": f"PR-{docket.id:05d}",
+            "requested_total": docket.quotation_reference or "To be confirmed",
+            "completion_summary": docket.scope_of_works
+            or "Completed works submitted for management and future Finance Logix review.",
+            "invoice_status": docket.invoice_status or "Not Ready",
+            "payment_status": docket.payment_status or "Not Invoiced",
+        }
+    )
+    return document_template_render_payload(
+        template_company,
+        "contractor_logix",
+        "payment_request",
         source_record=docket,
         contractor_company=contractor_company,
         extra_context=extra_context,

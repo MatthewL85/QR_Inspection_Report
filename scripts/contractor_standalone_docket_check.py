@@ -100,6 +100,14 @@ def main() -> int:
                 elif b"Core Document Template" not in document_response.data:
                     failures.append("Standalone docket document preview did not use the shared renderer surface")
 
+                payment_document_response = client.get(f"/contractor/job-dockets/{docket.id}/payment-request-document")
+                if payment_document_response.status_code != 200:
+                    failures.append(f"Standalone docket payment request preview failed: HTTP {payment_document_response.status_code}")
+                elif b"Payment Request Preview" not in payment_document_response.data:
+                    failures.append("Standalone docket payment request preview did not render the payment request surface")
+                elif bytes(docket.docket_number, "utf-8") not in payment_document_response.data:
+                    failures.append("Standalone docket payment request preview did not show the live docket number")
+
                 private_log_response = client.post(
                     f"/contractor/job-dockets/{docket.id}/private-work-log",
                     data={
@@ -150,6 +158,7 @@ def main() -> int:
     print("- Manual creation route checked: yes")
     print("- Detail route checked: yes")
     print("- Document preview route checked: yes")
+    print("- Payment request preview route checked: yes")
     print("- Scheduling route checked: yes")
 
     if failures:
