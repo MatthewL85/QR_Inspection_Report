@@ -9,6 +9,7 @@ from app.models.contractor.job_docket import JobDocket
 from app.models.core.user import User
 from app.models.works.quote_response import QuoteResponse
 from app.models.works.work_order import WorkOrder
+from app.services.core.document_template_service import document_template_render_payload
 
 
 AWAITING_SCHEDULING_STATUS = "Accepted - Awaiting Scheduling"
@@ -25,6 +26,14 @@ def _date_value(value):
 
 def _time_value(value):
     return value.strftime("%H:%M") if value else None
+
+
+def _date_display(value, fallback="-") -> str:
+    return value.strftime("%d %b %Y") if value else fallback
+
+
+def _time_display(value, fallback="-") -> str:
+    return value.strftime("%H:%M") if value else fallback
 
 
 def _unit_reference(unit) -> str:
@@ -67,6 +76,21 @@ def _standalone_location(docket: JobDocket) -> str:
     return ", ".join(str(part) for part in address_parts if part) or _standalone_unit_reference(docket)
 
 
+def _standalone_address_lines(docket: JobDocket) -> list[str]:
+    return [
+        str(part)
+        for part in [
+            docket.standalone_address_line_1,
+            docket.standalone_address_line_2,
+            docket.standalone_town_city,
+            docket.standalone_region,
+            docket.standalone_postal_code,
+            docket.standalone_country,
+        ]
+        if part
+    ]
+
+
 def _standalone_unit_reference(docket: JobDocket) -> str:
     parts = [
         docket.standalone_block_name,
@@ -103,6 +127,85 @@ def _contractor_job_reference(docket_id: int) -> str:
 def _entry_title(docket: JobDocket) -> str:
     title = getattr(docket.work_order, "title", None) or docket.scope_of_works or "Standalone Job"
     return f"{docket.docket_number or 'Job Docket'} - {title}"
+
+
+def build_job_docket_document_payload(docket: JobDocket) -> dict:
+    """Build the shared document-renderer payload for a Contractor Logix Job Docket."""
+
+    work_order = docket.work_order
+    unit = docket.unit or getattr(work_order, "unit", None)
+    client = docket.client or getattr(work_order, "client", None)
+    contractor_company = getattr(docket.contractor, "organisation_company", None)
+    template_company = contractor_company or docket.company
+    address_lines = []
+    if unit:
+        address_lines = [
+            str(part)
+            for part in [
+                unit.address_line_1,
+                unit.address_line_2,
+                unit.town_city,
+                unit.postal_code,
+            ]
+            if part
+        ]
+    if not address_lines and client:
+        address_lines = [
+            str(part)
+            for part in [
+                getattr(client, "address_line1", None) or getattr(client, "address_line_1", None),
+                getattr(client, "address_line2", None) or getattr(client, "address_line_2", None),
+                getattr(client, "city", None),
+                getattr(client, "postal_code", None),
+            ]
+            if part
+        ]
+    if not address_lines:
+        address_lines = _standalone_address_lines(docket)
+
+    unit_reference = _unit_reference(unit) if unit else _standalone_unit_reference(docket)
+    schedule = "Not scheduled"
+    if docket.scheduled_date:
+        schedule = f"{_date_display(docket.scheduled_date)} {_time_display(docket.start_time, '')}".strip()
+        if docket.end_time:
+            schedule = f"{schedule} - {_time_display(docket.end_time)}"
+
+    extra_context = {
+        "document_ref": docket.docket_number or f"JD-{docket.id}",
+        "job_docket_ref": docket.docket_number or f"JD-{docket.id}",
+        "work_order_ref": getattr(work_order, "display_reference", None)
+        or docket.external_work_order_reference
+        or "Standalone instruction",
+        "contractor_job_no": docket.contractor_job_number or "-",
+        "client_name": getattr(client, "name", None) or docket.standalone_client_name or "-",
+        "property_name": getattr(client, "property_name", None) or docket.standalone_property_name or "-",
+        "location": unit_reference,
+        "address": ", ".join(address_lines) if address_lines else "-",
+        "block": getattr(unit, "block_name", None) or docket.standalone_block_name or "-",
+        "core": getattr(unit, "core_name", None) or docket.standalone_core_name or "-",
+        "unit_number": getattr(unit, "unit_number", None) or docket.standalone_unit_number or "-",
+        "site_contact": docket.contact_name or "-",
+        "site_contact_phone": docket.contact_phone or "-",
+        "site_contact_email": docket.contact_email or "-",
+        "scope_of_works": docket.scope_of_works or getattr(work_order, "description", None) or "-",
+        "access_notes": docket.access_notes or "-",
+        "priority": docket.priority or "Normal",
+        "trade": docket.required_trade or getattr(work_order, "business_type", None) or "-",
+        "schedule": schedule,
+        "engineer": getattr(docket.assigned_engineer, "full_name", None) or "-",
+        "team": getattr(docket.assigned_team, "name", None) or "-",
+        "status": docket.status or "-",
+        "created_date": _date_display(getattr(docket, "created_at", None)),
+        "source_summary": docket.instruction_source or "Contractor Logix",
+    }
+    return document_template_render_payload(
+        template_company,
+        "contractor_logix",
+        "job_docket",
+        source_record=docket,
+        contractor_company=contractor_company,
+        extra_context=extra_context,
+    )
 
 
 def create_standalone_job_docket(

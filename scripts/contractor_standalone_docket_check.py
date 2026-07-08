@@ -89,6 +89,16 @@ def main() -> int:
                     failures.append(f"Standalone docket detail failed: HTTP {detail_response.status_code}")
                 elif b"Materials Used &amp; Time Log" not in detail_response.data:
                     failures.append("Standalone docket detail did not show the materials and time log section")
+                elif b"Document Preview" not in detail_response.data:
+                    failures.append("Standalone docket detail did not link to the document preview")
+
+                document_response = client.get(f"/contractor/job-dockets/{docket.id}/document")
+                if document_response.status_code != 200:
+                    failures.append(f"Standalone docket document preview failed: HTTP {document_response.status_code}")
+                elif bytes(docket.docket_number, "utf-8") not in document_response.data:
+                    failures.append("Standalone docket document preview did not show the live docket number")
+                elif b"Core Document Template" not in document_response.data:
+                    failures.append("Standalone docket document preview did not use the shared renderer surface")
 
                 private_log_response = client.post(
                     f"/contractor/job-dockets/{docket.id}/private-work-log",
@@ -139,6 +149,7 @@ def main() -> int:
     print("Contractor standalone docket check")
     print("- Manual creation route checked: yes")
     print("- Detail route checked: yes")
+    print("- Document preview route checked: yes")
     print("- Scheduling route checked: yes")
 
     if failures:

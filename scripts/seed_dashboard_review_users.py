@@ -33,6 +33,7 @@ from app.services.user_profile_service import ensure_hr_profile_for_user
 
 REVIEW_PASSWORD = "review2026"
 MANAGEMENT_COMPANY_NAME = "Bohan Hyland Estate Management"
+CONTRACTOR_COMPANY_NAME = "Review Contractor Services"
 TEST_CLIENT_NAME = "Matthew Lavery"
 
 
@@ -207,14 +208,41 @@ def get_management_company() -> Company:
     return company
 
 
-def get_or_create_contractor() -> Contractor:
-    contractor = Contractor.query.filter_by(company_name="Review Contractor Services").first()
+def get_contractor_company() -> Company:
+    company = Company.query.filter_by(name=CONTRACTOR_COMPANY_NAME).first()
+    if company:
+        company.company_type = "Contractor"
+        company.is_active = True
+        company.onboarding_completed = True
+        return company
+
+    company = Company(
+        name=CONTRACTOR_COMPANY_NAME,
+        company_type="Contractor",
+        country="Ireland",
+        region="Dublin",
+        currency="EUR",
+        timezone="Europe/Dublin",
+        is_active=True,
+        onboarding_completed=True,
+        terms_agreed=True,
+        consent_to_communicate=True,
+    )
+    db.session.add(company)
+    db.session.flush()
+    return company
+
+
+def get_or_create_contractor(contractor_company: Company) -> Contractor:
+    contractor = Contractor.query.filter_by(company_name=CONTRACTOR_COMPANY_NAME).first()
     if contractor:
         contractor.is_active = True
+        contractor.company_id = contractor_company.id
         return contractor
 
     contractor = Contractor(
-        company_name="Review Contractor Services",
+        company_id=contractor_company.id,
+        company_name=CONTRACTOR_COMPANY_NAME,
         email="review.contractor@logixpm.test",
         phone="+35314913007",
         contact_name="Review Contractor",
@@ -353,7 +381,8 @@ def seed() -> None:
     app = create_app()
     with app.app_context():
         company = get_management_company()
-        contractor = get_or_create_contractor()
+        contractor_company = get_contractor_company()
+        contractor = get_or_create_contractor(contractor_company)
         client = Client.query.filter(Client.name.ilike(TEST_CLIENT_NAME)).first()
         review_unit = get_review_unit(client)
 
@@ -362,7 +391,8 @@ def seed() -> None:
 
         for account in ACCOUNTS:
             linked_contractor = contractor if account.role_name == "Contractor" else None
-            user = upsert_user(account, company, linked_contractor)
+            user_company = contractor_company if account.role_name == "Contractor" else company
+            user = upsert_user(account, user_company, linked_contractor)
             users_by_role[account.role_name] = user
             created_or_updated.append((account, user))
 
@@ -380,6 +410,7 @@ def seed() -> None:
         print("Dashboard review users seeded")
         print(f"- Password for all review accounts: {REVIEW_PASSWORD}")
         print(f"- Company: {company.name} (id={company.id})")
+        print(f"- Contractor company: {contractor_company.name} (id={contractor_company.id})")
         if client:
             print(f"- Test client linked: {client.name} (id={client.id})")
         if review_unit:

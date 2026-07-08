@@ -95,6 +95,8 @@ Property management company users do not enter Contractor Logix to view this. Th
 
 Payment Requests, Job Dockets and contractor quote responses should use the shared Core Document Template foundation for logos, terms, numbering, footer text and future PDF output. This keeps Contractor Logix documents configurable without letting Contractor Logix own the whole document governance layer.
 
+Job Dockets now expose a document preview from the docket page. This preview renders live docket data through the shared Core Document Template foundation, rather than using a separate Contractor Logix-only template. It is the controlled bridge toward future downloadable PDFs and locked final docket documents.
+
 This action does not create a formal invoice, approve an invoice or mark payment as received. Those controls should remain in Finance Logix when that module is built. Contractor Logix only records the operational handoff: the contractor has requested payment for the completed docket.
 
 If a Job Docket came from an approved quote, the invoice readiness panel should retain the quote reference and quote basis so the future Finance Logix workflow can compare the prepared invoice against the accepted quotation.

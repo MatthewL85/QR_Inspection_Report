@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block title %}{{ job_docket.docket_number or 'Job Docket' }} Document Preview{% endblock %}
+
+{% block page_content %}
+<div class="contract-manager app-ready-surface app-ready-surface--contractor"
+     data-app-mobile-ready="true"
+     data-app-source-backed="true">
+  <section class="contract-manager-hero">
+    <div>
+      <h1>{{ job_docket.docket_number or 'Job Docket' }} Document Preview</h1>
+      <p>Rendered from the shared Core Document Template foundation.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="contract-manager-link" href="{{ url_for('contractor.job_docket_detail', docket_id=job_docket.id) }}">Back to Docket</a>
+      {% if job_docket.work_order %}
+        <a class="contract-manager-link" href="{{ url_for('contractor.work_order_detail', work_order_id=job_docket.work_order.id) }}">Work Order Pack</a>
+      {% endif %}
+    </div>
+  </section>
+
+  <div class="document-template-preview-layout">
+    <section class="contract-manager-panel document-template-preview-sheet">
+      <div class="document-template-preview-header">
+        <div>
+          <span>{{ payload.render.ownership.owner_module or 'Contractor Logix' }}</span>
+          <h5>{{ payload.name }}</h5>
+          <small>{{ payload.description or 'Job docket document preview' }}</small>
+        </div>
+        <div class="document-template-preview-brand">
+          {% set logo_path = payload.render.contractor_company.logo_path or payload.render.company.logo_path %}
+          {% if logo_path %}
+            {% set _lp = (logo_path or '')|trim %}
+            {% set _lp = _lp.lstrip('/') %}
+            {% if _lp.startswith('static/') %}{% set _lp = _lp[7:] %}{% endif %}
+            <img src="{{ url_for('static', filename=_lp) }}" alt="Company logo">
+          {% else %}
+            <strong>{{ payload.render.contractor_company.name or payload.render.company.name or 'Contractor Logix' }}</strong>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="document-template-preview-meta">
+        <div>
+          <span>Job Docket</span>
+          <strong>{{ payload.render.context.job_docket_ref or payload.render.reference }}</strong>
+        </div>
+        <div>
+          <span>Work Order</span>
+          <strong>{{ payload.render.context.work_order_ref or '-' }}</strong>
+        </div>
+        <div>
+          <span>Contractor Job No.</span>
+          <strong>{{ payload.render.context.contractor_job_no or '-' }}</strong>
+        </div>
+        <div>
+          <span>Status</span>
+          <strong>{{ payload.render.context.status or '-' }}</strong>
+        </div>
+      </div>
+
+      <div class="document-template-preview-body client-key-site-rich-content">
+        {{ payload.render.body|key_site_content }}
+      </div>
+
+      {% if payload.include_terms and payload.render.terms %}
+        <div class="document-template-preview-terms client-key-site-rich-content">
+          <h6>Terms & Conditions</h6>
+          {{ payload.render.terms|key_site_content }}
+        </div>
+      {% endif %}
+
+      {% if payload.include_signature_block %}
+        <div class="document-template-signature-grid">
+          <div>
+            <span>Engineer / Contractor</span>
+            <strong>____________________________</strong>
+          </div>
+          <div>
+            <span>Date</span>
+            <strong>____________________________</strong>
+          </div>
+        </div>
+      {% endif %}
+
+      {% if payload.render.footer %}
+        <div class="document-template-preview-footer client-key-site-rich-content">
+          {{ payload.render.footer|key_site_content }}
+        </div>
+      {% endif %}
+    </section>
+
+    <aside class="contract-manager-panel document-template-preview-side">
+      <div class="client-manager-heading">
+        <div>
+          <h6>Source Record</h6>
+          <span>Live data from this Contractor Logix job docket.</span>
+        </div>
+      </div>
+      <div class="document-template-context-list">
+        <div>
+          <span>Template Source</span>
+          <strong>{{ 'Company Template' if payload.source == 'database' else 'System Default' }}</strong>
+        </div>
+        <div>
+          <span>Created By</span>
+          <strong>{{ payload.render.ownership.created_by or '-' }}</strong>
+        </div>
+        <div>
+          <span>Reviewed / Used By</span>
+          <strong>{{ payload.render.ownership.reviewed_by or '-' }}</strong>
+        </div>
+        <div>
+          <span>Output Ready</span>
+          <strong>{{ (payload.supported_output_formats or ['html'])|join(' / ')|upper }}</strong>
+        </div>
+      </div>
+
+      <div class="document-template-context-table">
+        <h6>Live Fields</h6>
+        {% for key in ['client_name', 'property_name', 'location', 'site_contact', 'site_contact_phone', 'schedule', 'engineer', 'team'] %}
+          <div>
+            <span>{{ key|replace('_', ' ')|title }}</span>
+            <strong>{{ payload.render.context.get(key) or '-' }}</strong>
+          </div>
+        {% endfor %}
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}
