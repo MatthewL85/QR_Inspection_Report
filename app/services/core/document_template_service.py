@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from datetime import date
 from typing import Any
 
 from app.models.core.document_template import CoreDocumentTemplate
@@ -124,6 +125,74 @@ DOCUMENT_TEMPLATE_OWNERSHIP: dict[tuple[str, str], dict[str, Any]] = {
         "reviewed_by": "Role-aware module view",
         "availability": "GAR settings",
         "handoff": False,
+    },
+}
+
+DOCUMENT_TEMPLATE_SAMPLE_CONTEXTS: dict[tuple[str, str], dict[str, Any]] = {
+    ("works_logix", "work_order"): {
+        "document_ref": "WO-BH-00124",
+        "client_name": "Matthew Lavery",
+        "property_name": "Matthew Lavery Test Development",
+        "location": "Dodder View / Unit 7",
+        "issue_summary": "5th floor carpet spillage requiring cleaning attendance.",
+        "site_contact": "Review Member Owner",
+        "site_contact_phone": "+353 86 000 0009",
+        "priority": "Urgent",
+        "created_date": date.today().strftime("%d %b %Y"),
+    },
+    ("contractor_logix", "job_docket"): {
+        "document_ref": "JD-2026-00042",
+        "job_docket_ref": "JD-2026-00042",
+        "work_order_ref": "WO-BH-00124",
+        "client_name": "Matthew Lavery",
+        "location": "Dodder View / Unit 7",
+        "site_contact": "Review Member Owner",
+        "site_contact_phone": "+353 86 000 0009",
+        "scope_of_works": "Attend site, assess the reported issue, complete works and upload evidence.",
+        "scheduled_date": date.today().strftime("%d %b %Y"),
+    },
+    ("works_logix", "quote_request"): {
+        "document_ref": "QR-BH-00018",
+        "quote_request_ref": "QR-BH-00018",
+        "client_name": "Matthew Lavery",
+        "location": "Rathgar Hall common areas",
+        "scope_of_works": "Provide quotation for replacement access-control reader and associated making good.",
+        "response_due": date.today().strftime("%d %b %Y"),
+    },
+    ("contractor_logix", "quote_response"): {
+        "document_ref": "QT-00018",
+        "quote_response_ref": "QT-00018",
+        "quoted_total": "EUR 1,850.00",
+        "valid_until": date.today().strftime("%d %b %Y"),
+        "scope_of_works": "Supply and install access-control reader, test operation and issue completion evidence.",
+    },
+    ("contractor_logix", "payment_request"): {
+        "document_ref": "PR-00031",
+        "payment_request_ref": "PR-00031",
+        "job_docket_ref": "JD-2026-00042",
+        "work_order_ref": "WO-BH-00124",
+        "requested_total": "EUR 420.00",
+        "completion_summary": "Works complete and submitted for management review.",
+    },
+    ("finance_logix", "invoice"): {
+        "document_ref": "INV-00077",
+        "invoice_ref": "INV-00077",
+        "account_name": "Matthew Lavery OMC",
+        "invoice_total": "EUR 997.00",
+        "due_date": date.today().strftime("%d %b %Y"),
+    },
+    ("contracts_logix", "contract"): {
+        "document_ref": "CON-00009",
+        "contract_ref": "CON-00009",
+        "client_name": "Matthew Lavery",
+        "contract_period": "01 Jan 2026 to 31 Dec 2026",
+        "contract_value": "EUR 9,997.00",
+    },
+    ("gar", "gar_report"): {
+        "document_ref": "GAR-00014",
+        "report_title": "Property Risk Snapshot",
+        "source_summary": "Open works, key site records, contract status and resident activity.",
+        "generated_for": "Super Admin",
     },
 }
 
@@ -294,6 +363,127 @@ def get_document_template_payload(
 ) -> dict[str, Any]:
     template = resolve_document_template(company_id, module_key, document_type)
     return document_template_payload(template, context=context)
+
+
+def _sample_context(module_key: str, document_type: str) -> dict[str, Any]:
+    key = (_normalise_key(module_key), _normalise_key(document_type))
+    sample = deepcopy(DOCUMENT_TEMPLATE_SAMPLE_CONTEXTS.get(key, {}))
+    sample.setdefault("document_ref", f"{key[1].replace('_', '-').upper()}-00001")
+    sample.setdefault("created_date", date.today().strftime("%d %b %Y"))
+    return sample
+
+
+def _replace_tokens(content: str | None, context: dict[str, Any]) -> str:
+    if not content:
+        return ""
+    rendered = str(content)
+    flat_context = dict(context)
+    company = context.get("company") or {}
+    if isinstance(company, dict):
+        for key, value in company.items():
+            flat_context[f"company.{key}"] = value
+    contractor_company = context.get("contractor_company") or {}
+    if isinstance(contractor_company, dict):
+        for key, value in contractor_company.items():
+            flat_context[f"contractor_company.{key}"] = value
+
+    for key, value in flat_context.items():
+        if isinstance(value, (dict, list, tuple, set)):
+            continue
+        rendered = rendered.replace("{{ " + key + " }}", str(value or ""))
+        rendered = rendered.replace("{{" + key + "}}", str(value or ""))
+    return rendered
+
+
+def _default_preview_body(module_key: str, document_type: str, context: dict[str, Any]) -> str:
+    key = (_normalise_key(module_key), _normalise_key(document_type))
+    if key == ("works_logix", "work_order"):
+        return (
+            "<h3>Work Order Instruction</h3>"
+            "<p><strong>Issue:</strong> {{ issue_summary }}</p>"
+            "<p><strong>Location:</strong> {{ location }}</p>"
+            "<p><strong>Priority:</strong> {{ priority }}</p>"
+            "<p><strong>Site Contact:</strong> {{ site_contact }} - {{ site_contact_phone }}</p>"
+        )
+    if key == ("contractor_logix", "job_docket"):
+        return (
+            "<h3>Job Docket</h3>"
+            "<p><strong>Linked Work Order:</strong> {{ work_order_ref }}</p>"
+            "<p><strong>Scope:</strong> {{ scope_of_works }}</p>"
+            "<p><strong>Location:</strong> {{ location }}</p>"
+            "<p><strong>Scheduled:</strong> {{ scheduled_date }}</p>"
+        )
+    if key == ("works_logix", "quote_request"):
+        return (
+            "<h3>Quotation Request</h3>"
+            "<p><strong>Scope:</strong> {{ scope_of_works }}</p>"
+            "<p><strong>Location:</strong> {{ location }}</p>"
+            "<p><strong>Response Due:</strong> {{ response_due }}</p>"
+        )
+    if key == ("contractor_logix", "quote_response"):
+        return (
+            "<h3>Quotation Response</h3>"
+            "<p><strong>Quoted Total:</strong> {{ quoted_total }}</p>"
+            "<p><strong>Valid Until:</strong> {{ valid_until }}</p>"
+            "<p><strong>Scope:</strong> {{ scope_of_works }}</p>"
+        )
+    if key == ("contractor_logix", "payment_request"):
+        return (
+            "<h3>Payment Request</h3>"
+            "<p><strong>Job Docket:</strong> {{ job_docket_ref }}</p>"
+            "<p><strong>Work Order:</strong> {{ work_order_ref }}</p>"
+            "<p><strong>Amount Requested:</strong> {{ requested_total }}</p>"
+            "<p>{{ completion_summary }}</p>"
+        )
+    if key == ("finance_logix", "invoice"):
+        return (
+            "<h3>Invoice</h3>"
+            "<p><strong>Account:</strong> {{ account_name }}</p>"
+            "<p><strong>Total:</strong> {{ invoice_total }}</p>"
+            "<p><strong>Due Date:</strong> {{ due_date }}</p>"
+        )
+    if key == ("contracts_logix", "contract"):
+        return (
+            "<h3>Contract Agreement</h3>"
+            "<p><strong>Client:</strong> {{ client_name }}</p>"
+            "<p><strong>Period:</strong> {{ contract_period }}</p>"
+            "<p><strong>Value:</strong> {{ contract_value }}</p>"
+        )
+    return (
+        "<h3>{{ report_title }}</h3>"
+        "<p><strong>Generated For:</strong> {{ generated_for }}</p>"
+        "<p>{{ source_summary }}</p>"
+    )
+
+
+def document_template_preview_payload(
+    company: Company | None,
+    module_key: str,
+    document_type: str,
+) -> dict[str, Any]:
+    module = _normalise_key(module_key)
+    doc_type = _normalise_key(document_type)
+    sample = _sample_context(module, doc_type)
+    context = build_document_template_context(company=company, extra_context=sample)
+    payload = get_document_template_payload(
+        company.id if company else None,
+        module,
+        doc_type,
+        context=context,
+    )
+    ownership = DOCUMENT_TEMPLATE_OWNERSHIP.get((module, doc_type), {})
+    body = payload.get("html_body") or _default_preview_body(module, doc_type, context)
+    payload["preview"] = {
+        "ownership": ownership,
+        "reference": sample.get("document_ref"),
+        "body": _replace_tokens(body, context),
+        "terms": _replace_tokens(payload.get("terms_body"), context),
+        "footer": _replace_tokens(payload.get("footer_body"), context),
+        "sample_context": sample,
+        "company": context.get("company") or {},
+        "contractor_company": context.get("contractor_company") or {},
+    }
+    return payload
 
 
 def document_template_catalog(company_id: int | None = None) -> list[dict[str, Any]]:

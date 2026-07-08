@@ -13,6 +13,7 @@ from app.routes.settings import settings_bp
 from app.services.core.document_template_service import (
     DOCUMENT_TEMPLATE_DEFAULTS,
     document_template_catalog,
+    document_template_preview_payload,
     get_document_template_payload,
 )
 
@@ -139,5 +140,31 @@ def document_templates_edit(module_key: str, document_type: str):
         "settings/document_templates/form.html",
         company=company,
         template=template,
+        payload=payload,
+    )
+
+
+@settings_bp.route(
+    "/document-templates/<module_key>/<document_type>/preview",
+    methods=["GET"],
+    endpoint="document_templates_preview",
+)
+@login_required
+def document_templates_preview(module_key: str, document_type: str):
+    module_key = _normalise_key(module_key)
+    document_type = _normalise_key(document_type)
+    if (module_key, document_type) not in DOCUMENT_TEMPLATE_DEFAULTS:
+        flash("That document template type is not registered.", "danger")
+        return redirect(url_for("settings.document_templates_index"))
+
+    company = _resolve_company()
+    if not company:
+        flash("Company context is required before document templates can be previewed.", "danger")
+        return redirect(url_for("settings.profile_index"))
+
+    payload = document_template_preview_payload(company, module_key, document_type)
+    return render_template(
+        "settings/document_templates/preview.html",
+        company=company,
         payload=payload,
     )

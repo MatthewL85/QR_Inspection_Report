@@ -85,6 +85,9 @@
                     <a class="unit-link-action" href="{{ url_for('settings.document_templates_edit', module_key=item.module_key, document_type=item.document_type, company_id=company.id if company else none) }}">
                       Edit
                     </a>
+                    <a class="unit-link-action" href="{{ url_for('settings.document_templates_preview', module_key=item.module_key, document_type=item.document_type, company_id=company.id if company else none) }}">
+                      Preview
+                    </a>
                   </td>
                 </tr>
               {% endfor %}

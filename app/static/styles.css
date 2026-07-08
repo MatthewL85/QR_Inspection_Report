@@ -308,6 +308,160 @@ body.sidebar-collapsed .sidenav {
   gap: 8px;
 }
 
+.document-template-preview-layout {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.34fr);
+}
+
+.document-template-preview-sheet {
+  background: #fff;
+}
+
+.document-template-preview-header {
+  align-items: flex-start;
+  border-bottom: 1px solid #eef1f5;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1.1rem 1.2rem;
+}
+
+.document-template-preview-header span,
+.document-template-preview-meta span,
+.document-template-context-list span,
+.document-template-context-table span {
+  color: #526174;
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.document-template-preview-header h5 {
+  color: #10213f;
+  font-size: 1.2rem;
+  font-weight: 900;
+  margin: 0.18rem 0 0;
+}
+
+.document-template-preview-header small {
+  color: #526174;
+  display: block;
+  font-size: 0.86rem;
+  margin-top: 0.28rem;
+}
+
+.document-template-preview-brand {
+  align-items: center;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  min-height: 68px;
+  min-width: 150px;
+  padding: 0.7rem;
+}
+
+.document-template-preview-brand img {
+  max-height: 48px;
+  max-width: 140px;
+}
+
+.document-template-preview-brand strong {
+  color: #10213f;
+  font-size: 0.95rem;
+}
+
+.document-template-preview-meta {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 1rem 1.2rem;
+}
+
+.document-template-preview-meta div,
+.document-template-context-list div,
+.document-template-context-table div {
+  background: #f8fafd;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.document-template-preview-meta strong,
+.document-template-context-list strong,
+.document-template-context-table strong {
+  color: #10213f;
+  display: block;
+  font-size: 0.92rem;
+  margin-top: 0.18rem;
+}
+
+.document-template-preview-body {
+  border-top: 1px solid #eef1f5;
+  min-height: 260px;
+  padding: 1.2rem;
+}
+
+.document-template-preview-terms,
+.document-template-preview-footer {
+  border-top: 1px solid #eef1f5;
+  padding: 1rem 1.2rem;
+}
+
+.document-template-preview-terms h6,
+.document-template-context-table h6 {
+  color: #10213f;
+  font-size: 0.88rem;
+  font-weight: 900;
+  margin: 0 0 0.65rem;
+}
+
+.document-template-signature-grid {
+  border-top: 1px solid #eef1f5;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 1rem 1.2rem;
+}
+
+.document-template-signature-grid div {
+  border-top: 1px solid #aeb9ca;
+  padding-top: 0.5rem;
+}
+
+.document-template-signature-grid span {
+  color: #526174;
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.document-template-signature-grid strong {
+  color: #10213f;
+  display: block;
+  font-size: 0.9rem;
+  margin-top: 1.1rem;
+}
+
+.document-template-preview-side {
+  align-self: start;
+}
+
+.document-template-context-list,
+.document-template-context-table {
+  display: grid;
+  gap: 10px;
+  padding: 0 1rem 1rem;
+}
+
+.document-template-context-table {
+  border-top: 1px solid #eef1f5;
+  padding-top: 1rem;
+}
+
 @media (max-width: 1100px) {
   .document-template-form-grid,
   .document-template-rule-grid,
@@ -318,6 +472,14 @@ body.sidebar-collapsed .sidenav {
   .document-template-content-grid {
     grid-template-columns: 1fr;
   }
+
+  .document-template-preview-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .document-template-preview-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 700px) {
@@ -325,6 +487,16 @@ body.sidebar-collapsed .sidenav {
   .document-template-rule-grid,
   .company-document-setup-grid {
     grid-template-columns: 1fr;
+  }
+
+  .document-template-preview-header,
+  .document-template-preview-meta,
+  .document-template-signature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .document-template-preview-header {
+    display: grid;
   }
 }
 

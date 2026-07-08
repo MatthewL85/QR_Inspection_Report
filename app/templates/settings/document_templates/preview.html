@@ -1,0 +1,127 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block page_content %}
+<div class="container-fluid client-manager-workspace">
+  <div class="client-manager-command-bar">
+    <div>
+      <h5>Document Preview</h5>
+      <span>{{ payload.name }} using governed sample data and current company branding.</span>
+    </div>
+    <div class="client-manager-actions">
+      <a class="unit-link-action" href="{{ url_for('settings.document_templates_index', company_id=company.id) }}">
+        <i class="material-icons">arrow_back</i> Templates
+      </a>
+      <a class="btn btn-primary btn-sm" href="{{ url_for('settings.document_templates_edit', module_key=payload.module_key, document_type=payload.document_type, company_id=company.id) }}">
+        Edit Template
+      </a>
+    </div>
+  </div>
+
+  <div class="document-template-preview-layout">
+    <section class="client-manager-panel document-template-preview-sheet">
+      <div class="document-template-preview-header">
+        <div>
+          <span>{{ payload.preview.ownership.owner_module or payload.module_key|replace('_', ' ')|title }}</span>
+          <h5>{{ payload.name }}</h5>
+          <small>{{ payload.description or 'Document template preview' }}</small>
+        </div>
+        <div class="document-template-preview-brand">
+          {% if company.logo_path %}
+            {% set _lp = (company.logo_path or '')|trim %}
+            {% set _lp = _lp.lstrip('/') %}
+            {% if _lp.startswith('static/') %}{% set _lp = _lp[7:] %}{% endif %}
+            <img src="{{ url_for('static', filename=_lp) }}" alt="Company logo">
+          {% else %}
+            <strong>{{ company.name or 'LogixPM' }}</strong>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="document-template-preview-meta">
+        <div>
+          <span>Reference</span>
+          <strong>{{ payload.preview.reference }}</strong>
+        </div>
+        <div>
+          <span>Logo Mode</span>
+          <strong>{{ payload.logo_mode|replace('_', ' ')|title }}</strong>
+        </div>
+        <div>
+          <span>Brand Source</span>
+          <strong>{{ payload.primary_brand_source|replace('_', ' ')|title }}</strong>
+        </div>
+        <div>
+          <span>Output</span>
+          <strong>{{ (payload.supported_output_formats or ['html'])|join(' / ')|upper }}</strong>
+        </div>
+      </div>
+
+      <div class="document-template-preview-body client-key-site-rich-content">
+        {{ payload.preview.body|key_site_content }}
+      </div>
+
+      {% if payload.include_terms and payload.preview.terms %}
+        <div class="document-template-preview-terms client-key-site-rich-content">
+          <h6>Terms & Conditions</h6>
+          {{ payload.preview.terms|key_site_content }}
+        </div>
+      {% endif %}
+
+      {% if payload.include_signature_block %}
+        <div class="document-template-signature-grid">
+          <div>
+            <span>Authorised By</span>
+            <strong>____________________________</strong>
+          </div>
+          <div>
+            <span>Date</span>
+            <strong>____________________________</strong>
+          </div>
+        </div>
+      {% endif %}
+
+      {% if payload.preview.footer %}
+        <div class="document-template-preview-footer client-key-site-rich-content">
+          {{ payload.preview.footer|key_site_content }}
+        </div>
+      {% endif %}
+    </section>
+
+    <aside class="client-manager-panel document-template-preview-side">
+      <div class="client-manager-heading">
+        <div>
+          <h6>Preview Context</h6>
+          <span>Representative data only. Live documents will use the source record.</span>
+        </div>
+      </div>
+      <div class="document-template-context-list">
+        <div>
+          <span>Created By</span>
+          <strong>{{ payload.preview.ownership.created_by or '-' }}</strong>
+        </div>
+        <div>
+          <span>Reviewed / Used By</span>
+          <strong>{{ payload.preview.ownership.reviewed_by or '-' }}</strong>
+        </div>
+        <div>
+          <span>Availability</span>
+          <strong>{{ payload.preview.ownership.availability or 'Settings' }}</strong>
+        </div>
+        <div>
+          <span>Template Source</span>
+          <strong>{{ 'Company Template' if payload.source == 'database' else 'System Default' }}</strong>
+        </div>
+      </div>
+
+      <div class="document-template-context-table">
+        <h6>Sample Fields</h6>
+        {% for key, value in payload.preview.sample_context.items() %}
+          <div>
+            <span>{{ key|replace('_', ' ')|title }}</span>
+            <strong>{{ value }}</strong>
+          </div>
+        {% endfor %}
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

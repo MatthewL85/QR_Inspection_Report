@@ -20,6 +20,7 @@ def main() -> None:
     settings_init = read("app/routes/settings/__init__.py")
     index_template = read("app/templates/settings/document_templates/index.html")
     form_template = read("app/templates/settings/document_templates/form.html")
+    preview_template = read("app/templates/settings/document_templates/preview.html")
     company_profile_template = read("app/templates/settings/company_profile/index.html")
     super_admin_sidebar = read("app/templates/_partials/super_admin_sidebar.html")
     docs = "\n".join(
@@ -50,7 +51,9 @@ def main() -> None:
         "build_document_template_context",
         "document_template_payload",
         "document_template_catalog",
+        "document_template_preview_payload",
         "DOCUMENT_TEMPLATE_OWNERSHIP",
+        "DOCUMENT_TEMPLATE_SAMPLE_CONTEXTS",
         "\"payment_request\"",
         "\"job_docket\"",
         "\"quote_request\"",
@@ -63,15 +66,25 @@ def main() -> None:
     for token in [
         "document_templates_index",
         "document_templates_edit",
+        "document_templates_preview",
         "Document Templates",
         "Document Ownership Map",
+        "Document Preview",
         "Created By",
         "Reviewed / Used By",
         "Payment Requests",
         "Job Dockets",
     ]:
         combined_settings = "\n".join(
-            [settings_route, settings_init, index_template, form_template, company_profile_template, super_admin_sidebar]
+            [
+                settings_route,
+                settings_init,
+                index_template,
+                form_template,
+                preview_template,
+                company_profile_template,
+                super_admin_sidebar,
+            ]
         )
         require(combined_settings, token, "settings template manager")
 

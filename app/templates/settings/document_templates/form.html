@@ -10,6 +10,9 @@
       <a class="unit-link-action" href="{{ url_for('settings.document_templates_index', company_id=company.id) }}">
         <i class="material-icons">arrow_back</i> Templates
       </a>
+      <a class="unit-link-action" href="{{ url_for('settings.document_templates_preview', module_key=template.module_key, document_type=template.document_type, company_id=company.id) }}">
+        <i class="material-icons">visibility</i> Preview
+      </a>
       <button form="documentTemplateForm" type="submit" class="btn btn-primary btn-sm">Save Template</button>
     </div>
   </div>
