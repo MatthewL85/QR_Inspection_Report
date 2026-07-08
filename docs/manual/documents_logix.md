@@ -83,6 +83,8 @@ The settings page groups templates by the module that owns the document:
 
 Shared handoff documents should still show where they are reviewed. For example, a Contractor Logix Payment Request is created by the contractor, but reviewed through Works Logix and future Finance Logix. That does not make it a LogixPM-created document.
 
+Document previews and future generated outputs now share the same rendering foundation. The preview screen uses governed sample data, while live documents should pass their source work order, job docket, quote, invoice, contract or GAR record into the same renderer. This keeps on-screen previews, future PDFs and stored final documents aligned instead of creating separate document logic in each module.
+
 The foundation is protected by:
 
 ```text

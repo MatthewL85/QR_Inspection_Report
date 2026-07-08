@@ -51,6 +51,7 @@ def main() -> None:
         "build_document_template_context",
         "document_template_payload",
         "document_template_catalog",
+        "document_template_render_payload",
         "document_template_preview_payload",
         "DOCUMENT_TEMPLATE_OWNERSHIP",
         "DOCUMENT_TEMPLATE_SAMPLE_CONTEXTS",

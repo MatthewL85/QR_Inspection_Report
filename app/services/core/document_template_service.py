@@ -456,15 +456,30 @@ def _default_preview_body(module_key: str, document_type: str, context: dict[str
     )
 
 
-def document_template_preview_payload(
+def document_template_render_payload(
     company: Company | None,
     module_key: str,
     document_type: str,
+    *,
+    source_record: Any | None = None,
+    contractor_company: Company | None = None,
+    extra_context: dict[str, Any] | None = None,
+    use_sample_context: bool = False,
 ) -> dict[str, Any]:
     module = _normalise_key(module_key)
     doc_type = _normalise_key(document_type)
-    sample = _sample_context(module, doc_type)
-    context = build_document_template_context(company=company, extra_context=sample)
+    render_context: dict[str, Any] = {}
+    if use_sample_context:
+        render_context.update(_sample_context(module, doc_type))
+    if extra_context:
+        render_context.update(extra_context)
+
+    context = build_document_template_context(
+        company=company,
+        source_record=source_record,
+        contractor_company=contractor_company,
+        extra_context=render_context,
+    )
     payload = get_document_template_payload(
         company.id if company else None,
         module,
@@ -473,16 +488,43 @@ def document_template_preview_payload(
     )
     ownership = DOCUMENT_TEMPLATE_OWNERSHIP.get((module, doc_type), {})
     body = payload.get("html_body") or _default_preview_body(module, doc_type, context)
-    payload["preview"] = {
+    rendered = {
         "ownership": ownership,
-        "reference": sample.get("document_ref"),
+        "reference": render_context.get("document_ref")
+        or context.get("work_order_ref")
+        or context.get("job_docket_ref")
+        or context.get("quote_request_ref")
+        or context.get("quote_response_ref")
+        or context.get("payment_request_ref")
+        or context.get("invoice_ref")
+        or context.get("contract_ref")
+        or context.get("report_ref")
+        or payload.get("number_prefix")
+        or "-",
         "body": _replace_tokens(body, context),
         "terms": _replace_tokens(payload.get("terms_body"), context),
         "footer": _replace_tokens(payload.get("footer_body"), context),
-        "sample_context": sample,
+        "sample_context": render_context if use_sample_context else {},
+        "context": context,
         "company": context.get("company") or {},
         "contractor_company": context.get("contractor_company") or {},
     }
+    payload["render"] = rendered
+    return payload
+
+
+def document_template_preview_payload(
+    company: Company | None,
+    module_key: str,
+    document_type: str,
+) -> dict[str, Any]:
+    payload = document_template_render_payload(
+        company,
+        module_key,
+        document_type,
+        use_sample_context=True,
+    )
+    payload["preview"] = payload["render"]
     return payload
 
 
