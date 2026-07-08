@@ -2828,6 +2828,52 @@ def review_contractor_completion(
     return work_order
 
 
+def mark_payment_request_ready_for_finance(
+    *,
+    work_order_id: int,
+    company_id: int,
+    reviewed_by_user_id: int,
+    review_notes: str = "",
+) -> WorkOrder | None:
+    """Mark a contractor payment request as reviewed without creating a Finance invoice."""
+
+    work_order = WorkOrder.query.filter(
+        WorkOrder.id == work_order_id,
+        _work_order_company_filter(company_id),
+    ).first()
+    docket = getattr(work_order, "job_docket", None) if work_order else None
+    if not work_order or not docket:
+        return None
+
+    invoice_status = _normalise_status(getattr(docket, "invoice_status", None))
+    payment_status = _normalise_status(getattr(docket, "payment_status", None))
+    if invoice_status not in {"invoice prepared", "invoiced"}:
+        return None
+    if payment_status in {"paid", "settled", "closed paid"}:
+        return None
+
+    docket.invoice_status = "Ready for Finance"
+    docket.payment_status = "Awaiting Finance Review"
+    record_work_order_lifecycle_event(
+        work_order=work_order,
+        event_type="payment_request_ready_for_finance",
+        title="Payment request reviewed for Finance Logix",
+        source_module="Works Logix",
+        actor_user_id=reviewed_by_user_id,
+        note=review_notes or "Management reviewed the contractor payment request and marked it ready for future Finance Logix processing.",
+        status_snapshot=work_order.status,
+        event_metadata={
+            "job_docket_id": docket.id,
+            "job_docket_number": docket.docket_number,
+            "invoice_status": docket.invoice_status,
+            "payment_status": docket.payment_status,
+            "finance_logix_invoice_created": False,
+        },
+    )
+    db.session.commit()
+    return work_order
+
+
 def build_work_order_lifecycle(work_order: WorkOrder) -> list[dict]:
     """Build a review-friendly lifecycle from the linked source records."""
 

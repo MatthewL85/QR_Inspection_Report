@@ -14,7 +14,12 @@ from app.services.unit_access_service import create_unit_access_invite
 from app.services.unit_service import UnitService
 from app.services.work_order_reopen_service import WorkOrderReopenService
 from app.services.works import build_work_order_audit_pack, can_manage_reopen_request, can_manage_work_order
-from app.services.works.workflow_service import build_work_order_lifecycle, progress_updates_for_audience, review_contractor_completion
+from app.services.works.workflow_service import (
+    build_work_order_lifecycle,
+    mark_payment_request_ready_for_finance,
+    progress_updates_for_audience,
+    review_contractor_completion,
+)
 
 
 unit_bp = Blueprint("unit_bp", __name__, url_prefix="/units")
@@ -237,6 +242,41 @@ def work_order_payment_request_document(unit_id, work_order_id):
         job_docket=work_order.job_docket,
         payload=build_payment_request_document_payload(work_order.job_docket),
     )
+
+
+@unit_bp.route(
+    "/<int:unit_id>/work-orders/<int:work_order_id>/payment-request-ready-for-finance",
+    methods=["POST"],
+    endpoint="work_order_payment_request_ready_for_finance",
+)
+@login_required
+def work_order_payment_request_ready_for_finance(unit_id, work_order_id):
+    company_id = _company_id()
+    if not company_id:
+        abort(403)
+
+    data = UnitService.get_unit(unit_id)
+    if not data or data["unit"].company_id != company_id:
+        abort(404)
+
+    work_order = WorkOrder.query.filter_by(id=work_order_id, unit_id=unit_id).first()
+    if not work_order:
+        abort(404)
+    if not can_manage_work_order(current_user, work_order, company_id):
+        abort(403)
+
+    reviewed = mark_payment_request_ready_for_finance(
+        work_order_id=work_order_id,
+        company_id=company_id,
+        reviewed_by_user_id=current_user.id,
+        review_notes=request.form.get("review_notes", ""),
+    )
+    if reviewed:
+        flash("Payment request marked ready for Finance Logix review.", "success")
+    else:
+        flash("Payment request could not be moved to Finance Logix readiness.", "warning")
+
+    return redirect(url_for("unit_bp.work_order_review", unit_id=unit_id, work_order_id=work_order_id))
 
 
 @unit_bp.route("/<int:unit_id>/work-orders/<int:work_order_id>/reopen", methods=["POST"], endpoint="work_order_reopen")

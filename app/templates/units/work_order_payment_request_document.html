@@ -125,6 +125,40 @@
           </div>
         {% endfor %}
       </div>
+
+      {% set invoice_status_key = (job_docket.invoice_status or "")|lower %}
+      {% set payment_status_key = (job_docket.payment_status or "")|lower %}
+      {% if invoice_status_key in ["invoice prepared", "invoiced"] and payment_status_key not in ["paid", "settled", "closed paid"] %}
+        <form method="post"
+              action="{{ url_for('unit_bp.work_order_payment_request_ready_for_finance', unit_id=unit.id, work_order_id=work_order.id) }}"
+              class="document-template-context-table mt-3">
+          <h6>Management Review</h6>
+          <label class="d-block">
+            <span>Review Note</span>
+            <textarea name="review_notes"
+                      class="form-control"
+                      rows="4"
+                      placeholder="Optional note for the Finance Logix handoff."></textarea>
+          </label>
+          <button type="submit" class="contract-manager-button w-100 mt-2">
+            Mark Ready for Finance
+          </button>
+          <small class="d-block mt-2 text-muted">
+            This records readiness only. It does not create, approve or pay a Finance Logix invoice.
+          </small>
+        </form>
+      {% else %}
+        <div class="document-template-context-table mt-3">
+          <h6>Management Review</h6>
+          <div>
+            <span>Finance Handoff</span>
+            <strong>{{ job_docket.invoice_status or "Not ready" }}</strong>
+          </div>
+          <small class="d-block mt-2 text-muted">
+            The active payment request has already moved out of the management review queue or is no longer eligible.
+          </small>
+        </div>
+      {% endif %}
     </aside>
   </div>
 </div>

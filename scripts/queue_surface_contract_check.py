@@ -16,6 +16,7 @@ CONTRACTOR_KEY_INFO_ROUTES = ROOT / "app" / "routes" / "contractor" / "key_info.
 CONTRACTOR_ACCESS = ROOT / "app" / "services" / "core" / "contractor_access.py"
 JOB_DOCKET_SERVICE = ROOT / "app" / "services" / "contractor" / "job_docket_service.py"
 WORKS_COMMAND_CENTRE = ROOT / "app" / "templates" / "works" / "_command_centre.html"
+UNIT_ROUTES = ROOT / "app" / "routes" / "unit.py"
 
 
 def _read(path: Path) -> str:
@@ -154,7 +155,7 @@ def _check_contractor_access(route_text: str, key_info_text: str, access_text: s
     )
 
 
-def _check_works_command_centre(text: str, failures: list[str]) -> None:
+def _check_works_command_centre(text: str, unit_route_text: str, failures: list[str]) -> None:
     expected_queues = {
         "open": "Open Work Orders",
         "member_requests": "Member Requests",
@@ -209,6 +210,12 @@ def _check_works_command_centre(text: str, failures: list[str]) -> None:
         failures,
     )
     _require(
+        "mark_payment_request_ready_for_finance" in unit_route_text
+        and "work_order_payment_request_ready_for_finance" in unit_route_text,
+        "Works routes must expose a controlled payment-request readiness handoff for future Finance Logix.",
+        failures,
+    )
+    _require(
         _count(r"^\s*<section class=\"contract-manager-panel\"", text) <= 7,
         "Works command centre should not stack every queue list on one page.",
         failures,
@@ -226,13 +233,14 @@ def main() -> int:
     contractor_access = _read(CONTRACTOR_ACCESS)
     job_docket_service = _read(JOB_DOCKET_SERVICE)
     works_command_centre = _read(WORKS_COMMAND_CENTRE)
+    unit_routes = _read(UNIT_ROUTES)
 
     _check_contractor_queue(contractor_queue, failures)
     _check_contractor_dashboard(contractor_dashboard, failures)
     _check_contractor_pack(contractor_pack, failures)
     _check_contractor_docket(contractor_docket, job_docket_service, contractor_routes, failures)
     _check_contractor_access(contractor_routes, contractor_key_info_routes, contractor_access, failures)
-    _check_works_command_centre(works_command_centre, failures)
+    _check_works_command_centre(works_command_centre, unit_routes, failures)
 
     print("Queue surface contract check")
     print("- Contractor tile-driven queues checked: yes")

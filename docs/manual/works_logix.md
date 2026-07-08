@@ -81,6 +81,8 @@ Later phases can add Director Logix comparison/voting and Finance Logix approval
 
 Payment requests should be accessed through the Payment Requests tile. When a contractor completes work and sends a Payment Request from the linked Job Docket, Works Logix surfaces that record for PM/Admin/Assistant/Finance review without giving property-management-company users access to Contractor Logix. Authorised management users can preview the source-backed Payment Request document from the Works Logix queue or the work-order review page before the future Finance Logix payment workflow takes over.
 
+After review, Works Logix can mark the Payment Request as `Ready for Finance`. This records a lifecycle event and moves the contractor request out of the active payment-request queue. It does not create, approve or pay a Finance Logix invoice.
+
 Work orders, quotation requests and payment request review packs should use the shared Core Document Template foundation for branding, terms, numbering and future PDF output. Works Logix owns the operational workflow and review queues; Documents Logix owns the governed document-template foundation.
 
 This is a Finance Logix readiness handoff, not a full invoice ledger yet. The source remains the Works Logix work order and linked Contractor Logix job docket. The management user should review the completed work pack, evidence, docket number, contractor and invoice/payment state before the future Finance Logix payment workflow takes over.
