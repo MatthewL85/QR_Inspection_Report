@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any, Iterable
 
 from app.services.core.document_template_service import DOCUMENT_TEMPLATE_OWNERSHIP
@@ -269,3 +270,63 @@ def combined_settings_sections(enabled_module_keys: Iterable[str] | None = None)
     if not enabled:
         return registry
     return tuple(item for item in registry if item["key"] == "core_platform" or item["key"] in enabled)
+
+
+def module_settings_feed_payload(company: Any | None = None, user: Any | None = None) -> dict[str, Any]:
+    registry = module_settings_registry()
+    return {
+        "context_type": "module_settings_registry",
+        "contract_version": "phase3-module-settings-registry-v1",
+        "generated_at": datetime.now(UTC).isoformat(),
+        "read_only": True,
+        "scope": {
+            "company_id": getattr(company, "id", None),
+            "company_name": getattr(company, "name", None),
+            "organisation_uid": getattr(company, "organisation_uid", None),
+            "user_id": getattr(user, "id", None),
+            "role": getattr(getattr(user, "role", None), "name", None),
+            "server_side_visibility": True,
+        },
+        "summary": {
+            "module_count": len(registry),
+            "standalone_ready_count": sum(1 for item in registry if item["standalone_ready"]),
+            "connected_ready_count": sum(1 for item in registry if item["connected_ready"]),
+            "document_template_type_count": sum(len(item["document_template_types"]) for item in registry),
+        },
+        "settings_policy": {
+            "core_owns_shared_foundations": True,
+            "modules_own_operational_settings": True,
+            "standalone_modules_expose_own_settings_only": True,
+            "connected_modules_group_in_one_settings_centre": True,
+            "shared_engine_does_not_transfer_document_ownership": True,
+        },
+        "registry": list(registry),
+        "mutation_policy": {
+            "feed_allows_mutation": False,
+            "settings_changes_require_module_owner_route": True,
+            "requires_authenticated_session": True,
+            "requires_csrf": True,
+            "gar_may_execute_actions": False,
+        },
+        "source_references": [
+            {
+                "model": "ModuleSettingsContract",
+                "record_id": None,
+                "label": "Core module settings registry",
+                "fields": [
+                    "key",
+                    "settings_sections",
+                    "standalone_ready",
+                    "connected_ready",
+                    "document_template_types",
+                    "shared_foundations",
+                ],
+            },
+            {
+                "model": "CoreDocumentTemplate",
+                "record_id": None,
+                "label": "Document template ownership registry",
+                "fields": ["module_key", "document_type", "owner_module", "created_by", "reviewed_by"],
+            },
+        ],
+    }

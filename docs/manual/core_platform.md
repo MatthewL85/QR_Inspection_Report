@@ -62,6 +62,10 @@ This registry defines how settings should be split across the ecosystem:
 
 This prevents settings from becoming tangled together while still making the connected platform feel like one system.
 
+The same registry is available to authenticated app clients and future GAR setup surfaces through the read-only `/app/module-settings/feed.json` feed. The feed exposes module ownership, standalone/connected readiness, shared links, document template ownership and the settings mutation policy.
+
+Important: this feed is discovery only. It does not change settings. Module settings changes must go through the owning module's governed route, with authentication and CSRF protection.
+
 ## Connecting Organisations
 
 When two organisations need to work together, the platform should use a controlled connection invite.

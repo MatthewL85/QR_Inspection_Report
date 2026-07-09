@@ -11,6 +11,7 @@ from app.services.core.app_home import (
     build_app_home_payload,
 )
 from app.services.core.company_setup_readiness import company_setup_readiness_feed_payload
+from app.services.core.module_settings_registry import module_settings_feed_payload
 
 
 app_home_bp = Blueprint("app_home", __name__, url_prefix="/app")
@@ -48,3 +49,11 @@ def company_setup_feed():
         return jsonify({"error": "company_context_missing"}), 403
 
     return jsonify(company_setup_readiness_feed_payload(company))
+
+
+@app_home_bp.route("/module-settings/feed.json", endpoint="module_settings_feed")
+@login_required
+def module_settings_feed():
+    company_id = getattr(current_user, "company_id", None)
+    company = Company.query.get(company_id) if company_id else None
+    return jsonify(module_settings_feed_payload(company=company, user=current_user))

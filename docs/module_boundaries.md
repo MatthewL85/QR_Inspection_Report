@@ -382,6 +382,8 @@ Settings follow the same ownership model as operational data.
 
 The current registry is implemented in `app/services/core/module_settings_registry.py` and exposed through `Settings -> Module Settings`.
 
+The registry is also exposed as a read-only app feed at `/app/module-settings/feed.json` for future app clients, module onboarding and GAR. This feed must remain discovery-only: settings changes still belong to the module that owns the setting.
+
 ## Route Boundary Check
 
 Active module route namespaces are protected by:
