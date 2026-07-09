@@ -23,6 +23,11 @@ except Exception as e:
     print(f"[settings] document template routes not loaded: {e}")
 
 try:
+    from . import modules  # noqa: F401
+except Exception as e:
+    print(f"[settings] module settings routes not loaded: {e}")
+
+try:
     from .bank import *  # noqa
 except Exception as e:
     print(f"[settings] bank routes not loaded: {e}")

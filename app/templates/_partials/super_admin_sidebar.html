@@ -74,6 +74,7 @@
      The first existing endpoint will be used (prevents "missing" items). #}
   {% set SETTINGS_ITEMS = [
     ('Company Profile',  'business',        ['settings.profile_index', 'settings.profile_view', 'super_admin.settings_company_profile']),
+    ('Module Settings',  'apps',            ['settings.module_settings_index']),
     ('Branding & Theme', 'palette',         ['settings.branding_view', 'super_admin.settings_branding_theme']),
     ('Document Templates', 'description',   ['settings.document_templates_index']),
     ('Bank Accounts',    'account_balance', ['settings.bank_index',    'super_admin.bank_accounts_list']),

@@ -370,6 +370,18 @@ Key files:
 
 If a feature needs data from another module, it should link by ID and read through a service/helper. It should not copy and maintain a second version of the same business fact.
 
+## Settings Boundary Rule
+
+Settings follow the same ownership model as operational data.
+
+- Core Platform owns shared settings foundations: company profile, branding primitives, users, roles, module subscriptions, organisation connections, notifications, audit logs and the shared document template engine.
+- Each module owns the settings for the workflows it creates and operates.
+- If a module is bought or used independently, it should expose its own settings without requiring unrelated modules.
+- If modules are connected, the Settings Centre should show the same module-owned settings in one grouped view.
+- A shared engine does not transfer ownership. For example, the document template renderer is core infrastructure, but Work Order templates belong to Works Logix and Job Docket templates belong to Contractor Logix.
+
+The current registry is implemented in `app/services/core/module_settings_registry.py` and exposed through `Settings -> Module Settings`.
+
 ## Route Boundary Check
 
 Active module route namespaces are protected by:

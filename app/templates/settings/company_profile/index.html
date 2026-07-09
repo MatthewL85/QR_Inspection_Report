@@ -16,6 +16,9 @@
       <a class="unit-link-action" href="{{ url_for('settings.branding_view') }}">
         <i class="material-icons">palette</i> Branding
       </a>
+      <a class="unit-link-action" href="{{ url_for('settings.module_settings_index', company_id=company.id) }}">
+        <i class="material-icons">apps</i> Module Settings
+      </a>
       <a class="unit-link-action" href="{{ url_for('settings.document_templates_index', company_id=company.id) }}">
         <i class="material-icons">description</i> Document Templates
       </a>
@@ -240,6 +243,9 @@
         <h6>Module Setup Map</h6>
         <span>Structured readiness view used by setup screens, module onboarding and future GAR context.</span>
       </div>
+      <a class="unit-link-action" href="{{ url_for('settings.module_settings_index', company_id=company.id) }}">
+        <i class="material-icons">apps</i> Open Module Settings Registry
+      </a>
     </div>
     <div class="client-manager-table-wrap">
       <table class="client-manager-table organisation-connections-table">

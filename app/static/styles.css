@@ -134,6 +134,196 @@ body.sidebar-collapsed .sidenav {
   display: block;
 }
 
+.module-settings-overview-panel {
+  margin-bottom: 18px;
+}
+
+.module-settings-summary-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.module-settings-summary-grid div {
+  background: #f8fafd;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.module-settings-summary-grid span,
+.module-settings-card-header span,
+.module-settings-card h6 {
+  color: #52627a;
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.module-settings-summary-grid strong {
+  color: #061833;
+  display: block;
+  font-size: 1.35rem;
+  margin-top: 6px;
+}
+
+.module-settings-summary-grid small,
+.module-settings-card p,
+.module-settings-template-list small,
+.module-settings-empty {
+  color: #52627a;
+  font-size: 0.84rem;
+}
+
+.module-settings-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.module-settings-card {
+  background: #fff;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 16px;
+}
+
+.module-settings-card-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.module-settings-card-header strong {
+  color: #061833;
+  display: block;
+  font-size: 1rem;
+  margin-top: 4px;
+}
+
+.module-settings-status,
+.module-settings-badge-row span,
+.module-settings-chip-list span,
+.module-settings-template-list a,
+.module-settings-empty {
+  border-radius: 999px;
+  display: inline-flex;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.module-settings-status {
+  background: #eef3fa;
+  color: #40516d;
+  font-size: 0.72rem;
+  padding: 5px 9px;
+  white-space: nowrap;
+}
+
+.module-settings-status-active,
+.module-settings-status-foundation {
+  background: #e4f8ed;
+  color: #00843d;
+}
+
+.module-settings-status-partial,
+.module-settings-status-shell {
+  background: #fff4dd;
+  color: #b76500;
+}
+
+.module-settings-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.module-settings-badge-row span {
+  background: #eef3fa;
+  color: #52627a;
+  font-size: 0.75rem;
+  padding: 5px 10px;
+}
+
+.module-settings-badge-row span.is-ready {
+  background: #e9f2ff;
+  color: #005dff;
+}
+
+.module-settings-columns {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  margin-top: 8px;
+}
+
+.module-settings-card ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.module-settings-card li {
+  color: #10213f;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.module-settings-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.module-settings-chip-list span {
+  background: #f1f5fa;
+  color: #40516d;
+  font-size: 0.72rem;
+  padding: 5px 8px;
+}
+
+.module-settings-template-list {
+  border-top: 1px solid #edf1f6;
+  margin-top: 14px;
+  padding-top: 12px;
+}
+
+.module-settings-template-list a {
+  align-items: center;
+  background: #f8fafd;
+  border: 1px solid #dbe4f0;
+  color: #10213f;
+  gap: 8px;
+  margin: 8px 8px 0 0;
+  padding: 7px 10px;
+  text-decoration: none;
+}
+
+.module-settings-template-list a:hover {
+  border-color: #2554ff;
+  color: #005dff;
+}
+
+.module-settings-empty {
+  background: #f8fafd;
+  border: 1px dashed #dbe4f0;
+  margin-top: 8px;
+  padding: 8px 10px;
+}
+
+.module-settings-open-link {
+  align-self: flex-start;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
 .document-template-table td:first-child a {
   display: block;
   font-weight: 800;
@@ -465,8 +655,14 @@ body.sidebar-collapsed .sidenav {
 @media (max-width: 1100px) {
   .document-template-form-grid,
   .document-template-rule-grid,
-  .company-document-setup-grid {
+  .company-document-setup-grid,
+  .module-settings-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .module-settings-grid,
+  .module-settings-columns {
+    grid-template-columns: 1fr;
   }
 
   .document-template-content-grid {
@@ -485,7 +681,8 @@ body.sidebar-collapsed .sidenav {
 @media (max-width: 700px) {
   .document-template-form-grid,
   .document-template-rule-grid,
-  .company-document-setup-grid {
+  .company-document-setup-grid,
+  .module-settings-summary-grid {
     grid-template-columns: 1fr;
   }
 

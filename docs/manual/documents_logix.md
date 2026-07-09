@@ -81,6 +81,8 @@ The settings page groups templates by the module that owns the document:
 - Contracts Logix owns agreement templates.
 - GAR owns source-backed report wrappers.
 
+The Module Settings Registry makes the same ownership visible from the wider settings map. The template engine is shared core infrastructure, but the template type remains module-owned. For example, a job docket template belongs to Contractor Logix even when the docket was created from a Works Logix work order. A work order template belongs to Works/Property Management Logix, not the contractor.
+
 Shared handoff documents should still show where they are reviewed. For example, a Contractor Logix Payment Request is created by the contractor, but reviewed through Works Logix and future Finance Logix. That does not make it a LogixPM-created document.
 
 Document previews and future generated outputs now share the same rendering foundation. The preview screen uses governed sample data, while live documents should pass their source work order, job docket, quote, invoice, contract or GAR record into the same renderer. This keeps on-screen previews, future PDFs and stored final documents aligned instead of creating separate document logic in each module.

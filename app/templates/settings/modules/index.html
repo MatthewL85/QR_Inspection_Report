@@ -1,0 +1,122 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block page_content %}
+<div class="container-fluid client-manager-workspace">
+
+  <div class="client-manager-command-bar">
+    <div>
+      <h5>Module Settings Registry</h5>
+      <span>Independent module settings with one connected Settings Centre when modules are linked.</span>
+    </div>
+    <div class="client-manager-actions">
+      <a class="unit-link-action" href="{{ url_for('settings.profile_index', id=company.id) if company else url_for('settings.profile_index') }}">
+        <i class="material-icons">business</i> Company Profile
+      </a>
+      <a class="unit-link-action" href="{{ url_for('settings.document_templates_index', company_id=company.id) if company else url_for('settings.document_templates_index') }}">
+        <i class="material-icons">description</i> Document Templates
+      </a>
+    </div>
+  </div>
+
+  <section class="client-manager-panel module-settings-overview-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Connected Settings Model</h6>
+        <span>Core provides shared foundations. Each module owns its operational setup, document types and permissions.</span>
+      </div>
+      <span class="user-manager-status-pill is-active">REGISTRY</span>
+    </div>
+    <div class="module-settings-summary-grid">
+      <div>
+        <span>Modules</span>
+        <strong>{{ modules|length }}</strong>
+        <small>Registered settings contracts</small>
+      </div>
+      <div>
+        <span>Active Foundations</span>
+        <strong>{{ active_modules }}</strong>
+        <small>Active, shell or build-ready modules</small>
+      </div>
+      <div>
+        <span>Document Types</span>
+        <strong>{{ template_count }}</strong>
+        <small>Owned by their source module</small>
+      </div>
+      <div>
+        <span>Operating Mode</span>
+        <strong>Hybrid</strong>
+        <small>Standalone modules plus connected centre</small>
+      </div>
+    </div>
+  </section>
+
+  <section class="client-manager-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Module Ownership</h6>
+        <span>Use this as the setup map for LogixPM, Contractor Logix, Finance Logix, HR Logix, Members Logix, Director Logix and GAR.</span>
+      </div>
+    </div>
+
+    <div class="module-settings-grid">
+      {% for module in modules %}
+        <article class="module-settings-card">
+          <div class="module-settings-card-header">
+            <div>
+              <span>{{ module.owner_scope }}</span>
+              <strong>{{ module.name }}</strong>
+            </div>
+            <em class="module-settings-status module-settings-status-{{ module.status|replace('_', '-') }}">{{ module.status|replace('_', ' ')|title }}</em>
+          </div>
+
+          <div class="module-settings-badge-row">
+            <span class="{{ 'is-ready' if module.standalone_ready else '' }}">Standalone {{ 'Ready' if module.standalone_ready else 'Linked Only' }}</span>
+            <span class="{{ 'is-ready' if module.connected_ready else '' }}">Connected {{ 'Ready' if module.connected_ready else 'Planned' }}</span>
+          </div>
+
+          <p>{{ module.notes }}</p>
+
+          <div class="module-settings-columns">
+            <div>
+              <h6>Settings</h6>
+              <ul>
+                {% for section in module.settings_sections %}
+                  <li>{{ section }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+            <div>
+              <h6>Shared Links</h6>
+              <div class="module-settings-chip-list">
+                {% for item in module.shared_foundations %}
+                  <span>{{ item }}</span>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <div class="module-settings-template-list">
+            <h6>Document Templates</h6>
+            {% if module.document_template_types %}
+              {% for doc in module.document_template_types %}
+                <a href="{{ url_for('settings.document_templates_edit', module_key=doc.module_key, document_type=doc.document_type, company_id=company.id) if company else url_for('settings.document_templates_edit', module_key=doc.module_key, document_type=doc.document_type) }}">
+                  <span>{{ doc.document_type|replace('_', ' ')|title }}</span>
+                  <small>{{ doc.created_by }}{% if doc.handoff %} / handoff{% endif %}</small>
+                </a>
+              {% endfor %}
+            {% else %}
+              <span class="module-settings-empty">No module-owned templates registered yet.</span>
+            {% endif %}
+          </div>
+
+          {% if module.primary_setting_endpoint and module.primary_setting_endpoint in view_functions %}
+            <a class="unit-link-action module-settings-open-link" href="{{ url_for(module.primary_setting_endpoint) }}">
+              Open Settings
+            </a>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+</div>
+{% endblock %}

@@ -48,6 +48,20 @@ Each organisation can have one or more enabled modules, such as Property Managem
 
 This lets an organisation use one module independently, then add another module later without creating a second identity.
 
+## Module Settings Registry
+
+The platform now has a Module Settings Registry at `Settings -> Module Settings`.
+
+This registry defines how settings should be split across the ecosystem:
+
+- Core Platform owns shared foundations such as users, roles, companies, organisation identity, module subscriptions, organisation connections, document template engine, notifications and audit logs.
+- Each module owns its own operational settings. Contractor Logix owns contractor job docket, calendar, engineer/team and payment request settings. Finance Logix owns finance, invoice and ledger settings. Members Logix owns portal and member/resident access settings. HR Logix owns staff and HR document settings.
+- If modules are purchased or used separately, each module can expose only its own settings.
+- If modules are connected, the user should see one Settings Centre grouped by module, with the Core Platform providing the shared identity and connection layer.
+- Document templates are grouped by the module that creates the document, even when another module reviews or receives it.
+
+This prevents settings from becoming tangled together while still making the connected platform feel like one system.
+
 ## Connecting Organisations
 
 When two organisations need to work together, the platform should use a controlled connection invite.

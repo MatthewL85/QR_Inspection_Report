@@ -11,6 +11,9 @@
       <a class="unit-link-action" href="{{ url_for('settings.profile_index') }}">
         <i class="material-icons">business</i> Company Profile
       </a>
+      <a class="unit-link-action" href="{{ url_for('settings.module_settings_index', company_id=company.id) if company else url_for('settings.module_settings_index') }}">
+        <i class="material-icons">apps</i> Module Settings
+      </a>
       <a class="unit-link-action" href="{{ url_for('settings.branding_view') }}">
         <i class="material-icons">palette</i> Branding
       </a>
