@@ -47,7 +47,7 @@
           <div class="settings-app-row">
             <div>
               <strong>Contractor profile</strong>
-              <small>{{ contractor_display_name }} · {{ contractor_trade }}</small>
+              <small>{{ contractor_display_name }} &middot; {{ contractor_trade }}</small>
             </div>
             <a href="{{ url_for('settings.profile_index', company_id=company.id) if company else url_for('settings.profile_index') }}">Edit</a>
           </div>
