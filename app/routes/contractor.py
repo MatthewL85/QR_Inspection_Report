@@ -18,6 +18,7 @@ from app.services.gar import (
     build_work_order_relevant_history,
 )
 from app.services.core.contractor_access import contractor_portal_denial_reason
+from app.services.core.module_settings_registry import module_settings_by_key
 from app.services.works.workflow_service import (
     ContractorWorkFilters,
     WORK_ORDER_PROGRESS_VISIBILITY,
@@ -1020,9 +1021,32 @@ def calendar_ics():
 
 
 @contractor_bp.route('/settings')
-@login_required()
+@login_required(role='Contractor')
 def contractor_settings():
-    return render_template('contractor/settings.html')
+    user = _current_contractor_user()
+    if not user:
+        flash('Contractor Logix is only available to contractor company users.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    contractor = getattr(user, "contractor", None)
+    company = getattr(user, "company", None)
+    return render_template(
+        'contractor/settings.html',
+        contractor=contractor,
+        company=company,
+        contractor_display_name=(
+            getattr(contractor, "company_name", None)
+            or getattr(company, "name", None)
+            or getattr(user, "full_name", None)
+            or "Contractor"
+        ),
+        contractor_trade=(
+            getattr(contractor, "business_type", None)
+            or getattr(contractor, "contractor_type", None)
+            or "General contractor"
+        ),
+        module_contract=module_settings_by_key("contractor_logix"),
+    )
 
 
 @contractor_bp.route('/inspections')

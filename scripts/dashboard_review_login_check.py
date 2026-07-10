@@ -27,6 +27,7 @@ OPERATIONAL_PAGES_BY_EMAIL = {
     "review.contractor@logixpm.test": (
         "/contractor/work-orders",
         "/contractor/calendar",
+        "/contractor/settings",
     ),
     "review.member@logixpm.test": ("/members/works",),
     "review.resident@logixpm.test": ("/members/works",),

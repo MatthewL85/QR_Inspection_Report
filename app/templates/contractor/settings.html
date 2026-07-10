@@ -3,12 +3,142 @@
 {% block title %}Contractor Settings{% endblock %}
 
 {% block page_content %}
-<section class="container py-4">
-  <div class="card border-0 shadow-sm">
-    <div class="card-body p-4">
-      <h4 class="mb-1">Contractor Settings</h4>
-      <p class="text-muted mb-0">Company profile, compliance preferences and contractor workspace settings will be managed here.</p>
+<div class="contract-manager app-ready-surface app-ready-surface--contractor"
+     data-app-mobile-ready="true"
+     data-app-safe-area="required"
+     data-app-source-backed="true"
+     data-app-offline="static-shell-only"
+     data-app-surface="contractor-settings">
+  <section class="contract-manager-hero">
+    <div>
+      <h1>Contractor Settings</h1>
+      <p>Contractor-owned setup for job dockets, teams, calendar, documents and payment readiness.</p>
     </div>
-  </div>
-</section>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="contract-manager-link" href="{{ url_for('contractor.contractor_dashboard') }}">Dashboard</a>
+      <a class="contract-manager-link" href="{{ url_for('contractor.calendar') }}">Calendar</a>
+      <a class="contract-manager-button" href="{{ url_for('contractor.new_job_docket') }}">
+        <i class="fas fa-plus me-1"></i> New Job Docket
+      </a>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Contractor Workspace</h2>
+        <p>These settings belong to Contractor Logix and can operate independently or when connected to Works Logix.</p>
+      </div>
+      <span class="contract-alert-pill contract-alert-muted">Contractor only</span>
+    </div>
+    <div class="contractor-settings-profile-grid">
+      <article>
+        <span>Contractor Profile</span>
+        <strong>{{ contractor_display_name }}</strong>
+        <small>{{ contractor_trade }}</small>
+      </article>
+      <article>
+        <span>Company</span>
+        <strong>{{ company.name if company else '-' }}</strong>
+        <small>{{ company.organisation_uid if company and company.organisation_uid else 'Organisation UID pending' }}</small>
+      </article>
+      <article>
+        <span>Operating Mode</span>
+        <strong>Standalone + Connected</strong>
+        <small>Manual dockets and Works Logix assignments supported</small>
+      </article>
+      <article>
+        <span>Document Ownership</span>
+        <strong>Contractor Logix</strong>
+        <small>Job dockets, quote responses and payment requests</small>
+      </article>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Settings Areas</h2>
+        <p>Setup map for the contractor module. Future edit screens should open from these module-owned areas.</p>
+      </div>
+    </div>
+
+    <div class="contractor-settings-area-grid">
+      <article class="contractor-settings-area-card">
+        <span class="contract-alert-pill contract-alert-primary">Profile</span>
+        <h3>Company Profile</h3>
+        <p>Trading name, contact details, address, branding and contractor service categories.</p>
+        <small>Owned by Contractor Logix</small>
+      </article>
+      <article class="contractor-settings-area-card">
+        <span class="contract-alert-pill contract-alert-primary">People</span>
+        <h3>Engineers & Teams</h3>
+        <p>Engineer records, teams, mobile scheduling visibility and field assignment rules.</p>
+        <small>Supports calendar-centred job dockets</small>
+      </article>
+      <article class="contractor-settings-area-card">
+        <span class="contract-alert-pill contract-alert-primary">Dockets</span>
+        <h3>Job Docket Setup</h3>
+        <p>Docket numbering, contractor job numbers, manual instruction intake and default evidence requirements.</p>
+        <small>Independent from Works Logix work order ownership</small>
+      </article>
+      <article class="contractor-settings-area-card">
+        <span class="contract-alert-pill contract-alert-primary">Calendar</span>
+        <h3>Scheduling</h3>
+        <p>Calendar feed, engineer/team views, appointment defaults and future Outlook/Google sync controls.</p>
+        <small>Calendar remains the operational centre</small>
+      </article>
+      <article class="contractor-settings-area-card">
+        <span class="contract-alert-pill contract-alert-primary">Documents</span>
+        <h3>Document Templates</h3>
+        <p>Job docket, quote response and payment request template ownership, logos, terms and footer text.</p>
+        <small>Contractor-scoped template setup route pending</small>
+      </article>
+      <article class="contractor-settings-area-card">
+        <span class="contract-alert-pill contract-alert-primary">Finance Ready</span>
+        <h3>Payment Requests</h3>
+        <p>Payment request terms, invoice-prepared handoff and future Finance Logix integration rules.</p>
+        <small>Does not create Finance Logix invoices</small>
+      </article>
+      <article class="contractor-settings-area-card">
+        <span class="contract-alert-pill contract-alert-primary">Connections</span>
+        <h3>Organisation Links</h3>
+        <p>Connected management companies, Works Logix routing links and shared job visibility boundaries.</p>
+        <small>Controlled by organisation connection records</small>
+      </article>
+      <article class="contractor-settings-area-card">
+        <span class="contract-alert-pill contract-alert-primary">GAR</span>
+        <h3>GAR Readiness</h3>
+        <p>Source-backed contractor context for assigned jobs, previous issues, materials/time patterns and completion evidence.</p>
+        <small>GAR reads governed source records only</small>
+      </article>
+    </div>
+  </section>
+
+  {% if module_contract %}
+    <section class="contract-manager-panel">
+      <div class="contract-manager-section-heading">
+        <div>
+          <h2>Module Boundary</h2>
+          <p>{{ module_contract.notes }}</p>
+        </div>
+        <span class="contract-alert-pill contract-alert-muted">{{ module_contract.status|replace('_', ' ')|title }}</span>
+      </div>
+      <div class="contractor-settings-boundary-grid">
+        <div>
+          <span>Settings Sections</span>
+          {% for section in module_contract.settings_sections %}
+            <strong>{{ section }}</strong>
+          {% endfor %}
+        </div>
+        <div>
+          <span>Shared Source Links</span>
+          {% for item in module_contract.shared_foundations %}
+            <strong>{{ item }}</strong>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  {% endif %}
+</div>
 {% endblock %}

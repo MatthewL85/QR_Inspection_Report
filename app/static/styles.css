@@ -5873,6 +5873,91 @@ body.sidebar-collapsed .main-content {
   margin-top: 0.4rem;
 }
 
+.contractor-settings-profile-grid,
+.contractor-settings-area-grid,
+.contractor-settings-boundary-grid {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0 1rem 1rem;
+}
+
+.contractor-settings-profile-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.contractor-settings-area-grid {
+  grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+}
+
+.contractor-settings-boundary-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.contractor-settings-profile-grid article,
+.contractor-settings-area-card,
+.contractor-settings-boundary-grid > div {
+  background: #fff;
+  border: 1px solid #e4e9f1;
+  border-radius: 8px;
+  color: #17233c;
+  min-height: 100%;
+  padding: 0.85rem;
+}
+
+.contractor-settings-profile-grid span,
+.contractor-settings-boundary-grid span {
+  color: #55657a;
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.contractor-settings-profile-grid strong,
+.contractor-settings-boundary-grid strong {
+  color: #17233c;
+  display: block;
+  font-size: 0.96rem;
+  font-weight: 900;
+  line-height: 1.25;
+  margin-top: 0.35rem;
+}
+
+.contractor-settings-profile-grid small,
+.contractor-settings-area-card small {
+  color: #667386;
+  display: block;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  margin-top: 0.35rem;
+}
+
+.contractor-settings-area-card h3 {
+  color: #061833;
+  font-size: 1rem;
+  font-weight: 900;
+  margin: 0.7rem 0 0.35rem;
+}
+
+.contractor-settings-area-card p {
+  color: #52627a;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  margin: 0 0 0.6rem;
+}
+
+.contractor-settings-area-card a {
+  color: #005dff;
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.contractor-settings-area-card a:hover {
+  text-decoration: underline;
+}
+
 .contractor-docket-summary-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(140px, 1fr));
@@ -7668,6 +7753,9 @@ body.sidebar-collapsed .main-content {
   .works-audit-grid,
   .works-audit-context-strip,
   .works-audit-evidence-list,
+  .contractor-settings-profile-grid,
+  .contractor-settings-area-grid,
+  .contractor-settings-boundary-grid,
   .client-gar-health-panel,
   .client-gar-health-grid,
   .client-gar-signal-grid,
