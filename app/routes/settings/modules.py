@@ -7,7 +7,9 @@ from app.models.onboarding.company import Company
 from app.routes.settings import settings_bp
 from app.services.core.module_settings_registry import (
     can_view_module_settings_centre,
+    module_settings_registry,
     module_settings_registry_for_user,
+    module_settings_role_name,
 )
 
 
@@ -27,12 +29,16 @@ def module_settings_index():
         abort(403)
     company = _resolve_company()
     modules = module_settings_registry_for_user(current_user)
+    full_module_count = len(module_settings_registry())
+    role_name = module_settings_role_name(current_user)
     active_modules = sum(1 for item in modules if item["status"] in {"active", "foundation", "partial", "shell"})
     template_count = sum(len(item["document_template_types"]) for item in modules)
     return render_template(
         "settings/modules/index.html",
         company=company,
         modules=modules,
+        full_module_count=full_module_count,
+        role_name=role_name,
         active_modules=active_modules,
         template_count=template_count,
         view_functions=current_app.view_functions,

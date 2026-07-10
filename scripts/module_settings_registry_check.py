@@ -102,6 +102,8 @@ def main() -> None:
         "Connected",
         "Document Templates",
         "Shared Links",
+        "Role Scope",
+        "Full registry admin-only",
     ]:
         require(template, token, "module settings template")
 

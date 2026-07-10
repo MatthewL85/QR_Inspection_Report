@@ -29,7 +29,7 @@
       <div>
         <span>Modules</span>
         <strong>{{ modules|length }}</strong>
-        <small>Registered settings contracts</small>
+        <small>Visible settings contracts</small>
       </div>
       <div>
         <span>Active Foundations</span>
@@ -45,6 +45,24 @@
         <span>Operating Mode</span>
         <strong>Hybrid</strong>
         <small>Standalone modules plus connected centre</small>
+      </div>
+    </div>
+    <div class="module-settings-role-strip">
+      <div>
+        <span>Role Scope</span>
+        <strong>{{ role_name }}</strong>
+      </div>
+      <div>
+        <span>Visible Modules</span>
+        <strong>{{ modules|length }} of {{ full_module_count }}</strong>
+      </div>
+      <div>
+        <span>Boundary</span>
+        <strong>Module-Owned Settings</strong>
+      </div>
+      <div>
+        <span>Policy</span>
+        <strong>Full registry admin-only</strong>
       </div>
     </div>
   </section>
