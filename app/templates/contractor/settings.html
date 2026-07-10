@@ -3,184 +3,212 @@
 {% block title %}Contractor Settings{% endblock %}
 
 {% block page_content %}
-<div class="contractor-settings-hub app-ready-surface app-ready-surface--contractor"
+<div class="contractor-settings-app app-ready-surface app-ready-surface--contractor"
      data-app-mobile-ready="true"
      data-app-safe-area="required"
      data-app-source-backed="true"
      data-app-offline="static-shell-only"
      data-app-surface="contractor-settings">
-  <section class="contractor-settings-command">
-    <div>
-      <span class="contractor-settings-kicker">Contractor Logix</span>
-      <h1>Settings Centre</h1>
-      <p>Independent contractor setup for dockets, teams, calendar, templates, payment requests and GAR-ready records.</p>
-    </div>
-    <div class="contractor-settings-actions">
-      <a class="contractor-settings-link" href="{{ url_for('contractor.contractor_dashboard') }}">
-        <i class="fas fa-arrow-left me-1"></i> Dashboard
-      </a>
-      <a class="contractor-settings-link" href="{{ url_for('contractor.calendar') }}">Calendar</a>
-      <a class="contractor-settings-button" href="{{ url_for('contractor.new_job_docket') }}">
-        <i class="fas fa-plus me-1"></i> New Job Docket
-      </a>
-    </div>
-  </section>
+  <form method="post" action="{{ url_for('contractor.contractor_settings') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-  <section class="contractor-settings-band">
-    <div class="contractor-settings-band-heading">
+    <section class="settings-app-header">
       <div>
-        <h2>Workspace Identity</h2>
-        <p>This is the contractor-owned workspace. It can run standalone or connect into Works Logix through organisation links.</p>
+        <span>Contractor Logix</span>
+        <h1>Settings</h1>
+        <p>Configure how this contractor workspace operates, connects, documents jobs and shares updates.</p>
       </div>
-      <span>Contractor only</span>
-    </div>
-
-    <div class="contractor-settings-identity-grid">
-      <article>
-        <span>Contractor</span>
-        <strong>{{ contractor_display_name }}</strong>
-        <small>{{ contractor_trade }}</small>
-      </article>
-      <article>
-        <span>Company</span>
-        <strong>{{ company.name if company else '-' }}</strong>
-        <small>{{ company.organisation_uid if company and company.organisation_uid else 'Organisation UID pending' }}</small>
-      </article>
-      <article>
-        <span>Operating Mode</span>
-        <strong>Standalone + Connected</strong>
-        <small>Manual job dockets and Works Logix assignments</small>
-      </article>
-      <article>
-        <span>Document Ownership</span>
-        <strong>Contractor Logix</strong>
-        <small>Job dockets, quote responses and payment requests</small>
-      </article>
-    </div>
-  </section>
-
-  <section class="contractor-settings-layout">
-    <aside class="contractor-settings-index" aria-label="Settings groups">
-      <a href="#contractor-operations">Operations</a>
-      <a href="#contractor-documents">Documents</a>
-      <a href="#contractor-connections">Connections</a>
-      <a href="#contractor-gar">GAR</a>
-    </aside>
-
-    <div class="contractor-settings-groups">
-      <section id="contractor-operations" class="contractor-settings-group">
-        <div class="contractor-settings-group-title">
-          <h2>Operations Setup</h2>
-          <span>Daily workflow</span>
-        </div>
-        <div class="contractor-settings-row">
-          <div>
-            <strong>Company Profile</strong>
-            <p>Trading name, contact details, address, branding and contractor service categories.</p>
-          </div>
-          <span>Contractor owned</span>
-        </div>
-        <div class="contractor-settings-row">
-          <div>
-            <strong>Engineers & Teams</strong>
-            <p>Engineer records, teams, mobile scheduling visibility and field assignment rules.</p>
-          </div>
-          <span>Calendar ready</span>
-        </div>
-        <div class="contractor-settings-row">
-          <div>
-            <strong>Job Docket Setup</strong>
-            <p>Docket numbering, contractor job numbers, manual instruction intake and evidence defaults.</p>
-          </div>
-          <span>Docket source</span>
-        </div>
-        <div class="contractor-settings-row">
-          <div>
-            <strong>Scheduling</strong>
-            <p>Calendar feed, engineer/team views, appointment defaults and future Outlook/Google sync controls.</p>
-          </div>
-          <span>Calendar centred</span>
-        </div>
-      </section>
-
-      <section id="contractor-documents" class="contractor-settings-group">
-        <div class="contractor-settings-group-title">
-          <h2>Documents & Payment</h2>
-          <span>Module owned</span>
-        </div>
-        <div class="contractor-settings-row">
-          <div>
-            <strong>Document Templates</strong>
-            <p>Contractor-owned templates for job dockets, quotation responses and payment requests.</p>
-          </div>
-          <span>Template route pending</span>
-        </div>
-        <div class="contractor-settings-row">
-          <div>
-            <strong>Payment Requests</strong>
-            <p>Invoice-prepared handoff, payment request terms and future Finance Logix integration rules.</p>
-          </div>
-          <span>Finance ready</span>
-        </div>
-      </section>
-
-      <section id="contractor-connections" class="contractor-settings-group">
-        <div class="contractor-settings-group-title">
-          <h2>Organisation Connections</h2>
-          <span>Controlled links</span>
-        </div>
-        <div class="contractor-settings-row">
-          <div>
-            <strong>Connected Management Companies</strong>
-            <p>Organisation links decide which Works Logix companies can route work to this contractor workspace.</p>
-          </div>
-          <span>Access governed</span>
-        </div>
-        <div class="contractor-settings-row">
-          <div>
-            <strong>Shared Visibility Boundaries</strong>
-            <p>Contractor-private logs stay private. Work updates, evidence and payment requests are shared only by workflow rules.</p>
-          </div>
-          <span>Boundary protected</span>
-        </div>
-      </section>
-
-      <section id="contractor-gar" class="contractor-settings-group">
-        <div class="contractor-settings-group-title">
-          <h2>GAR Readiness</h2>
-          <span>Source backed</span>
-        </div>
-        <div class="contractor-settings-row">
-          <div>
-            <strong>Structured Contractor Context</strong>
-            <p>GAR can later reason over assigned jobs, previous issue history, completion evidence, materials and time logs.</p>
-          </div>
-          <span>AI ready</span>
-        </div>
-      </section>
-    </div>
-  </section>
-
-  {% if module_contract %}
-    <section class="contractor-settings-band contractor-settings-band--compact">
-      <div class="contractor-settings-band-heading">
-        <div>
-          <h2>Module Boundary</h2>
-          <p>{{ module_contract.notes }}</p>
-        </div>
-        <span>{{ module_contract.status|replace('_', ' ')|title }}</span>
-      </div>
-      <div class="contractor-settings-boundary">
-        <div>
-          <span>Settings sections</span>
-          <p>{{ module_contract.settings_sections|join(', ') }}</p>
-        </div>
-        <div>
-          <span>Shared source links</span>
-          <p>{{ module_contract.shared_foundations|join(', ') }}</p>
-        </div>
+      <div class="settings-app-actions">
+        <a href="{{ url_for('contractor.contractor_dashboard') }}">Dashboard</a>
+        <button type="submit">Save Changes</button>
       </div>
     </section>
-  {% endif %}
+
+    <section class="settings-app-shell">
+      <aside class="settings-app-nav" aria-label="Contractor settings navigation">
+        <a href="#contractor-account">Account</a>
+        <a href="#contractor-jobs">Job Dockets</a>
+        <a href="#contractor-updates">Updates</a>
+        <a href="#contractor-calendar">Calendar</a>
+        <a href="#contractor-documents">Documents</a>
+        <a href="#contractor-data">GAR & Data</a>
+      </aside>
+
+      <div class="settings-app-panels">
+        <section id="contractor-account" class="settings-app-panel">
+          <div class="settings-app-panel-heading">
+            <div>
+              <h2>Account & Organisation</h2>
+              <p>Core contractor identity used across Contractor Logix.</p>
+            </div>
+            <span>Contractor only</span>
+          </div>
+
+          <div class="settings-app-row">
+            <div>
+              <strong>Contractor profile</strong>
+              <small>{{ contractor_display_name }} · {{ contractor_trade }}</small>
+            </div>
+            <a href="{{ url_for('settings.profile_index', company_id=company.id) if company else url_for('settings.profile_index') }}">Edit</a>
+          </div>
+          <div class="settings-app-row">
+            <div>
+              <strong>Organisation UID</strong>
+              <small>{{ company.organisation_uid if company and company.organisation_uid else 'Not generated yet' }}</small>
+            </div>
+            <span class="settings-app-status">Read only</span>
+          </div>
+          <div class="settings-app-row">
+            <div>
+              <strong>Branding</strong>
+              <small>Logo, colours and document branding for contractor-issued documents.</small>
+            </div>
+            <a href="{{ url_for('settings.branding_view', company_id=company.id) if company else url_for('settings.branding_view') }}">Manage</a>
+          </div>
+        </section>
+
+        <section id="contractor-jobs" class="settings-app-panel">
+          <div class="settings-app-panel-heading">
+            <div>
+              <h2>Job Docket Defaults</h2>
+              <p>Default behaviour when work is accepted or manually entered.</p>
+            </div>
+          </div>
+
+          <label class="settings-app-row settings-app-row--control">
+            <div>
+              <strong>Auto-create job docket when a work order is accepted</strong>
+              <small>Accepted Works Logix jobs move straight into the Contractor Logix docket workflow.</small>
+            </div>
+            <input type="checkbox" name="auto_create_docket_on_accept" {% if contractor_settings.auto_create_docket_on_accept %}checked{% endif %}>
+          </label>
+          <label class="settings-app-row settings-app-row--control">
+            <div>
+              <strong>Require completion evidence</strong>
+              <small>Completion submissions should include photos, videos, documents or a reason why evidence is not available.</small>
+            </div>
+            <input type="checkbox" name="require_completion_evidence" {% if contractor_settings.require_completion_evidence %}checked{% endif %}>
+          </label>
+          <div class="settings-app-row">
+            <div>
+              <strong>Manual job docket</strong>
+              <small>Create a standalone docket from phone, email, WhatsApp or another external instruction.</small>
+            </div>
+            <a href="{{ url_for('contractor.new_job_docket') }}">Create</a>
+          </div>
+        </section>
+
+        <section id="contractor-updates" class="settings-app-panel">
+          <div class="settings-app-panel-heading">
+            <div>
+              <h2>Updates & Visibility</h2>
+              <p>Control default visibility for job progress and completion notes.</p>
+            </div>
+          </div>
+
+          <div class="settings-app-row settings-app-row--select">
+            <div>
+              <strong>Default progress update visibility</strong>
+              <small>Used when engineers add progress notes during the job.</small>
+            </div>
+            <select name="default_update_visibility">
+              <option value="contractor_only" {% if contractor_settings.default_update_visibility == 'contractor_only' %}selected{% endif %}>Contractor only</option>
+              <option value="contractor_management" {% if contractor_settings.default_update_visibility == 'contractor_management' %}selected{% endif %}>Contractor + management</option>
+              <option value="all_parties" {% if contractor_settings.default_update_visibility == 'all_parties' %}selected{% endif %}>All parties</option>
+            </select>
+          </div>
+          <div class="settings-app-row settings-app-row--select">
+            <div>
+              <strong>Completion note visibility</strong>
+              <small>Default audience when completion notes are submitted.</small>
+            </div>
+            <select name="completion_visibility">
+              <option value="contractor_management" {% if contractor_settings.completion_visibility == 'contractor_management' %}selected{% endif %}>Contractor + management</option>
+              <option value="all_parties" {% if contractor_settings.completion_visibility == 'all_parties' %}selected{% endif %}>All parties</option>
+            </select>
+          </div>
+        </section>
+
+        <section id="contractor-calendar" class="settings-app-panel">
+          <div class="settings-app-panel-heading">
+            <div>
+              <h2>Calendar & Scheduling</h2>
+              <p>Keep accepted job dockets centred around the contractor calendar.</p>
+            </div>
+          </div>
+
+          <label class="settings-app-row settings-app-row--control">
+            <div>
+              <strong>Enable calendar feed</strong>
+              <small>Allow the contractor schedule to be opened in Outlook, Google Calendar and phone calendars.</small>
+            </div>
+            <input type="checkbox" name="calendar_feed_enabled" {% if contractor_settings.calendar_feed_enabled %}checked{% endif %}>
+          </label>
+          <div class="settings-app-row">
+            <div>
+              <strong>Calendar</strong>
+              <small>View unscheduled dockets, scheduled jobs and calendar feed options.</small>
+            </div>
+            <a href="{{ url_for('contractor.calendar') }}">Open</a>
+          </div>
+        </section>
+
+        <section id="contractor-documents" class="settings-app-panel">
+          <div class="settings-app-panel-heading">
+            <div>
+              <h2>Documents & Payment Requests</h2>
+              <p>Contractor-owned documents stay inside Contractor Logix.</p>
+            </div>
+          </div>
+
+          <div class="settings-app-row">
+            <div>
+              <strong>Document templates</strong>
+              <small>Job docket, quotation response and payment request templates.</small>
+            </div>
+            <a href="{{ url_for('settings.document_templates_index', company_id=company.id) if company else url_for('settings.document_templates_index') }}">Manage</a>
+          </div>
+          <label class="settings-app-row settings-app-row--control">
+            <div>
+              <strong>Prepare payment request after completion approval</strong>
+              <small>Move approved completed works towards the invoice/payment request workflow.</small>
+            </div>
+            <input type="checkbox" name="payment_request_after_completion" {% if contractor_settings.payment_request_after_completion %}checked{% endif %}>
+          </label>
+        </section>
+
+        <section id="contractor-data" class="settings-app-panel">
+          <div class="settings-app-panel-heading">
+            <div>
+              <h2>GAR & Data Controls</h2>
+              <p>Make structured contractor records available for source-backed GAR assistance.</p>
+            </div>
+          </div>
+
+          <label class="settings-app-row settings-app-row--control">
+            <div>
+              <strong>Enable GAR job context</strong>
+              <small>GAR can use assigned jobs, previous issue history, updates, materials and evidence when permissions allow.</small>
+            </div>
+            <input type="checkbox" name="gar_context_enabled" {% if contractor_settings.gar_context_enabled %}checked{% endif %}>
+          </label>
+          {% if module_contract %}
+            <div class="settings-app-row">
+              <div>
+                <strong>Module boundary</strong>
+                <small>{{ module_contract.notes }}</small>
+              </div>
+              <span class="settings-app-status">{{ module_contract.status|replace('_', ' ')|title }}</span>
+            </div>
+          {% endif %}
+        </section>
+      </div>
+    </section>
+
+    <section class="settings-app-savebar">
+      <span>Changes apply to this Contractor Logix workspace only.</span>
+      <button type="submit">Save Changes</button>
+    </section>
+  </form>
 </div>
 {% endblock %}

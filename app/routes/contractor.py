@@ -1020,7 +1020,24 @@ def calendar_ics():
     )
 
 
-@contractor_bp.route('/settings')
+def _contractor_settings_defaults(company) -> dict:
+    defaults = {
+        "calendar_feed_enabled": True,
+        "default_update_visibility": "contractor_management",
+        "completion_visibility": "all_parties",
+        "require_completion_evidence": True,
+        "auto_create_docket_on_accept": True,
+        "payment_request_after_completion": True,
+        "gar_context_enabled": True,
+    }
+    company_settings = getattr(company, "default_settings", None) or {}
+    contractor_settings = company_settings.get("contractor_logix") if isinstance(company_settings, dict) else {}
+    if isinstance(contractor_settings, dict):
+        defaults.update({key: contractor_settings.get(key, value) for key, value in defaults.items()})
+    return defaults
+
+
+@contractor_bp.route('/settings', methods=['GET', 'POST'])
 @login_required(role='Contractor')
 def contractor_settings():
     user = _current_contractor_user()
@@ -1030,10 +1047,38 @@ def contractor_settings():
 
     contractor = getattr(user, "contractor", None)
     company = getattr(user, "company", None)
+    settings_payload = _contractor_settings_defaults(company)
+
+    if request.method == "POST":
+        if not company:
+            flash("A contractor company profile is required before settings can be saved.", "danger")
+            return redirect(url_for("contractor.contractor_settings"))
+
+        company_settings = dict(company.default_settings or {}) if isinstance(company.default_settings, dict) else {}
+        company_settings["contractor_logix"] = {
+            "calendar_feed_enabled": request.form.get("calendar_feed_enabled") == "on",
+            "default_update_visibility": (
+                request.form.get("default_update_visibility") or "contractor_management"
+            ).strip(),
+            "completion_visibility": (
+                request.form.get("completion_visibility") or "all_parties"
+            ).strip(),
+            "require_completion_evidence": request.form.get("require_completion_evidence") == "on",
+            "auto_create_docket_on_accept": request.form.get("auto_create_docket_on_accept") == "on",
+            "payment_request_after_completion": request.form.get("payment_request_after_completion") == "on",
+            "gar_context_enabled": request.form.get("gar_context_enabled") == "on",
+        }
+        company.default_settings = company_settings
+        company.updated_at = datetime.utcnow()
+        db.session.commit()
+        flash("Contractor Logix settings updated.", "success")
+        return redirect(url_for("contractor.contractor_settings"))
+
     return render_template(
         'contractor/settings.html',
         contractor=contractor,
         company=company,
+        contractor_settings=settings_payload,
         contractor_display_name=(
             getattr(contractor, "company_name", None)
             or getattr(company, "name", None)
