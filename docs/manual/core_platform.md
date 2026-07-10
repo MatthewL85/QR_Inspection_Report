@@ -66,6 +66,8 @@ The same registry is available to authenticated app clients and future GAR setup
 
 Important: this feed is discovery only. It does not change settings. Module settings changes must go through the owning module's governed route, with authentication and CSRF protection.
 
+The registry also applies role-aware settings visibility. Super Admin and Admin users can see the full combined registry. Property management company users see management-side settings only and do not get Contractor Logix operational settings. Contractor users see Contractor Logix settings and shared Core/GAR context only. Members, residents and directors see only the module context relevant to their portal/governance role. This keeps standalone module setup independent while still allowing a connected Settings Centre for authorised management users.
+
 ## Connecting Organisations
 
 When two organisations need to work together, the platform should use a controlled connection invite.

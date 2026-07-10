@@ -22,6 +22,7 @@ REQUIRED_TOP_LEVEL_KEYS = {
     "scope",
     "summary",
     "settings_policy",
+    "visibility_policy",
     "registry",
     "mutation_policy",
     "source_references",
@@ -75,6 +76,22 @@ def main() -> int:
         created_ids["roles"].append(role.id)
         return role
 
+    def _make_user(role_name: str, email_slug: str, company_id: int) -> User:
+        user = User(
+            full_name=f"{marker} {role_name}",
+            email=f"{marker.lower()}-{email_slug}@example.invalid",
+            username=f"{marker.lower()}_{email_slug}",
+            password_hash=generate_password_hash(password),
+            pin="0000",
+            role_id=_role(role_name).id,
+            company_id=company_id,
+            is_active=True,
+        )
+        db.session.add(user)
+        db.session.flush()
+        created_ids["users"].append(user.id)
+        return user
+
     def _sign_in(client, actor: User) -> None:
         response = client.post(
             "/auth/login",
@@ -96,19 +113,9 @@ def main() -> int:
             db.session.flush()
             created_ids["companies"].append(company.id)
 
-            user = User(
-                full_name=f"{marker} Super Admin",
-                email=f"{marker.lower()}@example.invalid",
-                username=f"{marker.lower()}_super_admin",
-                password_hash=generate_password_hash(password),
-                pin="0000",
-                role_id=_role("Super Admin").id,
-                company_id=company.id,
-                is_active=True,
-            )
-            db.session.add(user)
-            db.session.flush()
-            created_ids["users"].append(user.id)
+            super_admin = _make_user("Super Admin", "super-admin", company.id)
+            contractor = _make_user("Contractor", "contractor", company.id)
+            member = _make_user("Member", "member", company.id)
             db.session.commit()
 
             with app.test_client() as client:
@@ -120,7 +127,7 @@ def main() -> int:
                     )
 
             with app.test_client() as client:
-                _sign_in(client, user)
+                _sign_in(client, super_admin)
                 response = client.get("/app/module-settings/feed.json")
                 if response.status_code != 200:
                     failures.append(
@@ -134,7 +141,7 @@ def main() -> int:
                     failures.append(f"module settings payload missing: {key}")
             if payload.get("context_type") != "module_settings_registry":
                 failures.append(f"Unexpected context_type: {payload.get('context_type')}")
-            if payload.get("contract_version") != "phase3-module-settings-registry-v1":
+            if payload.get("contract_version") != "phase3-module-settings-registry-v2":
                 failures.append(f"Unexpected contract_version: {payload.get('contract_version')}")
             if payload.get("read_only") is not True:
                 failures.append("Module settings feed must be read-only")
@@ -163,6 +170,14 @@ def main() -> int:
                     if key not in item:
                         failures.append(f"Module settings item {item.get('key')} missing: {key}")
 
+            visibility_policy = payload.get("visibility_policy") or {}
+            if visibility_policy.get("server_side_filtered") is not True:
+                failures.append("Module settings feed must declare server-side filtering")
+            if visibility_policy.get("full_registry_admin_only") is not True:
+                failures.append("Module settings feed must mark the full registry as admin-only")
+            if set(visibility_policy.get("visible_module_keys") or []) != REQUIRED_MODULE_KEYS:
+                failures.append("Super Admin should see the full module settings registry")
+
             policy = payload.get("settings_policy") or {}
             if policy.get("core_owns_shared_foundations") is not True:
                 failures.append("Module settings feed lost core shared foundation rule")
@@ -187,6 +202,43 @@ def main() -> int:
             if not any(item.get("model") == "CoreDocumentTemplate" for item in sources):
                 failures.append("Module settings source references missing CoreDocumentTemplate")
 
+            scoped_expectations = [
+                (
+                    contractor,
+                    {"core_platform", "contractor_logix", "gar_ai"},
+                    {"property_management_logix", "finance_logix", "members_logix"},
+                    "Contractor",
+                ),
+                (
+                    member,
+                    {"core_platform", "members_logix", "gar_ai"},
+                    {"contractor_logix", "finance_logix", "property_management_logix"},
+                    "Member",
+                ),
+            ]
+            for actor, expected_visible, expected_hidden, label in scoped_expectations:
+                with app.test_client() as client:
+                    _sign_in(client, actor)
+                    scoped_response = client.get("/app/module-settings/feed.json")
+                    if scoped_response.status_code != 200:
+                        failures.append(f"{label} module settings feed returned HTTP {scoped_response.status_code}")
+                        continue
+                    scoped_payload = scoped_response.get_json(silent=True) or {}
+                scoped_keys = {
+                    item.get("key")
+                    for item in scoped_payload.get("registry", [])
+                    if isinstance(item, dict)
+                }
+                if not expected_visible.issubset(scoped_keys):
+                    failures.append(f"{label} feed missing visible modules: {sorted(expected_visible - scoped_keys)}")
+                if expected_hidden.intersection(scoped_keys):
+                    failures.append(f"{label} feed leaked hidden modules: {sorted(expected_hidden.intersection(scoped_keys))}")
+                scoped_visibility = scoped_payload.get("visibility_policy") or {}
+                if scoped_visibility.get("server_side_filtered") is not True:
+                    failures.append(f"{label} feed did not declare server-side filtering")
+                if scoped_payload.get("mutation_policy", {}).get("feed_allows_mutation") is not False:
+                    failures.append(f"{label} feed must remain read-only")
+
         finally:
             db.session.rollback()
             if created_ids["users"]:
@@ -202,6 +254,7 @@ def main() -> int:
     print("- Read-only method checked: yes")
     print("- Authenticated company scope checked: yes")
     print("- Module ownership policy checked: yes")
+    print("- Role-aware visibility checked: yes")
 
     if failures:
         print("\nFAILED")

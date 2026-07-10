@@ -217,6 +217,60 @@ MODULE_SETTINGS_CONTRACTS: tuple[ModuleSettingsContract, ...] = (
     ),
 )
 
+ADMIN_SETTINGS_ROLES = {"Super Admin", "Admin"}
+MANAGEMENT_SETTINGS_ROLES = {
+    "Super Admin",
+    "Admin",
+    "Property Manager",
+    "Assistant",
+    "Financial Controller",
+}
+
+MODULE_SETTINGS_VISIBILITY_BY_ROLE: dict[str, set[str] | None] = {
+    "Super Admin": None,
+    "Admin": None,
+    "Property Manager": {
+        "core_platform",
+        "property_management_logix",
+        "works_logix",
+        "finance_logix",
+        "members_logix",
+        "director_logix",
+        "gar_ai",
+    },
+    "Assistant": {
+        "core_platform",
+        "property_management_logix",
+        "works_logix",
+        "members_logix",
+        "gar_ai",
+    },
+    "Financial Controller": {
+        "core_platform",
+        "property_management_logix",
+        "works_logix",
+        "finance_logix",
+        "members_logix",
+        "gar_ai",
+    },
+    "Contractor": {"core_platform", "contractor_logix", "gar_ai"},
+    "Director": {"core_platform", "director_logix", "members_logix", "gar_ai"},
+    "Member": {"core_platform", "members_logix", "gar_ai"},
+    "Resident": {"core_platform", "members_logix", "gar_ai"},
+}
+
+
+def module_settings_role_name(user: Any | None) -> str:
+    if user is None:
+        return "Anonymous"
+    role = getattr(user, "role", None)
+    name = getattr(role, "name", None) or getattr(user, "role_name", None) or "Unassigned"
+    return str(name).strip() or "Unassigned"
+
+
+def can_view_module_settings_centre(user: Any | None) -> bool:
+    return module_settings_role_name(user) in MANAGEMENT_SETTINGS_ROLES
+
 
 def _template_types_for_owner(owner_names: Iterable[str]) -> tuple[dict[str, Any], ...]:
     wanted = set(owner_names)
@@ -259,6 +313,19 @@ def module_settings_registry() -> tuple[dict[str, Any], ...]:
     return tuple(payload)
 
 
+def module_settings_registry_for_role(role_name: str | None) -> tuple[dict[str, Any], ...]:
+    normalised_role = (role_name or "Unassigned").strip() or "Unassigned"
+    allowed = MODULE_SETTINGS_VISIBILITY_BY_ROLE.get(normalised_role, {"core_platform"})
+    registry = module_settings_registry()
+    if allowed is None:
+        return registry
+    return tuple(item for item in registry if item["key"] in allowed)
+
+
+def module_settings_registry_for_user(user: Any | None) -> tuple[dict[str, Any], ...]:
+    return module_settings_registry_for_role(module_settings_role_name(user))
+
+
 def module_settings_by_key(key: str) -> dict[str, Any] | None:
     normalised = (key or "").strip().lower()
     return next((item for item in module_settings_registry() if item["key"] == normalised), None)
@@ -273,10 +340,13 @@ def combined_settings_sections(enabled_module_keys: Iterable[str] | None = None)
 
 
 def module_settings_feed_payload(company: Any | None = None, user: Any | None = None) -> dict[str, Any]:
-    registry = module_settings_registry()
+    role_name = module_settings_role_name(user)
+    registry = module_settings_registry_for_role(role_name)
+    full_registry_count = len(module_settings_registry())
+    visible_keys = [item["key"] for item in registry]
     return {
         "context_type": "module_settings_registry",
-        "contract_version": "phase3-module-settings-registry-v1",
+        "contract_version": "phase3-module-settings-registry-v2",
         "generated_at": datetime.now(UTC).isoformat(),
         "read_only": True,
         "scope": {
@@ -284,11 +354,12 @@ def module_settings_feed_payload(company: Any | None = None, user: Any | None = 
             "company_name": getattr(company, "name", None),
             "organisation_uid": getattr(company, "organisation_uid", None),
             "user_id": getattr(user, "id", None),
-            "role": getattr(getattr(user, "role", None), "name", None),
+            "role": role_name,
             "server_side_visibility": True,
         },
         "summary": {
             "module_count": len(registry),
+            "full_module_count": full_registry_count,
             "standalone_ready_count": sum(1 for item in registry if item["standalone_ready"]),
             "connected_ready_count": sum(1 for item in registry if item["connected_ready"]),
             "document_template_type_count": sum(len(item["document_template_types"]) for item in registry),
@@ -299,6 +370,22 @@ def module_settings_feed_payload(company: Any | None = None, user: Any | None = 
             "standalone_modules_expose_own_settings_only": True,
             "connected_modules_group_in_one_settings_centre": True,
             "shared_engine_does_not_transfer_document_ownership": True,
+        },
+        "visibility_policy": {
+            "server_side_filtered": True,
+            "role": role_name,
+            "visible_module_keys": visible_keys,
+            "full_registry_admin_only": True,
+            "management_company_users_excluded_from_contractor_logix": (
+                role_name in MANAGEMENT_SETTINGS_ROLES
+                and role_name not in ADMIN_SETTINGS_ROLES
+                and "contractor_logix" not in visible_keys
+            ),
+            "contractor_users_excluded_from_management_settings": (
+                role_name == "Contractor"
+                and "property_management_logix" not in visible_keys
+                and "finance_logix" not in visible_keys
+            ),
         },
         "registry": list(registry),
         "mutation_policy": {

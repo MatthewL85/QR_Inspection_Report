@@ -40,7 +40,11 @@ def require(text: str, token: str, label: str) -> None:
 def main() -> None:
     from app import create_app
     from app.services.core.document_template_service import DOCUMENT_TEMPLATE_OWNERSHIP
-    from app.services.core.module_settings_registry import module_settings_registry
+    from app.services.core.module_settings_registry import (
+        can_view_module_settings_centre,
+        module_settings_registry,
+        module_settings_registry_for_role,
+    )
 
     app = create_app()
     endpoints = set(app.view_functions)
@@ -57,6 +61,17 @@ def main() -> None:
             raise AssertionError(f"{item['key']} has no shared foundations")
         if "standalone_ready" not in item or "connected_ready" not in item:
             raise AssertionError(f"{item['key']} missing standalone/connected readiness")
+
+    contractor_keys = {item["key"] for item in module_settings_registry_for_role("Contractor")}
+    if "contractor_logix" not in contractor_keys:
+        raise AssertionError("Contractor role must see Contractor Logix settings")
+    if "property_management_logix" in contractor_keys or "finance_logix" in contractor_keys:
+        raise AssertionError("Contractor role must not see management or finance settings")
+    member_keys = {item["key"] for item in module_settings_registry_for_role("Member")}
+    if "members_logix" not in member_keys or "contractor_logix" in member_keys:
+        raise AssertionError("Member role visibility should be portal-scoped")
+    if can_view_module_settings_centre(type("Actor", (), {"role_name": "Contractor"})()):
+        raise AssertionError("Contractor users must not access the combined settings centre")
 
     for key, expected_owner in REQUIRED_TEMPLATE_OWNERSHIP.items():
         ownership = DOCUMENT_TEMPLATE_OWNERSHIP.get(key)
@@ -99,6 +114,7 @@ def main() -> None:
         "Core Platform owns shared foundations",
         "Each module owns its own operational settings",
         "shared engine does not transfer ownership",
+        "role-aware settings visibility",
     ]:
         require(docs, token, "manual coverage")
 
