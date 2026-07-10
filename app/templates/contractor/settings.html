@@ -3,37 +3,41 @@
 {% block title %}Contractor Settings{% endblock %}
 
 {% block page_content %}
-<div class="contract-manager app-ready-surface app-ready-surface--contractor"
+<div class="contractor-settings-hub app-ready-surface app-ready-surface--contractor"
      data-app-mobile-ready="true"
      data-app-safe-area="required"
      data-app-source-backed="true"
      data-app-offline="static-shell-only"
      data-app-surface="contractor-settings">
-  <section class="contract-manager-hero">
+  <section class="contractor-settings-command">
     <div>
-      <h1>Contractor Settings</h1>
-      <p>Contractor-owned setup for job dockets, teams, calendar, documents and payment readiness.</p>
+      <span class="contractor-settings-kicker">Contractor Logix</span>
+      <h1>Settings Centre</h1>
+      <p>Independent contractor setup for dockets, teams, calendar, templates, payment requests and GAR-ready records.</p>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
-      <a class="contract-manager-link" href="{{ url_for('contractor.contractor_dashboard') }}">Dashboard</a>
-      <a class="contract-manager-link" href="{{ url_for('contractor.calendar') }}">Calendar</a>
-      <a class="contract-manager-button" href="{{ url_for('contractor.new_job_docket') }}">
+    <div class="contractor-settings-actions">
+      <a class="contractor-settings-link" href="{{ url_for('contractor.contractor_dashboard') }}">
+        <i class="fas fa-arrow-left me-1"></i> Dashboard
+      </a>
+      <a class="contractor-settings-link" href="{{ url_for('contractor.calendar') }}">Calendar</a>
+      <a class="contractor-settings-button" href="{{ url_for('contractor.new_job_docket') }}">
         <i class="fas fa-plus me-1"></i> New Job Docket
       </a>
     </div>
   </section>
 
-  <section class="contract-manager-panel">
-    <div class="contract-manager-section-heading">
+  <section class="contractor-settings-band">
+    <div class="contractor-settings-band-heading">
       <div>
-        <h2>Contractor Workspace</h2>
-        <p>These settings belong to Contractor Logix and can operate independently or when connected to Works Logix.</p>
+        <h2>Workspace Identity</h2>
+        <p>This is the contractor-owned workspace. It can run standalone or connect into Works Logix through organisation links.</p>
       </div>
-      <span class="contract-alert-pill contract-alert-muted">Contractor only</span>
+      <span>Contractor only</span>
     </div>
-    <div class="contractor-settings-profile-grid">
+
+    <div class="contractor-settings-identity-grid">
       <article>
-        <span>Contractor Profile</span>
+        <span>Contractor</span>
         <strong>{{ contractor_display_name }}</strong>
         <small>{{ contractor_trade }}</small>
       </article>
@@ -45,7 +49,7 @@
       <article>
         <span>Operating Mode</span>
         <strong>Standalone + Connected</strong>
-        <small>Manual dockets and Works Logix assignments supported</small>
+        <small>Manual job dockets and Works Logix assignments</small>
       </article>
       <article>
         <span>Document Ownership</span>
@@ -55,87 +59,125 @@
     </div>
   </section>
 
-  <section class="contract-manager-panel">
-    <div class="contract-manager-section-heading">
-      <div>
-        <h2>Settings Areas</h2>
-        <p>Setup map for the contractor module. Future edit screens should open from these module-owned areas.</p>
-      </div>
-    </div>
+  <section class="contractor-settings-layout">
+    <aside class="contractor-settings-index" aria-label="Settings groups">
+      <a href="#contractor-operations">Operations</a>
+      <a href="#contractor-documents">Documents</a>
+      <a href="#contractor-connections">Connections</a>
+      <a href="#contractor-gar">GAR</a>
+    </aside>
 
-    <div class="contractor-settings-area-grid">
-      <article class="contractor-settings-area-card">
-        <span class="contract-alert-pill contract-alert-primary">Profile</span>
-        <h3>Company Profile</h3>
-        <p>Trading name, contact details, address, branding and contractor service categories.</p>
-        <small>Owned by Contractor Logix</small>
-      </article>
-      <article class="contractor-settings-area-card">
-        <span class="contract-alert-pill contract-alert-primary">People</span>
-        <h3>Engineers & Teams</h3>
-        <p>Engineer records, teams, mobile scheduling visibility and field assignment rules.</p>
-        <small>Supports calendar-centred job dockets</small>
-      </article>
-      <article class="contractor-settings-area-card">
-        <span class="contract-alert-pill contract-alert-primary">Dockets</span>
-        <h3>Job Docket Setup</h3>
-        <p>Docket numbering, contractor job numbers, manual instruction intake and default evidence requirements.</p>
-        <small>Independent from Works Logix work order ownership</small>
-      </article>
-      <article class="contractor-settings-area-card">
-        <span class="contract-alert-pill contract-alert-primary">Calendar</span>
-        <h3>Scheduling</h3>
-        <p>Calendar feed, engineer/team views, appointment defaults and future Outlook/Google sync controls.</p>
-        <small>Calendar remains the operational centre</small>
-      </article>
-      <article class="contractor-settings-area-card">
-        <span class="contract-alert-pill contract-alert-primary">Documents</span>
-        <h3>Document Templates</h3>
-        <p>Job docket, quote response and payment request template ownership, logos, terms and footer text.</p>
-        <small>Contractor-scoped template setup route pending</small>
-      </article>
-      <article class="contractor-settings-area-card">
-        <span class="contract-alert-pill contract-alert-primary">Finance Ready</span>
-        <h3>Payment Requests</h3>
-        <p>Payment request terms, invoice-prepared handoff and future Finance Logix integration rules.</p>
-        <small>Does not create Finance Logix invoices</small>
-      </article>
-      <article class="contractor-settings-area-card">
-        <span class="contract-alert-pill contract-alert-primary">Connections</span>
-        <h3>Organisation Links</h3>
-        <p>Connected management companies, Works Logix routing links and shared job visibility boundaries.</p>
-        <small>Controlled by organisation connection records</small>
-      </article>
-      <article class="contractor-settings-area-card">
-        <span class="contract-alert-pill contract-alert-primary">GAR</span>
-        <h3>GAR Readiness</h3>
-        <p>Source-backed contractor context for assigned jobs, previous issues, materials/time patterns and completion evidence.</p>
-        <small>GAR reads governed source records only</small>
-      </article>
+    <div class="contractor-settings-groups">
+      <section id="contractor-operations" class="contractor-settings-group">
+        <div class="contractor-settings-group-title">
+          <h2>Operations Setup</h2>
+          <span>Daily workflow</span>
+        </div>
+        <div class="contractor-settings-row">
+          <div>
+            <strong>Company Profile</strong>
+            <p>Trading name, contact details, address, branding and contractor service categories.</p>
+          </div>
+          <span>Contractor owned</span>
+        </div>
+        <div class="contractor-settings-row">
+          <div>
+            <strong>Engineers & Teams</strong>
+            <p>Engineer records, teams, mobile scheduling visibility and field assignment rules.</p>
+          </div>
+          <span>Calendar ready</span>
+        </div>
+        <div class="contractor-settings-row">
+          <div>
+            <strong>Job Docket Setup</strong>
+            <p>Docket numbering, contractor job numbers, manual instruction intake and evidence defaults.</p>
+          </div>
+          <span>Docket source</span>
+        </div>
+        <div class="contractor-settings-row">
+          <div>
+            <strong>Scheduling</strong>
+            <p>Calendar feed, engineer/team views, appointment defaults and future Outlook/Google sync controls.</p>
+          </div>
+          <span>Calendar centred</span>
+        </div>
+      </section>
+
+      <section id="contractor-documents" class="contractor-settings-group">
+        <div class="contractor-settings-group-title">
+          <h2>Documents & Payment</h2>
+          <span>Module owned</span>
+        </div>
+        <div class="contractor-settings-row">
+          <div>
+            <strong>Document Templates</strong>
+            <p>Contractor-owned templates for job dockets, quotation responses and payment requests.</p>
+          </div>
+          <span>Template route pending</span>
+        </div>
+        <div class="contractor-settings-row">
+          <div>
+            <strong>Payment Requests</strong>
+            <p>Invoice-prepared handoff, payment request terms and future Finance Logix integration rules.</p>
+          </div>
+          <span>Finance ready</span>
+        </div>
+      </section>
+
+      <section id="contractor-connections" class="contractor-settings-group">
+        <div class="contractor-settings-group-title">
+          <h2>Organisation Connections</h2>
+          <span>Controlled links</span>
+        </div>
+        <div class="contractor-settings-row">
+          <div>
+            <strong>Connected Management Companies</strong>
+            <p>Organisation links decide which Works Logix companies can route work to this contractor workspace.</p>
+          </div>
+          <span>Access governed</span>
+        </div>
+        <div class="contractor-settings-row">
+          <div>
+            <strong>Shared Visibility Boundaries</strong>
+            <p>Contractor-private logs stay private. Work updates, evidence and payment requests are shared only by workflow rules.</p>
+          </div>
+          <span>Boundary protected</span>
+        </div>
+      </section>
+
+      <section id="contractor-gar" class="contractor-settings-group">
+        <div class="contractor-settings-group-title">
+          <h2>GAR Readiness</h2>
+          <span>Source backed</span>
+        </div>
+        <div class="contractor-settings-row">
+          <div>
+            <strong>Structured Contractor Context</strong>
+            <p>GAR can later reason over assigned jobs, previous issue history, completion evidence, materials and time logs.</p>
+          </div>
+          <span>AI ready</span>
+        </div>
+      </section>
     </div>
   </section>
 
   {% if module_contract %}
-    <section class="contract-manager-panel">
-      <div class="contract-manager-section-heading">
+    <section class="contractor-settings-band contractor-settings-band--compact">
+      <div class="contractor-settings-band-heading">
         <div>
           <h2>Module Boundary</h2>
           <p>{{ module_contract.notes }}</p>
         </div>
-        <span class="contract-alert-pill contract-alert-muted">{{ module_contract.status|replace('_', ' ')|title }}</span>
+        <span>{{ module_contract.status|replace('_', ' ')|title }}</span>
       </div>
-      <div class="contractor-settings-boundary-grid">
+      <div class="contractor-settings-boundary">
         <div>
-          <span>Settings Sections</span>
-          {% for section in module_contract.settings_sections %}
-            <strong>{{ section }}</strong>
-          {% endfor %}
+          <span>Settings sections</span>
+          <p>{{ module_contract.settings_sections|join(', ') }}</p>
         </div>
         <div>
-          <span>Shared Source Links</span>
-          {% for item in module_contract.shared_foundations %}
-            <strong>{{ item }}</strong>
-          {% endfor %}
+          <span>Shared source links</span>
+          <p>{{ module_contract.shared_foundations|join(', ') }}</p>
         </div>
       </div>
     </section>

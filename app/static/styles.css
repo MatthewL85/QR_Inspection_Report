@@ -5958,6 +5958,266 @@ body.sidebar-collapsed .main-content {
   text-decoration: underline;
 }
 
+.contractor-settings-hub {
+  color: #061833;
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.contractor-settings-command,
+.contractor-settings-band,
+.contractor-settings-group {
+  background: #fff;
+  border: 1px solid #d7e0ec;
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(23, 35, 60, 0.06);
+}
+
+.contractor-settings-command {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+}
+
+.contractor-settings-kicker {
+  color: #e91e63;
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+}
+
+.contractor-settings-command h1,
+.contractor-settings-band-heading h2,
+.contractor-settings-group-title h2 {
+  color: #061833;
+  font-size: 1.18rem;
+  font-weight: 900;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.contractor-settings-command p,
+.contractor-settings-band-heading p,
+.contractor-settings-group-title p {
+  color: #52627a;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  margin: 0.3rem 0 0;
+}
+
+.contractor-settings-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.contractor-settings-link,
+.contractor-settings-button {
+  align-items: center;
+  border-radius: 8px;
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0.45rem 0.75rem;
+  text-decoration: none;
+}
+
+.contractor-settings-link {
+  color: #005dff;
+}
+
+.contractor-settings-link:hover {
+  color: #004ad0;
+  text-decoration: none;
+}
+
+.contractor-settings-button {
+  background: linear-gradient(135deg, #2152ff, #1bbff0);
+  box-shadow: 0 10px 24px rgba(33, 82, 255, 0.18);
+  color: #fff;
+}
+
+.contractor-settings-button:hover {
+  color: #fff;
+  filter: brightness(0.96);
+  text-decoration: none;
+}
+
+.contractor-settings-band {
+  padding: 1rem;
+}
+
+.contractor-settings-band--compact {
+  box-shadow: none;
+}
+
+.contractor-settings-band-heading,
+.contractor-settings-group-title {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.contractor-settings-band-heading > span,
+.contractor-settings-group-title > span,
+.contractor-settings-row > span {
+  background: #eef3f9;
+  border-radius: 999px;
+  color: #55657a;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0.42rem 0.55rem;
+  text-transform: uppercase;
+}
+
+.contractor-settings-identity-grid {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.contractor-settings-identity-grid article {
+  background: #f8fafc;
+  border: 1px solid #e1e8f1;
+  border-radius: 8px;
+  min-width: 0;
+  padding: 0.72rem 0.78rem;
+}
+
+.contractor-settings-identity-grid span,
+.contractor-settings-boundary span {
+  color: #55657a;
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.contractor-settings-identity-grid strong {
+  color: #061833;
+  display: block;
+  font-size: 0.98rem;
+  font-weight: 900;
+  line-height: 1.25;
+  margin-top: 0.35rem;
+}
+
+.contractor-settings-identity-grid small {
+  color: #667386;
+  display: block;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  margin-top: 0.25rem;
+}
+
+.contractor-settings-layout {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 190px minmax(0, 1fr);
+}
+
+.contractor-settings-index {
+  align-self: start;
+  background: #fff;
+  border: 1px solid #d7e0ec;
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(23, 35, 60, 0.05);
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.55rem;
+  position: sticky;
+  top: 0.75rem;
+}
+
+.contractor-settings-index a {
+  border-radius: 999px;
+  color: #40516a;
+  font-size: 0.82rem;
+  font-weight: 900;
+  padding: 0.58rem 0.7rem;
+  text-decoration: none;
+}
+
+.contractor-settings-index a:hover,
+.contractor-settings-index a:focus {
+  background: #101d35;
+  color: #fff;
+}
+
+.contractor-settings-groups {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.contractor-settings-group {
+  padding: 0.9rem 1rem;
+}
+
+.contractor-settings-row {
+  align-items: center;
+  border-top: 1px solid #e8edf4;
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 0.72rem 0;
+}
+
+.contractor-settings-row:last-child {
+  padding-bottom: 0;
+}
+
+.contractor-settings-row strong {
+  color: #061833;
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.contractor-settings-row p {
+  color: #52627a;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  margin: 0.22rem 0 0;
+}
+
+.contractor-settings-boundary {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.contractor-settings-boundary > div {
+  background: #f8fafc;
+  border: 1px solid #e1e8f1;
+  border-radius: 8px;
+  padding: 0.72rem 0.78rem;
+}
+
+.contractor-settings-boundary p {
+  color: #061833;
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.4;
+  margin: 0.3rem 0 0;
+}
+
 .contractor-docket-summary-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(140px, 1fr));
@@ -7833,6 +8093,31 @@ body.sidebar-collapsed .main-content {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .contractor-settings-command,
+  .contractor-settings-band-heading,
+  .contractor-settings-group-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .contractor-settings-actions {
+    justify-content: flex-start;
+  }
+
+  .contractor-settings-identity-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .contractor-settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .contractor-settings-index {
+    display: flex;
+    overflow-x: auto;
+    position: static;
+  }
+
   .works-form-wide {
     grid-column: span 1;
   }
@@ -8027,5 +8312,19 @@ body.sidebar-collapsed .main-content {
 
   .contractor-today-wide {
     grid-column: auto;
+  }
+
+  .contractor-settings-hub {
+    padding: 0.5rem;
+  }
+
+  .contractor-settings-identity-grid,
+  .contractor-settings-boundary {
+    grid-template-columns: 1fr;
+  }
+
+  .contractor-settings-row {
+    align-items: flex-start;
+    grid-template-columns: 1fr;
   }
 }
