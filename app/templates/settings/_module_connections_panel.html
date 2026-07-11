@@ -1,0 +1,98 @@
+<section id="{{ connection_panel_id|default('module-connections') }}" class="settings-app-panel">
+  <div class="settings-app-panel-heading">
+    <div>
+      <h2>{{ connection_panel_title|default('Module Connections') }}</h2>
+      <p>{{ connection_panel_help|default('Connect this organisation to other Logix modules and approved external systems.') }}</p>
+    </div>
+    <span>{{ connection_context.active_connection_count }} Active</span>
+  </div>
+
+  <div class="settings-app-connection-grid">
+    <div>
+      <span>Organisation UID</span>
+      <strong>{{ connection_context.organisation_uid or 'Not generated yet' }}</strong>
+      <small>Permanent identity for this organisation across LogixPM, Contractor Logix, Finance Logix, HR Logix and GAR.</small>
+    </div>
+    <div>
+      <span>Pending Codes</span>
+      <strong>{{ connection_context.pending_invite_count }}</strong>
+      <small>One-time connection codes waiting to be accepted or shared.</small>
+    </div>
+    <div>
+      <span>GAR Scope</span>
+      <strong>Connected records only</strong>
+      <small>GAR can only use records allowed by the active connection and role visibility rules.</small>
+    </div>
+  </div>
+
+  {% if allow_connection_actions|default(false) %}
+    <div class="settings-app-connection-actions">
+      <label>
+        <span>Create connection code</span>
+        <input type="email" name="target_email" placeholder="Optional recipient email">
+        <button type="submit" name="settings_action" value="create_connection_invite">Generate Code</button>
+      </label>
+      <label>
+        <span>Enter received code</span>
+        <input type="text" name="invite_code" placeholder="Paste connection code">
+        <button type="submit" name="settings_action" value="accept_connection_invite">Connect</button>
+      </label>
+    </div>
+  {% endif %}
+
+  <div class="settings-app-row">
+    <div>
+      <strong>Active organisation connections</strong>
+      <small>
+        {% if connection_context.active_connections %}
+          {% for connection in connection_context.active_connections %}
+            {% set other_company = connection.target_company if connection.source_company_id == connection_context.company.id else connection.source_company %}
+            {{ other_company.name if other_company else 'Connected organisation' }}{% if not loop.last %}, {% endif %}
+          {% endfor %}
+        {% else %}
+          No active organisation connections yet.
+        {% endif %}
+      </small>
+    </div>
+    <span class="settings-app-status">{{ connection_context.active_connection_count }} Links</span>
+  </div>
+
+  {% if connection_context.pending_sent_invites %}
+    <div class="settings-app-row">
+      <div>
+        <strong>Codes created by this organisation</strong>
+        <small>
+          {% for invite in connection_context.pending_sent_invites %}
+            {{ invite.invite_code }}{% if invite.target_email %} for {{ invite.target_email }}{% endif %}{% if not loop.last %}; {% endif %}
+          {% endfor %}
+        </small>
+      </div>
+      <span class="settings-app-status">Pending</span>
+    </div>
+  {% endif %}
+
+  {% if connection_context.pending_received_invites %}
+    <div class="settings-app-row">
+      <div>
+        <strong>Received pending invites</strong>
+        <small>
+          {% for invite in connection_context.pending_received_invites %}
+            From {{ invite.source_company.name if invite.source_company else 'another organisation' }}{% if not loop.last %}; {% endif %}
+          {% endfor %}
+        </small>
+      </div>
+      <span class="settings-app-status">Awaiting</span>
+    </div>
+  {% endif %}
+
+  <div class="settings-app-integration-list">
+    {% for integration in connection_context.integration_readiness %}
+      <article>
+        <span>{{ integration.kind }}</span>
+        <strong>{{ integration.name }}</strong>
+        <small>{{ integration.notes }}</small>
+        <em>{{ integration.status }}</em>
+      </article>
+    {% endfor %}
+  </div>
+</section>

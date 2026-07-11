@@ -18,7 +18,12 @@ from app.services.gar import (
     build_work_order_relevant_history,
 )
 from app.services.core.contractor_access import contractor_portal_denial_reason
+from app.services.core.module_connections import module_connection_context
 from app.services.core.module_settings_registry import module_settings_by_key
+from app.services.core.organisation_identity import (
+    accept_organisation_connection_invite,
+    create_organisation_connection_invite,
+)
 from app.services.works.workflow_service import (
     ContractorWorkFilters,
     WORK_ORDER_PROGRESS_VISIBILITY,
@@ -1054,6 +1059,43 @@ def contractor_settings():
             flash("A contractor company profile is required before settings can be saved.", "danger")
             return redirect(url_for("contractor.contractor_settings"))
 
+        settings_action = (request.form.get("settings_action") or "save_settings").strip()
+
+        if settings_action == "create_connection_invite":
+            try:
+                invite = create_organisation_connection_invite(
+                    source_company_id=company.id,
+                    target_email=(request.form.get("target_email") or "").strip() or None,
+                    connection_type="management_contractor",
+                    allowed_modules=["works", "contractor", "gar_ai"],
+                    created_by_user_id=getattr(user, "id", None),
+                    notes="Created from Contractor Logix settings.",
+                )
+                db.session.commit()
+                flash(f"Connection code created: {invite.invite_code}", "success")
+            except ValueError as exc:
+                db.session.rollback()
+                flash(str(exc), "danger")
+            return redirect(url_for("contractor.contractor_settings"))
+
+        if settings_action == "accept_connection_invite":
+            invite_code = (request.form.get("invite_code") or "").strip().upper()
+            if not invite_code:
+                flash("Enter the connection code before connecting organisations.", "warning")
+                return redirect(url_for("contractor.contractor_settings"))
+            try:
+                accept_organisation_connection_invite(
+                    invite_code=invite_code,
+                    accepting_company_id=company.id,
+                    accepted_by_user_id=getattr(user, "id", None),
+                )
+                db.session.commit()
+                flash("Organisation connection accepted.", "success")
+            except ValueError as exc:
+                db.session.rollback()
+                flash(str(exc), "danger")
+            return redirect(url_for("contractor.contractor_settings"))
+
         company_settings = dict(company.default_settings or {}) if isinstance(company.default_settings, dict) else {}
         company_settings["contractor_logix"] = {
             "calendar_feed_enabled": request.form.get("calendar_feed_enabled") == "on",
@@ -1091,6 +1133,7 @@ def contractor_settings():
             or "General contractor"
         ),
         module_contract=module_settings_by_key("contractor_logix"),
+        connection_context=module_connection_context(company, module_key="contractor_logix"),
     )
 
 

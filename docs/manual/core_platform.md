@@ -68,6 +68,8 @@ Important: this feed is discovery only. It does not change settings. Module sett
 
 The registry also applies role-aware settings visibility. Super Admin and Admin users can see the full combined registry. Property management company users see management-side settings only and do not get Contractor Logix operational settings. Contractor users see Contractor Logix settings and shared Core/GAR context only. Members, residents and directors see only the module context relevant to their portal/governance role. This keeps standalone module setup independent while still allowing a connected Settings Centre for authorised management users.
 
+Each standalone module should expose a reciprocal connections area inside its own settings. The Core Platform still owns the underlying organisation UID, module subscription and organisation connection records, but the user experience should sit where the user expects it. For example, Contractor Logix settings should show the contractor organisation UID, active management-company links, pending connection codes and the ability to enter a received code. Finance Logix and HR Logix should follow the same pattern when those modules are expanded.
+
 ## Connecting Organisations
 
 When two organisations need to work together, the platform should use a controlled connection invite.
@@ -97,6 +99,19 @@ Use this page to:
 This is the controlled setup area for future independent module purchases. For example, a contractor using Contractor Logix can be connected to a management company using LogixPM without duplicating company records or using email as the source of truth.
 
 Contractor profiles should be linked to their real organisation identity before they are used for connected Works Logix routing. When a new contractor user is created from a linked contractor profile, the user inherits that organisation link.
+
+## External Connectors
+
+External systems such as Sage, Xero, QuickBooks, HR Manager, Microsoft 365, Google Workspace or other cloud HR/finance systems should not be treated as native Logix modules.
+
+The recommended structure is:
+
+1. Native Logix modules connect through organisation UID, module subscriptions and organisation connections.
+2. External products connect through a module-owned integration adapter.
+3. The adapter stores only the controlled connection metadata, credentials/token reference, sync direction, mapping rules and audit state.
+4. GAR can read connector status and mapped source records when permissions allow, but GAR should not hold the credential or become the source of truth.
+
+For example, if a company later adds Finance Logix, that module is enabled as a native module subscription. If the same company wants Sage, Finance Logix should own a Sage connector under Finance settings. If a company later adds HR Logix, that module is enabled as a native module subscription. If it wants HR Manager, HR Logix should own the HR Manager connector under HR settings.
 
 ## Works Logix Routing Impact
 

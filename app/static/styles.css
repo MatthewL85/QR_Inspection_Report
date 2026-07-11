@@ -6494,6 +6494,125 @@ body.sidebar-collapsed .main-content {
   font-weight: 800;
 }
 
+.settings-app-connection-grid {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 0.85rem 1rem;
+}
+
+.settings-app-connection-grid > div,
+.settings-app-integration-list article {
+  background: #f8fafc;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  min-width: 0;
+  padding: 0.75rem;
+}
+
+.settings-app-connection-grid span,
+.settings-app-integration-list span,
+.settings-app-connection-actions span {
+  color: #52627a;
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.settings-app-connection-grid strong,
+.settings-app-integration-list strong {
+  color: #061833;
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 900;
+  line-height: 1.25;
+  margin-top: 0.22rem;
+  overflow-wrap: anywhere;
+}
+
+.settings-app-connection-grid small,
+.settings-app-integration-list small {
+  color: #52627a;
+  display: block;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  margin-top: 0.3rem;
+}
+
+.settings-app-connection-actions {
+  border-top: 1px solid #edf1f6;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0.85rem 1rem;
+}
+
+.settings-app-connection-actions label {
+  background: #ffffff;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  min-width: 0;
+  padding: 0.75rem;
+}
+
+.settings-app-connection-actions input {
+  border: 1px solid #d5deea;
+  border-radius: 8px;
+  color: #061833;
+  font-size: 0.86rem;
+  min-height: 38px;
+  padding: 0.45rem 0.65rem;
+  width: 100%;
+}
+
+.settings-app-connection-actions button {
+  align-items: center;
+  align-self: start;
+  background: linear-gradient(135deg, #2152ff, #1bbff0);
+  border: 0;
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(33, 82, 255, 0.16);
+  color: #fff;
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0.45rem 0.8rem;
+}
+
+.settings-app-integration-list {
+  border-top: 1px solid #edf1f6;
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 0.85rem 1rem;
+}
+
+.settings-app-integration-list article {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.settings-app-integration-list em {
+  align-self: end;
+  background: #eef3f9;
+  border-radius: 999px;
+  color: #40516a;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 900;
+  justify-self: start;
+  margin-top: 0.25rem;
+  padding: 0.28rem 0.55rem;
+}
+
 .contractor-docket-summary-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(140px, 1fr));
@@ -8413,6 +8532,12 @@ body.sidebar-collapsed .main-content {
     display: flex;
     overflow-x: auto;
     position: static;
+  }
+
+  .settings-app-connection-grid,
+  .settings-app-connection-actions,
+  .settings-app-integration-list {
+    grid-template-columns: 1fr;
   }
 
   .works-form-wide {

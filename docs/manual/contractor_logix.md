@@ -61,6 +61,10 @@ The contractor job number is the contractor's internal reference. The source/ext
 
 This keeps Contractor Logix independently useful while preserving future connection readiness. If that client later joins LogixPM, historic standalone dockets can be linked to the proper organisation connection rather than being lost in a separate workflow.
 
+Contractor Settings includes a Connections & Integrations area. This shows the contractor organisation UID, active organisation connections, pending connection codes and the future connector readiness for external systems. Contractors can generate a one-time connection code for a management company or enter a code received from a management company. The accepted connection becomes the governed link; email is only a delivery method, not the source of truth.
+
+External finance or HR systems should connect through future adapters rather than direct database sharing. For example, Sage should be handled by a Finance Logix/Sage connector and HR Manager should be handled by an HR Logix/HR Manager connector. Contractor Logix can display readiness for those connectors, but the module that owns the business process should own the adapter.
+
 Accepted job dockets appear in the Contractor Calendar as an Unscheduled Job Queue until the contractor assigns an engineer/team and chooses a calendar slot.
 
 Each job docket has its own operational detail page. The page shows the linked work order, schedule, engineer/team assignment, site and contact information, scope of works, evidence, contractor updates and the shared Works Logix lifecycle. This separates the contractor's operational file from the pre-acceptance work order pack while keeping both records linked.
