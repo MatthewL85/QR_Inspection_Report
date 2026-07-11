@@ -8,8 +8,8 @@
       <span>Organisation identity, company records and cross-module connection readiness.</span>
     </div>
     <div class="client-manager-actions">
-      {% if 'super_admin.organisation_connections' in current_app.view_functions %}
-        <a class="unit-link-action" href="{{ url_for('super_admin.organisation_connections', company_id=company.id) }}">
+      {% if 'settings.connections_index' in current_app.view_functions %}
+        <a class="unit-link-action" href="{{ url_for('settings.connections_index', company_id=company.id) }}">
           <i class="material-icons">hub</i> Connections
         </a>
       {% endif %}
@@ -192,6 +192,11 @@
         <h6>Module & Connection Readiness</h6>
         <span>Shows whether this organisation can operate independently and connect to other Logix modules.</span>
       </div>
+      {% if 'settings.connections_index' in current_app.view_functions %}
+        <a class="unit-link-action" href="{{ url_for('settings.connections_index', company_id=company.id) }}">
+          <i class="material-icons">hub</i> Manage Connections
+        </a>
+      {% endif %}
     </div>
     <div class="client-manager-table-wrap">
       <table class="client-manager-table organisation-connections-table">

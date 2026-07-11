@@ -360,6 +360,91 @@ body.sidebar-collapsed .sidenav {
   padding-top: 12px;
 }
 
+.module-connection-module-grid,
+.module-connection-rule-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.module-connection-module-card,
+.module-connection-rule-grid > div {
+  background: #fff;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 118px;
+  padding: 14px;
+}
+
+.module-connection-rule-grid > div {
+  display: block;
+}
+
+.module-connection-module-card span,
+.module-connection-rule-grid strong {
+  color: #52627a;
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.module-connection-module-card strong,
+.module-connection-rule-grid strong {
+  color: #061833;
+  font-size: 0.95rem;
+  margin-top: 5px;
+  text-transform: none;
+}
+
+.module-connection-module-card small,
+.module-connection-rule-grid span {
+  color: #52627a;
+  display: block;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  margin-top: 6px;
+}
+
+.module-connection-module-meta {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: space-between;
+  min-width: 92px;
+}
+
+.module-connection-module-meta em {
+  background: #eef3fa;
+  border-radius: 999px;
+  color: #40516d;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 800;
+  padding: 5px 9px;
+  white-space: nowrap;
+}
+
+.module-connection-module-meta em.is-enabled {
+  background: #e4f8ed;
+  color: #00843d;
+}
+
+.module-connection-module-meta button {
+  background: #2554ff;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 8px 12px;
+}
+
 .document-template-table td:first-child a {
   display: block;
   font-weight: 800;
@@ -692,6 +777,8 @@ body.sidebar-collapsed .sidenav {
   .document-template-form-grid,
   .document-template-rule-grid,
   .company-document-setup-grid,
+  .module-connection-module-grid,
+  .module-connection-rule-grid,
   .module-settings-summary-grid,
   .module-settings-role-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -727,6 +814,8 @@ body.sidebar-collapsed .sidenav {
   .document-template-form-grid,
   .document-template-rule-grid,
   .company-document-setup-grid,
+  .module-connection-module-grid,
+  .module-connection-rule-grid,
   .module-settings-summary-grid,
   .module-settings-role-strip {
     grid-template-columns: 1fr;

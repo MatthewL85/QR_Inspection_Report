@@ -50,7 +50,7 @@ This lets an organisation use one module independently, then add another module 
 
 ## Module Settings Registry
 
-The platform now has a Module Settings Registry at `Settings -> Module Settings`.
+The platform now has a Module Settings Registry at `Settings -> Module Settings`, plus a governed connection surface at `Settings -> Connections`.
 
 This registry defines how settings should be split across the ecosystem:
 
@@ -70,6 +70,8 @@ The registry also applies role-aware settings visibility. Super Admin and Admin 
 
 Each standalone module should expose a reciprocal connections area inside its own settings. The Core Platform still owns the underlying organisation UID, module subscription and organisation connection records, but the user experience should sit where the user expects it. For example, Contractor Logix settings should show the contractor organisation UID, active management-company links, pending connection codes and the ability to enter a received code. Finance Logix and HR Logix should follow the same pattern when those modules are expanded.
 
+`Settings -> Connections` is the shared setup surface for connected organisations. It lets authorised management users enable native Logix modules for the selected organisation, generate one-time connection codes, accept received codes and see future external connector readiness. Standalone module settings can reuse the same connection controls, but they should only show the actions relevant to that module.
+
 ## Connecting Organisations
 
 When two organisations need to work together, the platform should use a controlled connection invite.
@@ -86,6 +88,8 @@ Email can be used to deliver an invite, but the email address is not the permane
 ## Super Admin: Organisation Connections
 
 Super Admin users can open Organisation Connections from the Super Admin sidebar or dashboard.
+
+Management users can also open the lighter settings-owned view from `Settings -> Connections`.
 
 Use this page to:
 
