@@ -2,7 +2,7 @@
 
 Status: shell operating guide
 
-Last updated: 2026-05-28
+Last updated: 2026-07-11
 
 ## Purpose
 
@@ -45,6 +45,8 @@ The Finance dashboard also includes a read-only Payment Request Intake. This sho
 
 The Finance dashboard also includes Ask GAR. Finance users can ask source-backed questions in their permitted finance scope. Where the question relies on live debtor, arrears, budget, payment or ledger services that are not ready yet, GAR should explain that the module is not query-ready rather than inventing an answer.
 
+Finance Logix has a module-owned Connections page at `/finance/settings/connections`. This is where a standalone Finance Logix workspace should manage native Logix links and future finance-owned adapters. Native Logix connections use organisation UID, module subscription and governed connection codes. External accounting systems such as Sage, Xero or QuickBooks should be added later as Finance-owned adapters, because Finance Logix owns ledger mapping, invoice sync, payment references and reconciliation rules.
+
 ## GAR Readiness
 
 GAR can recognise finance questions such as:
@@ -64,3 +66,5 @@ The current GAR capability registry marks Finance Logix as `foundation_present_n
 Finance Logix should own ledgers and transaction records. Unit and client screens should show summaries, not duplicate finance records.
 
 Works Logix can hand a contractor Payment Request into Finance readiness, but Finance Logix must remain the owner of invoice approval, ledger posting, payment runs and supplier reconciliation when those workflows are built.
+
+Finance Logix settings should not be hidden inside Contractor Logix or Property Management settings when Finance is purchased independently. In a connected LogixPM suite, the combined Settings Centre can link to the same Finance-owned setup surface.

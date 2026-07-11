@@ -2,7 +2,7 @@
 
 Status: Phase 3 operating guide
 
-Last updated: 2026-06-26
+Last updated: 2026-07-11
 
 ## Purpose
 
@@ -68,7 +68,15 @@ Important: this feed is discovery only. It does not change settings. Module sett
 
 The registry also applies role-aware settings visibility. Super Admin and Admin users can see the full combined registry. Property management company users see management-side settings only and do not get Contractor Logix operational settings. Contractor users see Contractor Logix settings and shared Core/GAR context only. Members, residents and directors see only the module context relevant to their portal/governance role. This keeps standalone module setup independent while still allowing a connected Settings Centre for authorised management users.
 
-Each standalone module should expose a reciprocal connections area inside its own settings. The Core Platform still owns the underlying organisation UID, module subscription and organisation connection records, but the user experience should sit where the user expects it. For example, Contractor Logix settings should show the contractor organisation UID, active management-company links, pending connection codes and the ability to enter a received code. Finance Logix and HR Logix should follow the same pattern when those modules are expanded.
+Each standalone module should expose a reciprocal connections area inside its own settings. The Core Platform still owns the underlying organisation UID, module subscription and organisation connection records, but the user experience should sit where the user expects it.
+
+Current module-local connection surfaces:
+
+- Contractor Logix: `/contractor/settings/connections`
+- Finance Logix: `/finance/settings/connections`
+- HR Logix: future `/hr/settings/connections` when HR Logix moves beyond the foundation shell
+
+Contractor Logix settings should show the contractor organisation UID, active management-company links, pending connection codes and the ability to enter a received code. Finance Logix should show native Logix finance links and future accounting/payment adapter readiness. HR Logix should later show HR module links and future HR/payroll adapter readiness.
 
 `Settings -> Connections` is the shared setup surface for connected organisations. It lets authorised management users enable native Logix modules for the selected organisation, generate one-time connection codes, accept received codes and see future external connector readiness. Standalone module settings can reuse the same connection controls, but they should only show the actions relevant to that module.
 

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Finance Connections{% endblock %}
+
+{% block page_content %}
+<div class="contractor-settings-app app-ready-surface"
+     data-app-mobile-ready="true"
+     data-app-safe-area="required"
+     data-app-source-backed="true"
+     data-app-surface="finance-settings-connections">
+  <form method="post" action="{{ url_for('finance.settings_connections') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <section class="settings-app-header">
+      <div>
+        <span>Finance Logix</span>
+        <h1>Connections</h1>
+        <p>Connect Finance Logix to management records, payment request intake, GAR and future accounting systems.</p>
+      </div>
+      <div class="settings-app-actions">
+        <a href="{{ url_for('finance.dashboard') }}">Dashboard</a>
+      </div>
+    </section>
+
+    {% set connection_panel_id = 'finance-connections' %}
+    {% set connection_panel_title = 'Finance Connections' %}
+    {% set connection_panel_help = 'Use organisation codes for native Logix links. Accounting systems such as Sage should connect later through Finance-owned adapters.' %}
+    {% set allow_connection_actions = true %}
+    {% include 'settings/_module_connections_panel.html' %}
+  </form>
+
+  <section class="settings-app-panel">
+    <div class="settings-app-panel-heading">
+      <div>
+        <h2>Finance Setup Logic</h2>
+        <p>Finance Logix can operate as its own finance workspace while connecting to LogixPM, Works Logix and external accounting products through controlled boundaries.</p>
+      </div>
+      <span>Finance Owned</span>
+    </div>
+    <div class="module-connection-rule-grid">
+      <div>
+        <strong>Native Logix data</strong>
+        <span>Clients, units, payment requests and GAR finance context should arrive through module subscriptions and organisation connections.</span>
+      </div>
+      <div>
+        <strong>Accounting systems</strong>
+        <span>Sage, Xero and QuickBooks should be configured here later as Finance-owned connectors with mapping and audit rules.</span>
+      </div>
+      <div>
+        <strong>Payment controls</strong>
+        <span>Invoice approval, ledger posting and payment status remain Finance Logix responsibilities, even when Works Logix starts the handoff.</span>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

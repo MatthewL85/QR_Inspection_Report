@@ -27,7 +27,6 @@
     <section class="settings-app-shell">
       <aside class="settings-app-nav" aria-label="Contractor settings navigation">
         <a href="#contractor-account">Account</a>
-        <a href="#contractor-connections">Connections</a>
         <a href="#contractor-jobs">Job Dockets</a>
         <a href="#contractor-updates">Updates</a>
         <a href="#contractor-calendar">Calendar</a>
@@ -61,18 +60,19 @@
           </div>
           <div class="settings-app-row">
             <div>
+              <strong>Connections & integrations</strong>
+              <small>Connect this Contractor Logix workspace to management companies, GAR and future approved systems.</small>
+            </div>
+            <a href="{{ url_for('contractor.contractor_settings_connections') }}">Manage</a>
+          </div>
+          <div class="settings-app-row">
+            <div>
               <strong>Branding</strong>
               <small>Logo, colours and document branding for contractor-issued documents.</small>
             </div>
             <a href="{{ url_for('settings.branding_view', company_id=company.id) if company else url_for('settings.branding_view') }}">Manage</a>
           </div>
         </section>
-
-        {% set connection_panel_id = 'contractor-connections' %}
-        {% set connection_panel_title = 'Connections & Integrations' %}
-        {% set connection_panel_help = 'Connect Contractor Logix to management companies, native Logix modules and future approved external systems.' %}
-        {% set allow_connection_actions = true %}
-        {% include 'settings/_module_connections_panel.html' %}
 
         <section id="contractor-jobs" class="settings-app-panel">
           <div class="settings-app-panel-heading">

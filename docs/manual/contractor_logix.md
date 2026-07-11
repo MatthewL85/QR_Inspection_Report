@@ -2,7 +2,7 @@
 
 Status: Phase 3 operating guide
 
-Last updated: 2026-06-26
+Last updated: 2026-07-11
 
 ## Purpose
 
@@ -61,7 +61,7 @@ The contractor job number is the contractor's internal reference. The source/ext
 
 This keeps Contractor Logix independently useful while preserving future connection readiness. If that client later joins LogixPM, historic standalone dockets can be linked to the proper organisation connection rather than being lost in a separate workflow.
 
-Contractor Settings includes a Connections & Integrations area. This shows the contractor organisation UID, active organisation connections, pending connection codes and the future connector readiness for external systems. Contractors can generate a one-time connection code for a management company or enter a code received from a management company. The accepted connection becomes the governed link; email is only a delivery method, not the source of truth.
+Contractor Settings links to a module-owned Connections area at `/contractor/settings/connections`. This shows the contractor organisation UID, active organisation connections, pending connection codes and the future connector readiness for external systems. Contractors can generate a one-time connection code for a management company or enter a code received from a management company. The accepted connection becomes the governed link; email is only a delivery method, not the source of truth.
 
 External finance or HR systems should connect through future adapters rather than direct database sharing. For example, Sage should be handled by a Finance Logix/Sage connector and HR Manager should be handled by an HR Logix/HR Manager connector. Contractor Logix can display readiness for those connectors, but the module that owns the business process should own the adapter.
 

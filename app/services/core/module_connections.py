@@ -66,6 +66,38 @@ def _integration_readiness_for_module(module_key: str) -> tuple[dict[str, Any], 
             },
         )
 
+    if module_key == "finance_logix":
+        return common + (
+            {
+                "name": "Sage / Xero / QuickBooks",
+                "kind": "External accounting connector",
+                "status": "Future connector",
+                "notes": "Finance Logix should own ledger, invoice, payment and account-code mapping into accounting packages.",
+            },
+            {
+                "name": "Bank feed / payment provider",
+                "kind": "External finance connector",
+                "status": "Future connector",
+                "notes": "Bank/payment feeds should sync through finance-owned reconciliation and audit rules.",
+            },
+        )
+
+    if module_key == "hr_logix":
+        return common + (
+            {
+                "name": "HR Manager / Cloud HR",
+                "kind": "External HR connector",
+                "status": "Future connector",
+                "notes": "HR Logix should own staff profiles, leave, policies and external HR/payroll mapping.",
+            },
+            {
+                "name": "Payroll provider",
+                "kind": "External payroll connector",
+                "status": "Future connector",
+                "notes": "Payroll integrations should use HR-owned staff identity and finance-approved posting rules.",
+            },
+        )
+
     return common + (
         {
             "name": "Finance Logix / Sage",

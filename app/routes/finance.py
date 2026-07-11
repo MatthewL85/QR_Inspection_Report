@@ -2,14 +2,20 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from flask import Blueprint, abort, jsonify, render_template, request, url_for
+from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
+from app.extensions import db
 from app.models.client.client import Client
 from app.models.contracts import ClientContract
 from app.models.contractor.job_docket import JobDocket
 from app.models.members.unit import Unit
 from app.models.works.work_order import WorkOrder
+from app.services.core.module_connections import module_connection_context
+from app.services.core.organisation_identity import (
+    accept_organisation_connection_invite,
+    create_organisation_connection_invite,
+)
 from app.services.contractor.job_docket_service import build_payment_request_document_payload
 from app.services.gar import attach_gar_capability_readiness, build_gar_inquiry_response, build_operational_digest
 
@@ -137,6 +143,62 @@ def dashboard():
 def manage_clients():
     clients = _finance_clients().all()
     return render_template("finance/manage_clients.html", clients=clients)
+
+
+@finance_bp.route("/settings/connections", methods=["GET", "POST"], endpoint="settings_connections")
+@login_required
+def settings_connections():
+    company = getattr(current_user, "company", None)
+    if not company:
+        flash("A finance organisation profile is required before managing connections.", "danger")
+        return redirect(url_for("finance.dashboard"))
+
+    if request.method == "POST":
+        settings_action = (request.form.get("settings_action") or "").strip()
+
+        if settings_action == "create_connection_invite":
+            try:
+                invite = create_organisation_connection_invite(
+                    source_company_id=company.id,
+                    target_email=(request.form.get("target_email") or "").strip() or None,
+                    connection_type="management_finance",
+                    allowed_modules=["finance", "works", "gar_ai"],
+                    created_by_user_id=getattr(current_user, "id", None),
+                    notes="Created from Finance Logix connection settings.",
+                )
+                db.session.commit()
+                flash(f"Connection code created: {invite.invite_code}", "success")
+            except ValueError as exc:
+                db.session.rollback()
+                flash(str(exc), "danger")
+            return redirect(url_for("finance.settings_connections"))
+
+        if settings_action == "accept_connection_invite":
+            invite_code = (request.form.get("invite_code") or "").strip().upper()
+            if not invite_code:
+                flash("Enter the connection code before connecting organisations.", "warning")
+                return redirect(url_for("finance.settings_connections"))
+            try:
+                accept_organisation_connection_invite(
+                    invite_code=invite_code,
+                    accepting_company_id=company.id,
+                    accepted_by_user_id=getattr(current_user, "id", None),
+                )
+                db.session.commit()
+                flash("Organisation connection accepted.", "success")
+            except ValueError as exc:
+                db.session.rollback()
+                flash(str(exc), "danger")
+            return redirect(url_for("finance.settings_connections"))
+
+        flash("Choose a connection action before saving.", "warning")
+        return redirect(url_for("finance.settings_connections"))
+
+    return render_template(
+        "finance/settings_connections.html",
+        company=company,
+        connection_context=module_connection_context(company, module_key="finance_logix"),
+    )
 
 
 @finance_bp.route("/payment-requests/<int:work_order_id>", endpoint="payment_request_review")
