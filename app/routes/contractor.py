@@ -1059,12 +1059,21 @@ def _normalise_document_key(value: str) -> str:
 
 
 def _contractor_document_catalog(company_id: int | None) -> list[dict]:
-    return [
+    template_order = {
+        "job_docket": 10,
+        "quote_response": 20,
+        "payment_request": 30,
+    }
+    templates = [
         template
         for template in document_template_catalog(company_id)
         if template.get("module_key") == CONTRACTOR_DOCUMENT_MODULE_KEY
         and template.get("document_type") in CONTRACTOR_DOCUMENT_TYPES
     ]
+    return sorted(
+        templates,
+        key=lambda template: template_order.get(template.get("document_type"), 99),
+    )
 
 
 def _contractor_editable_document_template(
