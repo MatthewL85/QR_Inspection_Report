@@ -6702,6 +6702,103 @@ body.sidebar-collapsed .main-content {
   padding: 0.28rem 0.55rem;
 }
 
+.contractor-template-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 0.85rem 1rem 1rem;
+}
+
+.contractor-template-card {
+  background: #f8fafc;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.85rem;
+}
+
+.contractor-template-card > div:first-child span,
+.contractor-template-meta span {
+  color: #52627a;
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.contractor-template-card h3 {
+  color: #061833;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.2;
+  margin: 0.25rem 0 0;
+}
+
+.contractor-template-card p {
+  color: #52627a;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  margin: 0.3rem 0 0;
+}
+
+.contractor-template-meta {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.contractor-template-meta div {
+  background: #fff;
+  border: 1px solid #e3eaf3;
+  border-radius: 8px;
+  padding: 0.55rem;
+}
+
+.contractor-template-meta strong {
+  color: #061833;
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1.2;
+  margin-top: 0.2rem;
+  overflow-wrap: anywhere;
+}
+
+.contractor-template-actions {
+  display: flex;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.contractor-template-actions a {
+  align-items: center;
+  border: 1px solid #d5deea;
+  border-radius: 8px;
+  color: #005dff;
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 36px;
+  min-width: 82px;
+  padding: 0.45rem 0.75rem;
+  text-decoration: none;
+}
+
+.contractor-template-actions a.is-primary {
+  background: linear-gradient(135deg, #2152ff, #1bbff0);
+  border-color: transparent;
+  box-shadow: 0 10px 24px rgba(33, 82, 255, 0.16);
+  color: #fff;
+}
+
+.contractor-template-form-grid {
+  padding: 0.85rem 1rem 0;
+}
+
 .contractor-docket-summary-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(140px, 1fr));
@@ -8497,6 +8594,8 @@ body.sidebar-collapsed .main-content {
   .works-audit-grid,
   .works-audit-context-strip,
   .works-audit-evidence-list,
+  .contractor-template-grid,
+  .contractor-template-meta,
   .contractor-settings-profile-grid,
   .contractor-settings-area-grid,
   .contractor-settings-boundary-grid,

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Contractor Document Templates{% endblock %}
+
+{% block page_content %}
+<div class="contractor-settings-app app-ready-surface app-ready-surface--contractor"
+     data-app-mobile-ready="true"
+     data-app-safe-area="required"
+     data-app-source-backed="true"
+     data-app-surface="contractor-document-templates">
+  <section class="settings-app-header">
+    <div>
+      <span>Contractor Logix</span>
+      <h1>Document Templates</h1>
+      <p>Contractor-owned job docket, quotation response and payment request documents for {{ contractor_display_name }}.</p>
+    </div>
+    <div class="settings-app-actions">
+      <a href="{{ url_for('contractor.contractor_settings') }}">Settings</a>
+      <a href="{{ url_for('contractor.contractor_dashboard') }}">Dashboard</a>
+    </div>
+  </section>
+
+  <section class="settings-app-panel">
+    <div class="settings-app-panel-heading">
+      <div>
+        <h2>Contractor-Owned Templates</h2>
+        <p>These templates stay in Contractor Logix. Works Logix work orders and management documents are controlled by the management company.</p>
+      </div>
+      <span>Contractor Only</span>
+    </div>
+
+    <div class="contractor-template-grid">
+      {% for template in templates %}
+        <article class="contractor-template-card">
+          <div>
+            <span>{{ template.document_type|replace('_', ' ')|title }}</span>
+            <h3>{{ template.name }}</h3>
+            <p>{{ template.description or template.default_name }}</p>
+          </div>
+          <div class="contractor-template-meta">
+            <div>
+              <span>Prefix</span>
+              <strong>{{ template.number_prefix or '-' }}</strong>
+            </div>
+            <div>
+              <span>Source</span>
+              <strong>{{ 'Custom' if template.has_company_template else 'Default' }}</strong>
+            </div>
+            <div>
+              <span>Output</span>
+              <strong>{{ (template.supported_output_formats or ['html'])|join(' / ')|upper }}</strong>
+            </div>
+          </div>
+          <div class="contractor-template-actions">
+            <a href="{{ url_for('contractor.contractor_document_template_preview', document_type=template.document_type) }}">Preview</a>
+            <a class="is-primary" href="{{ url_for('contractor.contractor_document_template_edit', document_type=template.document_type) }}">Edit</a>
+          </div>
+        </article>
+      {% else %}
+        <div class="settings-app-row">
+          <div>
+            <strong>No contractor templates are registered.</strong>
+            <small>Contractor Logix templates will appear here once module setup is available.</small>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

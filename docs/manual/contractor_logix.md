@@ -65,6 +65,8 @@ Contractor Settings links to a module-owned Connections area at `/contractor/set
 
 External finance or HR systems should connect through future adapters rather than direct database sharing. For example, Sage should be handled by a Finance Logix/Sage connector and HR Manager should be handled by an HR Logix/HR Manager connector. Contractor Logix can display readiness for those connectors, but the module that owns the business process should own the adapter.
 
+Contractor Settings also links to a module-owned Document Templates area at `/contractor/settings/document-templates`. This area only exposes Contractor Logix documents: Job Docket, Quotation Response and Payment Request. A contractor user must not be routed into the shared LogixPM/Super Admin document template settings, even when Contractor Logix is connected to a management company. Direct attempts to open the shared document template settings as a contractor should redirect back to the Contractor Logix document template surface.
+
 Accepted job dockets appear in the Contractor Calendar as an Unscheduled Job Queue until the contractor assigns an engineer/team and chooses a calendar slot.
 
 Each job docket has its own operational detail page. The page shows the linked work order, schedule, engineer/team assignment, site and contact information, scope of works, evidence, contractor updates and the shared Works Logix lifecycle. This separates the contractor's operational file from the pre-acceptance work order pack while keeping both records linked.

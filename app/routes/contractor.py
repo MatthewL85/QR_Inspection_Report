@@ -3,6 +3,7 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from flask import Blueprint, Response, render_template, session, request, current_app, flash, redirect, url_for, jsonify, abort, send_file
+from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.utils import secure_filename
 
 from app.extensions import db
@@ -10,6 +11,7 @@ from app.helpers.decorators import login_required
 from app.models import ContractorComplianceDocument
 from app.models.contractor.contractor_team import ContractorTeam
 from app.models.contractor.job_docket import JobDocket, JobDocketPrivateWorkLog
+from app.models.core.document_template import CoreDocumentTemplate
 from app.models.core.user import User
 from app.services.gar import (
     attach_gar_capability_readiness,
@@ -18,6 +20,12 @@ from app.services.gar import (
     build_work_order_relevant_history,
 )
 from app.services.core.contractor_access import contractor_portal_denial_reason
+from app.services.core.document_template_service import (
+    DOCUMENT_TEMPLATE_DEFAULTS,
+    document_template_catalog,
+    document_template_preview_payload,
+    get_document_template_payload,
+)
 from app.services.core.module_connections import module_connection_context
 from app.services.core.module_settings_registry import module_settings_by_key
 from app.services.core.organisation_identity import (
@@ -1042,6 +1050,71 @@ def _contractor_settings_defaults(company) -> dict:
     return defaults
 
 
+CONTRACTOR_DOCUMENT_MODULE_KEY = "contractor_logix"
+CONTRACTOR_DOCUMENT_TYPES = {"job_docket", "quote_response", "payment_request"}
+
+
+def _normalise_document_key(value: str) -> str:
+    return (value or "").strip().lower()
+
+
+def _contractor_document_catalog(company_id: int | None) -> list[dict]:
+    return [
+        template
+        for template in document_template_catalog(company_id)
+        if template.get("module_key") == CONTRACTOR_DOCUMENT_MODULE_KEY
+        and template.get("document_type") in CONTRACTOR_DOCUMENT_TYPES
+    ]
+
+
+def _contractor_editable_document_template(
+    company,
+    document_type: str,
+    *,
+    persist_new: bool = False,
+) -> CoreDocumentTemplate:
+    template = CoreDocumentTemplate.query.filter_by(
+        company_id=company.id,
+        module_key=CONTRACTOR_DOCUMENT_MODULE_KEY,
+        document_type=document_type,
+        status="Active",
+    ).order_by(CoreDocumentTemplate.id.desc()).first()
+    if template:
+        return template
+
+    default_payload = get_document_template_payload(company.id, CONTRACTOR_DOCUMENT_MODULE_KEY, document_type)
+    template = CoreDocumentTemplate(
+        company_id=company.id,
+        module_key=CONTRACTOR_DOCUMENT_MODULE_KEY,
+        document_type=document_type,
+        name=default_payload.get("name") or document_type.replace("_", " ").title(),
+        description=default_payload.get("description"),
+        status="Active",
+        version_label=default_payload.get("version_label") or "v1",
+        template_format=default_payload.get("template_format") or "html",
+        html_body=default_payload.get("html_body"),
+        terms_body=default_payload.get("terms_body"),
+        footer_body=default_payload.get("footer_body"),
+        logo_mode=default_payload.get("logo_mode") or "contractor",
+        primary_brand_source=default_payload.get("primary_brand_source") or "contractor",
+        include_signature_block=bool(default_payload.get("include_signature_block")),
+        include_terms=bool(default_payload.get("include_terms", True)),
+        number_prefix=default_payload.get("number_prefix"),
+        sequence_padding=default_payload.get("sequence_padding") or 5,
+        supported_output_formats=default_payload.get("supported_output_formats") or ["html", "pdf"],
+        required_context_keys=default_payload.get("required_context_keys") or [],
+        default_context=default_payload.get("default_context") or {},
+        visibility_scope=default_payload.get("visibility_scope") or "company",
+        created_by_id=session.get("user_id"),
+        updated_by_id=session.get("user_id"),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    if persist_new:
+        db.session.add(template)
+    return template
+
+
 @contractor_bp.route('/settings', methods=['GET', 'POST'])
 @login_required(role='Contractor')
 def contractor_settings():
@@ -1098,6 +1171,123 @@ def contractor_settings():
             or "General contractor"
         ),
         module_contract=module_settings_by_key("contractor_logix"),
+    )
+
+
+@contractor_bp.route(
+    '/settings/document-templates',
+    methods=['GET'],
+    endpoint='contractor_document_templates',
+)
+@login_required(role='Contractor')
+def contractor_document_templates():
+    user = _current_contractor_user()
+    if not user:
+        flash('Contractor Logix is only available to contractor company users.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    company = getattr(user, "company", None)
+    if not company:
+        flash("A contractor company profile is required before managing document templates.", "danger")
+        return redirect(url_for("contractor.contractor_settings"))
+
+    templates = _contractor_document_catalog(company.id)
+    return render_template(
+        "contractor/document_templates.html",
+        company=company,
+        templates=templates,
+        contractor_display_name=(
+            getattr(getattr(user, "contractor", None), "company_name", None)
+            or getattr(company, "name", None)
+            or getattr(user, "full_name", None)
+            or "Contractor"
+        ),
+    )
+
+
+@contractor_bp.route(
+    '/settings/document-templates/<document_type>/edit',
+    methods=['GET', 'POST'],
+    endpoint='contractor_document_template_edit',
+)
+@login_required(role='Contractor')
+def contractor_document_template_edit(document_type: str):
+    user = _current_contractor_user()
+    if not user:
+        flash('Contractor Logix is only available to contractor company users.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    company = getattr(user, "company", None)
+    if not company:
+        flash("A contractor company profile is required before document templates can be edited.", "danger")
+        return redirect(url_for("contractor.contractor_settings"))
+
+    document_type = _normalise_document_key(document_type)
+    if (CONTRACTOR_DOCUMENT_MODULE_KEY, document_type) not in DOCUMENT_TEMPLATE_DEFAULTS:
+        flash("That Contractor Logix document template is not registered.", "danger")
+        return redirect(url_for("contractor.contractor_document_templates"))
+    if document_type not in CONTRACTOR_DOCUMENT_TYPES:
+        flash("That document template belongs to another module.", "danger")
+        return redirect(url_for("contractor.contractor_document_templates"))
+
+    template = _contractor_editable_document_template(company, document_type, persist_new=request.method == "POST")
+    if request.method == "POST":
+        try:
+            template.name = (request.form.get("name") or "").strip() or template.name
+            template.description = (request.form.get("description") or "").strip() or None
+            template.logo_mode = (request.form.get("logo_mode") or "contractor").strip()
+            template.primary_brand_source = (request.form.get("primary_brand_source") or "contractor").strip()
+            template.number_prefix = (request.form.get("number_prefix") or "").strip().upper() or None
+            template.terms_body = (request.form.get("terms_body") or "").strip() or None
+            template.footer_body = (request.form.get("footer_body") or "").strip() or None
+            template.html_body = (request.form.get("html_body") or "").strip() or None
+            template.include_terms = request.form.get("include_terms") == "on"
+            template.include_signature_block = request.form.get("include_signature_block") == "on"
+            template.updated_by_id = session.get("user_id")
+            template.updated_at = datetime.utcnow()
+            db.session.commit()
+            flash("Contractor document template updated.", "success")
+            return redirect(url_for("contractor.contractor_document_templates"))
+        except SQLAlchemyError:
+            db.session.rollback()
+            flash("We could not save that document template. Please try again.", "danger")
+
+    payload = get_document_template_payload(company.id, CONTRACTOR_DOCUMENT_MODULE_KEY, document_type)
+    return render_template(
+        "contractor/document_template_form.html",
+        company=company,
+        template=template,
+        payload=payload,
+    )
+
+
+@contractor_bp.route(
+    '/settings/document-templates/<document_type>/preview',
+    methods=['GET'],
+    endpoint='contractor_document_template_preview',
+)
+@login_required(role='Contractor')
+def contractor_document_template_preview(document_type: str):
+    user = _current_contractor_user()
+    if not user:
+        flash('Contractor Logix is only available to contractor company users.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    company = getattr(user, "company", None)
+    if not company:
+        flash("A contractor company profile is required before document templates can be previewed.", "danger")
+        return redirect(url_for("contractor.contractor_settings"))
+
+    document_type = _normalise_document_key(document_type)
+    if document_type not in CONTRACTOR_DOCUMENT_TYPES:
+        flash("That document template belongs to another module.", "danger")
+        return redirect(url_for("contractor.contractor_document_templates"))
+
+    payload = document_template_preview_payload(company, CONTRACTOR_DOCUMENT_MODULE_KEY, document_type)
+    return render_template(
+        "contractor/document_template_preview.html",
+        company=company,
+        payload=payload,
     )
 
 

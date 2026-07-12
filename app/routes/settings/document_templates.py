@@ -18,13 +18,51 @@ from app.services.core.document_template_service import (
 )
 
 
+CONTRACTOR_ROLE_NAMES = {"contractor", "admin contractor"}
+COMPANY_SWITCH_ROLE_NAMES = {"super admin", "admin"}
+
+
+def _role_key() -> str:
+    return (getattr(current_user, "role_name", None) or "").strip().lower()
+
+
+def _is_contractor_document_context() -> bool:
+    return _role_key() in CONTRACTOR_ROLE_NAMES
+
+
+def _can_switch_company_context() -> bool:
+    return _role_key() in COMPANY_SWITCH_ROLE_NAMES
+
+
+def _contractor_template_redirect(module_key: str | None = None, document_type: str | None = None, *, preview: bool = False):
+    module = _normalise_key(module_key or "")
+    doc_type = _normalise_key(document_type or "")
+    if module == "contractor_logix" and doc_type:
+        endpoint = "contractor.contractor_document_template_preview" if preview else "contractor.contractor_document_template_edit"
+        return redirect(url_for(endpoint, document_type=doc_type))
+
+    flash("Contractor Logix document templates are managed inside Contractor Logix settings.", "warning")
+    return redirect(url_for("contractor.contractor_document_templates"))
+
+
 def _resolve_company() -> Company | None:
-    company_id = request.args.get("company_id", type=int) or getattr(current_user, "company_id", None)
-    if company_id:
-        company = Company.query.get(company_id)
+    requested_company_id = request.args.get("company_id", type=int)
+    current_company_id = getattr(current_user, "company_id", None)
+
+    if _can_switch_company_context() and requested_company_id:
+        company = Company.query.get(requested_company_id)
         if company:
             return company
-    return Company.query.order_by(Company.id.desc()).first()
+
+    if current_company_id:
+        company = Company.query.get(current_company_id)
+        if company:
+            return company
+
+    if _can_switch_company_context():
+        return Company.query.order_by(Company.id.desc()).first()
+
+    return None
 
 
 def _normalise_key(value: str) -> str:
@@ -82,6 +120,9 @@ def _editable_template(
 @settings_bp.route("/document-templates", methods=["GET"], endpoint="document_templates_index")
 @login_required
 def document_templates_index():
+    if _is_contractor_document_context():
+        return redirect(url_for("contractor.contractor_document_templates"))
+
     company = _resolve_company()
     templates = document_template_catalog(company.id if company else None)
     owner_groups: dict[str, list[dict]] = {}
@@ -104,6 +145,9 @@ def document_templates_index():
 def document_templates_edit(module_key: str, document_type: str):
     module_key = _normalise_key(module_key)
     document_type = _normalise_key(document_type)
+    if _is_contractor_document_context():
+        return _contractor_template_redirect(module_key, document_type)
+
     if (module_key, document_type) not in DOCUMENT_TEMPLATE_DEFAULTS:
         flash("That document template type is not registered.", "danger")
         return redirect(url_for("settings.document_templates_index"))
@@ -153,6 +197,9 @@ def document_templates_edit(module_key: str, document_type: str):
 def document_templates_preview(module_key: str, document_type: str):
     module_key = _normalise_key(module_key)
     document_type = _normalise_key(document_type)
+    if _is_contractor_document_context():
+        return _contractor_template_redirect(module_key, document_type, preview=True)
+
     if (module_key, document_type) not in DOCUMENT_TEMPLATE_DEFAULTS:
         flash("That document template type is not registered.", "danger")
         return redirect(url_for("settings.document_templates_index"))

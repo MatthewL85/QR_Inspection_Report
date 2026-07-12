@@ -173,7 +173,7 @@
               <strong>Document templates</strong>
               <small>Job docket, quotation response and payment request templates.</small>
             </div>
-            <a href="{{ url_for('settings.document_templates_index', company_id=company.id) if company else url_for('settings.document_templates_index') }}">Manage</a>
+            <a href="{{ url_for('contractor.contractor_document_templates') }}">Manage</a>
           </div>
           <label class="settings-app-row settings-app-row--control">
             <div>
