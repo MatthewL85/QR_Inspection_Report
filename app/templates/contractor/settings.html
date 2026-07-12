@@ -26,19 +26,86 @@
 
     <section class="settings-app-shell">
       <aside class="settings-app-nav" aria-label="Contractor settings navigation">
-        <a href="#contractor-account">Account</a>
+        <a href="#contractor-settings-centre">Settings Centre</a>
+        <a href="#contractor-account">Company Profile</a>
+        <a href="#contractor-branding">Branding & Theme</a>
+        <a href="{{ url_for('contractor.contractor_settings_connections') }}">Connections</a>
+        <a href="{{ url_for('contractor.contractor_document_templates') }}">Document Templates</a>
+        <a href="#contractor-finance">Bank Accounts</a>
+        <a href="#contractor-compliance">Insurance</a>
+        <a href="#contractor-module">Module Setup</a>
         <a href="#contractor-jobs">Job Dockets</a>
         <a href="#contractor-updates">Updates</a>
         <a href="#contractor-calendar">Calendar</a>
-        <a href="#contractor-documents">Documents</a>
         <a href="#contractor-data">GAR & Data</a>
       </aside>
 
       <div class="settings-app-panels">
+        <section id="contractor-settings-centre" class="settings-app-panel">
+          <div class="settings-app-panel-heading">
+            <div>
+              <h2>Contractor Settings Centre</h2>
+              <p>Standalone Contractor Logix setup areas for identity, branding, integrations, compliance and documents.</p>
+            </div>
+            <span>Contractor owned</span>
+          </div>
+
+          <div class="settings-app-tile-grid">
+            <a class="settings-app-tile" href="#contractor-account">
+              <span>Identity</span>
+              <h3>Company Profile</h3>
+              <p>Trading name, organisation UID and contractor profile details used across Contractor Logix.</p>
+              <em>In settings</em>
+            </a>
+            <a class="settings-app-tile" href="#contractor-branding">
+              <span>Appearance</span>
+              <h3>Branding & Theme</h3>
+              <p>Logo, colours and document branding for contractor-issued dockets, quotes and payment requests.</p>
+              <em>Setup area</em>
+            </a>
+            <a class="settings-app-tile" href="{{ url_for('contractor.contractor_settings_connections') }}">
+              <span>Connections</span>
+              <h3>Organisation Connections</h3>
+              <p>Connect this contractor workspace to management companies and approved external services.</p>
+              <em>Open</em>
+            </a>
+            <a class="settings-app-tile" href="{{ url_for('contractor.contractor_document_templates') }}">
+              <span>Documents</span>
+              <h3>Document Templates</h3>
+              <p>Manage contractor-owned job docket, quotation response and payment request templates.</p>
+              <em>Open</em>
+            </a>
+            <a class="settings-app-tile" href="#contractor-finance">
+              <span>Finance Ready</span>
+              <h3>Bank Accounts</h3>
+              <p>Payment-request bank details and finance defaults for future Contractor Logix invoicing.</p>
+              <em>Planned</em>
+            </a>
+            <a class="settings-app-tile" href="#contractor-compliance">
+              <span>Compliance</span>
+              <h3>Insurance & Licences</h3>
+              <p>Insurance, certifications and contractor compliance records for management-company review.</p>
+              <em>Planned</em>
+            </a>
+            <a class="settings-app-tile" href="#contractor-module">
+              <span>Module</span>
+              <h3>Module Setup</h3>
+              <p>Standalone and connected-mode controls that keep Contractor Logix separated but interoperable.</p>
+              <em>Controlled</em>
+            </a>
+            <a class="settings-app-tile" href="#contractor-data">
+              <span>GAR</span>
+              <h3>GAR & Data</h3>
+              <p>Source-backed job context settings for future contractor intelligence and performance insight.</p>
+              <em>Available</em>
+            </a>
+          </div>
+        </section>
+
         <section id="contractor-account" class="settings-app-panel">
           <div class="settings-app-panel-heading">
             <div>
-              <h2>Account & Organisation</h2>
+              <h2>Company Profile</h2>
               <p>Core contractor identity used across Contractor Logix.</p>
             </div>
             <span>Contractor only</span>
@@ -49,7 +116,7 @@
               <strong>Contractor profile</strong>
               <small>{{ contractor_display_name }} &middot; {{ contractor_trade }}</small>
             </div>
-            <a href="{{ url_for('settings.profile_index', company_id=company.id) if company else url_for('settings.profile_index') }}">Edit</a>
+            <span class="settings-app-status">Contractor workspace</span>
           </div>
           <div class="settings-app-row">
             <div>
@@ -65,13 +132,71 @@
             </div>
             <a href="{{ url_for('contractor.contractor_settings_connections') }}">Manage</a>
           </div>
+        </section>
+
+        <section id="contractor-branding" class="settings-app-panel">
+          <div class="settings-app-panel-heading">
+            <div>
+              <h2>Branding & Theme</h2>
+              <p>Contractor-owned appearance controls for standalone use and contractor-issued documents.</p>
+            </div>
+            <span>Setup area</span>
+          </div>
           <div class="settings-app-row">
             <div>
-              <strong>Branding</strong>
-              <small>Logo, colours and document branding for contractor-issued documents.</small>
+              <strong>Logo and trading identity</strong>
+              <small>Used on Job Dockets, quotation responses, payment requests and contractor reports.</small>
             </div>
-            <a href="{{ url_for('settings.branding_view', company_id=company.id) if company else url_for('settings.branding_view') }}">Manage</a>
+            <span class="settings-app-status">Planned</span>
           </div>
+          <div class="settings-app-row">
+            <div>
+              <strong>Theme colours</strong>
+              <small>Controls the Contractor Logix workspace accent colour while preserving platform consistency.</small>
+            </div>
+            <span class="settings-app-status">Planned</span>
+          </div>
+          <div class="settings-app-row">
+            <div>
+              <strong>Document branding</strong>
+              <small>Template headers, footers, logos, terms and contractor-specific document styling.</small>
+            </div>
+            <a href="{{ url_for('contractor.contractor_document_templates') }}">Manage templates</a>
+          </div>
+        </section>
+
+        <section id="contractor-module" class="settings-app-panel">
+          <div class="settings-app-panel-heading">
+            <div>
+              <h2>Module Setup</h2>
+              <p>Controls that allow Contractor Logix to run independently or connect safely to other organisations.</p>
+            </div>
+            <span>Boundary controlled</span>
+          </div>
+
+          <div class="settings-app-row">
+            <div>
+              <strong>Standalone contractor workspace</strong>
+              <small>Manual job dockets, calendar, templates and contractor records stay usable without LogixPM.</small>
+            </div>
+            <span class="settings-app-status">Enabled</span>
+          </div>
+          <div class="settings-app-row">
+            <div>
+              <strong>Connected organisation mode</strong>
+              <small>Approved connections can exchange Works Logix jobs without exposing another company's dashboard.</small>
+            </div>
+            <a href="{{ url_for('contractor.contractor_settings_connections') }}">Manage connections</a>
+          </div>
+          {% if module_contract %}
+            <div class="settings-app-row">
+              <div>
+                <strong>Module boundary</strong>
+                <small>{{ module_contract.notes }}</small>
+              </div>
+              <span class="settings-app-status">{{ module_contract.status|replace('_', ' ')|title }}</span>
+            </div>
+          {% endif %}
         </section>
 
         <section id="contractor-jobs" class="settings-app-panel">
@@ -163,7 +288,7 @@
         <section id="contractor-documents" class="settings-app-panel">
           <div class="settings-app-panel-heading">
             <div>
-              <h2>Documents & Payment Requests</h2>
+              <h2>Document Templates</h2>
               <p>Contractor-owned documents stay inside Contractor Logix.</p>
             </div>
           </div>
@@ -175,6 +300,24 @@
             </div>
             <a href="{{ url_for('contractor.contractor_document_templates') }}">Manage</a>
           </div>
+        </section>
+
+        <section id="contractor-finance" class="settings-app-panel">
+          <div class="settings-app-panel-heading">
+            <div>
+              <h2>Bank Accounts & Payment Requests</h2>
+              <p>Finance-ready contractor settings for payment requests and future invoice handoff.</p>
+            </div>
+            <span>Contractor finance</span>
+          </div>
+
+          <div class="settings-app-row">
+            <div>
+              <strong>Bank accounts</strong>
+              <small>Store contractor payment account details for payment-request documents when this area is built out.</small>
+            </div>
+            <span class="settings-app-status">Planned</span>
+          </div>
           <label class="settings-app-row settings-app-row--control">
             <div>
               <strong>Prepare payment request after completion approval</strong>
@@ -182,6 +325,38 @@
             </div>
             <input type="checkbox" name="payment_request_after_completion" {% if contractor_settings.payment_request_after_completion %}checked{% endif %}>
           </label>
+        </section>
+
+        <section id="contractor-compliance" class="settings-app-panel">
+          <div class="settings-app-panel-heading">
+            <div>
+              <h2>Insurance & Compliance</h2>
+              <p>Contractor-controlled compliance records for future Works Logix and GAR checks.</p>
+            </div>
+            <span>Compliance ready</span>
+          </div>
+
+          <div class="settings-app-row">
+            <div>
+              <strong>Insurance policies</strong>
+              <small>Public liability, employer liability, professional indemnity and renewal dates.</small>
+            </div>
+            <span class="settings-app-status">Planned</span>
+          </div>
+          <div class="settings-app-row">
+            <div>
+              <strong>Licences and certifications</strong>
+              <small>Trade licences, health and safety certifications and expiry monitoring.</small>
+            </div>
+            <span class="settings-app-status">Planned</span>
+          </div>
+          <div class="settings-app-row">
+            <div>
+              <strong>Emergency contacts</strong>
+              <small>Out-of-hours escalation contacts for urgent contractor jobs.</small>
+            </div>
+            <span class="settings-app-status">Planned</span>
+          </div>
         </section>
 
         <section id="contractor-data" class="settings-app-panel">
@@ -199,15 +374,13 @@
             </div>
             <input type="checkbox" name="gar_context_enabled" {% if contractor_settings.gar_context_enabled %}checked{% endif %}>
           </label>
-          {% if module_contract %}
-            <div class="settings-app-row">
-              <div>
-                <strong>Module boundary</strong>
-                <small>{{ module_contract.notes }}</small>
-              </div>
-              <span class="settings-app-status">{{ module_contract.status|replace('_', ' ')|title }}</span>
+          <div class="settings-app-row">
+            <div>
+              <strong>Contractor data scope</strong>
+              <small>GAR should only use contractor-visible jobs, updates, evidence, materials and connected records allowed by permissions.</small>
             </div>
-          {% endif %}
+            <span class="settings-app-status">Role aware</span>
+          </div>
         </section>
       </div>
     </section>
