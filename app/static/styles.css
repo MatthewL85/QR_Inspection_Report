@@ -850,6 +850,117 @@ body.superadmin-darkblue.sidebar-open #sidenav-main {
   max-width: 250px !important;
 }
 
+body.contractor-orange.sidebar-open #sidebar,
+body.contractor-orange.sidebar-open #sidenav-main {
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
+}
+
+body.contractor-orange #sidebar,
+body.contractor-orange #sidenav-main.contractor-sidebar-shell {
+  background: #ffffff !important;
+  border-right: 1px solid #e4e9f1 !important;
+  border-radius: 0 !important;
+  color: #14213d !important;
+}
+
+body.contractor-orange #sidenav-main.contractor-sidebar-shell {
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+body.contractor-orange #sidenav-main.contractor-sidebar-shell .sidenav-header {
+  min-height: 82px;
+  padding: 1rem 1rem 0.65rem;
+}
+
+.contractor-sidebar-mark {
+  align-items: center;
+  background: linear-gradient(135deg, #ff8a00, #e91e63);
+  border-radius: 8px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 900;
+  height: 28px;
+  justify-content: center;
+  letter-spacing: 0;
+  min-width: 28px;
+}
+
+body.contractor-orange #sidenav-main.contractor-sidebar-shell .navbar-brand,
+body.contractor-orange #sidenav-main.contractor-sidebar-shell .navbar-brand span {
+  color: #14213d !important;
+}
+
+body.contractor-orange #sidenav-main.contractor-sidebar-shell .horizontal {
+  border-color: #edf1f6 !important;
+}
+
+body.contractor-orange #sidenav-main.contractor-sidebar-shell .contractor-sidebar-scroll {
+  max-height: calc(100vh - 170px);
+  overflow: auto;
+  padding-bottom: 5.5rem;
+}
+
+body.contractor-orange #sidenav-main.contractor-sidebar-shell .nav-link {
+  align-items: center;
+  border-radius: 8px;
+  color: #40516a !important;
+  display: flex !important;
+  gap: 0.25rem;
+  margin: 0.125rem 0.75rem;
+  min-height: 44px;
+  padding: 0.65rem 0.85rem !important;
+}
+
+body.contractor-orange #sidenav-main.contractor-sidebar-shell .nav-link:hover,
+body.contractor-orange #sidenav-main.contractor-sidebar-shell .nav-link.active {
+  background: #fff4e6 !important;
+  color: #0f172a !important;
+}
+
+body.contractor-orange #sidenav-main.contractor-sidebar-shell .nav-link.active {
+  box-shadow: inset 3px 0 0 #ff8a00;
+  font-weight: 900;
+}
+
+body.contractor-orange #sidenav-main.contractor-sidebar-shell .nav-link .nav-link-text {
+  color: inherit !important;
+  font-weight: 800;
+}
+
+.contractor-sidebar-bottombar {
+  bottom: 0.75rem;
+  left: 0.75rem;
+  position: absolute;
+  right: 0.75rem;
+  z-index: 1040;
+}
+
+.contractor-sidebar-settings-btn {
+  background: #ffffff;
+  border: 1px solid #d5deea;
+  border-radius: 8px;
+  color: #40516a;
+  font-size: 0.86rem;
+  font-weight: 900;
+  min-height: 44px;
+}
+
+.contractor-sidebar-settings-btn:hover,
+.contractor-sidebar-settings-btn.is-active {
+  background: linear-gradient(135deg, #ff8a00, #e91e63);
+  border-color: transparent;
+  color: #fff;
+}
+
+.contractor-sidebar-settings-btn .material-icons {
+  color: inherit !important;
+  font-size: 1.15rem;
+}
+
 body.superadmin-darkblue #sidebar,
 body.superadmin-darkblue #sidenav-main,
 body.superadmin-darkblue #sidenav-main.bg-white {

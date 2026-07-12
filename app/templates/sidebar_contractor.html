@@ -1,34 +1,54 @@
-<aside class="bg-white border-end" style="width: 250px; min-height: 100vh;">
-  <div class="p-3">
-    <h5 class="fw-bold text-warning">Contractor Logix</h5>
-    <hr>
-    <ul class="nav flex-column">
-      <li class="nav-item">
-        <a class="nav-link {% if request.endpoint == 'contractor.contractor_dashboard' %}active text-primary fw-bold{% endif %}" href="{{ url_for('contractor.contractor_dashboard') }}">
-          <i class="fas fa-tools me-2"></i>Dashboard
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link {% if request.endpoint == 'contractor.work_orders' %}active text-primary fw-bold{% endif %}" href="{{ url_for('contractor.work_orders') }}">
-          <i class="fas fa-clipboard-list me-2"></i>Work Queue
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link {% if request.endpoint == 'contractor.contractor_inspections' %}active text-primary fw-bold{% endif %}" href="{{ url_for('contractor.contractor_inspections') }}">
-          <i class="fas fa-clipboard-check me-2"></i>My Inspections
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link {% if request.endpoint in ['contractor.calendar', 'contractor.contractor_ppm_calendar'] %}active text-primary fw-bold{% endif %}" href="{{ url_for('contractor.calendar') }}">
-          <i class="fas fa-calendar-alt me-2"></i>Calendar
-        </a>
-      </li>
-      <li class="nav-item mt-auto">
-        <a class="nav-link {% if request.endpoint == 'contractor.contractor_settings' %}active text-primary fw-bold{% endif %} text-dark" href="{{ url_for('contractor.contractor_settings') }}">
-          <i class="fas fa-cog text-secondary me-2"></i>
-          <span class="nav-link-text">Settings</span>
-        </a>
-      </li>
+<aside class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start contractor-sidebar-shell"
+       id="sidenav-main">
+  <div class="sidenav-header position-relative">
+    <i class="fas fa-times p-3 cursor-pointer text-secondary opacity-5 position-absolute end-0 top-0 d-xl-none"
+       id="iconSidenav" aria-label="Close sidebar"></i>
+
+    <a class="navbar-brand m-0 d-flex align-items-center text-decoration-none"
+       href="{{ url_for('contractor.contractor_dashboard') }}">
+      <span class="contractor-sidebar-mark">CL</span>
+      <span class="ms-2 fw-bold fs-6">Contractor Logix</span>
+    </a>
+  </div>
+
+  <hr class="horizontal dark mt-0 mb-2">
+
+  <div class="collapse navbar-collapse w-auto contractor-sidebar-scroll" id="sidenav-collapse-main">
+    <ul class="navbar-nav">
+      {% set contractor_items = [
+        ('contractor.contractor_dashboard', 'Dashboard', 'construction', 'text-primary'),
+        ('contractor.work_orders', 'Work Queue', 'assignment', 'text-danger'),
+        ('contractor.contractor_inspections', 'My Inspections', 'fact_check', 'text-success'),
+        ('contractor.calendar', 'Calendar', 'event', 'text-warning')
+      ] %}
+
+      {% for endpoint, label, icon, color in contractor_items if endpoint in current_app.view_functions %}
+        {% set is_active = request.endpoint == endpoint %}
+        <li class="nav-item">
+          <a class="nav-link {{ 'active' if is_active else '' }}"
+             href="{{ url_for(endpoint) }}">
+            <div class="icon icon-shape icon-sm text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="material-icons {{ 'text-white' if is_active else color }}">
+                {{ 'check_circle' if is_active else icon }}
+              </i>
+            </div>
+            <span class="nav-link-text ms-1">{{ label }}</span>
+          </a>
+        </li>
+      {% endfor %}
     </ul>
+  </div>
+
+  {% set is_settings_active = request.endpoint and (
+    request.endpoint == 'contractor.contractor_settings'
+    or request.endpoint.startswith('contractor.contractor_settings_')
+    or request.endpoint.startswith('contractor.contractor_document_template')
+  ) %}
+  <div class="contractor-sidebar-bottombar">
+    <a class="btn w-100 d-flex align-items-center justify-content-center contractor-sidebar-settings-btn {{ 'is-active' if is_settings_active else '' }}"
+       href="{{ url_for('contractor.contractor_settings') }}">
+      <i class="material-icons me-2">{{ 'check_circle' if is_settings_active else 'settings' }}</i>
+      <span>Settings</span>
+    </a>
   </div>
 </aside>
