@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block title %}Contractor Insurance{% endblock %}
+
+{% block page_content %}
+<div class="contractor-settings-app app-ready-surface app-ready-surface--contractor"
+     data-app-mobile-ready="true"
+     data-app-safe-area="required"
+     data-app-source-backed="true"
+     data-app-surface="contractor-insurance">
+  <section class="settings-app-header">
+    <div>
+      <span>Contractor Logix</span>
+      <h1>Insurance & Compliance</h1>
+      <p>Contractor insurance records for future Works Logix checks, compliance reminders and GAR risk context.</p>
+    </div>
+    <div class="settings-app-actions">
+      <a href="{{ url_for('contractor.contractor_settings') }}">Settings</a>
+    </div>
+  </section>
+
+  <section class="settings-app-panel">
+    <div class="settings-app-panel-heading">
+      <div>
+        <h2>Insurance Policies</h2>
+        <p>Keep policy details structured so they can be checked before routing future work.</p>
+      </div>
+      <span>{{ policies|length }} Policies</span>
+    </div>
+    <div class="settings-app-table-wrap">
+      <table class="settings-app-table">
+        <thead>
+          <tr>
+            <th>Policy</th>
+            <th>Provider</th>
+            <th>Cover</th>
+            <th>Dates</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for policy in policies %}
+            <tr>
+              <td>
+                <strong>{{ policy.policy_type }}</strong>
+                <small>{{ policy.policy_number or '-' }}</small>
+              </td>
+              <td>{{ policy.provider or '-' }}</td>
+              <td>
+                {% if policy.coverage_amount %}
+                  {{ policy.currency or 'EUR' }} {{ "{:,.2f}".format(policy.coverage_amount) }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>
+                <strong>{{ policy.start_date.strftime('%d %b %Y') if policy.start_date else '-' }}</strong>
+                <small>Expiry: {{ policy.expiry_date.strftime('%d %b %Y') if policy.expiry_date else '-' }}</small>
+              </td>
+              <td>
+                {% if policy.is_default %}<span class="settings-app-status">Default</span>{% endif %}
+                {% if policy.is_expired %}
+                  <span class="settings-app-status settings-app-status--danger">Expired</span>
+                {% elif policy.active %}
+                  <span class="settings-app-status">Active</span>
+                {% else %}
+                  <span class="settings-app-status">Inactive</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="5" class="settings-app-empty">No contractor insurance policies have been added yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <form method="post" action="{{ url_for('contractor.contractor_settings_insurance') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <section class="settings-app-panel">
+      <div class="settings-app-panel-heading">
+        <div>
+          <h2>Add Insurance Policy</h2>
+          <p>This creates a structured contractor compliance record, not a LogixPM company policy.</p>
+        </div>
+      </div>
+      <div class="settings-app-form-grid">
+        <label>
+          <span>Policy Type</span>
+          <select name="policy_type" required>
+            <option value="">Select policy type</option>
+            <option value="Public Liability">Public Liability</option>
+            <option value="Employers Liability">Employers Liability</option>
+            <option value="Professional Indemnity">Professional Indemnity</option>
+            <option value="Contractors All Risks">Contractors All Risks</option>
+          </select>
+        </label>
+        <label>
+          <span>Provider</span>
+          <input type="text" name="provider" placeholder="Insurance provider">
+        </label>
+        <label>
+          <span>Policy Number</span>
+          <input type="text" name="policy_number" placeholder="Policy number">
+        </label>
+        <label>
+          <span>Coverage Amount</span>
+          <input type="number" name="coverage_amount" min="0" step="0.01" placeholder="0.00">
+        </label>
+        <label>
+          <span>Currency</span>
+          <input type="text" name="currency" value="EUR">
+        </label>
+        <label>
+          <span>Start Date</span>
+          <input type="date" name="start_date">
+        </label>
+        <label>
+          <span>Expiry Date</span>
+          <input type="date" name="expiry_date">
+        </label>
+        <label class="settings-app-form-wide">
+          <span>Document Reference</span>
+          <input type="text" name="document_path" placeholder="Secure file reference or upload path">
+        </label>
+      </div>
+      <div class="settings-app-inline-controls">
+        <label><input type="checkbox" name="active" checked> Active</label>
+        <label><input type="checkbox" name="is_default"> Default for this type</label>
+      </div>
+      <div class="settings-app-submit-row">
+        <button type="submit">Add Policy</button>
+      </div>
+    </section>
+  </form>
+</div>
+{% endblock %}

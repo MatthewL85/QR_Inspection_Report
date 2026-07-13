@@ -27,12 +27,12 @@
     <section class="settings-app-shell">
       <aside class="settings-app-nav" aria-label="Contractor settings navigation">
         <a href="#contractor-settings-centre">Settings Centre</a>
-        <a href="#contractor-account">Company Profile</a>
-        <a href="#contractor-branding">Branding & Theme</a>
+        <a href="{{ url_for('contractor.contractor_settings_profile') }}">Company Profile</a>
+        <a href="{{ url_for('contractor.contractor_settings_profile') }}#contractor-branding-edit">Branding & Theme</a>
         <a href="{{ url_for('contractor.contractor_settings_connections') }}">Connections</a>
         <a href="{{ url_for('contractor.contractor_document_templates') }}">Document Templates</a>
-        <a href="#contractor-finance">Bank Accounts</a>
-        <a href="#contractor-compliance">Insurance</a>
+        <a href="{{ url_for('contractor.contractor_settings_bank_accounts') }}">Bank Accounts</a>
+        <a href="{{ url_for('contractor.contractor_settings_insurance') }}">Insurance</a>
         <a href="#contractor-module">Module Setup</a>
         <a href="#contractor-jobs">Job Dockets</a>
         <a href="#contractor-updates">Updates</a>
@@ -51,17 +51,17 @@
           </div>
 
           <div class="settings-app-tile-grid">
-            <a class="settings-app-tile" href="#contractor-account">
+            <a class="settings-app-tile" href="{{ url_for('contractor.contractor_settings_profile') }}">
               <span>Identity</span>
               <h3>Company Profile</h3>
               <p>Trading name, organisation UID and contractor profile details used across Contractor Logix.</p>
               <em>In settings</em>
             </a>
-            <a class="settings-app-tile" href="#contractor-branding">
+            <a class="settings-app-tile" href="{{ url_for('contractor.contractor_settings_profile') }}#contractor-branding-edit">
               <span>Appearance</span>
               <h3>Branding & Theme</h3>
               <p>Logo, colours and document branding for contractor-issued dockets, quotes and payment requests.</p>
-              <em>Setup area</em>
+              <em>Open</em>
             </a>
             <a class="settings-app-tile" href="{{ url_for('contractor.contractor_settings_connections') }}">
               <span>Connections</span>
@@ -75,17 +75,17 @@
               <p>Manage contractor-owned job docket, quotation response and payment request templates.</p>
               <em>Open</em>
             </a>
-            <a class="settings-app-tile" href="#contractor-finance">
+            <a class="settings-app-tile" href="{{ url_for('contractor.contractor_settings_bank_accounts') }}">
               <span>Finance Ready</span>
               <h3>Bank Accounts</h3>
               <p>Payment-request bank details and finance defaults for future Contractor Logix invoicing.</p>
-              <em>Planned</em>
+              <em>Open</em>
             </a>
-            <a class="settings-app-tile" href="#contractor-compliance">
+            <a class="settings-app-tile" href="{{ url_for('contractor.contractor_settings_insurance') }}">
               <span>Compliance</span>
               <h3>Insurance & Licences</h3>
               <p>Insurance, certifications and contractor compliance records for management-company review.</p>
-              <em>Planned</em>
+              <em>Open</em>
             </a>
             <a class="settings-app-tile" href="#contractor-module">
               <span>Module</span>
@@ -116,7 +116,7 @@
               <strong>Contractor profile</strong>
               <small>{{ contractor_display_name }} &middot; {{ contractor_trade }}</small>
             </div>
-            <span class="settings-app-status">Contractor workspace</span>
+            <a href="{{ url_for('contractor.contractor_settings_profile') }}">Manage</a>
           </div>
           <div class="settings-app-row">
             <div>
@@ -147,14 +147,14 @@
               <strong>Logo and trading identity</strong>
               <small>Used on Job Dockets, quotation responses, payment requests and contractor reports.</small>
             </div>
-            <span class="settings-app-status">Planned</span>
+            <a href="{{ url_for('contractor.contractor_settings_profile') }}#contractor-branding-edit">Manage</a>
           </div>
           <div class="settings-app-row">
             <div>
               <strong>Theme colours</strong>
               <small>Controls the Contractor Logix workspace accent colour while preserving platform consistency.</small>
             </div>
-            <span class="settings-app-status">Planned</span>
+            <a href="{{ url_for('contractor.contractor_settings_profile') }}#contractor-branding-edit">Manage</a>
           </div>
           <div class="settings-app-row">
             <div>
@@ -316,7 +316,7 @@
               <strong>Bank accounts</strong>
               <small>Store contractor payment account details for payment-request documents when this area is built out.</small>
             </div>
-            <span class="settings-app-status">Planned</span>
+            <a href="{{ url_for('contractor.contractor_settings_bank_accounts') }}">Manage</a>
           </div>
           <label class="settings-app-row settings-app-row--control">
             <div>
@@ -341,14 +341,14 @@
               <strong>Insurance policies</strong>
               <small>Public liability, employer liability, professional indemnity and renewal dates.</small>
             </div>
-            <span class="settings-app-status">Planned</span>
+            <a href="{{ url_for('contractor.contractor_settings_insurance') }}">Manage</a>
           </div>
           <div class="settings-app-row">
             <div>
               <strong>Licences and certifications</strong>
               <small>Trade licences, health and safety certifications and expiry monitoring.</small>
             </div>
-            <span class="settings-app-status">Planned</span>
+            <a href="{{ url_for('contractor.contractor_settings_insurance') }}">Manage</a>
           </div>
           <div class="settings-app-row">
             <div>

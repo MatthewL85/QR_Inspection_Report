@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block title %}Contractor Company Profile{% endblock %}
+
+{% block page_content %}
+<div class="contractor-settings-app app-ready-surface app-ready-surface--contractor"
+     data-app-mobile-ready="true"
+     data-app-safe-area="required"
+     data-app-source-backed="true"
+     data-app-surface="contractor-settings-profile">
+  <form method="post" action="{{ url_for('contractor.contractor_settings_profile') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <section class="settings-app-header">
+      <div>
+        <span>Contractor Logix</span>
+        <h1>Company Profile</h1>
+        <p>Contractor-owned company identity, contact details and branding used across Contractor Logix.</p>
+      </div>
+      <div class="settings-app-actions">
+        <a href="{{ url_for('contractor.contractor_settings') }}">Settings</a>
+        <button type="submit">Save Profile</button>
+      </div>
+    </section>
+
+    <section class="settings-app-panel">
+      <div class="settings-app-panel-heading">
+        <div>
+          <h2>Core Identity</h2>
+          <p>These details identify this contractor company in dockets, quotes and payment requests.</p>
+        </div>
+        <span>Contractor owned</span>
+      </div>
+      <div class="settings-app-form-grid">
+        <label>
+          <span>Company Name</span>
+          <input type="text" name="name" value="{{ company.name or '' }}" required>
+        </label>
+        <label>
+          <span>Registration Number</span>
+          <input type="text" name="registration_number" value="{{ company.registration_number or '' }}">
+        </label>
+        <label>
+          <span>VAT Number</span>
+          <input type="text" name="vat_number" value="{{ company.vat_number or '' }}">
+        </label>
+        <label>
+          <span>Organisation UID</span>
+          <input type="text" value="{{ company.organisation_uid }}" readonly>
+        </label>
+      </div>
+    </section>
+
+    <section class="settings-app-panel">
+      <div class="settings-app-panel-heading">
+        <div>
+          <h2>Contact Details</h2>
+          <p>Operational contact details for the contractor workspace.</p>
+        </div>
+      </div>
+      <div class="settings-app-form-grid">
+        <label>
+          <span>Email</span>
+          <input type="email" name="email" value="{{ company.email or '' }}">
+        </label>
+        <label>
+          <span>Phone</span>
+          <input type="text" name="phone" value="{{ company.phone or '' }}">
+        </label>
+        <label class="settings-app-form-wide">
+          <span>Website</span>
+          <input type="text" name="website" value="{{ company.website or '' }}">
+        </label>
+      </div>
+    </section>
+
+    <section class="settings-app-panel">
+      <div class="settings-app-panel-heading">
+        <div>
+          <h2>Address</h2>
+          <p>Used on contractor documents and future payment request records.</p>
+        </div>
+      </div>
+      <div class="settings-app-form-grid">
+        <label>
+          <span>Address Line 1</span>
+          <input type="text" name="address_line1" value="{{ company.address_line1 or '' }}">
+        </label>
+        <label>
+          <span>Address Line 2</span>
+          <input type="text" name="address_line2" value="{{ company.address_line2 or '' }}">
+        </label>
+        <label>
+          <span>Town / City</span>
+          <input type="text" name="city" value="{{ company.city or '' }}">
+        </label>
+        <label>
+          <span>County / Region</span>
+          <input type="text" name="state" value="{{ company.state or '' }}">
+        </label>
+        <label>
+          <span>Eircode / Postal Code</span>
+          <input type="text" name="postal_code" value="{{ company.postal_code or '' }}">
+        </label>
+        <label>
+          <span>Country</span>
+          <input type="text" name="country" value="{{ company.country or '' }}">
+        </label>
+      </div>
+    </section>
+
+    <section id="contractor-branding-edit" class="settings-app-panel">
+      <div class="settings-app-panel-heading">
+        <div>
+          <h2>Branding & Theme</h2>
+          <p>Lightweight contractor branding for module surfaces and document templates.</p>
+        </div>
+      </div>
+      <div class="settings-app-form-grid">
+        <label>
+          <span>Primary Colour</span>
+          <input type="text" name="brand_primary_color" value="{{ company.brand_primary_color or company.brand_color or '' }}" placeholder="#2152ff">
+        </label>
+        <label>
+          <span>Secondary Colour</span>
+          <input type="text" name="brand_secondary_color" value="{{ company.brand_secondary_color or '' }}" placeholder="#1bbff0">
+        </label>
+        <label>
+          <span>Currency</span>
+          <input type="text" name="currency" value="{{ company.currency or 'EUR' }}">
+        </label>
+        <label>
+          <span>Timezone</span>
+          <input type="text" name="timezone" value="{{ company.timezone or 'Europe/Dublin' }}">
+        </label>
+        <label>
+          <span>Preferred Language</span>
+          <input type="text" name="preferred_language" value="{{ company.preferred_language or 'en' }}">
+        </label>
+      </div>
+    </section>
+
+    <section class="settings-app-savebar">
+      <span>Changes apply to this Contractor Logix workspace only.</span>
+      <button type="submit">Save Profile</button>
+    </section>
+  </form>
+</div>
+{% endblock %}

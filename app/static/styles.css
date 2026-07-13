@@ -6624,6 +6624,135 @@ body.sidebar-collapsed .main-content {
   text-transform: uppercase;
 }
 
+.settings-app-form-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 0.95rem 1rem;
+}
+
+.settings-app-form-grid label {
+  display: grid;
+  gap: 0.32rem;
+}
+
+.settings-app-form-grid label > span {
+  color: #40516a;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.settings-app-form-grid input,
+.settings-app-form-grid select {
+  background: #f8fafc;
+  border: 1px solid #d5deea;
+  border-radius: 8px;
+  color: #061833;
+  font-size: 0.9rem;
+  min-height: 42px;
+  padding: 0.55rem 0.7rem;
+  width: 100%;
+}
+
+.settings-app-form-grid input[readonly] {
+  background: #eef3f9;
+  color: #52627a;
+}
+
+.settings-app-form-wide {
+  grid-column: span 2;
+}
+
+.settings-app-inline-controls {
+  align-items: center;
+  border-top: 1px solid #edf1f6;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem 0;
+}
+
+.settings-app-inline-controls label {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #dbe4f0;
+  border-radius: 999px;
+  color: #061833;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  gap: 0.4rem;
+  padding: 0.42rem 0.65rem;
+}
+
+.settings-app-submit-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.8rem 1rem 1rem;
+}
+
+.settings-app-submit-row button {
+  background: linear-gradient(135deg, #2152ff, #1bbff0);
+  border: 0;
+  border-radius: 8px;
+  box-shadow: 0 10px 22px rgba(33, 82, 255, 0.18);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 900;
+  min-height: 38px;
+  padding: 0.55rem 0.95rem;
+}
+
+.settings-app-table-wrap {
+  overflow-x: auto;
+  padding: 0.8rem 1rem 1rem;
+}
+
+.settings-app-table {
+  border-collapse: collapse;
+  min-width: 760px;
+  width: 100%;
+}
+
+.settings-app-table th {
+  background: #f2f5f9;
+  border-bottom: 1px solid #d5deea;
+  color: #55657a;
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 0.65rem;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.settings-app-table td {
+  border-bottom: 1px solid #edf1f6;
+  color: #061833;
+  font-size: 0.86rem;
+  padding: 0.7rem 0.65rem;
+  vertical-align: top;
+}
+
+.settings-app-table td strong,
+.settings-app-table td small {
+  display: block;
+}
+
+.settings-app-table td small {
+  color: #52627a;
+  margin-top: 0.15rem;
+}
+
+.settings-app-empty {
+  color: #52627a !important;
+  text-align: center;
+}
+
+.settings-app-status--danger {
+  background: #fee2e2;
+  color: #b42318;
+}
+
 .settings-app-panel {
   overflow: hidden;
 }
@@ -8898,6 +9027,10 @@ body.sidebar-collapsed .main-content {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .settings-app-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .settings-app-nav {
     display: flex;
     overflow-x: auto;
@@ -9127,6 +9260,23 @@ body.sidebar-collapsed .main-content {
   .settings-app-tile-grid {
     grid-template-columns: 1fr;
     padding: 0.65rem;
+  }
+
+  .settings-app-form-grid {
+    grid-template-columns: 1fr;
+    padding: 0.75rem;
+  }
+
+  .settings-app-form-wide {
+    grid-column: auto;
+  }
+
+  .settings-app-submit-row {
+    justify-content: stretch;
+  }
+
+  .settings-app-submit-row button {
+    width: 100%;
   }
 
   .settings-app-row {

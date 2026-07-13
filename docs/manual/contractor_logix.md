@@ -67,6 +67,18 @@ External finance or HR systems should connect through future adapters rather tha
 
 Contractor Settings also links to a module-owned Document Templates area at `/contractor/settings/document-templates`. This area only exposes Contractor Logix documents: Job Docket, Quotation Response and Payment Request. A contractor user must not be routed into the shared LogixPM/Super Admin document template settings, even when Contractor Logix is connected to a management company. Direct attempts to open the shared document template settings as a contractor should redirect back to the Contractor Logix document template surface.
 
+Contractor Settings now includes a contractor-owned Settings Centre at `/contractor/settings`. It links to Contractor Logix setup areas instead of shared LogixPM settings screens:
+
+- Company Profile and Branding: `/contractor/settings/company-profile`
+- Connections: `/contractor/settings/connections`
+- Document Templates: `/contractor/settings/document-templates`
+- Bank Accounts: `/contractor/settings/bank-accounts`
+- Insurance and Compliance: `/contractor/settings/insurance`
+
+The Company Profile page stores the contractor company's identity, contact details, address, basic localisation and brand colours against the contractor company record. The Bank Accounts page stores contractor-owned payment account details using `owner_type = contractor`, so payment request documents can later pull from the correct contractor account without treating it as a LogixPM management-company bank account. The Insurance page stores contractor company insurance policies for future expiry checks, Works Logix routing confidence and GAR compliance context.
+
+These screens are intentionally under `/contractor/settings/...`. A contractor user should not need to enter Super Admin, LogixPM settings or another company's dashboard to manage their standalone module setup.
+
 Accepted job dockets appear in the Contractor Calendar as an Unscheduled Job Queue until the contractor assigns an engineer/team and chooses a calendar slot.
 
 Each job docket has its own operational detail page. The page shows the linked work order, schedule, engineer/team assignment, site and contact information, scope of works, evidence, contractor updates and the shared Works Logix lifecycle. This separates the contractor's operational file from the pre-acceptance work order pack while keeping both records linked.

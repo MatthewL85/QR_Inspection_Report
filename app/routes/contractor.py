@@ -13,6 +13,8 @@ from app.models.contractor.contractor_team import ContractorTeam
 from app.models.contractor.job_docket import JobDocket, JobDocketPrivateWorkLog
 from app.models.core.document_template import CoreDocumentTemplate
 from app.models.core.user import User
+from app.models.onboarding.bank_account import BankAccount
+from app.models.onboarding.insurance_policy import InsurancePolicy
 from app.services.gar import (
     attach_gar_capability_readiness,
     build_gar_inquiry_response,
@@ -1050,6 +1052,43 @@ def _contractor_settings_defaults(company) -> dict:
     return defaults
 
 
+def _current_contractor_context():
+    user = _current_contractor_user()
+    if not user:
+        return None, None, None
+    return user, getattr(user, "contractor", None), getattr(user, "company", None)
+
+
+def _parse_optional_date(value: str):
+    value = (value or "").strip()
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _contractor_bank_accounts(company):
+    if not company:
+        return []
+    return (
+        BankAccount.query.filter_by(owner_type="contractor", owner_id=company.id)
+        .order_by(BankAccount.is_default.desc(), BankAccount.active.desc(), BankAccount.id.desc())
+        .all()
+    )
+
+
+def _contractor_insurance_policies(company):
+    if not company:
+        return []
+    return (
+        InsurancePolicy.query.filter_by(company_id=company.id)
+        .order_by(InsurancePolicy.active.desc(), InsurancePolicy.expiry_date.asc(), InsurancePolicy.id.desc())
+        .all()
+    )
+
+
 CONTRACTOR_DOCUMENT_MODULE_KEY = "contractor_logix"
 CONTRACTOR_DOCUMENT_TYPES = {"job_docket", "quote_response", "payment_request"}
 
@@ -1180,6 +1219,153 @@ def contractor_settings():
             or "General contractor"
         ),
         module_contract=module_settings_by_key("contractor_logix"),
+    )
+
+
+@contractor_bp.route('/settings/company-profile', methods=['GET', 'POST'], endpoint='contractor_settings_profile')
+@login_required(role='Contractor')
+def contractor_settings_profile():
+    user, contractor, company = _current_contractor_context()
+    if not user:
+        flash('Contractor Logix is only available to contractor company users.', 'danger')
+        return redirect(url_for('auth.login'))
+    if not company:
+        flash("A contractor company profile is required before profile settings can be managed.", "danger")
+        return redirect(url_for("contractor.contractor_settings"))
+
+    if request.method == "POST":
+        company.name = (request.form.get("name") or "").strip() or company.name
+        company.registration_number = (request.form.get("registration_number") or "").strip() or None
+        company.vat_number = (request.form.get("vat_number") or "").strip() or None
+        company.email = (request.form.get("email") or "").strip() or None
+        company.phone = (request.form.get("phone") or "").strip() or None
+        company.website = (request.form.get("website") or "").strip() or None
+        company.address_line1 = (request.form.get("address_line1") or "").strip() or None
+        company.address_line2 = (request.form.get("address_line2") or "").strip() or None
+        company.city = (request.form.get("city") or "").strip() or None
+        company.state = (request.form.get("state") or "").strip() or None
+        company.postal_code = (request.form.get("postal_code") or "").strip() or None
+        company.country = (request.form.get("country") or "").strip() or None
+        company.region = (request.form.get("region") or "").strip() or None
+        company.currency = (request.form.get("currency") or "").strip() or company.currency or "EUR"
+        company.timezone = (request.form.get("timezone") or "").strip() or company.timezone or "Europe/Dublin"
+        company.preferred_language = (request.form.get("preferred_language") or "").strip() or company.preferred_language or "en"
+        company.brand_primary_color = (request.form.get("brand_primary_color") or "").strip() or None
+        company.brand_secondary_color = (request.form.get("brand_secondary_color") or "").strip() or None
+        company.brand_color = company.brand_primary_color or company.brand_color
+        company.updated_at = datetime.utcnow()
+        db.session.commit()
+        flash("Contractor company profile updated.", "success")
+        return redirect(url_for("contractor.contractor_settings_profile"))
+
+    return render_template(
+        "contractor/settings_profile.html",
+        company=company,
+        contractor=contractor,
+        contractor_display_name=(
+            getattr(contractor, "company_name", None)
+            or getattr(company, "name", None)
+            or getattr(user, "full_name", None)
+            or "Contractor"
+        ),
+    )
+
+
+@contractor_bp.route('/settings/bank-accounts', methods=['GET', 'POST'], endpoint='contractor_settings_bank_accounts')
+@login_required(role='Contractor')
+def contractor_settings_bank_accounts():
+    user, contractor, company = _current_contractor_context()
+    if not user:
+        flash('Contractor Logix is only available to contractor company users.', 'danger')
+        return redirect(url_for('auth.login'))
+    if not company:
+        flash("A contractor company profile is required before bank accounts can be managed.", "danger")
+        return redirect(url_for("contractor.contractor_settings"))
+
+    if request.method == "POST":
+        if request.form.get("is_default") == "on":
+            BankAccount.query.filter_by(owner_type="contractor", owner_id=company.id).update({"is_default": False})
+
+        bank_account = BankAccount(
+            owner_type="contractor",
+            owner_id=company.id,
+            company_id=company.id,
+            nickname=(request.form.get("nickname") or "").strip() or None,
+            account_name=(request.form.get("account_name") or "").strip() or None,
+            bank_name=(request.form.get("bank_name") or "").strip() or None,
+            iban=(request.form.get("iban") or "").strip().upper() or None,
+            bic_swift=(request.form.get("bic_swift") or "").strip().upper() or None,
+            remittance_email=(request.form.get("remittance_email") or "").strip() or None,
+            currency=(request.form.get("currency") or "").strip() or "EUR",
+            account_type=(request.form.get("account_type") or "").strip() or "Operating",
+            active=request.form.get("active") == "on",
+            is_default=request.form.get("is_default") == "on",
+        )
+        db.session.add(bank_account)
+        db.session.commit()
+        flash("Contractor bank account added.", "success")
+        return redirect(url_for("contractor.contractor_settings_bank_accounts"))
+
+    return render_template(
+        "contractor/settings_bank_accounts.html",
+        company=company,
+        contractor=contractor,
+        bank_accounts=_contractor_bank_accounts(company),
+    )
+
+
+@contractor_bp.route('/settings/insurance', methods=['GET', 'POST'], endpoint='contractor_settings_insurance')
+@login_required(role='Contractor')
+def contractor_settings_insurance():
+    user, contractor, company = _current_contractor_context()
+    if not user:
+        flash('Contractor Logix is only available to contractor company users.', 'danger')
+        return redirect(url_for('auth.login'))
+    if not company:
+        flash("A contractor company profile is required before insurance can be managed.", "danger")
+        return redirect(url_for("contractor.contractor_settings"))
+
+    if request.method == "POST":
+        policy_type = (request.form.get("policy_type") or "").strip()
+        if not policy_type:
+            flash("Choose the policy type before saving.", "warning")
+            return redirect(url_for("contractor.contractor_settings_insurance"))
+
+        if request.form.get("is_default") == "on":
+            InsurancePolicy.query.filter_by(company_id=company.id, policy_type=policy_type).update({"is_default": False})
+
+        coverage_amount = None
+        raw_amount = (request.form.get("coverage_amount") or "").strip()
+        if raw_amount:
+            try:
+                coverage_amount = Decimal(raw_amount)
+            except (InvalidOperation, ValueError):
+                flash("Coverage amount must be a valid number.", "warning")
+                return redirect(url_for("contractor.contractor_settings_insurance"))
+
+        policy = InsurancePolicy(
+            company_id=company.id,
+            policy_type=policy_type,
+            provider=(request.form.get("provider") or "").strip() or None,
+            policy_number=(request.form.get("policy_number") or "").strip() or None,
+            coverage_amount=coverage_amount,
+            currency=(request.form.get("currency") or "").strip() or "EUR",
+            start_date=_parse_optional_date(request.form.get("start_date") or ""),
+            expiry_date=_parse_optional_date(request.form.get("expiry_date") or ""),
+            document_path=(request.form.get("document_path") or "").strip() or None,
+            active=request.form.get("active") == "on",
+            is_default=request.form.get("is_default") == "on",
+        )
+        db.session.add(policy)
+        db.session.commit()
+        flash("Contractor insurance policy added.", "success")
+        return redirect(url_for("contractor.contractor_settings_insurance"))
+
+    return render_template(
+        "contractor/settings_insurance.html",
+        company=company,
+        contractor=contractor,
+        policies=_contractor_insurance_policies(company),
     )
 
 
