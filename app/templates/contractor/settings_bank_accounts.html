@@ -36,6 +36,7 @@
             <th>IBAN</th>
             <th>Currency</th>
             <th>Status</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -52,10 +53,26 @@
                 {% if account.is_default %}<span class="settings-app-status">Default</span>{% endif %}
                 {% if account.active %}<span class="settings-app-status">Active</span>{% else %}<span class="settings-app-status">Inactive</span>{% endif %}
               </td>
+              <td>
+                <div class="settings-app-table-actions">
+                  {% if account.active and not account.is_default %}
+                    <form method="post" action="{{ url_for('contractor.contractor_settings_bank_account_default', account_id=account.id) }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit">Make Default</button>
+                    </form>
+                  {% endif %}
+                  <form method="post" action="{{ url_for('contractor.contractor_settings_bank_account_toggle', account_id=account.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="{{ '' if not account.active else 'is-danger' }}">
+                      {{ 'Reactivate' if not account.active else 'Deactivate' }}
+                    </button>
+                  </form>
+                </div>
+              </td>
             </tr>
           {% else %}
             <tr>
-              <td colspan="5" class="settings-app-empty">No contractor bank accounts have been added yet.</td>
+              <td colspan="6" class="settings-app-empty">No contractor bank accounts have been added yet.</td>
             </tr>
           {% endfor %}
         </tbody>

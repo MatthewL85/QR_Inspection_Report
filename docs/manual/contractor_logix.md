@@ -77,6 +77,8 @@ Contractor Settings now includes a contractor-owned Settings Centre at `/contrac
 
 The Company Profile page stores the contractor company's identity, contact details, address, basic localisation and brand colours against the contractor company record. The Bank Accounts page stores contractor-owned payment account details using `owner_type = contractor`, so payment request documents can later pull from the correct contractor account without treating it as a LogixPM management-company bank account. The Insurance page stores contractor company insurance policies for future expiry checks, Works Logix routing confidence and GAR compliance context.
 
+Contractor bank accounts and insurance policies can be marked as the default record or deactivated/reactivated from their Contractor Settings pages. These actions are scoped to the signed-in contractor company only. They do not change management-company bank accounts, management-company insurance records or another connected organisation's settings.
+
 These screens are intentionally under `/contractor/settings/...`. A contractor user should not need to enter Super Admin, LogixPM settings or another company's dashboard to manage their standalone module setup.
 
 Accepted job dockets appear in the Contractor Calendar as an Unscheduled Job Queue until the contractor assigns an engineer/team and chooses a calendar slot.

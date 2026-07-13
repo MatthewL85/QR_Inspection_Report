@@ -1314,6 +1314,62 @@ def contractor_settings_bank_accounts():
     )
 
 
+@contractor_bp.post(
+    '/settings/bank-accounts/<int:account_id>/default',
+    endpoint='contractor_settings_bank_account_default',
+)
+@login_required(role='Contractor')
+def contractor_settings_bank_account_default(account_id):
+    user, contractor, company = _current_contractor_context()
+    if not user:
+        flash('Contractor Logix is only available to contractor company users.', 'danger')
+        return redirect(url_for('auth.login'))
+    if not company:
+        flash("A contractor company profile is required before bank accounts can be managed.", "danger")
+        return redirect(url_for("contractor.contractor_settings"))
+
+    account = BankAccount.query.filter_by(
+        id=account_id,
+        owner_type="contractor",
+        owner_id=company.id,
+    ).first_or_404()
+    BankAccount.query.filter_by(owner_type="contractor", owner_id=company.id).update({"is_default": False})
+    account.is_default = True
+    account.active = True
+    account.updated_at = datetime.utcnow()
+    db.session.commit()
+    flash("Default contractor bank account updated.", "success")
+    return redirect(url_for("contractor.contractor_settings_bank_accounts"))
+
+
+@contractor_bp.post(
+    '/settings/bank-accounts/<int:account_id>/toggle',
+    endpoint='contractor_settings_bank_account_toggle',
+)
+@login_required(role='Contractor')
+def contractor_settings_bank_account_toggle(account_id):
+    user, contractor, company = _current_contractor_context()
+    if not user:
+        flash('Contractor Logix is only available to contractor company users.', 'danger')
+        return redirect(url_for('auth.login'))
+    if not company:
+        flash("A contractor company profile is required before bank accounts can be managed.", "danger")
+        return redirect(url_for("contractor.contractor_settings"))
+
+    account = BankAccount.query.filter_by(
+        id=account_id,
+        owner_type="contractor",
+        owner_id=company.id,
+    ).first_or_404()
+    account.active = not account.active
+    if not account.active:
+        account.is_default = False
+    account.updated_at = datetime.utcnow()
+    db.session.commit()
+    flash("Contractor bank account status updated.", "success")
+    return redirect(url_for("contractor.contractor_settings_bank_accounts"))
+
+
 @contractor_bp.route('/settings/insurance', methods=['GET', 'POST'], endpoint='contractor_settings_insurance')
 @login_required(role='Contractor')
 def contractor_settings_insurance():
@@ -1367,6 +1423,54 @@ def contractor_settings_insurance():
         contractor=contractor,
         policies=_contractor_insurance_policies(company),
     )
+
+
+@contractor_bp.post(
+    '/settings/insurance/<int:policy_id>/default',
+    endpoint='contractor_settings_insurance_default',
+)
+@login_required(role='Contractor')
+def contractor_settings_insurance_default(policy_id):
+    user, contractor, company = _current_contractor_context()
+    if not user:
+        flash('Contractor Logix is only available to contractor company users.', 'danger')
+        return redirect(url_for('auth.login'))
+    if not company:
+        flash("A contractor company profile is required before insurance can be managed.", "danger")
+        return redirect(url_for("contractor.contractor_settings"))
+
+    policy = InsurancePolicy.query.filter_by(id=policy_id, company_id=company.id).first_or_404()
+    InsurancePolicy.query.filter_by(company_id=company.id, policy_type=policy.policy_type).update({"is_default": False})
+    policy.is_default = True
+    policy.active = True
+    policy.updated_at = datetime.utcnow()
+    db.session.commit()
+    flash("Default contractor insurance policy updated.", "success")
+    return redirect(url_for("contractor.contractor_settings_insurance"))
+
+
+@contractor_bp.post(
+    '/settings/insurance/<int:policy_id>/toggle',
+    endpoint='contractor_settings_insurance_toggle',
+)
+@login_required(role='Contractor')
+def contractor_settings_insurance_toggle(policy_id):
+    user, contractor, company = _current_contractor_context()
+    if not user:
+        flash('Contractor Logix is only available to contractor company users.', 'danger')
+        return redirect(url_for('auth.login'))
+    if not company:
+        flash("A contractor company profile is required before insurance can be managed.", "danger")
+        return redirect(url_for("contractor.contractor_settings"))
+
+    policy = InsurancePolicy.query.filter_by(id=policy_id, company_id=company.id).first_or_404()
+    policy.active = not policy.active
+    if not policy.active:
+        policy.is_default = False
+    policy.updated_at = datetime.utcnow()
+    db.session.commit()
+    flash("Contractor insurance policy status updated.", "success")
+    return redirect(url_for("contractor.contractor_settings_insurance"))
 
 
 @contractor_bp.route(

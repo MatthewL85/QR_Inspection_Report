@@ -6743,6 +6743,42 @@ body.sidebar-collapsed .main-content {
   margin-top: 0.15rem;
 }
 
+.settings-app-table-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.settings-app-table-actions form {
+  margin: 0;
+}
+
+.settings-app-table-actions button {
+  background: #fff;
+  border: 1px solid #d5deea;
+  border-radius: 8px;
+  color: #005dff;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 900;
+  min-height: 30px;
+  padding: 0.35rem 0.55rem;
+}
+
+.settings-app-table-actions button:hover {
+  background: #f7faff;
+}
+
+.settings-app-table-actions button.is-danger {
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.settings-app-table-actions button.is-danger:hover {
+  background: #fff7f7;
+}
+
 .settings-app-empty {
   color: #52627a !important;
   text-align: center;

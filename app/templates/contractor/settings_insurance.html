@@ -36,6 +36,7 @@
             <th>Cover</th>
             <th>Dates</th>
             <th>Status</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -67,10 +68,26 @@
                   <span class="settings-app-status">Inactive</span>
                 {% endif %}
               </td>
+              <td>
+                <div class="settings-app-table-actions">
+                  {% if policy.active and not policy.is_default %}
+                    <form method="post" action="{{ url_for('contractor.contractor_settings_insurance_default', policy_id=policy.id) }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit">Make Default</button>
+                    </form>
+                  {% endif %}
+                  <form method="post" action="{{ url_for('contractor.contractor_settings_insurance_toggle', policy_id=policy.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="{{ '' if not policy.active else 'is-danger' }}">
+                      {{ 'Reactivate' if not policy.active else 'Deactivate' }}
+                    </button>
+                  </form>
+                </div>
+              </td>
             </tr>
           {% else %}
             <tr>
-              <td colspan="5" class="settings-app-empty">No contractor insurance policies have been added yet.</td>
+              <td colspan="6" class="settings-app-empty">No contractor insurance policies have been added yet.</td>
             </tr>
           {% endfor %}
         </tbody>
