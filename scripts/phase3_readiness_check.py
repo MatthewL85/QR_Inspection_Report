@@ -24,6 +24,7 @@ CHECKS = (
     ("Platform System Map", "platform_system_map_check.py"),
     ("Archive Inventory Strict", "archive_inventory_check.py --strict"),
     ("Core Platform Identity", "core_platform_identity_check.py"),
+    ("Organisation Connection Boundary", "organisation_connection_boundary_check.py"),
     ("Migration Integrity", "migration_integrity_check.py"),
     ("Admin Portal Access Contract", "admin_portal_access_contract_check.py"),
     ("Platform Documentation Contract", "platform_documentation_contract_check.py"),

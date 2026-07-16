@@ -34,7 +34,7 @@ If a module is being built in a separate task, that task may own its feature wor
 | --- | --- | --- | --- | --- |
 | Module access/security boundaries | P0 | Guarded | Core Platform | Role checks must stop users entering another organisation/module workspace. Contractor Logix routes must require Contractor role. Management users must not use settings links as a route into Contractor Logix. |
 | Module settings ownership | P0 | Guarded | Core Platform plus each module | Shared Settings Centre may group connected modules, but each standalone module owns its own settings pages, document templates, bank/insurance records and connection setup. |
-| Organisation identity and connections | P0 | Foundation | Core Platform | Organisations connect by `organisation_uid`, module subscriptions and governed connection records, not email addresses. |
+| Organisation identity and connections | P0 | Guarded | Core Platform | Organisations connect by `organisation_uid`, module subscriptions and governed connection records, not email addresses. Guarded by `scripts/organisation_connection_boundary_check.py`. |
 | Document template ownership | P0 | Guarded | Core Platform plus document-owning module | Shared renderer can be reused, but document ownership stays with the module that creates the document. Work orders and quotation requests are Works/LogixPM documents; job dockets, quotation responses and payment requests are Contractor Logix documents. Guarded by `scripts/contractor_document_template_boundary_check.py`. |
 | Media and evidence spine | P1 | Partial | Core Platform | Photos, videos and documents need a consistent media/evidence service across member requests, work orders, job dockets, key site info and completion evidence. |
 | Manual and validation coverage | P1 | Active | Core Platform | User manual and contract checks must be updated in the same slice as user-facing workflow changes. |
@@ -57,7 +57,7 @@ If a module is being built in a separate task, that task may own its feature wor
 
 ## Current Sprint Decision
 
-This stabilisation task owns the P0 boundary work: module access/security boundaries and module settings ownership.
+This stabilisation task owns the P0 boundary work: module access/security boundaries, module settings ownership, organisation connection boundaries and document ownership boundaries.
 
 The separate Finance Logix task may build Finance foundations, but it should not alter shared route guards, module settings ownership rules, organisation connections or cross-module visibility without bringing the change back through this register.
 

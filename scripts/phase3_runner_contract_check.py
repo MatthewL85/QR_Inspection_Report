@@ -27,6 +27,7 @@ REQUIRED_CHECK_LABELS = {
     "Platform System Map",
     "Archive Inventory Strict",
     "Core Platform Identity",
+    "Organisation Connection Boundary",
     "Migration Integrity",
     "Platform Documentation Contract",
     "Manual Coverage",

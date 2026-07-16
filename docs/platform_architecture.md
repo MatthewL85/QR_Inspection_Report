@@ -49,6 +49,14 @@ Works Logix work orders should store `organisation_connection_id` when a contrac
 
 Contractor profiles should have their own `company_id` link to the contractor organisation identity. Works Logix can then route through a real company-to-company connection instead of inferring the contractor organisation from user email or free-text contractor names.
 
+This boundary is checked by:
+
+```text
+.\venv\Scripts\python.exe scripts\organisation_connection_boundary_check.py
+```
+
+The check validates unique organisation identifiers, one-time connection invite acceptance, default Works/Contractor/GAR permissions, and `organisation_connection_id` propagation into Works Logix records.
+
 GAR must respect these same connection boundaries. It may summarise connected records only when the user, company, module subscription and organisation connection allow that visibility.
 
 ## Module Layer

@@ -206,6 +206,14 @@ The module access and settings ownership boundary check is:
 
 This protects the rule that Contractor Logix, LogixPM, Finance Logix, Members Logix and future standalone modules keep their own settings and role boundaries.
 
+The organisation connection boundary check is:
+
+```text
+.\venv\Scripts\python.exe scripts\organisation_connection_boundary_check.py
+```
+
+This protects the rule that standalone modules connect through organisation UIDs, module subscriptions and accepted connection records rather than shared email addresses or direct cross-company shortcuts.
+
 The contractor document template ownership check is:
 
 ```text
