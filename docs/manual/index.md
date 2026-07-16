@@ -111,6 +111,14 @@ The governed workflow action contract is checked by:
 
 This confirms lifecycle actions remain POST-only while feeds remain read-only.
 
+The module completion register contract is checked by:
+
+```text
+.\venv\Scripts\python.exe scripts\module_completion_register_check.py
+```
+
+This confirms cross-cutting platform close-out rows stay guarded and the strategic module list remains visible.
+
 The notification intelligence contract is checked by:
 
 ```text

@@ -194,6 +194,14 @@ The architecture/manual/stabilisation documentation spine is protected by:
 .\venv\Scripts\python.exe scripts\platform_documentation_contract_check.py
 ```
 
+The unfinished module completion register is protected by:
+
+```text
+.\venv\Scripts\python.exe scripts\module_completion_register_check.py
+```
+
+This confirms cross-cutting close-out rows stay guarded and every strategic module remains listed before wider feature expansion.
+
 Active route namespace boundaries are checked by:
 
 ```text

@@ -32,6 +32,7 @@ REQUIRED_CHECK_LABELS = {
     "Organisation Connection Boundary",
     "Migration Integrity",
     "Platform Documentation Contract",
+    "Module Completion Register",
     "Manual Coverage",
     "Phase 3 Manual Contract",
     "Phase 3 Runner Contract",
