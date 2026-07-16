@@ -47,6 +47,7 @@ REQUIRED_CHECK_LABELS = {
     "Works Command Centre Contract",
     "Queue Surface Contract",
     "Contractor Standalone Docket Contract",
+    "Media Evidence Spine",
     "Works Lifecycle Flow",
 }
 

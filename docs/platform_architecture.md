@@ -222,6 +222,16 @@ This protects the setup rule that each standalone module owns its own settings
 surface, while the shared settings registry remains role-aware and admin-only
 where the modules are connected through the core platform.
 
+The shared media/evidence spine is checked by:
+
+```text
+.\venv\Scripts\python.exe scripts\media_evidence_spine_check.py
+```
+
+This protects the current reference-first evidence handoff across Members
+Logix, Works Logix, Contractor Logix and GAR while the final governed
+`MediaFile` service is being built.
+
 Contractor document template ownership is checked by:
 
 ```text

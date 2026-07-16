@@ -214,6 +214,14 @@ The module settings registry ownership check is:
 
 This protects the rule that each module keeps its own settings surface, document template ownership and standalone/connected setup while the shared registry remains role-aware.
 
+The media/evidence spine check is:
+
+```text
+.\venv\Scripts\python.exe scripts\media_evidence_spine_check.py
+```
+
+This protects the reference-first evidence handoff across member requests, work orders, job dockets, completion evidence, feedback and GAR source records until the full governed `MediaFile` service is complete.
+
 The organisation connection boundary check is:
 
 ```text

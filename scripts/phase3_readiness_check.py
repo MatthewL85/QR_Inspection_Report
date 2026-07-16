@@ -51,6 +51,7 @@ CHECKS = (
     ("Works Command Centre Contract", "works_command_centre_contract_check.py"),
     ("Queue Surface Contract", "queue_surface_contract_check.py"),
     ("Contractor Standalone Docket Contract", "contractor_standalone_docket_check.py"),
+    ("Media Evidence Spine", "media_evidence_spine_check.py"),
     ("Works Evidence Audit Contract", "works_evidence_audit_contract_check.py"),
     ("Contractor Evidence Propagation Contract", "contractor_evidence_propagation_check.py"),
     ("Role Dashboard Attention Contract", "role_dashboard_attention_contract_check.py"),

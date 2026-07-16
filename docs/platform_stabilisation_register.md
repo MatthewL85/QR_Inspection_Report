@@ -61,6 +61,7 @@ Run these checks after structural work:
 .\venv\Scripts\python.exe scripts\dashboard_review_login_check.py
 .\venv\Scripts\python.exe scripts\operational_surface_render_check.py
 .\venv\Scripts\python.exe scripts\key_site_info_contract_check.py
+.\venv\Scripts\python.exe scripts\media_evidence_spine_check.py
 .\venv\Scripts\python.exe scripts\contractor_evidence_propagation_check.py
 .\venv\Scripts\python.exe scripts\contractor_standalone_docket_check.py
 .\venv\Scripts\python.exe scripts\queue_surface_contract_check.py
@@ -89,7 +90,7 @@ To inspect the selected checks without running them:
 
 The full Phase 3 suite streams each child check, records elapsed time and applies a per-check timeout. Use `PHASE3_CHECK_TIMEOUT_SECONDS` to raise the limit when a local machine is slow, but treat repeated timeouts as a signal to split or optimise the underlying check. Failed checks are retried once by default via `PHASE3_FAILED_CHECK_RETRIES=1` so transient local database disconnects do not invalidate a long suite; repeated failures still fail the suite. Full mode should be used before merge/deployment-style review because it includes both the fast contracts and the role dashboard / operational surface render smoke checks.
 
-The formal unfinished-module register is `docs/module_completion_register.md`. The documentation entry points are protected by `scripts/platform_documentation_contract_check.py`. The runner mode split is protected by `scripts/phase3_runner_contract_check.py`. The access and settings ownership boundary is protected by `scripts/module_access_security_boundary_check.py`. The module settings registry ownership rule is protected by `scripts/module_settings_registry_check.py`. Contractor-owned document templates are protected by `scripts/contractor_document_template_boundary_check.py`. Organisation connection boundaries are protected by `scripts/organisation_connection_boundary_check.py`.
+The formal unfinished-module register is `docs/module_completion_register.md`. The documentation entry points are protected by `scripts/platform_documentation_contract_check.py`. The runner mode split is protected by `scripts/phase3_runner_contract_check.py`. The access and settings ownership boundary is protected by `scripts/module_access_security_boundary_check.py`. The module settings registry ownership rule is protected by `scripts/module_settings_registry_check.py`. The media/evidence spine is protected by `scripts/media_evidence_spine_check.py`. Contractor-owned document templates are protected by `scripts/contractor_document_template_boundary_check.py`. Organisation connection boundaries are protected by `scripts/organisation_connection_boundary_check.py`.
 
 ## Next Stabilisation Steps
 
