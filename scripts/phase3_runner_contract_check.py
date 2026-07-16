@@ -22,6 +22,7 @@ import scripts.phase3_readiness_check as readiness
 REQUIRED_CHECK_LABELS = {
     "Architecture",
     "Module Contracts",
+    "Module Access and Settings Ownership",
     "Platform System Map",
     "Archive Inventory Strict",
     "Core Platform Identity",

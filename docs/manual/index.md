@@ -16,6 +16,7 @@ The main platform architecture and active build guardrails are recorded in:
 | --- | --- |
 | `docs/platform_architecture.md` | Shared source-of-truth records, module boundaries and cross-module linking rules |
 | `docs/platform_stabilisation_register.md` | Current stabilisation rules, verification gates and next cleanup priorities |
+| `docs/module_completion_register.md` | Formal register of unfinished module work, ownership boundaries and close-out priorities |
 | `docs/role_dashboard_surface_standard.md` | Shared dashboard UX rules for all role surfaces |
 | `docs/module_contracts.md` | Module-level ownership, shared links and GAR visibility boundaries |
 
@@ -196,6 +197,14 @@ The module dependency boundary check is:
 ```
 
 This protects the operating principle that each module remains independent, loosely coupled and service/API driven.
+
+The module access and settings ownership boundary check is:
+
+```text
+.\venv\Scripts\python.exe scripts\module_access_security_boundary_check.py
+```
+
+This protects the rule that Contractor Logix, LogixPM, Finance Logix, Members Logix and future standalone modules keep their own settings and role boundaries.
 
 The archive inventory check is:
 

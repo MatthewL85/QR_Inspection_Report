@@ -1674,7 +1674,7 @@ def contractor_ppm_calendar():
 
 @contractor_bp.route('/upload-compliance-document', methods=['GET', 'POST'], endpoint='upload_compliance_document')
 
-@login_required()
+@login_required(role='Contractor')
 def contractor_upload_compliance_document():
     if request.method == 'POST':
         document_type = request.form['document_type']

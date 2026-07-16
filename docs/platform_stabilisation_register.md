@@ -52,6 +52,7 @@ Run these checks after structural work:
 .\venv\Scripts\python.exe scripts\module_contract_check.py
 .\venv\Scripts\python.exe scripts\module_route_boundary_check.py
 .\venv\Scripts\python.exe scripts\module_dependency_boundary_check.py
+.\venv\Scripts\python.exe scripts\module_access_security_boundary_check.py
 .\venv\Scripts\python.exe scripts\app_company_setup_feed_contract_check.py
 .\venv\Scripts\python.exe scripts\role_dashboard_surface_check.py
 .\venv\Scripts\python.exe scripts\dashboard_review_login_check.py
@@ -85,7 +86,7 @@ To inspect the selected checks without running them:
 
 The full Phase 3 suite streams each child check, records elapsed time and applies a per-check timeout. Use `PHASE3_CHECK_TIMEOUT_SECONDS` to raise the limit when a local machine is slow, but treat repeated timeouts as a signal to split or optimise the underlying check. Failed checks are retried once by default via `PHASE3_FAILED_CHECK_RETRIES=1` so transient local database disconnects do not invalidate a long suite; repeated failures still fail the suite. Full mode should be used before merge/deployment-style review because it includes both the fast contracts and the role dashboard / operational surface render smoke checks.
 
-The documentation entry points are protected by `scripts/platform_documentation_contract_check.py`. The runner mode split is protected by `scripts/phase3_runner_contract_check.py`.
+The formal unfinished-module register is `docs/module_completion_register.md`. The documentation entry points are protected by `scripts/platform_documentation_contract_check.py`. The runner mode split is protected by `scripts/phase3_runner_contract_check.py`. The access and settings ownership boundary is protected by `scripts/module_access_security_boundary_check.py`.
 
 ## Next Stabilisation Steps
 
@@ -100,3 +101,4 @@ The documentation entry points are protected by `scripts/platform_documentation_
 9. Keep organisation identity, module subscription and organisation-connection setup inside the core platform gate so independently purchased modules can connect without email-address coupling.
 10. Keep Alembic migration metadata valid and the recent Contractor/Works schema chain intact before expanding the operational workflow.
 11. Keep Contractor Logix independently useful: manual job docket creation, private materials/time logs and scheduling must continue to work without a linked Works Logix work order.
+12. Keep `docs/module_completion_register.md` current whenever a module is started, paused, split into another task or made dependent on another module.

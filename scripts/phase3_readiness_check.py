@@ -19,6 +19,7 @@ CHECKS = (
     ("Module Contracts", "module_contract_check.py"),
     ("Module Route Boundaries", "module_route_boundary_check.py"),
     ("Module Dependency Boundaries", "module_dependency_boundary_check.py"),
+    ("Module Access and Settings Ownership", "module_access_security_boundary_check.py"),
     ("Platform System Map", "platform_system_map_check.py"),
     ("Archive Inventory Strict", "archive_inventory_check.py --strict"),
     ("Core Platform Identity", "core_platform_identity_check.py"),

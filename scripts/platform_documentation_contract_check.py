@@ -16,6 +16,7 @@ REQUIRED_FILES = (
     "README.md",
     "docs/platform_architecture.md",
     "docs/platform_stabilisation_register.md",
+    "docs/module_completion_register.md",
     "docs/role_dashboard_surface_standard.md",
     "docs/module_contracts.md",
     "docs/manual/index.md",
@@ -25,6 +26,7 @@ REQUIRED_REFERENCES = {
     "README.md": (
         "docs/platform_architecture.md",
         "docs/platform_stabilisation_register.md",
+        "docs/module_completion_register.md",
         "docs/role_dashboard_surface_standard.md",
         "docs/module_contracts.md",
         "docs/manual/index.md",
@@ -35,6 +37,7 @@ REQUIRED_REFERENCES = {
         "Architecture And Governance Notes",
         "docs/platform_architecture.md",
         "docs/platform_stabilisation_register.md",
+        "docs/module_completion_register.md",
         "docs/role_dashboard_surface_standard.md",
         "docs/module_contracts.md",
         "platform_documentation_contract_check.py",
@@ -42,6 +45,7 @@ REQUIRED_REFERENCES = {
     "docs/platform_architecture.md": (
         "Related Control Documents",
         "docs/platform_stabilisation_register.md",
+        "docs/module_completion_register.md",
         "docs/role_dashboard_surface_standard.md",
         "docs/module_contracts.md",
         "docs/manual/index.md",
@@ -53,10 +57,21 @@ REQUIRED_REFERENCES = {
     "docs/platform_stabilisation_register.md": (
         "Non-Negotiable Build Rules",
         "Verification Gates",
+        "docs/module_completion_register.md",
         "phase3_readiness_check.py --quick",
         "phase3_readiness_check.py --smoke-only",
         "phase3_runner_contract_check.py",
         "platform_documentation_contract_check.py",
+        "module_access_security_boundary_check.py",
+    ),
+    "docs/module_completion_register.md": (
+        "Unfinished Module Completion Register",
+        "Module Completion Register",
+        "Module access/security boundaries",
+        "Module settings ownership",
+        "Contractor Logix",
+        "Finance Logix",
+        "GAR AI Layer",
     ),
     "docs/role_dashboard_surface_standard.md": (
         "Every primary dashboard should",

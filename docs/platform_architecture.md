@@ -9,6 +9,7 @@ Purpose: define the shared platform spine so LogixPM can grow as separate module
 | Document | Purpose |
 | --- | --- |
 | `docs/platform_stabilisation_register.md` | Active stabilisation register, verification gates and cleanup priorities |
+| `docs/module_completion_register.md` | Formal register of unfinished module work, module ownership and close-out priorities |
 | `docs/role_dashboard_surface_standard.md` | Shared dashboard surface rules for Super Admin, PM, Assistant, Finance, Director, Contractor and Members views |
 | `docs/module_contracts.md` | Module ownership and integration contract reference |
 | `docs/manual/index.md` | User-facing operating manual index |
@@ -193,6 +194,15 @@ Active route namespace boundaries are checked by:
 
 This helps each module stay independently navigable while still connecting
 through shared IDs and services.
+
+Module access and settings ownership boundaries are checked by:
+
+```text
+.\venv\Scripts\python.exe scripts\module_access_security_boundary_check.py
+```
+
+This protects the highest-risk separation rule: users must not be able to use
+settings links or weak route guards to enter another module/company workspace.
 
 Service dependency boundaries are checked by:
 

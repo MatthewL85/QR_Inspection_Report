@@ -10,6 +10,7 @@ The active build principle is simple: each module should work independently, whi
 | --- | --- |
 | `docs/platform_architecture.md` | Core architecture, shared IDs and source-of-truth rules |
 | `docs/platform_stabilisation_register.md` | Active stabilisation rules, verification gates and cleanup priorities |
+| `docs/module_completion_register.md` | Formal register of unfinished module work, priorities and ownership boundaries |
 | `docs/role_dashboard_surface_standard.md` | Shared dashboard UX pattern for every role surface |
 | `docs/module_contracts.md` | Module ownership, integration points and GAR visibility boundaries |
 | `docs/manual/index.md` | User-facing operating manual |
@@ -40,4 +41,3 @@ The documentation spine is protected by:
 ```powershell
 .\venv\Scripts\python.exe scripts\platform_documentation_contract_check.py
 ```
-

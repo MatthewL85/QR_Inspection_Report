@@ -17,6 +17,7 @@ EXPECTED_FEEDS = {
     "app_home.company_setup_feed": "/app/company-setup/feed.json",
     "app_home.feed": "/app/home/feed.json",
     "app_home.health_feed": "/app/health/feed.json",
+    "app_home.module_settings_feed": "/app/module-settings/feed.json",
     "super_admin.gar_insights_feed": "/super-admin/gar-insights/feed.json",
     "admin_portal.gar_feed": "/admin-portal/gar/feed.json",
     "property_manager.gar_feed": "/pm/gar/feed.json",
@@ -282,13 +283,24 @@ def main() -> int:
             db.session.flush()
             ids["companies"].append(company.id)
 
+            contractor_company = Company(
+                name=f"{marker} Contractor Company",
+                company_type="Contractor",
+                country="Ireland",
+                currency="EUR",
+                subdomain=f"{marker.lower()}contractor",
+            )
+            db.session.add(contractor_company)
+            db.session.flush()
+            ids["companies"].append(contractor_company.id)
+
             super_admin = user("Super Admin", "Super Admin", company.id, "super_admin")
             admin = user("Admin", "Admin", company.id, "admin")
             pm = user("PM", "Property Manager", company.id, "pm")
             assistant = user("Assistant", "Assistant Property Manager", company.id, "assistant")
             finance = user("Finance", "Financial Controller", company.id, "finance")
             director = user("Director", "Director", company.id, "director")
-            contractor_user = user("Contractor", "Contractor", company.id, "contractor")
+            contractor_user = user("Contractor", "Contractor", contractor_company.id, "contractor")
             member_user = user("Member", "Member", company.id, "member")
 
             client_record = Client(
@@ -460,11 +472,20 @@ def main() -> int:
                 "readiness",
                 "source_references",
             )
+            module_settings_keys = (
+                "summary",
+                "settings_policy",
+                "visibility_policy",
+                "registry",
+                "mutation_policy",
+                "source_references",
+            )
 
             cases = (
                 ("app_home.capabilities_feed", super_admin, "app_capabilities", app_capabilities_keys),
                 ("app_home.feed", super_admin, "app_home", app_home_keys),
                 ("app_home.health_feed", super_admin, "app_health", app_health_keys),
+                ("app_home.module_settings_feed", super_admin, "module_settings_registry", module_settings_keys),
                 ("super_admin.gar_insights_feed", super_admin, "gar_operational_digest", gar_keys),
                 ("admin_portal.gar_feed", admin, "gar_operational_digest", gar_keys),
                 ("property_manager.gar_feed", pm, "gar_operational_digest", gar_keys),
