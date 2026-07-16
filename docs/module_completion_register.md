@@ -38,7 +38,7 @@ If a module is being built in a separate task, that task may own its feature wor
 | Document template ownership | P0 | Guarded | Core Platform plus document-owning module | Shared renderer can be reused, but document ownership stays with the module that creates the document. Work orders and quotation requests are Works/LogixPM documents; job dockets, quotation responses and payment requests are Contractor Logix documents. Guarded by `scripts/contractor_document_template_boundary_check.py`. |
 | Media and evidence spine | P1 | Guarded foundation | Core Platform | Photos, videos and documents need a consistent media/evidence service across member requests, work orders, job dockets, key site info and completion evidence. Current reference-first spine is guarded by `scripts/media_evidence_spine_check.py`; future work should consolidate into the governed `MediaFile` service. |
 | Manual and validation coverage | P1 | Active | Core Platform | User manual and contract checks must be updated in the same slice as user-facing workflow changes. |
-| Legacy/archive isolation | P1 | Active | Core Platform | `legacy_archive` and `Old_QR` remain out of active feature work unless a migration/cleanup task explicitly brings something forward. |
+| Legacy/archive isolation | P1 | Guarded | Core Platform | `legacy_archive` and `Old_QR` remain out of active feature work unless a migration/cleanup task explicitly brings something forward. Guarded by `scripts/legacy_archive_isolation_check.py`. |
 
 ## Module Completion Register
 

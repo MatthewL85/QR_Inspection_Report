@@ -27,6 +27,7 @@ REQUIRED_CHECK_LABELS = {
     "Contractor Document Template Boundary",
     "Platform System Map",
     "Archive Inventory Strict",
+    "Legacy Archive Isolation",
     "Core Platform Identity",
     "Organisation Connection Boundary",
     "Migration Integrity",

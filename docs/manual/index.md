@@ -245,3 +245,11 @@ The archive inventory check is:
 ```
 
 This is a read-only guardrail that lists legacy/archive areas and confirms whether active app code references old project roots. The formal policy is kept in `docs/architecture/archive_strategy.md`.
+
+The legacy/archive isolation check is:
+
+```text
+.\venv\Scripts\python.exe scripts\legacy_archive_isolation_check.py
+```
+
+This fails if active runtime files start depending on `Old_QR` or `legacy_archive`, keeping historical code out of production feature work.

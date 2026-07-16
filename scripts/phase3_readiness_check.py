@@ -24,6 +24,7 @@ CHECKS = (
     ("Contractor Document Template Boundary", "contractor_document_template_boundary_check.py"),
     ("Platform System Map", "platform_system_map_check.py"),
     ("Archive Inventory Strict", "archive_inventory_check.py --strict"),
+    ("Legacy Archive Isolation", "legacy_archive_isolation_check.py"),
     ("Core Platform Identity", "core_platform_identity_check.py"),
     ("Organisation Connection Boundary", "organisation_connection_boundary_check.py"),
     ("Migration Integrity", "migration_integrity_check.py"),

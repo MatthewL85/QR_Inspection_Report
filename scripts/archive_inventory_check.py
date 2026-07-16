@@ -44,6 +44,9 @@ GOVERNANCE_FILES = {
     PROJECT_ROOT / "docs" / "architecture" / "archive_strategy.md",
     PROJECT_ROOT / "docs" / "legacy_cleanup_register.md",
     PROJECT_ROOT / "docs" / "phase_2_legacy_review.md",
+    PROJECT_ROOT / "scripts" / "legacy_archive_isolation_check.py",
+    PROJECT_ROOT / "scripts" / "phase3_readiness_check.py",
+    PROJECT_ROOT / "scripts" / "platform_documentation_contract_check.py",
     PROJECT_ROOT / "scripts" / "platform_system_map_check.py",
     SELF_PATH,
 }

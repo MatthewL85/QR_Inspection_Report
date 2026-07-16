@@ -250,6 +250,14 @@ Service dependency boundaries are checked by:
 
 This protects the platform from hidden coupling by confirming models stay persistence-only, services do not import routes, and cross-module service dependencies are explicitly declared.
 
+Legacy/archive isolation is checked by:
+
+```text
+.\venv\Scripts\python.exe scripts\legacy_archive_isolation_check.py
+```
+
+This protects `Old_QR` and `legacy_archive` from becoming active dependencies again while they remain available for deliberate historical review or migration.
+
 ## Non-Negotiable Source-of-Truth Rules
 
 1. A unit belongs to one client/development through `client_id`.
