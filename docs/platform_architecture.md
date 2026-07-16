@@ -212,6 +212,16 @@ Module access and settings ownership boundaries are checked by:
 This protects the highest-risk separation rule: users must not be able to use
 settings links or weak route guards to enter another module/company workspace.
 
+Module settings registry ownership is checked by:
+
+```text
+.\venv\Scripts\python.exe scripts\module_settings_registry_check.py
+```
+
+This protects the setup rule that each standalone module owns its own settings
+surface, while the shared settings registry remains role-aware and admin-only
+where the modules are connected through the core platform.
+
 Contractor document template ownership is checked by:
 
 ```text

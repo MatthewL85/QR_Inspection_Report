@@ -23,6 +23,7 @@ REQUIRED_CHECK_LABELS = {
     "Architecture",
     "Module Contracts",
     "Module Access and Settings Ownership",
+    "Module Settings Registry",
     "Contractor Document Template Boundary",
     "Platform System Map",
     "Archive Inventory Strict",
