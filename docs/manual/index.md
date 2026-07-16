@@ -206,6 +206,14 @@ The module access and settings ownership boundary check is:
 
 This protects the rule that Contractor Logix, LogixPM, Finance Logix, Members Logix and future standalone modules keep their own settings and role boundaries.
 
+The contractor document template ownership check is:
+
+```text
+.\venv\Scripts\python.exe scripts\contractor_document_template_boundary_check.py
+```
+
+This protects the rule that Contractor Logix owns contractor-created documents such as job dockets, quotation responses and payment requests, while Works/LogixPM owns work orders and quotation requests.
+
 The archive inventory check is:
 
 ```text

@@ -53,6 +53,7 @@ REQUIRED_REFERENCES = {
         "phase3_readiness_check.py --smoke-only",
         "phase3_runner_contract_check.py",
         "platform_documentation_contract_check.py",
+        "contractor_document_template_boundary_check.py",
     ),
     "docs/platform_stabilisation_register.md": (
         "Non-Negotiable Build Rules",
@@ -63,12 +64,15 @@ REQUIRED_REFERENCES = {
         "phase3_runner_contract_check.py",
         "platform_documentation_contract_check.py",
         "module_access_security_boundary_check.py",
+        "contractor_document_template_boundary_check.py",
     ),
     "docs/module_completion_register.md": (
         "Unfinished Module Completion Register",
         "Module Completion Register",
         "Module access/security boundaries",
         "Module settings ownership",
+        "Document template ownership",
+        "contractor_document_template_boundary_check.py",
         "Contractor Logix",
         "Finance Logix",
         "GAR AI Layer",

@@ -204,6 +204,16 @@ Module access and settings ownership boundaries are checked by:
 This protects the highest-risk separation rule: users must not be able to use
 settings links or weak route guards to enter another module/company workspace.
 
+Contractor document template ownership is checked by:
+
+```text
+.\venv\Scripts\python.exe scripts\contractor_document_template_boundary_check.py
+```
+
+This protects the rule that the shared document-template engine does not move
+module ownership. Works Logix owns work orders and quotation requests;
+Contractor Logix owns job dockets, quotation responses and payment requests.
+
 Service dependency boundaries are checked by:
 
 ```text
