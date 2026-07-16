@@ -19,6 +19,7 @@ CHECKS = (
     ("Module Contracts", "module_contract_check.py"),
     ("Module Route Boundaries", "module_route_boundary_check.py"),
     ("Module Dependency Boundaries", "module_dependency_boundary_check.py"),
+    ("Module Service Contract", "module_service_contract_check.py"),
     ("Module Access and Settings Ownership", "module_access_security_boundary_check.py"),
     ("Module Settings Registry", "module_settings_registry_check.py"),
     ("Contractor Document Template Boundary", "contractor_document_template_boundary_check.py"),

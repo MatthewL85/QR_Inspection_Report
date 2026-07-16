@@ -258,6 +258,14 @@ Service dependency boundaries are checked by:
 
 This protects the platform from hidden coupling by confirming models stay persistence-only, services do not import routes, and cross-module service dependencies are explicitly declared.
 
+The source-backed service/feed contract is checked by:
+
+```text
+.\venv\Scripts\python.exe scripts\module_service_contract_check.py
+```
+
+This protects the integration rule that modules may connect through declared services, feeds, lifecycle records and governed organisation connections, but should not use another module's route, dashboard or template as an integration API.
+
 Legacy/archive isolation is checked by:
 
 ```text

@@ -28,6 +28,12 @@ Module dependency boundaries are validated by:
 scripts/module_dependency_boundary_check.py
 ```
 
+Module service/feed contracts are validated by:
+
+```text
+scripts/module_service_contract_check.py
+```
+
 Role dashboard surface consistency is validated by:
 
 ```text
@@ -99,6 +105,14 @@ Allowed cross-module service dependencies must be explicit. The dependency check
 - Dashboard summaries reading Contract Manager metrics.
 
 If a new module needs another module's data, add a source-backed service or feed in the owning module and declare the dependency. Do not query another module's private internals from a route.
+
+The source-backed service/feed contract is checked by:
+
+```text
+.\venv\Scripts\python.exe scripts\module_service_contract_check.py
+```
+
+This keeps integrations service-led and makes sure new module links are documented before deeper Finance, HR, Director or GAR build-out.
 
 ## Phase 3 Cross-Module Workflow Contract
 

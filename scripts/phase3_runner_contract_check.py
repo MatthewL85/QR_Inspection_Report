@@ -22,6 +22,7 @@ import scripts.phase3_readiness_check as readiness
 REQUIRED_CHECK_LABELS = {
     "Architecture",
     "Module Contracts",
+    "Module Service Contract",
     "Module Access and Settings Ownership",
     "Module Settings Registry",
     "Contractor Document Template Boundary",

@@ -41,6 +41,7 @@ REQUIRED_REFERENCES = {
         "docs/role_dashboard_surface_standard.md",
         "docs/module_contracts.md",
         "platform_documentation_contract_check.py",
+        "module_service_contract_check.py",
     ),
     "docs/platform_architecture.md": (
         "Related Control Documents",
@@ -59,6 +60,7 @@ REQUIRED_REFERENCES = {
         "media_evidence_spine_check.py",
         "contractor_document_template_boundary_check.py",
         "organisation_connection_boundary_check.py",
+        "module_service_contract_check.py",
     ),
     "docs/platform_stabilisation_register.md": (
         "Non-Negotiable Build Rules",
@@ -75,6 +77,7 @@ REQUIRED_REFERENCES = {
         "media_evidence_spine_check.py",
         "contractor_document_template_boundary_check.py",
         "organisation_connection_boundary_check.py",
+        "module_service_contract_check.py",
     ),
     "docs/module_completion_register.md": (
         "Unfinished Module Completion Register",
@@ -101,6 +104,12 @@ REQUIRED_REFERENCES = {
         "avoid long duplicated lists",
         "queue_surface_contract_check.py",
         "key_site_info_contract_check.py",
+    ),
+    "docs/module_contracts.md": (
+        "Dependency Rule",
+        "source-backed service or feed",
+        "module_dependency_boundary_check.py",
+        "module_service_contract_check.py",
     ),
 }
 

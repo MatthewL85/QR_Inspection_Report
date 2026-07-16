@@ -206,6 +206,14 @@ The module dependency boundary check is:
 
 This protects the operating principle that each module remains independent, loosely coupled and service/API driven.
 
+The module service/feed contract is checked by:
+
+```text
+.\venv\Scripts\python.exe scripts\module_service_contract_check.py
+```
+
+This confirms cross-module links stay service-led, source-backed and declared before new module workflows rely on them.
+
 The module access and settings ownership boundary check is:
 
 ```text

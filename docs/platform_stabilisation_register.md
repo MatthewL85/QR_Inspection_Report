@@ -54,6 +54,7 @@ Run these checks after structural work:
 .\venv\Scripts\python.exe scripts\module_contract_check.py
 .\venv\Scripts\python.exe scripts\module_route_boundary_check.py
 .\venv\Scripts\python.exe scripts\module_dependency_boundary_check.py
+.\venv\Scripts\python.exe scripts\module_service_contract_check.py
 .\venv\Scripts\python.exe scripts\module_access_security_boundary_check.py
 .\venv\Scripts\python.exe scripts\module_settings_registry_check.py
 .\venv\Scripts\python.exe scripts\contractor_document_template_boundary_check.py
@@ -92,7 +93,7 @@ To inspect the selected checks without running them:
 
 The full Phase 3 suite streams each child check, records elapsed time and applies a per-check timeout. Use `PHASE3_CHECK_TIMEOUT_SECONDS` to raise the limit when a local machine is slow, but treat repeated timeouts as a signal to split or optimise the underlying check. Failed checks are retried once by default via `PHASE3_FAILED_CHECK_RETRIES=1` so transient local database disconnects do not invalidate a long suite; repeated failures still fail the suite. Full mode should be used before merge/deployment-style review because it includes both the fast contracts and the role dashboard / operational surface render smoke checks.
 
-The formal unfinished-module register is `docs/module_completion_register.md` and is protected by `scripts/module_completion_register_check.py`. The documentation entry points are protected by `scripts/platform_documentation_contract_check.py`. The runner mode split is protected by `scripts/phase3_runner_contract_check.py`. The access and settings ownership boundary is protected by `scripts/module_access_security_boundary_check.py`. The module settings registry ownership rule is protected by `scripts/module_settings_registry_check.py`. Legacy/archive isolation is protected by `scripts/legacy_archive_isolation_check.py`. The media/evidence spine is protected by `scripts/media_evidence_spine_check.py`. Contractor-owned document templates are protected by `scripts/contractor_document_template_boundary_check.py`. Organisation connection boundaries are protected by `scripts/organisation_connection_boundary_check.py`.
+The formal unfinished-module register is `docs/module_completion_register.md` and is protected by `scripts/module_completion_register_check.py`. The documentation entry points are protected by `scripts/platform_documentation_contract_check.py`. The runner mode split is protected by `scripts/phase3_runner_contract_check.py`. The access and settings ownership boundary is protected by `scripts/module_access_security_boundary_check.py`. The module settings registry ownership rule is protected by `scripts/module_settings_registry_check.py`. Service-led integration and source-backed feeds are protected by `scripts/module_service_contract_check.py`. Legacy/archive isolation is protected by `scripts/legacy_archive_isolation_check.py`. The media/evidence spine is protected by `scripts/media_evidence_spine_check.py`. Contractor-owned document templates are protected by `scripts/contractor_document_template_boundary_check.py`. Organisation connection boundaries are protected by `scripts/organisation_connection_boundary_check.py`.
 
 ## Next Stabilisation Steps
 
@@ -100,7 +101,7 @@ The formal unfinished-module register is `docs/module_completion_register.md` an
 2. Standardise the remaining heavy pages against the current light dashboard pattern.
 3. Extend route-level smoke checks as new role dashboards and queue pages are added.
 4. Keep extending the user manual whenever a user-facing workflow becomes real.
-5. Add module-level API/service contracts before deeper Finance, HR, Director and GAR build-out.
+5. Keep module-level API/service contracts covered before deeper Finance, HR, Director and GAR build-out.
 6. Keep media/evidence propagation covered whenever request, work order, docket or completion evidence changes.
 7. Keep Key Site Information rich text, media, contractor visibility and safe rendering covered as it becomes an operational source of truth.
 8. Keep Works Logix and Contractor Logix operational queues tile-driven: one selected queue list at a time, compact filters, no duplicated attention/list blocks.
