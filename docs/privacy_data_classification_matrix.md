@@ -81,5 +81,6 @@ Primary checks:
 .\venv\Scripts\python.exe scripts\gar_source_adapter_contract_check.py
 .\venv\Scripts\python.exe scripts\notification_role_visibility_contract_check.py
 .\venv\Scripts\python.exe scripts\works_access_control_check.py
+.\venv\Scripts\python.exe scripts\privacy_data_classification_contract_check.py
 .\venv\Scripts\python.exe scripts\phase3_runner_contract_check.py
 ```

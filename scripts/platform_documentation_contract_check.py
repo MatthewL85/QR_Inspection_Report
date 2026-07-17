@@ -173,6 +173,8 @@ REQUIRED_REFERENCES = {
         "support_readiness_contract_check.py",
         "onboarding, import and portal-invite contracts",
         "onboarding_data_import_contract_check.py",
+        "privacy and data-classification contracts",
+        "privacy_data_classification_contract_check.py",
         "Current Close-Out Position",
         "Release Readiness Rules",
         "Module Expansion Checklist",
@@ -377,6 +379,7 @@ REQUIRED_REFERENCES = {
         "gar_source_adapter_contract_check.py",
         "notification_role_visibility_contract_check.py",
         "works_access_control_check.py",
+        "privacy_data_classification_contract_check.py",
         "phase3_runner_contract_check.py",
     ),
     "docs/observability_monitoring_matrix.md": (

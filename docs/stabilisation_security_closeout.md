@@ -48,6 +48,8 @@ The support and production readiness contracts are guarded together by `scripts\
 
 The onboarding, import and portal-invite contracts are guarded together by `scripts\onboarding_data_import_contract_check.py` because real data intake must stay source-mapped, duplicate-checked, classified, reversible and owned by the module that uses it.
 
+The privacy and data-classification contracts are guarded together by `scripts\privacy_data_classification_contract_check.py` because personal, financial, HR, contractor-private, security/access and GAR-derived data must stay purpose-limited, role-scoped and source-backed.
+
 ## Current Close-Out Position
 
 The current stabilisation pass has guarded the platform-level boundaries that keep the ecosystem modular:
