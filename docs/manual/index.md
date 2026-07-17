@@ -119,6 +119,14 @@ The module completion register contract is checked by:
 
 This confirms cross-cutting platform close-out rows stay guarded and the strategic module list remains visible.
 
+The app module settings feed contract is checked by:
+
+```text
+.\venv\Scripts\python.exe scripts\app_module_settings_feed_contract_check.py
+```
+
+This confirms the read-only module settings registry feed keeps role-aware visibility, source references and module-owned settings mutation rules.
+
 The notification intelligence contract is checked by:
 
 ```text

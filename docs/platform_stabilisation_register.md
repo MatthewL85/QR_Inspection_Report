@@ -60,6 +60,7 @@ Run these checks after structural work:
 .\venv\Scripts\python.exe scripts\contractor_document_template_boundary_check.py
 .\venv\Scripts\python.exe scripts\organisation_connection_boundary_check.py
 .\venv\Scripts\python.exe scripts\app_company_setup_feed_contract_check.py
+.\venv\Scripts\python.exe scripts\app_module_settings_feed_contract_check.py
 .\venv\Scripts\python.exe scripts\role_dashboard_surface_check.py
 .\venv\Scripts\python.exe scripts\dashboard_review_login_check.py
 .\venv\Scripts\python.exe scripts\operational_surface_render_check.py

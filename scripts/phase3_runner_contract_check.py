@@ -43,6 +43,7 @@ REQUIRED_CHECK_LABELS = {
     "App Home Feed Contract",
     "App Capabilities Feed Contract",
     "App Company Setup Feed Contract",
+    "App Module Settings Feed Contract",
     "Workflow Action Contract",
     "Notification Contract",
     "Role Dashboard Login/Render Smoke",

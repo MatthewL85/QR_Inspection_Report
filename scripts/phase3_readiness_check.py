@@ -41,6 +41,7 @@ CHECKS = (
     ("App Home Feed Contract", "app_home_feed_contract_check.py"),
     ("App Capabilities Feed Contract", "app_capabilities_feed_contract_check.py"),
     ("App Company Setup Feed Contract", "app_company_setup_feed_contract_check.py"),
+    ("App Module Settings Feed Contract", "app_module_settings_feed_contract_check.py"),
     ("App Mobile Surface", "app_mobile_surface_check.py"),
     ("Workflow Action Contract", "workflow_action_contract_check.py"),
     ("Notification Contract", "notification_contract_check.py"),

@@ -230,6 +230,17 @@ This protects the setup rule that each standalone module owns its own settings
 surface, while the shared settings registry remains role-aware and admin-only
 where the modules are connected through the core platform.
 
+The app module-settings feed contract is checked by:
+
+```text
+.\venv\Scripts\python.exe scripts\app_module_settings_feed_contract_check.py
+```
+
+This protects the read-only module settings registry feed used by future app
+clients and GAR setup views. It verifies role-aware visibility, source
+references and the rule that settings changes still belong to the owning
+module route.
+
 The shared media/evidence spine is checked by:
 
 ```text

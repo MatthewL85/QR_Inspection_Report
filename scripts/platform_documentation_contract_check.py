@@ -42,6 +42,7 @@ REQUIRED_REFERENCES = {
         "docs/module_contracts.md",
         "platform_documentation_contract_check.py",
         "module_service_contract_check.py",
+        "app_module_settings_feed_contract_check.py",
     ),
     "docs/platform_architecture.md": (
         "Related Control Documents",
@@ -61,6 +62,7 @@ REQUIRED_REFERENCES = {
         "contractor_document_template_boundary_check.py",
         "organisation_connection_boundary_check.py",
         "module_service_contract_check.py",
+        "app_module_settings_feed_contract_check.py",
     ),
     "docs/platform_stabilisation_register.md": (
         "Non-Negotiable Build Rules",
@@ -78,6 +80,7 @@ REQUIRED_REFERENCES = {
         "contractor_document_template_boundary_check.py",
         "organisation_connection_boundary_check.py",
         "module_service_contract_check.py",
+        "app_module_settings_feed_contract_check.py",
     ),
     "docs/module_completion_register.md": (
         "Unfinished Module Completion Register",
