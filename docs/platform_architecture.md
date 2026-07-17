@@ -194,6 +194,15 @@ The architecture/manual/stabilisation documentation spine is protected by:
 .\venv\Scripts\python.exe scripts\platform_documentation_contract_check.py
 ```
 
+The stabilisation register gate list is checked by:
+
+```text
+.\venv\Scripts\python.exe scripts\stabilisation_register_gate_check.py
+```
+
+This keeps the written stabilisation checklist aligned with the executable
+Phase 3 readiness suite.
+
 The unfinished module completion register is protected by:
 
 ```text

@@ -31,6 +31,7 @@ CHECKS = (
     ("Migration Integrity", "migration_integrity_check.py"),
     ("Admin Portal Access Contract", "admin_portal_access_contract_check.py"),
     ("Platform Documentation Contract", "platform_documentation_contract_check.py"),
+    ("Stabilisation Register Gate", "stabilisation_register_gate_check.py"),
     ("Module Completion Register", "module_completion_register_check.py"),
     ("Manual Coverage", "manual_coverage_check.py"),
     ("Phase 3 Manual Contract", "phase3_manual_contract_check.py"),

@@ -200,6 +200,14 @@ The readiness runner mode split is protected by:
 .\venv\Scripts\python.exe scripts\phase3_runner_contract_check.py
 ```
 
+The stabilisation register gate is checked by:
+
+```text
+.\venv\Scripts\python.exe scripts\stabilisation_register_gate_check.py
+```
+
+This confirms the written stabilisation register lists every Phase 3 readiness gate, so the release checklist and executable suite stay aligned.
+
 The architecture/manual/stabilisation documentation spine is protected by:
 
 ```text

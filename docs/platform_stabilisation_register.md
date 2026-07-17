@@ -44,6 +44,7 @@ Before major new feature expansion, each module should have:
 Run these checks after structural work:
 
 ```powershell
+.\venv\Scripts\python.exe scripts\architecture_smoke_check.py
 .\venv\Scripts\python.exe scripts\platform_system_map_check.py
 .\venv\Scripts\python.exe scripts\archive_inventory_check.py --strict
 .\venv\Scripts\python.exe scripts\legacy_archive_isolation_check.py
@@ -51,7 +52,10 @@ Run these checks after structural work:
 .\venv\Scripts\python.exe scripts\migration_integrity_check.py
 .\venv\Scripts\python.exe scripts\admin_portal_access_contract_check.py
 .\venv\Scripts\python.exe scripts\platform_documentation_contract_check.py
+.\venv\Scripts\python.exe scripts\stabilisation_register_gate_check.py
 .\venv\Scripts\python.exe scripts\module_completion_register_check.py
+.\venv\Scripts\python.exe scripts\manual_coverage_check.py
+.\venv\Scripts\python.exe scripts\phase3_manual_contract_check.py
 .\venv\Scripts\python.exe scripts\module_contract_check.py
 .\venv\Scripts\python.exe scripts\module_route_boundary_check.py
 .\venv\Scripts\python.exe scripts\module_dependency_boundary_check.py
@@ -60,16 +64,38 @@ Run these checks after structural work:
 .\venv\Scripts\python.exe scripts\module_settings_registry_check.py
 .\venv\Scripts\python.exe scripts\contractor_document_template_boundary_check.py
 .\venv\Scripts\python.exe scripts\organisation_connection_boundary_check.py
+.\venv\Scripts\python.exe scripts\app_feed_contract_check.py
+.\venv\Scripts\python.exe scripts\app_shell_readiness_check.py
+.\venv\Scripts\python.exe scripts\app_health_feed_contract_check.py
+.\venv\Scripts\python.exe scripts\app_home_feed_contract_check.py
+.\venv\Scripts\python.exe scripts\app_capabilities_feed_contract_check.py
 .\venv\Scripts\python.exe scripts\app_company_setup_feed_contract_check.py
 .\venv\Scripts\python.exe scripts\app_module_settings_feed_contract_check.py
+.\venv\Scripts\python.exe scripts\app_mobile_surface_check.py
+.\venv\Scripts\python.exe scripts\workflow_action_contract_check.py
+.\venv\Scripts\python.exe scripts\notification_contract_check.py
+.\venv\Scripts\python.exe scripts\notification_role_visibility_contract_check.py
+.\venv\Scripts\python.exe scripts\navbar_notification_contract_check.py
 .\venv\Scripts\python.exe scripts\role_dashboard_surface_check.py
 .\venv\Scripts\python.exe scripts\dashboard_review_login_check.py
 .\venv\Scripts\python.exe scripts\operational_surface_render_check.py
 .\venv\Scripts\python.exe scripts\key_site_info_contract_check.py
+.\venv\Scripts\python.exe scripts\role_dashboard_notification_contract_check.py
+.\venv\Scripts\python.exe scripts\works_command_centre_contract_check.py
+.\venv\Scripts\python.exe scripts\works_evidence_audit_contract_check.py
+.\venv\Scripts\python.exe scripts\role_dashboard_attention_contract_check.py
 .\venv\Scripts\python.exe scripts\media_evidence_spine_check.py
 .\venv\Scripts\python.exe scripts\contractor_evidence_propagation_check.py
 .\venv\Scripts\python.exe scripts\contractor_standalone_docket_check.py
 .\venv\Scripts\python.exe scripts\queue_surface_contract_check.py
+.\venv\Scripts\python.exe scripts\template_reference_check.py
+.\venv\Scripts\python.exe scripts\url_for_reference_check.py
+.\venv\Scripts\python.exe scripts\gar_context_check.py
+.\venv\Scripts\python.exe scripts\gar_role_visibility_contract_check.py
+.\venv\Scripts\python.exe scripts\gar_source_adapter_contract_check.py
+.\venv\Scripts\python.exe scripts\gar_inquiry_endpoint_check.py
+.\venv\Scripts\python.exe scripts\works_access_control_check.py
+.\venv\Scripts\python.exe scripts\works_lifecycle_flow_check.py
 .\venv\Scripts\python.exe scripts\phase3_runner_contract_check.py
 .\venv\Scripts\python.exe scripts\phase3_readiness_check.py
 ```
