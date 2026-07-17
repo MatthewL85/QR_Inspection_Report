@@ -26,6 +26,8 @@ The observability and monitoring contract is `docs/observability_monitoring_matr
 
 The release and change management contract is `docs/release_change_management_matrix.md`. Use it before merging, deploying, activating modules, running seed scripts, shipping migrations, updating document templates, changing GAR adapters or widening external integration scopes.
 
+The production readiness gate is `docs/production_readiness_gate.md`. Use it before treating any module, workflow, dashboard, queue, integration or GAR surface as ready for live customer use.
+
 The GAR visibility contract is `docs/gar_visibility_matrix.md`. Use it before adding AI answers, summaries, recommendations, source adapters or role dashboards.
 
 The auditability contract is `docs/auditability_matrix.md`. Use it before adding approvals, state changes, cross-module handoffs, external integrations, document finalisation or GAR-assisted actions.
@@ -48,6 +50,7 @@ The current stabilisation pass has guarded the platform-level boundaries that ke
 - personal, financial, HR, contractor-private and security/access data must be classified before it is displayed, exported, notified or used by GAR;
 - dashboard counts, health feeds, operational alerts and degraded states must be source-backed, module-owned and privacy-safe;
 - release changes must be scoped, validated, rollback-aware and kept separate from unrelated dirty module work;
+- production readiness must be explicit: prototype, review, pilot, production or deferred;
 - GAR must read source-backed records with role and visibility controls rather than becoming the source of truth;
 - cross-module actions must record module ownership, source records, acting users and human approvals where required;
 - deletion must default to archive, deactivation, superseding or controlled amendment for business records;
@@ -76,9 +79,10 @@ Before any larger feature expansion or deployment-style review:
 15. Confirm any personal, financial, HR, contractor-private, security/access or GAR-derived data use matches `docs/privacy_data_classification_matrix.md`.
 16. Confirm any health feed, dashboard count, operational alert, background job, degraded state or sync monitor matches `docs/observability_monitoring_matrix.md`.
 17. Confirm any merge, deployment, migration, seed, rollback, module activation or external scope change matches `docs/release_change_management_matrix.md`.
-18. Confirm any GAR answer, feed or recommendation matches `docs/gar_visibility_matrix.md`.
-19. Confirm any state change, approval, cross-module handoff or finalised document matches `docs/auditability_matrix.md`.
-20. Confirm any delete, archive, restore, deactivate or retention behaviour matches `docs/data_retention_deletion_matrix.md`.
+18. Confirm any live customer use, pilot, module activation or production sign-off matches `docs/production_readiness_gate.md`.
+19. Confirm any GAR answer, feed or recommendation matches `docs/gar_visibility_matrix.md`.
+20. Confirm any state change, approval, cross-module handoff or finalised document matches `docs/auditability_matrix.md`.
+21. Confirm any delete, archive, restore, deactivate or retention behaviour matches `docs/data_retention_deletion_matrix.md`.
 
 ## Module Expansion Checklist
 
@@ -94,6 +98,7 @@ When starting or extending a module, record:
 - privacy and data classification rules;
 - observability, monitoring and degraded-state rules;
 - release, validation and rollback ownership rules;
+- production readiness level, blockers and sign-off owner;
 - allowed cross-module service/feed dependencies;
 - GAR visibility rules;
 - manual coverage;
@@ -126,6 +131,7 @@ Stop and route the work back through stabilisation if any of these appear:
 - a release includes unrelated module work because it was already dirty locally;
 - a module becomes visible because a route exists rather than because module subscription, role and settings ownership allow it;
 - a migration, seed script, document-template change or GAR adapter is shipped without a scoped validation or rollback path;
+- a module is described as production-ready while it still depends on seed data, debug mode, missing settings ownership or undocumented user workflows;
 - a standalone module cannot operate unless another Logix module is present;
 - a GAR response depends on free text without a source record reference;
 - GAR reveals records the user could not open directly in the relevant module;
