@@ -30,6 +30,8 @@ The production readiness gate is `docs/production_readiness_gate.md`. Use it bef
 
 The support and escalation ownership contract is `docs/support_escalation_ownership_matrix.md`. Use it before piloting or activating any module, workflow, integration, dashboard queue or GAR surface that users may rely on operationally.
 
+The onboarding and data import contract is `docs/onboarding_data_import_matrix.md`. Use it before importing, seeding, migrating, bulk-inviting or syncing real organisations, clients, users, units, owners, residents, contractors, documents, media or external system records.
+
 The GAR visibility contract is `docs/gar_visibility_matrix.md`. Use it before adding AI answers, summaries, recommendations, source adapters or role dashboards.
 
 The auditability contract is `docs/auditability_matrix.md`. Use it before adding approvals, state changes, cross-module handoffs, external integrations, document finalisation or GAR-assisted actions.
@@ -54,6 +56,7 @@ The current stabilisation pass has guarded the platform-level boundaries that ke
 - release changes must be scoped, validated, rollback-aware and kept separate from unrelated dirty module work;
 - production readiness must be explicit: prototype, review, pilot, production or deferred;
 - support ownership and escalation must follow the module that owns the workflow;
+- onboarding and imports must be batch-aware, duplicate-checked, source-mapped and rollback-aware;
 - GAR must read source-backed records with role and visibility controls rather than becoming the source of truth;
 - cross-module actions must record module ownership, source records, acting users and human approvals where required;
 - deletion must default to archive, deactivation, superseding or controlled amendment for business records;
@@ -84,9 +87,10 @@ Before any larger feature expansion or deployment-style review:
 17. Confirm any merge, deployment, migration, seed, rollback, module activation or external scope change matches `docs/release_change_management_matrix.md`.
 18. Confirm any live customer use, pilot, module activation or production sign-off matches `docs/production_readiness_gate.md`.
 19. Confirm any operational support, escalation, customer response or degraded-state support path matches `docs/support_escalation_ownership_matrix.md`.
-20. Confirm any GAR answer, feed or recommendation matches `docs/gar_visibility_matrix.md`.
-21. Confirm any state change, approval, cross-module handoff or finalised document matches `docs/auditability_matrix.md`.
-22. Confirm any delete, archive, restore, deactivate or retention behaviour matches `docs/data_retention_deletion_matrix.md`.
+20. Confirm any onboarding, import, migration, seed, bulk invite or external data intake matches `docs/onboarding_data_import_matrix.md`.
+21. Confirm any GAR answer, feed or recommendation matches `docs/gar_visibility_matrix.md`.
+22. Confirm any state change, approval, cross-module handoff or finalised document matches `docs/auditability_matrix.md`.
+23. Confirm any delete, archive, restore, deactivate or retention behaviour matches `docs/data_retention_deletion_matrix.md`.
 
 ## Module Expansion Checklist
 
@@ -104,6 +108,7 @@ When starting or extending a module, record:
 - release, validation and rollback ownership rules;
 - production readiness level, blockers and sign-off owner;
 - support owner, escalation route and customer-response rule;
+- onboarding, import and data-quality rules;
 - allowed cross-module service/feed dependencies;
 - GAR visibility rules;
 - manual coverage;
@@ -138,6 +143,8 @@ Stop and route the work back through stabilisation if any of these appear:
 - a migration, seed script, document-template change or GAR adapter is shipped without a scoped validation or rollback path;
 - a module is described as production-ready while it still depends on seed data, debug mode, missing settings ownership or undocumented user workflows;
 - a pilot or production module has no named support owner or escalation path;
+- a live import creates operational records without source mapping, duplicate checks, data classification or rollback path;
+- bulk portal invites are sent before memberships and unit links are validated;
 - a standalone module cannot operate unless another Logix module is present;
 - a GAR response depends on free text without a source record reference;
 - GAR reveals records the user could not open directly in the relevant module;
