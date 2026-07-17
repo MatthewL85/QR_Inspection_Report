@@ -46,6 +46,8 @@ The audit and retention contracts are guarded together by `scripts\audit_retenti
 
 The support and production readiness contracts are guarded together by `scripts\support_readiness_contract_check.py` because pilot/live use, customer support, escalation and production sign-off must stay module-owned and source-record backed.
 
+The onboarding, import and portal-invite contracts are guarded together by `scripts\onboarding_data_import_contract_check.py` because real data intake must stay source-mapped, duplicate-checked, classified, reversible and owned by the module that uses it.
+
 ## Current Close-Out Position
 
 The current stabilisation pass has guarded the platform-level boundaries that keep the ecosystem modular:

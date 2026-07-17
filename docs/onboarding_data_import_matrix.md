@@ -129,5 +129,6 @@ Use these checks around onboarding, import, migration, bulk invite and connector
 .\venv\Scripts\python.exe scripts\media_evidence_spine_check.py
 .\venv\Scripts\python.exe scripts\contractor_evidence_propagation_check.py
 .\venv\Scripts\python.exe scripts\app_company_setup_feed_contract_check.py
+.\venv\Scripts\python.exe scripts\onboarding_data_import_contract_check.py
 .\venv\Scripts\python.exe scripts\phase3_runner_contract_check.py
 ```

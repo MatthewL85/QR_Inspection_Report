@@ -171,6 +171,8 @@ REQUIRED_REFERENCES = {
         "docs/data_retention_deletion_matrix.md",
         "support and production readiness contracts",
         "support_readiness_contract_check.py",
+        "onboarding, import and portal-invite contracts",
+        "onboarding_data_import_contract_check.py",
         "Current Close-Out Position",
         "Release Readiness Rules",
         "Module Expansion Checklist",
@@ -515,6 +517,7 @@ REQUIRED_REFERENCES = {
         "platform_documentation_contract_check.py",
         "media_evidence_spine_check.py",
         "organisation_connection_boundary_check.py",
+        "onboarding_data_import_contract_check.py",
         "phase3_runner_contract_check.py",
     ),
     "docs/pilot_live_activation_runbook.md": (
