@@ -32,6 +32,7 @@ REQUIRED_CHECK_LABELS = {
     "Core Platform Identity",
     "Organisation Connection Boundary",
     "Migration Integrity",
+    "Admin Portal Access Contract",
     "Platform Documentation Contract",
     "Module Completion Register",
     "Manual Coverage",

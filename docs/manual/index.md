@@ -230,6 +230,14 @@ The module access and settings ownership boundary check is:
 
 This protects the rule that Contractor Logix, LogixPM, Finance Logix, Members Logix and future standalone modules keep their own settings and role boundaries.
 
+The Admin Portal access contract is checked by:
+
+```text
+.\venv\Scripts\python.exe scripts\admin_portal_access_contract_check.py
+```
+
+This confirms Admin Portal remains an Admin-owned operational workspace and cannot be used by other roles as a dashboard bypass.
+
 The module settings registry ownership check is:
 
 ```text

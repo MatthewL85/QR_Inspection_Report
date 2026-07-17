@@ -220,6 +220,16 @@ Module access and settings ownership boundaries are checked by:
 This protects the highest-risk separation rule: users must not be able to use
 settings links or weak route guards to enter another module/company workspace.
 
+Admin Portal route access is checked by:
+
+```text
+.\venv\Scripts\python.exe scripts\admin_portal_access_contract_check.py
+```
+
+This protects the operational Admin Portal as an Admin-owned workspace, rather
+than a shortcut for Property Managers, Contractors or other roles to cross into
+the wrong dashboard.
+
 Module settings registry ownership is checked by:
 
 ```text

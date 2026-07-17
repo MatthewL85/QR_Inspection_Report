@@ -49,6 +49,7 @@ Run these checks after structural work:
 .\venv\Scripts\python.exe scripts\legacy_archive_isolation_check.py
 .\venv\Scripts\python.exe scripts\core_platform_identity_check.py
 .\venv\Scripts\python.exe scripts\migration_integrity_check.py
+.\venv\Scripts\python.exe scripts\admin_portal_access_contract_check.py
 .\venv\Scripts\python.exe scripts\platform_documentation_contract_check.py
 .\venv\Scripts\python.exe scripts\module_completion_register_check.py
 .\venv\Scripts\python.exe scripts\module_contract_check.py
