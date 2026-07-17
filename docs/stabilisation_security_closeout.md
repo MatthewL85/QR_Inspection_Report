@@ -12,6 +12,8 @@ The module connection contract is `docs/module_connection_matrix.md`. Use it bef
 
 The document ownership contract is `docs/document_template_ownership_matrix.md`. Use it before adding or moving any document template, PDF, export, quotation, payment request, work order or job docket output.
 
+The source record identity contract is `docs/source_record_identity_matrix.md`. Use it before adding or changing UIDs, portal access codes, work-order numbers, job-docket numbers, contractor job numbers, invoice numbers, quotation references or any cross-module record reference.
+
 The GAR visibility contract is `docs/gar_visibility_matrix.md`. Use it before adding AI answers, summaries, recommendations, source adapters or role dashboards.
 
 The auditability contract is `docs/auditability_matrix.md`. Use it before adding approvals, state changes, cross-module handoffs, external integrations, document finalisation or GAR-assisted actions.
@@ -27,6 +29,7 @@ The current stabilisation pass has guarded the platform-level boundaries that ke
 - contractor users must not use shared settings or document links to reach LogixPM, Finance Logix or Members Logix management surfaces;
 - each module must own the settings and documents for the workflows it creates;
 - organisation connections must use governed organisation identity and connection records, not email-address coupling;
+- cross-module links must use source IDs, stable UIDs and safe human-readable references rather than display labels or short numbers alone;
 - GAR must read source-backed records with role and visibility controls rather than becoming the source of truth;
 - cross-module actions must record module ownership, source records, acting users and human approvals where required;
 - deletion must default to archive, deactivation, superseding or controlled amendment for business records;
@@ -48,9 +51,10 @@ Before any larger feature expansion or deployment-style review:
 8. Confirm any new role/module surface matches `docs/module_access_matrix.md`.
 9. Confirm any new module or external integration link matches `docs/module_connection_matrix.md`.
 10. Confirm any new document output matches `docs/document_template_ownership_matrix.md`.
-11. Confirm any GAR answer, feed or recommendation matches `docs/gar_visibility_matrix.md`.
-12. Confirm any state change, approval, cross-module handoff or finalised document matches `docs/auditability_matrix.md`.
-13. Confirm any delete, archive, restore, deactivate or retention behaviour matches `docs/data_retention_deletion_matrix.md`.
+11. Confirm any new UID, display reference or cross-module source reference matches `docs/source_record_identity_matrix.md`.
+12. Confirm any GAR answer, feed or recommendation matches `docs/gar_visibility_matrix.md`.
+13. Confirm any state change, approval, cross-module handoff or finalised document matches `docs/auditability_matrix.md`.
+14. Confirm any delete, archive, restore, deactivate or retention behaviour matches `docs/data_retention_deletion_matrix.md`.
 
 ## Module Expansion Checklist
 
@@ -59,6 +63,7 @@ When starting or extending a module, record:
 - source-of-truth models;
 - module-owned routes and settings;
 - document-template ownership;
+- source record identity and numbering rules;
 - allowed cross-module service/feed dependencies;
 - GAR visibility rules;
 - manual coverage;
@@ -75,6 +80,8 @@ Stop and route the work back through stabilisation if any of these appear:
 - a document template is managed by a module that did not create the document;
 - a PDF or export is added without a clear owning module;
 - an integration uses email address matching instead of governed organisation, user, company, client, unit or work-order identifiers;
+- a cross-module link uses a human-readable reference, display name or email address instead of a source ID or stable UID;
+- a work-order, job-docket, invoice, quotation or payment request number can collide across organisations without source context;
 - a standalone module cannot operate unless another Logix module is present;
 - a GAR response depends on free text without a source record reference;
 - GAR reveals records the user could not open directly in the relevant module;
