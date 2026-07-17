@@ -17,6 +17,7 @@ The active build principle is simple: each module should work independently, whi
 | `docs/source_record_identity_matrix.md` | Source IDs, UIDs and safe human-readable numbering rules |
 | `docs/external_integration_security_matrix.md` | External connector credentials, scopes, sync and revocation boundaries |
 | `docs/deployment_environment_security_matrix.md` | Deployment secrets, feature flags, migrations and seed data boundaries |
+| `docs/schema_migration_ownership_matrix.md` | Schema and migration ownership boundaries by module |
 | `docs/incident_response_backup_matrix.md` | Incident response, backup, restore and recovery ownership boundaries |
 | `docs/privacy_data_classification_matrix.md` | Privacy, sensitive data and module data-classification boundaries |
 | `docs/observability_monitoring_matrix.md` | Module health, monitoring, queue accuracy and degraded-state boundaries |

@@ -44,6 +44,7 @@ Release control is not only a GitHub step. It is the operational boundary that p
 2. Do not activate a module because a route exists. Module subscription, role access and settings ownership must allow it.
 3. Do not promote local review users, demo records or seed scripts as production content.
 4. Do not ship migrations without their matching model and route/service expectations.
+4a. Schema and migration changes must follow the schema and migration ownership contract in `docs/schema_migration_ownership_matrix.md`.
 5. Do not rewrite signed, approved, completed, paid or closed source records during release. Use controlled amendment, superseding or archive behaviour.
 6. Do not move document templates into a shared settings area when the workflow belongs to a specific module.
 7. Do not add GAR answers or feeds without source references and role visibility checks.
@@ -108,6 +109,7 @@ Stop and route the work back through stabilisation if:
 .\venv\Scripts\python.exe scripts\platform_documentation_contract_check.py
 .\venv\Scripts\python.exe scripts\phase3_runner_contract_check.py
 .\venv\Scripts\python.exe scripts\migration_integrity_check.py
+.\venv\Scripts\python.exe scripts\schema_migration_contract_check.py
 .\venv\Scripts\python.exe scripts\module_access_security_boundary_check.py
 .\venv\Scripts\python.exe scripts\module_settings_registry_check.py
 .\venv\Scripts\python.exe scripts\module_service_contract_check.py

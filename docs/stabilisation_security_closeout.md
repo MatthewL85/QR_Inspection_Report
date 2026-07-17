@@ -18,6 +18,8 @@ The external integration security contract is `docs/external_integration_securit
 
 The deployment environment security contract is `docs/deployment_environment_security_matrix.md`. Use it before changing environment variables, secrets, debug behaviour, seed scripts, feature flags, migrations, upload storage or production deployment configuration.
 
+The schema and migration ownership contract is `docs/schema_migration_ownership_matrix.md`. Use it before adding tables, columns, indexes, constraints, backfills or Alembic migrations.
+
 The incident response and backup contract is `docs/incident_response_backup_matrix.md`. Use it before changing backup scope, restore behaviour, incident response, recovery testing, media recovery, external sync recovery or GAR rebuild behaviour.
 
 The privacy and data classification contract is `docs/privacy_data_classification_matrix.md`. Use it before exposing personal, financial, HR, contractor-private, security/access or GAR-derived data through screens, exports, notifications, documents, integrations or AI answers.
@@ -52,6 +54,7 @@ The current stabilisation pass has guarded the platform-level boundaries that ke
 - cross-module links must use source IDs, stable UIDs and safe human-readable references rather than display labels or short numbers alone;
 - external integrations must be owned by the module that uses them, with scoped credentials, sync logs and revocation controls;
 - deployment configuration must keep secrets, debug behaviour, seed data, migrations and module feature flags environment-owned;
+- schema and migration ownership boundaries must keep database changes module-owned, migration-controlled and recovery-aware;
 - backup, restore and incident response must preserve source records, media, audit history, visibility rules and external sync state;
 - personal, financial, HR, contractor-private and security/access data must be classified before it is displayed, exported, notified or used by GAR;
 - dashboard counts, health feeds, operational alerts and degraded states must be source-backed, module-owned and privacy-safe;
@@ -84,6 +87,7 @@ Before any larger feature expansion or deployment-style review:
 11. Confirm any new UID, display reference or cross-module source reference matches `docs/source_record_identity_matrix.md`.
 12. Confirm any external credential, connector, mailbox, calendar, cloud storage or sync behaviour matches `docs/external_integration_security_matrix.md`.
 13. Confirm any environment variable, secret, seed script, migration, feature flag or deployment behaviour matches `docs/deployment_environment_security_matrix.md`.
+13a. Confirm any table, column, index, constraint, backfill or Alembic migration matches `docs/schema_migration_ownership_matrix.md`.
 14. Confirm any backup, restore, incident response, recovery test or external sync recovery matches `docs/incident_response_backup_matrix.md`.
 15. Confirm any personal, financial, HR, contractor-private, security/access or GAR-derived data use matches `docs/privacy_data_classification_matrix.md`.
 16. Confirm any health feed, dashboard count, operational alert, background job, degraded state or sync monitor matches `docs/observability_monitoring_matrix.md`.
@@ -106,6 +110,7 @@ When starting or extending a module, record:
 - source record identity and numbering rules;
 - external integration credential, sync and revocation rules;
 - deployment environment, feature flag, seed data and migration rules;
+- schema and migration ownership rules;
 - incident response, backup, restore and recovery ownership rules;
 - privacy and data classification rules;
 - observability, monitoring and degraded-state rules;
@@ -146,6 +151,7 @@ Stop and route the work back through stabilisation if any of these appear:
 - a release includes unrelated module work because it was already dirty locally;
 - a module becomes visible because a route exists rather than because module subscription, role and settings ownership allow it;
 - a migration, seed script, document-template change or GAR adapter is shipped without a scoped validation or rollback path;
+- a migration mixes unrelated module schema changes or depends on local seed data;
 - a module is described as production-ready while it still depends on seed data, debug mode, missing settings ownership or undocumented user workflows;
 - a pilot or production module has no named support owner or escalation path;
 - a live import creates operational records without source mapping, duplicate checks, data classification or rollback path;
@@ -169,6 +175,7 @@ Primary checks:
 .\venv\Scripts\python.exe scripts\phase3_readiness_check.py
 .\venv\Scripts\python.exe scripts\platform_documentation_contract_check.py
 .\venv\Scripts\python.exe scripts\pilot_live_activation_contract_check.py
+.\venv\Scripts\python.exe scripts\schema_migration_contract_check.py
 .\venv\Scripts\python.exe scripts\stabilisation_register_gate_check.py
 .\venv\Scripts\python.exe scripts\module_completion_register_check.py
 .\venv\Scripts\python.exe scripts\module_access_security_boundary_check.py

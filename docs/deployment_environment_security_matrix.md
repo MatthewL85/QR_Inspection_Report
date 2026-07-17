@@ -36,6 +36,7 @@ Do not rely on local defaults, seeded test users, debug behaviour, hard-coded se
 8. Background jobs and sync tasks must run with a declared module owner and audit context.
 9. Upload limits, allowed file types and malware/safety scanning should be defined before public production use.
 10. Error pages must not expose stack traces, environment variables, tokens, SQL strings or private record data.
+11. Schema changes must follow the schema and migration ownership contract in `docs/schema_migration_ownership_matrix.md`.
 
 ## Module Deployment Rules
 
@@ -92,6 +93,7 @@ Primary checks:
 ```powershell
 .\venv\Scripts\python.exe scripts\platform_documentation_contract_check.py
 .\venv\Scripts\python.exe scripts\migration_integrity_check.py
+.\venv\Scripts\python.exe scripts\schema_migration_contract_check.py
 .\venv\Scripts\python.exe scripts\module_access_security_boundary_check.py
 .\venv\Scripts\python.exe scripts\module_settings_registry_check.py
 .\venv\Scripts\python.exe scripts\app_module_settings_feed_contract_check.py
