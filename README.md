@@ -15,6 +15,7 @@ The active build principle is simple: each module should work independently, whi
 | `docs/module_connection_matrix.md` | Organisation, module and external integration connection boundaries |
 | `docs/document_template_ownership_matrix.md` | Document template ownership boundaries by module and workflow |
 | `docs/gar_visibility_matrix.md` | GAR source-backed answer and role visibility boundaries |
+| `docs/auditability_matrix.md` | Audit ownership and human-approval boundaries for cross-module actions |
 | `docs/module_completion_register.md` | Formal register of unfinished module work, priorities and ownership boundaries |
 | `docs/role_dashboard_surface_standard.md` | Shared dashboard UX pattern for every role surface |
 | `docs/module_contracts.md` | Module ownership, integration points and GAR visibility boundaries |
