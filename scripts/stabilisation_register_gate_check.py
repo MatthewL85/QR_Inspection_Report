@@ -46,12 +46,21 @@ def main() -> int:
             failures.append(f"Stabilisation register missing {label}: {script_reference}")
 
     for required_heading in (
+        "Close-Out Status",
         "Non-Negotiable Build Rules",
         "Verification Gates",
         "Next Stabilisation Steps",
     ):
         if required_heading not in content:
             failures.append(f"Stabilisation register missing heading: {required_heading}")
+
+    for required_phrase in (
+        "Completed for this stabilisation/security close-out",
+        "Deferred module-owned close-out",
+        "Finance Logix security/stabilisation is intentionally deferred",
+    ):
+        if required_phrase not in content:
+            failures.append(f"Stabilisation register missing close-out phrase: {required_phrase}")
 
     print("Stabilisation register gate check")
     print(f"- Register: {REGISTER_PATH.relative_to(PROJECT_ROOT)}")

@@ -14,6 +14,25 @@ Before major new feature expansion, each module should have:
 - shared IDs instead of duplicated business facts;
 - GAR-readable records with visibility boundaries.
 
+## Close-Out Status
+
+Completed for this stabilisation/security close-out:
+
+- module route, dependency and service-contract boundaries;
+- role access boundaries for module dashboards and operational queues;
+- module settings ownership, including module-owned document-template settings;
+- organisation identity and connection-code boundaries;
+- Contractor Logix document-template ownership;
+- media/evidence source attachment and propagation guardrails;
+- legacy/archive isolation;
+- app/module settings feed visibility;
+- admin portal access boundaries;
+- the stabilisation register gate itself.
+
+Deferred module-owned close-out:
+
+- Finance Logix security/stabilisation is intentionally deferred to the Finance-owned build slice. It must declare Finance-owned roles, settings, document templates, GAR source adapters and module boundaries before Finance workflows are treated as production-active in the committed Phase 3 suite.
+
 ## Active Module Shape
 
 | Layer | Owns | Connects through |

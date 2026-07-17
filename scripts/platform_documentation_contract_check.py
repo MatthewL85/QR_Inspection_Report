@@ -69,6 +69,8 @@ REQUIRED_REFERENCES = {
         "admin_portal_access_contract_check.py",
     ),
     "docs/platform_stabilisation_register.md": (
+        "Close-Out Status",
+        "Finance Logix security/stabilisation is intentionally deferred",
         "Non-Negotiable Build Rules",
         "Verification Gates",
         "docs/module_completion_register.md",
