@@ -508,6 +508,7 @@ REQUIRED_REFERENCES = {
         "rollback owner",
         "Finance Logix or HR Logix is activated before its module-owned close-out is complete",
         "platform_documentation_contract_check.py",
+        "pilot_live_activation_contract_check.py",
         "module_access_security_boundary_check.py",
         "organisation_connection_boundary_check.py",
         "phase3_runner_contract_check.py",

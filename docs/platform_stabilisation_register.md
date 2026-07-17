@@ -84,6 +84,7 @@ Run these checks after structural work:
 .\venv\Scripts\python.exe scripts\migration_integrity_check.py
 .\venv\Scripts\python.exe scripts\admin_portal_access_contract_check.py
 .\venv\Scripts\python.exe scripts\platform_documentation_contract_check.py
+.\venv\Scripts\python.exe scripts\pilot_live_activation_contract_check.py
 .\venv\Scripts\python.exe scripts\stabilisation_register_gate_check.py
 .\venv\Scripts\python.exe scripts\module_completion_register_check.py
 .\venv\Scripts\python.exe scripts\manual_coverage_check.py

@@ -151,6 +151,7 @@ Use these checks around pilot, live activation and module add-on work:
 
 ```powershell
 .\venv\Scripts\python.exe scripts\platform_documentation_contract_check.py
+.\venv\Scripts\python.exe scripts\pilot_live_activation_contract_check.py
 .\venv\Scripts\python.exe scripts\module_access_security_boundary_check.py
 .\venv\Scripts\python.exe scripts\module_settings_registry_check.py
 .\venv\Scripts\python.exe scripts\module_completion_register_check.py
