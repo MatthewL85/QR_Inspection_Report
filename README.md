@@ -19,6 +19,7 @@ The active build principle is simple: each module should work independently, whi
 | `docs/deployment_environment_security_matrix.md` | Deployment secrets, feature flags, migrations and seed data boundaries |
 | `docs/incident_response_backup_matrix.md` | Incident response, backup, restore and recovery ownership boundaries |
 | `docs/privacy_data_classification_matrix.md` | Privacy, sensitive data and module data-classification boundaries |
+| `docs/observability_monitoring_matrix.md` | Module health, monitoring, queue accuracy and degraded-state boundaries |
 | `docs/gar_visibility_matrix.md` | GAR source-backed answer and role visibility boundaries |
 | `docs/auditability_matrix.md` | Audit ownership and human-approval boundaries for cross-module actions |
 | `docs/data_retention_deletion_matrix.md` | Archive, deletion, retention and restoration rules by module |
