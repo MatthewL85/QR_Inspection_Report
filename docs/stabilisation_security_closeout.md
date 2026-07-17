@@ -18,6 +18,8 @@ The external integration security contract is `docs/external_integration_securit
 
 The deployment environment security contract is `docs/deployment_environment_security_matrix.md`. Use it before changing environment variables, secrets, debug behaviour, seed scripts, feature flags, migrations, upload storage or production deployment configuration.
 
+The incident response and backup contract is `docs/incident_response_backup_matrix.md`. Use it before changing backup scope, restore behaviour, incident response, recovery testing, media recovery, external sync recovery or GAR rebuild behaviour.
+
 The GAR visibility contract is `docs/gar_visibility_matrix.md`. Use it before adding AI answers, summaries, recommendations, source adapters or role dashboards.
 
 The auditability contract is `docs/auditability_matrix.md`. Use it before adding approvals, state changes, cross-module handoffs, external integrations, document finalisation or GAR-assisted actions.
@@ -36,6 +38,7 @@ The current stabilisation pass has guarded the platform-level boundaries that ke
 - cross-module links must use source IDs, stable UIDs and safe human-readable references rather than display labels or short numbers alone;
 - external integrations must be owned by the module that uses them, with scoped credentials, sync logs and revocation controls;
 - deployment configuration must keep secrets, debug behaviour, seed data, migrations and module feature flags environment-owned;
+- backup, restore and incident response must preserve source records, media, audit history, visibility rules and external sync state;
 - GAR must read source-backed records with role and visibility controls rather than becoming the source of truth;
 - cross-module actions must record module ownership, source records, acting users and human approvals where required;
 - deletion must default to archive, deactivation, superseding or controlled amendment for business records;
@@ -60,9 +63,10 @@ Before any larger feature expansion or deployment-style review:
 11. Confirm any new UID, display reference or cross-module source reference matches `docs/source_record_identity_matrix.md`.
 12. Confirm any external credential, connector, mailbox, calendar, cloud storage or sync behaviour matches `docs/external_integration_security_matrix.md`.
 13. Confirm any environment variable, secret, seed script, migration, feature flag or deployment behaviour matches `docs/deployment_environment_security_matrix.md`.
-14. Confirm any GAR answer, feed or recommendation matches `docs/gar_visibility_matrix.md`.
-15. Confirm any state change, approval, cross-module handoff or finalised document matches `docs/auditability_matrix.md`.
-16. Confirm any delete, archive, restore, deactivate or retention behaviour matches `docs/data_retention_deletion_matrix.md`.
+14. Confirm any backup, restore, incident response, recovery test or external sync recovery matches `docs/incident_response_backup_matrix.md`.
+15. Confirm any GAR answer, feed or recommendation matches `docs/gar_visibility_matrix.md`.
+16. Confirm any state change, approval, cross-module handoff or finalised document matches `docs/auditability_matrix.md`.
+17. Confirm any delete, archive, restore, deactivate or retention behaviour matches `docs/data_retention_deletion_matrix.md`.
 
 ## Module Expansion Checklist
 
@@ -74,6 +78,7 @@ When starting or extending a module, record:
 - source record identity and numbering rules;
 - external integration credential, sync and revocation rules;
 - deployment environment, feature flag, seed data and migration rules;
+- incident response, backup, restore and recovery ownership rules;
 - allowed cross-module service/feed dependencies;
 - GAR visibility rules;
 - manual coverage;
@@ -95,6 +100,9 @@ Stop and route the work back through stabilisation if any of these appear:
 - a module uses another module's external integration credential, calendar feed, mailbox or accounting/HR connector;
 - an external sync creates or changes business records without source references, audit trail and approval controls;
 - production uses debug mode, local secrets, unreviewed seed users or manual schema changes;
+- a backup excludes media, evidence, audit history or external sync state needed to recover a module workflow;
+- a restore overwrites signed, approved, completed, paid or closed source records;
+- an incident is resolved by deleting audit logs or source history;
 - a standalone module cannot operate unless another Logix module is present;
 - a GAR response depends on free text without a source record reference;
 - GAR reveals records the user could not open directly in the relevant module;
