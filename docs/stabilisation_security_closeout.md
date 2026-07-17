@@ -16,6 +16,8 @@ The GAR visibility contract is `docs/gar_visibility_matrix.md`. Use it before ad
 
 The auditability contract is `docs/auditability_matrix.md`. Use it before adding approvals, state changes, cross-module handoffs, external integrations, document finalisation or GAR-assisted actions.
 
+The data retention contract is `docs/data_retention_deletion_matrix.md`. Use it before adding delete, archive, restore, deactivate, supersede or test-cleanup behaviour.
+
 ## Current Close-Out Position
 
 The current stabilisation pass has guarded the platform-level boundaries that keep the ecosystem modular:
@@ -27,6 +29,7 @@ The current stabilisation pass has guarded the platform-level boundaries that ke
 - organisation connections must use governed organisation identity and connection records, not email-address coupling;
 - GAR must read source-backed records with role and visibility controls rather than becoming the source of truth;
 - cross-module actions must record module ownership, source records, acting users and human approvals where required;
+- deletion must default to archive, deactivation, superseding or controlled amendment for business records;
 - legacy/archive folders must remain outside active feature work.
 
 Finance Logix is deliberately treated as a separate module-owned security slice. It can continue in its own build task, but it should not become production-active until its own roles, settings, document templates, GAR adapters and route boundaries are declared and checked.
@@ -47,6 +50,7 @@ Before any larger feature expansion or deployment-style review:
 10. Confirm any new document output matches `docs/document_template_ownership_matrix.md`.
 11. Confirm any GAR answer, feed or recommendation matches `docs/gar_visibility_matrix.md`.
 12. Confirm any state change, approval, cross-module handoff or finalised document matches `docs/auditability_matrix.md`.
+13. Confirm any delete, archive, restore, deactivate or retention behaviour matches `docs/data_retention_deletion_matrix.md`.
 
 ## Module Expansion Checklist
 
@@ -76,6 +80,8 @@ Stop and route the work back through stabilisation if any of these appear:
 - GAR reveals records the user could not open directly in the relevant module;
 - a state-changing action has no acting user, source record or owning module audit trail;
 - a signed, approved, completed or closed record can be overwritten instead of amended;
+- a delete action removes source-linked business history rather than archiving or superseding it;
+- active dashboard counts include archived records by default;
 - a new feature reads from `legacy_archive` or `Old_QR` directly.
 
 ## Guarded By
