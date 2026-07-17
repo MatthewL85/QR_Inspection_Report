@@ -1,0 +1,26 @@
+{
+  "name": "LogixPM",
+  "short_name": "LogixPM",
+  "description": "Role-aware property management, Works Logix, Members Logix, Contractor Logix and GAR AI.",
+  "start_url": "/auth/login",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f6fb",
+  "theme_color": "#2152ff",
+  "orientation": "portrait-primary",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/static/assets/img/favicon.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/assets/img/apple-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

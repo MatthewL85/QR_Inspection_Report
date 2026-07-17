@@ -1,0 +1,839 @@
+{% macro status_pill(status) -%}
+  {% set key = (status or 'Open')|lower %}
+  {% if key in ['completed', 'closed', 'resolved'] %}
+    <span class="contract-alert-pill contract-alert-success">{{ status or 'Closed' }}</span>
+  {% elif key in ['returned', 'rejected', 'cancelled'] %}
+    <span class="contract-alert-pill contract-alert-danger">{{ status or 'Returned' }}</span>
+  {% elif key in ['accepted', 'in progress'] %}
+    <span class="contract-alert-pill contract-alert-primary">{{ status }}</span>
+  {% elif key in ['high', 'urgent', 'emergency'] %}
+    <span class="contract-alert-pill contract-alert-warning">{{ status }}</span>
+  {% else %}
+    <span class="contract-alert-pill contract-alert-muted">{{ status or 'Open' }}</span>
+  {% endif %}
+{%- endmacro %}
+
+{% macro unit_label(unit) -%}
+  {% if unit %}
+    {{ unit.block_name ~ ' / ' if unit.block_name }}{{ unit.unit_number or unit.unit_label }}
+  {% else %}
+    -
+  {% endif %}
+{%- endmacro %}
+
+{% macro gar_history_chip(history) -%}
+  {% if history and history.summary.related_count %}
+    <span class="works-gar-row-chip" title="{{ history.routing_recommendation.detail or history.admin_summary }}">
+      GAR history {{ history.summary.related_count }}
+    </span>
+  {% endif %}
+{%- endmacro %}
+
+{% macro review_cycle_chip(cycle) -%}
+  {% if cycle and (cycle.completion_returns or cycle.resubmissions) %}
+    <span class="works-gar-row-chip {{ 'works-gar-row-chip-danger' if cycle.needs_management_attention else '' }}" title="Completion review cycle">
+      {{ cycle.completion_returns or 0 }} return{{ '' if (cycle.completion_returns or 0) == 1 else 's' }} / {{ cycle.resubmissions or 0 }} resubmission{{ '' if (cycle.resubmissions or 0) == 1 else 's' }}
+    </span>
+  {% endif %}
+{%- endmacro %}
+
+{% macro scheduled_visit(work_order) -%}
+  {% set docket = work_order.job_docket if work_order else none %}
+  {% set entry = docket.calendar_entries[0] if docket and docket.calendar_entries else none %}
+  {% set visit_date = entry.scheduled_date if entry else (docket.scheduled_date if docket else none) %}
+  {% set start_time = entry.start_time if entry else (docket.start_time if docket else none) %}
+  {% set end_time = entry.end_time if entry else (docket.end_time if docket else none) %}
+  {% set engineer = entry.assigned_engineer if entry else (docket.assigned_engineer if docket else none) %}
+  {% if visit_date %}
+    <div class="works-schedule-cell">
+      <strong>{{ visit_date.strftime('%d %b %Y') }}</strong>
+      <span>
+        {% if start_time %}{{ start_time.strftime('%H:%M') }}{% else %}Any time{% endif %}
+        {% if end_time %} - {{ end_time.strftime('%H:%M') }}{% endif %}
+      </span>
+      {% if engineer %}
+        <small>{{ engineer.full_name }}</small>
+      {% endif %}
+    </div>
+  {% elif docket %}
+    <span class="contract-alert-pill contract-alert-warning">Awaiting Schedule</span>
+  {% else %}
+    <span class="contract-alert-pill contract-alert-muted">Not Scheduled</span>
+  {% endif %}
+{%- endmacro %}
+
+{% set dashboard_endpoint = dashboard_endpoint|default('super_admin.dashboard') %}
+{% set dashboard_label = dashboard_label|default('Dashboard') %}
+{% set convert_endpoint = convert_endpoint|default('super_admin.convert_member_request_to_work_order') %}
+{% set request_detail_endpoint = request_detail_endpoint|default(none) %}
+{% if not request_detail_endpoint %}
+  {% if convert_endpoint == 'super_admin.convert_member_request_to_work_order' %}
+    {% set request_detail_endpoint = 'super_admin.member_request_detail' %}
+  {% elif convert_endpoint == 'property_manager.convert_member_request' %}
+    {% set request_detail_endpoint = 'property_manager.member_request_detail' %}
+  {% elif convert_endpoint == 'assistant.convert_member_request' %}
+    {% set request_detail_endpoint = 'assistant.member_request_detail' %}
+  {% elif convert_endpoint == 'admin_portal.convert_member_request' %}
+    {% set request_detail_endpoint = 'admin_portal.member_request_detail' %}
+  {% endif %}
+{% endif %}
+{% set assign_endpoint = assign_endpoint|default('super_admin.assign_work_order_contractor') %}
+{% set request_quotes_endpoint = request_quotes_endpoint|default(none) %}
+{% set select_quote_endpoint = select_quote_endpoint|default(none) %}
+{% set workspace_title = workspace_title|default('Works Logix') %}
+{% set workspace_subtitle = workspace_subtitle|default('Phase 3 command centre for member requests, work orders, contractor routing and GAR signals.') %}
+{% set reset_endpoint = reset_endpoint|default(request.endpoint) %}
+{% set repeated_returns_endpoint = repeated_returns_endpoint|default(none) %}
+{% set selected_queue = request.args.get('queue', 'open') %}
+{% if selected_queue not in ['open', 'member_requests', 'quote_requests', 'closed', 'payment_requests', 'reopen', 'gar'] %}
+  {% set selected_queue = 'open' %}
+{% endif %}
+
+<div class="container-fluid contract-manager-workspace works-manager-workspace">
+
+  <div class="contract-manager-command-bar">
+    <div>
+      <h5>{{ workspace_title }}</h5>
+      <span>{{ workspace_subtitle }}</span>
+    </div>
+    <div class="contract-manager-actions">
+      <a href="{{ url_for(dashboard_endpoint) }}" class="contract-manager-link">
+        <i class="material-icons">arrow_back</i> {{ dashboard_label }}
+      </a>
+      <span class="unit-action-divider"></span>
+      <span class="dashboard-status-pill">GAR Linked</span>
+    </div>
+  </div>
+
+  {% if cover_access is defined and cover_access %}
+    <section class="works-cover-panel" aria-label="Assistant cover mode">
+      <div>
+        <span>Coverage Mode</span>
+        <strong>Company-wide assistant cover</strong>
+        <small>Use this view when assigned PM or assistant teams are unavailable.</small>
+      </div>
+      <div>
+        <span>Routing Scope</span>
+        <strong>All company developments</strong>
+        <small>Client filters can narrow the queue without changing access rules.</small>
+      </div>
+      <div>
+        <span>Audit Context</span>
+        <strong>assistant_manager_cover</strong>
+        <small>Conversions and contractor routing are recorded for GAR and audit review.</small>
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="works-command-overview" aria-label="Works Logix command tiles">
+    <div class="contract-alert-grid works-alert-grid">
+      <a class="contract-alert-card {{ 'is-active' if selected_queue == 'open' else '' }}" href="{{ url_for(reset_endpoint, queue='open', search=filters.search, client_id=filters.client_id or '', status=filters.status) }}">
+        <span>Open Work Orders</span>
+        <strong class="text-primary">{{ stats.open_work_orders }}</strong>
+      </a>
+      <a class="contract-alert-card {{ 'is-active' if selected_queue == 'member_requests' else '' }}" href="{{ url_for(reset_endpoint, queue='member_requests', search=filters.search, client_id=filters.client_id or '', status=filters.status) }}">
+        <span>Member Requests</span>
+        <strong class="text-warning">{{ stats.open_member_requests }}</strong>
+      </a>
+      <a class="contract-alert-card {{ 'is-active' if selected_queue == 'quote_requests' else '' }}" href="{{ url_for(reset_endpoint, queue='quote_requests', search=filters.search, client_id=filters.client_id or '', status=filters.status) }}">
+        <span>Quote Requests</span>
+        <strong class="text-warning">{{ stats.quote_requests or 0 }}</strong>
+      </a>
+      <a class="contract-alert-card {{ 'is-active' if selected_queue == 'closed' else '' }}" href="{{ url_for(reset_endpoint, queue='closed', search=filters.search, client_id=filters.client_id or '', status=filters.status) }}">
+        <span>Closed</span>
+        <strong class="text-success">{{ stats.closed_work_orders }}</strong>
+      </a>
+      <a class="contract-alert-card {{ 'is-active' if selected_queue == 'payment_requests' else '' }}" href="{{ url_for(reset_endpoint, queue='payment_requests', search=filters.search, client_id=filters.client_id or '', status=filters.status) }}">
+        <span>Payment Requests</span>
+        <strong class="text-success">{{ stats.payment_requests or 0 }}</strong>
+      </a>
+      <a class="contract-alert-card {{ 'is-active' if selected_queue == 'reopen' else '' }}" href="{{ url_for(reset_endpoint, queue='reopen', search=filters.search, client_id=filters.client_id or '', status=filters.status) }}">
+        <span>Reopen Requests</span>
+        <strong class="text-danger">{{ stats.pending_reopen_requests }}</strong>
+      </a>
+      <a class="contract-alert-card {{ 'is-active' if selected_queue == 'gar' else '' }}" href="{{ url_for(reset_endpoint, queue='gar', search=filters.search, client_id=filters.client_id or '', status=filters.status) }}">
+        <span>GAR Signals</span>
+        <strong>{{ gar_works_intelligence.signal_count if gar_works_intelligence is defined and gar_works_intelligence else 0 }}</strong>
+      </a>
+    </div>
+
+    <details class="works-filter-disclosure">
+      <summary>Search and filter Works Logix</summary>
+      <form method="GET" class="works-quick-filter" role="search" aria-label="Works Logix filters">
+        <input type="hidden" name="queue" value="{{ selected_queue }}">
+        <div class="works-quick-filter-main">
+          <label for="search">Search</label>
+          <input class="form-control" id="search" name="search" value="{{ filters.search }}" placeholder="Title, unit, client or reference">
+        </div>
+        <div>
+          <label for="client_id">Development</label>
+          <select class="form-select" id="client_id" name="client_id">
+            <option value="">All developments</option>
+            {% for client in clients %}
+              <option value="{{ client.id }}" {% if filters.client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="status">Status</label>
+          <select class="form-select" id="status" name="status">
+            <option value="">All statuses</option>
+            {% for status in status_options %}
+              <option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>{{ status }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="contract-filter-actions">
+          <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+          <a href="{{ url_for(reset_endpoint) }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+        </div>
+      </form>
+    </details>
+  </section>
+
+  {% set gar_intel = gar_works_intelligence if gar_works_intelligence is defined else {} %}
+  {% set gar_signals = gar_intel.signals if gar_intel else [] %}
+  {% set gar_memory = gar_intel.pattern_memory if gar_intel else {} %}
+  {% set gar_memory_patterns = gar_memory.patterns if gar_memory else {} %}
+  {% set contractor_quality_patterns = gar_memory_patterns.contractor_quality if gar_memory_patterns else [] %}
+  {% set gar_cover = gar_intel.cover_context if gar_intel else {} %}
+
+  {% if selected_queue == 'gar' %}
+  <details class="contract-manager-panel works-gar-command-panel works-collapsible-panel" id="gar-works-intelligence" open>
+    <summary class="contract-manager-heading">
+      <div>
+        <h6>GAR Works Intelligence</h6>
+        <span>{{ gar_intel.signal_count or 0 }} active signal{{ '' if (gar_intel.signal_count or 0) == 1 else 's' }} across stuck work, reopen patterns, feedback and repeat issues.</span>
+      </div>
+      <span class="contract-alert-pill contract-alert-info">GAR AI Centre</span>
+    </summary>
+    <div class="works-gar-signal-grid">
+      {% for signal in gar_signals %}
+        {% set signal_href = url_for(repeated_returns_endpoint, search=filters.search, client_id=filters.client_id, status=filters.status) if signal.key == 'repeated_completion_returns' and repeated_returns_endpoint else '#' ~ signal.anchor %}
+        <a class="works-gar-signal-card works-gar-signal-{{ signal.severity }}" href="{{ signal_href }}">
+          <span>{{ signal.label }}</span>
+          <strong>{{ signal.count }}</strong>
+          <small>{{ signal.detail }}</small>
+        </a>
+      {% endfor %}
+    </div>
+    {% if gar_intel.recommended_actions %}
+      <div class="works-gar-recommendation-strip">
+        {% for action in gar_intel.recommended_actions[:3] %}
+          <article>
+            <span>{{ action.priority|upper }}</span>
+            <strong>{{ action.source }}</strong>
+            <small>{{ action.message }}</small>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="works-gar-clear mb-0">No GAR Works risk patterns are currently flagged in this view.</p>
+    {% endif %}
+    {% if gar_cover.cover_context_used %}
+      <div class="works-gar-cover-strip">
+        <article>
+          <span>Cover Context</span>
+          <strong>Assistant Manager Cover</strong>
+          <small>{{ gar_cover.cover_event_count or 0 }} cover action{{ '' if (gar_cover.cover_event_count or 0) == 1 else 's' }} across {{ gar_cover.cover_work_order_count or 0 }} work order{{ '' if (gar_cover.cover_work_order_count or 0) == 1 else 's' }}.</small>
+        </article>
+        <article>
+          <span>GAR Interpretation</span>
+          <strong>Operational continuity</strong>
+          <small>Cover routing is tracked separately from normal assigned PM/assistant handling.</small>
+        </article>
+      </div>
+    {% endif %}
+    <div class="works-gar-memory-strip">
+      <div>
+        <span>Pattern Memory</span>
+        <strong>{{ gar_memory.pattern_count or 0 }} pattern{{ '' if (gar_memory.pattern_count or 0) == 1 else 's' }}</strong>
+      </div>
+      <div>
+        <span>Top Signal</span>
+        {% if gar_memory.highest_signal %}
+          <strong>{{ gar_memory.highest_signal.label }}</strong>
+          <small>{{ gar_memory.highest_signal.count }} linked record{{ '' if gar_memory.highest_signal.count == 1 else 's' }}</small>
+        {% else %}
+          <strong>Clear</strong>
+          <small>No repeated issue pattern detected yet.</small>
+        {% endif %}
+      </div>
+      <div>
+        <span>Tracked By</span>
+        <strong>Unit, block, development, contractor, category</strong>
+        <small>Derived from Works Logix and Members Logix source records.</small>
+      </div>
+    </div>
+    {% if gar_memory.recommended_actions %}
+      <div class="works-gar-pattern-list">
+        {% for action in gar_memory.recommended_actions[:4] %}
+          <article>
+            <span>{{ action.source }}</span>
+            <strong>{{ action.message }}</strong>
+          </article>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if contractor_quality_patterns %}
+      <div class="works-gar-quality-strip">
+        <div>
+          <span>Contractor Quality Signals</span>
+          <strong>{{ contractor_quality_patterns|length }} contractor{{ '' if contractor_quality_patterns|length == 1 else 's' }} flagged</strong>
+          <small>Derived from repeated completion returns and low member/resident feedback.</small>
+        </div>
+        {% for pattern in contractor_quality_patterns[:3] %}
+          <article>
+            <span>{{ pattern.severity|upper }}</span>
+            <strong>{{ pattern.label }}</strong>
+            <small>{{ pattern.repeated_return_count or 0 }} repeated return{{ '' if (pattern.repeated_return_count or 0) == 1 else 's' }}{% if pattern.low_feedback_count %}, {{ pattern.low_feedback_count }} low feedback{% endif %}</small>
+          </article>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </details>
+
+  {% if gar_history_work_orders is defined and gar_history_work_orders %}
+    <details class="contract-manager-panel works-gar-history-review works-collapsible-panel" id="gar-history-review" open>
+      <summary class="contract-manager-heading">
+        <div>
+          <h6>GAR Relevant History Review</h6>
+          <span>{{ gar_history_work_orders|length }} work order{{ '' if gar_history_work_orders|length == 1 else 's' }} in this view have previous related history.</span>
+        </div>
+        <span class="contract-alert-pill contract-alert-info">Routing intelligence</span>
+      </summary>
+      <div class="works-gar-history-review-grid">
+        {% for item in gar_history_work_orders %}
+          {% set work = item.work_order %}
+          <article>
+            <div>
+              <span>{{ work.display_reference }}</span>
+              <strong>{{ work.title or 'Work Order #' ~ work.id }}</strong>
+              <small>{{ item.routing_action or 'Review previous outcome' }}</small>
+            </div>
+            <p>{{ item.routing_detail or item.history.admin_summary }}</p>
+            <footer>
+              <span>{{ item.related_count }} related</span>
+              {% if work.unit %}
+                <a class="user-manager-action-link" href="{{ url_for('unit_bp.work_order_review', unit_id=work.unit.id, work_order_id=work.id) }}">Review</a>
+              {% endif %}
+            </footer>
+          </article>
+        {% endfor %}
+      </div>
+    </details>
+  {% endif %}
+  {% endif %}
+
+  {% if selected_queue == 'member_requests' %}
+  <section class="contract-manager-panel" id="member-requests">
+    <div class="contract-manager-heading">
+      <div>
+        <h6>Member Request Triage</h6>
+        <span>{{ open_member_requests|length }} open request{{ '' if open_member_requests|length == 1 else 's' }} waiting for Works Logix review.</span>
+      </div>
+      <span class="contract-alert-pill contract-alert-info">Members Logix</span>
+    </div>
+    <div class="contract-manager-table-wrap">
+      <table class="table contract-manager-table works-manager-table mb-0">
+        <colgroup>
+          <col style="width: 20%;">
+          <col style="width: 18%;">
+          <col style="width: 14%;">
+          <col style="width: 12%;">
+          <col style="width: 12%;">
+          <col style="width: 14%;">
+          <col style="width: 10%;">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Request</th>
+            <th>Development</th>
+            <th>Unit</th>
+            <th>Category</th>
+            <th>Urgency</th>
+            <th>Reported</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in open_member_requests %}
+            <tr id="member-request-{{ item.id }}">
+              <td>
+                <div class="contract-manager-cell-stack">
+                  <strong>{{ item.title }}</strong>
+                  <span>{{ item.description or '-' }}</span>
+                </div>
+              </td>
+              <td>{{ item.unit.client.name if item.unit and item.unit.client else '-' }}</td>
+              <td>
+                {% if item.unit %}
+                  <a href="{{ url_for('unit_bp.view', unit_id=item.unit.id, tab='works') }}">{{ unit_label(item.unit) }}</a>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>{{ item.category or '-' }}</td>
+              <td>{{ status_pill(item.urgency_level or 'Normal') }}</td>
+              <td>{{ item.created_at.strftime('%d %b %Y') if item.created_at else '-' }}</td>
+              <td>
+                {% if request_detail_endpoint %}
+                  <a class="user-manager-action-link" href="{{ url_for(request_detail_endpoint, request_id=item.id, search=filters.search, client_id=filters.client_id or '', status=filters.status) }}">Review</a>
+                {% else %}
+                  <span class="text-muted">Review unavailable</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="7" class="contract-manager-empty">No open member maintenance requests are waiting for triage.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if selected_queue == 'quote_requests' %}
+  <section class="contract-manager-panel" id="quote-requests">
+    <div class="contract-manager-heading">
+      <div>
+        <h6>Quote Requests</h6>
+        <span>{{ quote_request_work_orders|length }} quotation request{{ '' if quote_request_work_orders|length == 1 else 's' }} in the current view.</span>
+      </div>
+      <span class="contract-alert-pill contract-alert-warning">Contractor Logix</span>
+    </div>
+    <div class="contract-manager-table-wrap">
+      <table class="table contract-manager-table works-manager-table mb-0">
+        <colgroup>
+          <col style="width: 20%;">
+          <col style="width: 16%;">
+          <col style="width: 12%;">
+          <col style="width: 12%;">
+          <col style="width: 16%;">
+          <col style="width: 16%;">
+          <col style="width: 8%;">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Work Order</th>
+            <th>Development</th>
+            <th>Unit</th>
+            <th>Status</th>
+            <th>Invited Contractors</th>
+            <th>Submitted Quotes</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in quote_request_work_orders %}
+            <tr id="quote-request-{{ item.id }}">
+              <td>
+                <div class="contract-manager-cell-stack">
+                  <strong>{{ item.title or item.display_reference }}</strong>
+                  <span>{{ item.display_reference }}</span>
+                  {{ gar_history_chip(gar_history_by_work_order.get(item.id) if gar_history_by_work_order is defined else none) }}
+                </div>
+              </td>
+              <td>{{ item.client.name if item.client else '-' }}</td>
+              <td>{{ unit_label(item.unit) }}</td>
+              <td>{{ status_pill(item.quote_status or item.status) }}</td>
+              <td>
+                <div class="contract-manager-cell-stack">
+                  {% for invite in item.quote_recipients %}
+                    {% if invite.visible_to_contractor and not invite.archived_by_admin %}
+                      <span>{{ invite.contractor.full_name if invite.contractor else 'Contractor user' }} - {{ invite.response_status or invite.status }}</span>
+                    {% endif %}
+                  {% else %}
+                    <span>No recipients recorded.</span>
+                  {% endfor %}
+                </div>
+              </td>
+              <td>
+                <div class="contract-manager-cell-stack">
+                  {% for quote in item.quote_responses %}
+                    <span>
+                      {{ quote.submitted_by.full_name if quote.submitted_by else 'Contractor' }}
+                      {% if quote.parsed_total is not none %} - EUR {{ "{:,.2f}".format(quote.parsed_total) }}{% endif %}
+                      {% if quote.is_selected %} - Selected{% endif %}
+                    </span>
+                    <a class="works-evidence-link" href="{{ quote.quote_file_path }}" target="_blank" rel="noopener">Open Quote</a>
+                    {% if select_quote_endpoint and quote.status == 'Submitted' and not quote.is_selected %}
+                      <form method="POST"
+                            action="{{ url_for(select_quote_endpoint, work_order_id=item.id, quote_response_id=quote.id) }}"
+                            class="works-select-quote-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="search" value="{{ filters.search }}">
+                        <input type="hidden" name="client_id" value="{{ filters.client_id or '' }}">
+                        <input type="hidden" name="status" value="{{ filters.status }}">
+                        <input type="text" name="decision_note" placeholder="Optional decision note" aria-label="Quote decision note">
+                        <button type="submit">Select</button>
+                      </form>
+                    {% endif %}
+                  {% else %}
+                    <span>No quote submitted yet.</span>
+                  {% endfor %}
+                </div>
+              </td>
+              <td>
+                {% if item.unit %}
+                  <div class="contract-manager-cell-stack">
+                    <a class="user-manager-action-link" href="{{ url_for('unit_bp.work_order_review', unit_id=item.unit.id, work_order_id=item.id) }}">Review</a>
+                    {% if docket %}
+                      <a class="user-manager-action-link" href="{{ url_for('unit_bp.work_order_payment_request_document', unit_id=item.unit.id, work_order_id=item.id) }}">Preview Request</a>
+                    {% endif %}
+                  </div>
+                {% else %}
+                  <span class="text-muted">Unlinked</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="7" class="contract-manager-empty">No quotation requests match this view.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if selected_queue == 'open' %}
+  <section class="contract-manager-panel" id="open-work-orders">
+    <div class="contract-manager-heading">
+      <div>
+        <h6>Open Work Orders</h6>
+        <span>{{ open_work_orders|length }} open record{{ '' if open_work_orders|length == 1 else 's' }} in the current view.</span>
+      </div>
+      <span class="contract-alert-pill contract-alert-primary">Works Logix</span>
+    </div>
+    <div class="contract-manager-table-wrap">
+      <table class="table contract-manager-table works-manager-table mb-0">
+        <colgroup>
+          <col style="width: 24%;">
+          <col style="width: 18%;">
+          <col style="width: 13%;">
+          <col style="width: 19%;">
+          <col style="width: 16%;">
+          <col style="width: 10%;">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Work Order</th>
+            <th>Location</th>
+            <th>Type / Status</th>
+            <th>Contractor</th>
+            <th>Scheduled Visit</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in open_work_orders %}
+            <tr id="work-order-{{ item.id }}">
+              <td>
+                <div class="contract-manager-cell-stack">
+                  <strong>{{ item.title or 'Work Order #' ~ item.id }}</strong>
+                  <span>{{ item.external_reference or item.display_reference }}</span>
+                  <span>Created {{ item.created_at.strftime('%d %b %Y') if item.created_at else '-' }}</span>
+                  {{ gar_history_chip(gar_history_by_work_order.get(item.id) if gar_history_by_work_order is defined else none) }}
+                  {{ review_cycle_chip(review_cycle_by_work_order.get(item.id) if review_cycle_by_work_order is defined else none) }}
+                </div>
+              </td>
+              <td>
+                <div class="contract-manager-cell-stack">
+                  <strong>{{ item.client.name if item.client else '-' }}</strong>
+                {% if item.unit %}
+                    <a href="{{ url_for('unit_bp.view', unit_id=item.unit.id, tab='works') }}">{{ unit_label(item.unit) }}</a>
+                {% else %}
+                    <span>-</span>
+                {% endif %}
+                </div>
+              </td>
+              <td>
+                <div class="contract-manager-cell-stack">
+                  <strong>{{ item.business_type or item.request_type or '-' }}</strong>
+                  {{ status_pill(item.status) }}
+                </div>
+              </td>
+              <td>
+                {% if item.contractor_company %}
+                  <span class="contract-alert-pill contract-alert-info">{{ item.contractor_company.company_name }}</span>
+                {% else %}
+                  <form method="POST" action="{{ url_for(assign_endpoint, work_order_id=item.id) }}" class="works-routing-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="search" value="{{ filters.search }}">
+                    <input type="hidden" name="client_id" value="{{ filters.client_id or '' }}">
+                    <input type="hidden" name="status" value="{{ filters.status }}">
+                    <select name="contractor_id" aria-label="Assign contractor">
+                      <option value="">Assign</option>
+                      {% for contractor in contractors %}
+                        {% set routing_option = contractor_routing_by_id.get(contractor.id) if contractor_routing_by_id is defined else none %}
+                        <option value="{{ contractor.id }}">
+                          {{ contractor.company_name }}
+                          {% if routing_option and routing_option.is_connected %} - Connected{% endif %}
+                          {% if routing_option and routing_option.open_work_orders %} - {{ routing_option.open_work_orders }} open{% endif %}
+                        </option>
+                      {% endfor %}
+                    </select>
+                    <button type="submit">Route</button>
+                  </form>
+                {% endif %}
+              </td>
+              <td>{{ scheduled_visit(item) }}</td>
+              <td>
+                {% if item.unit %}
+                  <a class="user-manager-action-link" href="{{ url_for('unit_bp.work_order_review', unit_id=item.unit.id, work_order_id=item.id) }}">Review</a>
+                {% else %}
+                  <span class="text-muted">Unlinked</span>
+                {% endif %}
+                {% if request_quotes_endpoint %}
+                  <details class="works-row-action-details">
+                    <summary>Request Quote</summary>
+                    <form method="POST" action="{{ url_for(request_quotes_endpoint, work_order_id=item.id) }}" class="works-quote-request-form">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <input type="hidden" name="search" value="{{ filters.search }}">
+                      <input type="hidden" name="client_id" value="{{ filters.client_id or '' }}">
+                      <input type="hidden" name="status" value="{{ filters.status }}">
+                      <label>Contractors</label>
+                      <select name="contractor_ids" multiple required aria-label="Select contractors for quotation">
+                        {% for contractor in contractors %}
+                          {% set routing_option = contractor_routing_by_id.get(contractor.id) if contractor_routing_by_id is defined else none %}
+                          <option value="{{ contractor.id }}">
+                            {{ contractor.company_name }}
+                            {% if routing_option and routing_option.is_connected %} - Connected{% endif %}
+                            {% if routing_option and routing_option.open_work_orders %} - {{ routing_option.open_work_orders }} open{% endif %}
+                          </option>
+                        {% endfor %}
+                      </select>
+                      <label>Deadline</label>
+                      <input type="date" name="quote_deadline">
+                      <label>Instruction</label>
+                      <textarea name="quote_notes" rows="2" placeholder="Scope notes or pricing instruction"></textarea>
+                      <label class="works-inline-check">
+                        <input type="checkbox" name="visible_to_directors" value="1">
+                        Director review ready
+                      </label>
+                      <button type="submit">Send Request</button>
+                    </form>
+                  </details>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="6" class="contract-manager-empty">No open work orders match this view.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if selected_queue == 'closed' %}
+  <section class="contract-manager-panel" id="closed-work-orders">
+    <div class="contract-manager-heading">
+      <div>
+        <h6>Closed Work Orders</h6>
+        <span>Review completed work, evidence and reopen patterns without crowding the open queue.</span>
+      </div>
+      <span class="contract-alert-pill contract-alert-success">{{ closed_work_orders|length }} Closed</span>
+    </div>
+    <div class="contract-manager-table-wrap">
+      <table class="table contract-manager-table works-manager-table mb-0">
+        <colgroup>
+          <col style="width: 23%;">
+          <col style="width: 18%;">
+          <col style="width: 14%;">
+          <col style="width: 12%;">
+          <col style="width: 20%;">
+          <col style="width: 13%;">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Work Order</th>
+            <th>Development</th>
+            <th>Unit</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in closed_work_orders[:12] %}
+            <tr id="closed-work-order-{{ item.id }}">
+              <td>
+                <div class="contract-manager-cell-stack">
+                  <strong>{{ item.title or 'Work Order #' ~ item.id }}</strong>
+                  {{ gar_history_chip(gar_history_by_work_order.get(item.id) if gar_history_by_work_order is defined else none) }}
+                </div>
+              </td>
+              <td>{{ item.client.name if item.client else '-' }}</td>
+              <td>{{ unit_label(item.unit) }}</td>
+              <td>{{ status_pill(item.status) }}</td>
+              <td>{{ item.created_at.strftime('%d %b %Y') if item.created_at else '-' }}</td>
+              <td>
+                {% if item.unit %}
+                  <a class="user-manager-action-link" href="{{ url_for('unit_bp.work_order_review', unit_id=item.unit.id, work_order_id=item.id) }}">Review</a>
+                {% else %}
+                  <span class="text-muted">Unlinked</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="6" class="contract-manager-empty">No closed work orders match this view.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if selected_queue == 'payment_requests' %}
+  <section class="contract-manager-panel" id="payment-requests">
+    <div class="contract-manager-heading">
+      <div>
+        <h6>Payment Requests</h6>
+        <span>{{ payment_request_work_orders|length }} contractor payment request{{ '' if payment_request_work_orders|length == 1 else 's' }} awaiting management or Finance Logix review.</span>
+      </div>
+      <span class="contract-alert-pill contract-alert-success">Finance Ready</span>
+    </div>
+    <div class="contract-manager-table-wrap">
+      <table class="table contract-manager-table works-manager-table mb-0">
+        <colgroup>
+          <col style="width: 18%;">
+          <col style="width: 18%;">
+          <col style="width: 12%;">
+          <col style="width: 18%;">
+          <col style="width: 12%;">
+          <col style="width: 12%;">
+          <col style="width: 10%;">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Work Order / Docket</th>
+            <th>Development</th>
+            <th>Unit</th>
+            <th>Contractor</th>
+            <th>Invoice State</th>
+            <th>Prepared</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in payment_request_work_orders %}
+            {% set docket = item.job_docket %}
+            <tr id="payment-request-{{ item.id }}">
+              <td>
+                <div class="contract-manager-cell-stack">
+                  <strong>{{ item.display_reference }}</strong>
+                  <span>{{ docket.docket_number if docket and docket.docket_number else 'No docket number' }}</span>
+                  {{ gar_history_chip(gar_history_by_work_order.get(item.id) if gar_history_by_work_order is defined else none) }}
+                </div>
+              </td>
+              <td>{{ item.client.name if item.client else '-' }}</td>
+              <td>{{ unit_label(item.unit) }}</td>
+              <td>
+                {% if item.contractor_company %}
+                  {{ item.contractor_company.company_name }}
+                {% elif docket and docket.contractor %}
+                  {{ docket.contractor.company_name }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>
+                <div class="contract-manager-cell-stack">
+                  {{ status_pill(docket.invoice_status if docket else 'Invoice Prepared') }}
+                  <span>{{ docket.payment_status if docket else 'Not Paid' }}</span>
+                </div>
+              </td>
+              <td>
+                {% if docket and docket.updated_at %}
+                  {{ docket.updated_at.strftime('%d %b %Y') }}
+                {% elif docket and docket.completion_date %}
+                  {{ docket.completion_date.strftime('%d %b %Y') }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>
+                {% if item.unit %}
+                  <a class="user-manager-action-link" href="{{ url_for('unit_bp.work_order_review', unit_id=item.unit.id, work_order_id=item.id) }}">Review</a>
+                {% else %}
+                  <span class="text-muted">Unlinked</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="7" class="contract-manager-empty">No contractor payment requests match this view.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if selected_queue == 'reopen' %}
+  <section class="contract-manager-panel" id="reopen-requests">
+    <div class="contract-manager-heading">
+      <div>
+        <h6>Reopen Requests</h6>
+        <span>Member or resident challenges to closed works that need review.</span>
+      </div>
+      <span class="contract-alert-pill contract-alert-warning">{{ pending_reopen_requests|length }} Pending</span>
+    </div>
+    <div class="contract-manager-table-wrap">
+      <table class="table contract-manager-table works-manager-table mb-0">
+        <colgroup>
+          <col style="width: 18%;">
+          <col style="width: 18%;">
+          <col style="width: 20%;">
+          <col style="width: 16%;">
+          <col style="width: 14%;">
+          <col style="width: 14%;">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Unit</th>
+            <th>Work Order</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Requested</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in pending_reopen_requests %}
+            <tr id="reopen-request-{{ item.id }}">
+              <td>{{ unit_label(item.unit) }}</td>
+              <td>{{ item.work_order.title if item.work_order else '-' }}</td>
+              <td>{{ item.reason or item.additional_details or '-' }}</td>
+              <td>{{ status_pill(item.status) }}</td>
+              <td>{{ item.created_at.strftime('%d %b %Y') if item.created_at else '-' }}</td>
+              <td>
+                {% if item.unit and item.work_order %}
+                  <a class="user-manager-action-link" href="{{ url_for('unit_bp.work_order_review', unit_id=item.unit.id, work_order_id=item.work_order.id) }}">Review</a>
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="6" class="contract-manager-empty">No pending reopen requests.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+</div>

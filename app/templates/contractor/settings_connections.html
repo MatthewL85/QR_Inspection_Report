@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Contractor Connections{% endblock %}
+
+{% block page_content %}
+<div class="contractor-settings-app app-ready-surface app-ready-surface--contractor"
+     data-app-mobile-ready="true"
+     data-app-safe-area="required"
+     data-app-source-backed="true"
+     data-app-surface="contractor-settings-connections">
+  <form method="post" action="{{ url_for('contractor.contractor_settings_connections') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <section class="settings-app-header">
+      <div>
+        <span>Contractor Logix</span>
+        <h1>Connections</h1>
+        <p>Connect {{ contractor_display_name }} to management companies, Works Logix, GAR and future approved external systems.</p>
+      </div>
+      <div class="settings-app-actions">
+        <a href="{{ url_for('contractor.contractor_settings') }}">Settings</a>
+        <a href="{{ url_for('contractor.contractor_dashboard') }}">Dashboard</a>
+      </div>
+    </section>
+
+    {% set connection_panel_id = 'contractor-connections' %}
+    {% set connection_panel_title = 'Contractor Connections' %}
+    {% set connection_panel_help = 'Use one-time codes to connect this standalone Contractor Logix workspace to approved management companies and shared Logix records.' %}
+    {% set allow_connection_actions = true %}
+    {% include 'settings/_module_connections_panel.html' %}
+  </form>
+
+  <section class="settings-app-panel">
+    <div class="settings-app-panel-heading">
+      <div>
+        <h2>Contractor Setup Logic</h2>
+        <p>Contractor Logix can run by itself, then connect to LogixPM or Works Logix when another organisation accepts the code.</p>
+      </div>
+      <span>Standalone Ready</span>
+    </div>
+    <div class="module-connection-rule-grid">
+      <div>
+        <strong>Works Logix</strong>
+        <span>Connected work orders, dockets, schedules, updates and completion evidence flow through the organisation connection.</span>
+      </div>
+      <div>
+        <strong>Manual Work</strong>
+        <span>Jobs received by phone, email or WhatsApp remain contractor-owned and can later be linked to client records where appropriate.</span>
+      </div>
+      <div>
+        <strong>External Systems</strong>
+        <span>Contractor-side exports can be configured here later; management ledgers belong to Finance Logix and staff/payroll links belong to HR Logix.</span>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

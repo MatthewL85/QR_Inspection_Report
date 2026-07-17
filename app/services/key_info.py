@@ -19,7 +19,7 @@ from app.models.client.key_info import (
 # ─────────────────────────────────────────────────────────────────────────────
 # Original constants retained (not used directly by checks anymore, but kept
 # for backwards compatibility with any external import that might read them).
-APPROVERS = {"Property Manager", "Super Admin"}
+APPROVERS = {"Admin", "Property Manager", "Financial Controller", "Super Admin"}
 # ⬇️ Contractors can now propose (guarded below)
 PROPOSERS = {"Admin", "Property Manager", "Financial Controller", "Super Admin", "Contractor", "Admin Contractor"}
 
@@ -84,6 +84,8 @@ def _collect_role_names(user) -> Set[str]:
 
 # Accepted names (normalized)
 _APPROVERS = {
+    "admin",
+    "financial controller",
     "property manager",
     "super admin",
     "superadmin",
@@ -215,10 +217,10 @@ def _ai_enrich_from_content(content: str) -> Dict[str, Any]:
 def apply_change(change: ClientKeyInfoChange, approver, reason: Optional[str] = None) -> ClientKeyInfo:
     """
     Approve a pending change and publish it to ClientKeyInfo, synchronising
-    per-contractor shares. Only Property Manager / Super Admin can approve.
+    per-contractor shares. Admin, FC, PM and Super Admin can approve.
     """
     if not can_approve(approver):
-        raise PermissionError("Only Property Manager or Super Admin can approve.")
+        raise PermissionError("Only Admin, Financial Controller, Property Manager or Super Admin can approve.")
 
     contractor_ids = change.proposed_contractor_ids or []
     enrich = _ai_enrich_from_content(change.proposed_content)
@@ -284,10 +286,10 @@ def apply_change(change: ClientKeyInfoChange, approver, reason: Optional[str] = 
 
 def reject_change(change: ClientKeyInfoChange, approver, reason: Optional[str] = None) -> None:
     """
-    Reject a pending change. Only Property Manager / Super Admin can reject.
+    Reject a pending change. Admin, FC, PM and Super Admin can reject.
     """
     if not can_approve(approver):
-        raise PermissionError("Only Property Manager or Super Admin can reject.")
+        raise PermissionError("Only Admin, Financial Controller, Property Manager or Super Admin can reject.")
 
     change.status = "rejected"
     change.decided_by_id = approver.id

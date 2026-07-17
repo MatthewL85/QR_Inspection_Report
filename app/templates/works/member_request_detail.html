@@ -1,0 +1,204 @@
+{% extends layout_template|default('base.html') %}
+
+{% block title %}Member Request Review | Works Logix{% endblock %}
+
+{% macro status_pill(value) -%}
+  {% set key = (value or 'Pending')|lower %}
+  {% if key in ['urgent', 'emergency'] %}
+    <span class="contract-alert-pill contract-alert-warning">{{ value }}</span>
+  {% elif key in ['rejected'] %}
+    <span class="contract-alert-pill contract-alert-danger">{{ value }}</span>
+  {% elif key in ['more info requested'] %}
+    <span class="contract-alert-pill contract-alert-info">{{ value }}</span>
+  {% else %}
+    <span class="contract-alert-pill contract-alert-muted">{{ value or 'Pending' }}</span>
+  {% endif %}
+{%- endmacro %}
+
+{% block page_content %}
+{% set unit = member_request.unit %}
+{% set client = unit.client if unit else none %}
+{% set member = member_request.member %}
+{% set requested_by = member_request.requested_by %}
+{% set reporter_name = requested_by.full_name if requested_by else (member.full_name if member else 'Member / Resident') %}
+{% set reporter_email = (requested_by.email if requested_by and requested_by.email else (member.email if member and member.email else '-')) %}
+{% set reporter_phone = (
+  requested_by.mobile_phone if requested_by and requested_by.mobile_phone else
+  (requested_by.direct_phone if requested_by and requested_by.direct_phone else
+  (member.phone if member and member.phone else
+  (member.alternate_phone if member and member.alternate_phone else '-')))
+) %}
+{% set unit_number = (unit.unit_number or unit.unit_label or unit.unit_name) if unit else '-' %}
+{% set unit_postcode = (unit.postal_code if unit else none) or (client.postal_code if client else none) %}
+<div class="contract-manager app-ready-surface app-ready-surface--works"
+     data-app-source-backed="true"
+     data-app-mobile-ready="true">
+  <section class="contract-manager-hero">
+    <div>
+      <h1>Member Request Review</h1>
+      <p>Review the issue before deciding whether it should become a Works Logix work order.</p>
+    </div>
+    <a class="contract-manager-link" href="{{ url_for(dashboard_endpoint, **filters) }}">Back to {{ dashboard_label }}</a>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>{{ member_request.title }}</h2>
+        <p>{{ client.name if client else 'Unlinked development' }}{% if unit %} - Unit {{ unit_number }}{% endif %}</p>
+      </div>
+      {{ status_pill(member_request.status or 'Pending') }}
+    </div>
+
+    <div class="works-command-grid">
+      <article class="works-kpi-card"><span>Category</span><strong>{{ member_request.category or 'General' }}</strong></article>
+      <article class="works-kpi-card"><span>Urgency</span><strong>{{ member_request.urgency_level or 'Normal' }}</strong></article>
+      <article class="works-kpi-card"><span>Reported</span><strong>{{ member_request.created_at.strftime('%d %b %Y') if member_request.created_at else '-' }}</strong></article>
+      <article class="works-kpi-card"><span>Source</span><strong>{{ member_request.source_system or member_request.request_channel or 'Members Logix' }}</strong></article>
+    </div>
+
+    <div class="unit-detail-grid works-review-detail-grid mt-3">
+      <div class="unit-detail-wide">
+        <span class="unit-detail-label">Issue Details</span>
+        <strong>{{ member_request.description or '-' }}</strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Reported By</span>
+        <strong>{{ reporter_name }}</strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Reporter Phone</span>
+        <strong>
+          {% if reporter_phone != '-' %}
+            <a href="tel:{{ reporter_phone }}">{{ reporter_phone }}</a>
+          {% else %}
+            -
+          {% endif %}
+        </strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Reporter Email</span>
+        <strong>{{ reporter_email }}</strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Development</span>
+        <strong>{{ client.name if client else '-' }}</strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Unit Number</span>
+        <strong>{{ unit_number }}</strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Block</span>
+        <strong>{{ unit.block_name if unit and unit.block_name else '-' }}</strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Core</span>
+        <strong>{{ unit.core_name if unit and unit.core_name else '-' }}</strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Eircode / Postal Code</span>
+        <strong>{{ unit_postcode or '-' }}</strong>
+      </div>
+      <div class="unit-detail-wide">
+        <span class="unit-detail-label">Media / Evidence</span>
+        <strong>
+          {% set evidence_links = member_request.doc_links or member_request.photo_links or ([member_request.attachment_url] if member_request.attachment_url else []) %}
+          {% if evidence_links %}
+            <span class="works-evidence-link-list">
+              {% for evidence_link in evidence_links %}
+                <a class="works-evidence-link" href="{{ evidence_link }}" target="_blank" rel="noopener">
+                  Open attached evidence {{ loop.index }}
+                </a>
+              {% endfor %}
+            </span>
+          {% else %}
+            No media attached
+          {% endif %}
+        </strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Triage Notes</span>
+        <strong>{{ member_request.internal_notes or '-' }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Triage Decision</h2>
+        <p>Only convert requests that are appropriate for the OMC or management company to progress.</p>
+      </div>
+    </div>
+
+    <div class="works-attention-grid">
+      <article class="works-attention-card works-attention-primary">
+        <span>Valid Works Issue</span>
+        <strong>Convert to Work Order</strong>
+        <small>Use when the issue is appropriate for the OMC or management company to progress.</small>
+        {% if unit %}
+          <form method="post" action="{{ url_for(convert_endpoint, request_id=member_request.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="search" value="{{ filters.search or '' }}">
+            <input type="hidden" name="client_id" value="{{ filters.client_id or '' }}">
+            <input type="hidden" name="status" value="{{ filters.status or '' }}">
+            <label class="unit-detail-label mt-2" for="contractor_id_{{ member_request.id }}">Contractor</label>
+            <select id="contractor_id_{{ member_request.id }}" name="contractor_id" required>
+              <option value="">Select contractor</option>
+              {% for option in contractor_routing_options or [] %}
+                {% set contractor = option.contractor %}
+                <option value="{{ contractor.id }}">
+                  {{ contractor.company_name }}
+                  {% if contractor.business_type %} - {{ contractor.business_type }}{% endif %}
+                  {% if option.is_connected %} - Connected{% endif %}
+                  {% if option.is_suggested %} (Suggested: {{ option.suggestion_reason }}){% endif %}
+                  {% if option.open_work_orders %} - {{ option.open_work_orders }} open{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+            {% if not contractor_routing_options %}
+              <span class="unit-module-note">No active contractors are available for routing.</span>
+            {% endif %}
+            <button type="submit" class="btn btn-sm btn-primary mt-2" {% if not contractor_routing_options %}disabled{% endif %}>
+              Convert & Send
+            </button>
+          </form>
+        {% else %}
+          <span class="unit-module-note">A linked unit is required before conversion.</span>
+        {% endif %}
+      </article>
+
+      <article class="works-attention-card works-attention-info">
+        <span>Need More Detail</span>
+        <strong>Request Information</strong>
+        <small>Ask the member/resident for photos, access details or clarification before deciding.</small>
+        <form method="post" action="{{ url_for(triage_endpoint, request_id=member_request.id) }}" class="mt-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="request_info">
+          <input type="hidden" name="search" value="{{ filters.search or '' }}">
+          <input type="hidden" name="client_id" value="{{ filters.client_id or '' }}">
+          <input type="hidden" name="status" value="{{ filters.status or '' }}">
+          <textarea name="message" rows="4" required placeholder="What information, photos, access details or clarification is needed?"></textarea>
+          <button type="submit" class="btn btn-sm btn-outline-primary mt-2">Send Request</button>
+        </form>
+      </article>
+
+      <article class="works-attention-card works-attention-danger">
+        <span>Not Progressed</span>
+        <strong>Reject Request</strong>
+        <small>Use where the issue is outside OMC/management responsibility or cannot be progressed.</small>
+        <form method="post" action="{{ url_for(triage_endpoint, request_id=member_request.id) }}" class="mt-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="reject">
+          <input type="hidden" name="search" value="{{ filters.search or '' }}">
+          <input type="hidden" name="client_id" value="{{ filters.client_id or '' }}">
+          <input type="hidden" name="status" value="{{ filters.status or '' }}">
+          <textarea name="message" rows="4" required placeholder="Explain clearly why this request is not being converted."></textarea>
+          <button type="submit" class="btn btn-sm btn-outline-danger mt-2">Reject Request</button>
+        </form>
+      </article>
+    </div>
+  </section>
+</div>
+{% endblock %}

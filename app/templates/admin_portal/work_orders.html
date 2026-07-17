@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Works Logix | LogixPM{% endblock %}
+
+{% block page_content %}
+  {% set dashboard_endpoint = 'admin_portal.dashboard' %}
+  {% set dashboard_label = 'Dashboard' %}
+  {% set convert_endpoint = 'admin_portal.convert_member_request' %}
+  {% set request_detail_endpoint = 'admin_portal.member_request_detail' %}
+  {% set assign_endpoint = 'admin_portal.assign_work_order_contractor' %}
+  {% set request_quotes_endpoint = 'admin_portal.request_work_order_quotes' %}
+  {% set select_quote_endpoint = 'admin_portal.select_work_order_quote' %}
+  {% set reset_endpoint = 'admin_portal.work_orders' %}
+  {% set repeated_returns_endpoint = 'admin_portal.work_orders_repeated_returns' %}
+  {% set workspace_title = 'Works Logix' %}
+  {% set workspace_subtitle = 'Admin command centre for company member requests, contractor routing and GAR signals.' %}
+  {% include 'works/_command_centre.html' %}
+{% endblock %}

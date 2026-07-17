@@ -22,7 +22,7 @@ def manage_pms():
 
     pagination = q.paginate(page=page, per_page=per_page, error_out=False)
     return render_template(
-        "super_admin/user/manage_pms.html",
+        "super_admin/users/manage_pms.html",
         users=pagination,
         total=pagination.total,
     )

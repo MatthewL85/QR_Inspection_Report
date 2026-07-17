@@ -1,0 +1,58 @@
+{% set timeline_title = timeline_title|default("Workflow Lifecycle") %}
+{% set timeline_subtitle = timeline_subtitle|default("Shared Works Logix history") %}
+{% set timeline_empty = timeline_empty|default("No lifecycle events have been recorded yet.") %}
+{% set timeline_compact = timeline_compact|default(false) %}
+{% set timeline_collapsible = timeline_collapsible|default(not timeline_compact) %}
+{% set timeline_expanded = timeline_expanded|default(false) %}
+{% set timeline_event_count = timeline_events|length %}
+
+{% if timeline_collapsible %}
+<details class="works-lifecycle works-lifecycle--collapsible" {% if timeline_expanded %}open{% endif %}>
+  <summary class="works-lifecycle-summary">
+    <span>
+      <strong>{{ timeline_title }}</strong>
+      <small>{{ timeline_subtitle }}</small>
+    </span>
+    <span class="works-lifecycle-summary-meta">
+      <span>{{ timeline_event_count }} event{{ '' if timeline_event_count == 1 else 's' }}</span>
+      <span class="works-lifecycle-summary-action">View history</span>
+    </span>
+  </summary>
+{% else %}
+<div class="works-lifecycle {{ 'works-lifecycle--compact' if timeline_compact else '' }}">
+  <div class="works-lifecycle-heading">
+    <h6>{{ timeline_title }}</h6>
+    <span>{{ timeline_subtitle }}</span>
+  </div>
+{% endif %}
+  <div class="works-lifecycle-list">
+    {% for event in timeline_events %}
+      <article class="works-lifecycle-event">
+        <span class="works-lifecycle-dot"></span>
+        <div>
+          <div class="works-lifecycle-event-head">
+            <strong>{{ event.title }}</strong>
+            {% if event.status %}
+              <span class="unit-status-pill {{ 'is-active' if event.status|lower in ['active', 'approved', 'closed', 'completed', 'resolved'] else '' }}">{{ event.status }}</span>
+            {% endif %}
+          </div>
+          <p>{{ event.note }}</p>
+          <div class="works-lifecycle-meta">
+            <span>{{ event.source }}</span>
+            <span>{{ event.actor }}</span>
+            {% if event.access_context %}
+              <span class="works-lifecycle-context">{{ event.access_context|replace('_', ' ')|title }}</span>
+            {% endif %}
+            <time>{{ event.occurred_at.strftime("%d %b %Y %H:%M") if event.occurred_at else "Current state" }}</time>
+          </div>
+        </div>
+      </article>
+    {% else %}
+      <p class="unit-empty">{{ timeline_empty }}</p>
+    {% endfor %}
+  </div>
+{% if timeline_collapsible %}
+</details>
+{% else %}
+</div>
+{% endif %}

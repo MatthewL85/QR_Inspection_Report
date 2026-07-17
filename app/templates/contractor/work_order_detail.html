@@ -1,0 +1,453 @@
+{% extends 'base.html' %}
+{% block title %}{{ docket.reference }} Contractor Pack{% endblock %}
+
+{% macro status_pill(status) -%}
+  {% set key = (status or 'Assigned')|lower %}
+  {% if key in ['completed', 'closed', 'resolved'] %}
+    <span class="contract-alert-pill contract-alert-success">{{ status }}</span>
+  {% elif key in ['accepted', 'in progress', 'completion submitted'] %}
+    <span class="contract-alert-pill contract-alert-primary">{{ status }}</span>
+  {% elif key in ['returned', 'rejected'] %}
+    <span class="contract-alert-pill contract-alert-danger">{{ status }}</span>
+  {% else %}
+    <span class="contract-alert-pill contract-alert-muted">{{ status or 'Assigned' }}</span>
+  {% endif %}
+{%- endmacro %}
+
+{% block page_content %}
+{% set work_order = docket.work_order %}
+<div class="contract-manager app-ready-surface app-ready-surface--contractor"
+     data-app-mobile-ready="true"
+     data-app-source-backed="true">
+  <section class="contract-manager-hero">
+    <div>
+      <h1>{{ docket.reference }} Contractor Pack</h1>
+      <p>Review the job, location, contact and evidence information before accepting or returning it to Works Logix.</p>
+    </div>
+    <div class="contract-filter-actions">
+      <a class="contract-manager-link" href="{{ url_for('contractor.work_orders') }}">Back to Queue</a>
+      {% if docket.pdf_ready %}
+        <a class="btn btn-sm btn-primary" href="{{ url_for('contractor.work_order_pdf', work_order_id=work_order.id) }}">Download PDF</a>
+      {% else %}
+        <span class="contract-alert-pill contract-alert-muted">PDF available after acceptance</span>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>{{ work_order.title or docket.reference }}</h2>
+        <p>{{ docket.location.development }}{% if docket.location.unit != '-' %} - {{ docket.location.unit }}{% endif %}</p>
+      </div>
+      {{ status_pill(work_order.status) }}
+    </div>
+
+    <div class="works-command-grid">
+      <article class="works-kpi-card"><span>Type</span><strong>{{ docket.classification.business_type }}</strong></article>
+      <article class="works-kpi-card"><span>Request</span><strong>{{ docket.classification.request_type }}</strong></article>
+      <article class="works-kpi-card"><span>Created</span><strong>{{ docket.dates.created }}</strong></article>
+      <article class="works-kpi-card"><span>Preferred Visit</span><strong>{{ docket.dates.preferred_visit }}</strong></article>
+    </div>
+
+    <div class="unit-detail-grid contractor-pack-detail-grid">
+      <div>
+        <span class="unit-detail-label">Description</span>
+        <strong>{{ work_order.description or '-' }}</strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">GAR Context</span>
+        <strong>{{ docket.gar_history.contractor_safe_summary if docket.gar_history and docket.gar_history.contractor_safe_summary else 'No related history flagged.' }}</strong>
+      </div>
+    </div>
+
+    {% if quote_outcome %}
+      <div class="contractor-quote-outcome-panel">
+        <div class="contract-manager-section-heading">
+          <div>
+            <h2>Quote Outcome</h2>
+            {% if quote_outcome == 'selected' %}
+              <p>Your quote has been selected. This is now an assigned work order.</p>
+            {% elif quote_outcome == 'not_selected' %}
+              <p>Another quotation was selected for this work order.</p>
+            {% else %}
+              <p>This quotation request has been closed.</p>
+            {% endif %}
+          </div>
+          {% if quote_outcome == 'selected' %}
+            <span class="contract-alert-pill contract-alert-success">Selected</span>
+          {% elif quote_outcome == 'not_selected' %}
+            <span class="contract-alert-pill contract-alert-muted">Not Selected</span>
+          {% else %}
+            <span class="contract-alert-pill contract-alert-muted">Closed</span>
+          {% endif %}
+        </div>
+        {% if quote_response %}
+          <div class="works-command-grid">
+            <article class="works-kpi-card">
+              <span>Submitted</span>
+              <strong>{{ quote_response.submitted_at.strftime('%d %b %Y %H:%M') if quote_response.submitted_at else '-' }}</strong>
+            </article>
+            <article class="works-kpi-card">
+              <span>Total</span>
+              <strong>{% if quote_response.parsed_total is not none %}EUR {{ "{:,.2f}".format(quote_response.parsed_total) }}{% else %}-{% endif %}</strong>
+            </article>
+            <article class="works-kpi-card">
+              <span>Quote File</span>
+              <strong><a class="works-evidence-link" href="{{ quote_response.quote_file_path }}" target="_blank" rel="noopener">Open Quote</a></strong>
+            </article>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    {% if active_quote_invite %}
+      <div class="contract-manager-actions-row contractor-pack-actions-row">
+        <div class="contractor-pack-action-buttons">
+          <form method="post" action="{{ url_for('contractor.quote_invite_action', work_order_id=work_order.id, action='pricing') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-primary">Review / Prepare Quote</button>
+          </form>
+          <button type="button"
+                  class="contract-manager-link contractor-pack-reject-toggle"
+                  data-reject-toggle="contractor_quote_decline_panel"
+                  aria-controls="contractor_quote_decline_panel"
+                  aria-expanded="false">
+            Decline to quote
+          </button>
+        </div>
+        <div id="contractor_quote_decline_panel" class="contractor-pack-reject-panel" hidden>
+          <form method="post" action="{{ url_for('contractor.quote_invite_action', work_order_id=work_order.id, action='decline') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <textarea name="decision_feedback" rows="3" required placeholder="Tell Works Logix why you cannot quote this request."></textarea>
+            <button type="submit" class="btn btn-sm btn-outline-danger">Decline Quote Request</button>
+          </form>
+        </div>
+      </div>
+      <div class="contractor-quote-submit-panel">
+        <div class="contract-manager-section-heading">
+          <div>
+            <h2>Submit Quote</h2>
+            <p>Send pricing back to Works Logix without accepting the job yet.</p>
+          </div>
+          {% if quote_response %}
+            <span class="contract-alert-pill contract-alert-success">Submitted</span>
+          {% else %}
+            <span class="contract-alert-pill contract-alert-warning">Awaiting quote</span>
+          {% endif %}
+        </div>
+        {% if quote_response %}
+          <div class="works-command-grid">
+            <article class="works-kpi-card">
+              <span>Submitted</span>
+              <strong>{{ quote_response.submitted_at.strftime('%d %b %Y %H:%M') if quote_response.submitted_at else '-' }}</strong>
+            </article>
+            <article class="works-kpi-card">
+              <span>Total</span>
+              <strong>{% if quote_response.parsed_total is not none %}EUR {{ "{:,.2f}".format(quote_response.parsed_total) }}{% else %}-{% endif %}</strong>
+            </article>
+            <article class="works-kpi-card">
+              <span>Quote File</span>
+              <strong><a class="works-evidence-link" href="{{ quote_response.quote_file_path }}" target="_blank" rel="noopener">Open Quote</a></strong>
+            </article>
+          </div>
+          {% if quote_response.parsed_summary or quote_response.decision_note %}
+            <div class="unit-detail-grid contractor-pack-detail-grid">
+              <div><span class="unit-detail-label">Summary</span><strong>{{ quote_response.parsed_summary or '-' }}</strong></div>
+              <div><span class="unit-detail-label">Note</span><strong>{{ quote_response.decision_note or '-' }}</strong></div>
+            </div>
+          {% endif %}
+        {% endif %}
+        <form method="post"
+              action="{{ url_for('contractor.submit_quote', work_order_id=work_order.id) }}"
+              enctype="multipart/form-data"
+              class="contractor-quote-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div>
+            <label class="unit-detail-label" for="quote_total">Quote Total</label>
+            <input id="quote_total" name="quote_total" type="number" min="0" step="0.01" placeholder="0.00">
+          </div>
+          <div>
+            <label class="unit-detail-label" for="quote_file">Main Quote File</label>
+            <input id="quote_file" name="quote_file" type="file" required accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.webp">
+          </div>
+          <div>
+            <label class="unit-detail-label" for="quote_supporting_files">Supporting Files</label>
+            <input id="quote_supporting_files" name="quote_supporting_files" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.webp,.mp4,.mov,.webm">
+          </div>
+          <div class="contractor-quote-form-wide">
+            <label class="unit-detail-label" for="quote_summary">Quote Summary</label>
+            <textarea id="quote_summary" name="quote_summary" rows="3" placeholder="Briefly summarise the quotation, exclusions, lead time or assumptions."></textarea>
+          </div>
+          <div class="contractor-quote-form-wide">
+            <label class="unit-detail-label" for="quote_note">Contractor Note</label>
+            <textarea id="quote_note" name="quote_note" rows="3" placeholder="Optional note for the management team."></textarea>
+          </div>
+          <div class="contractor-quote-submit-actions">
+            <button type="submit" class="btn btn-sm btn-primary">{{ 'Replace Submitted Quote' if quote_response else 'Submit Quote' }}</button>
+          </div>
+        </form>
+      </div>
+    {% endif %}
+
+    {% if can_manage_work_order and not active_quote_invite and docket.status_key in ['assigned', 'open'] %}
+      <div class="contract-manager-actions-row contractor-pack-actions-row">
+        <div class="contractor-pack-action-buttons">
+          <form method="post" action="{{ url_for('contractor.update_work_order', work_order_id=work_order.id, action='accept') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="return_to" value="detail">
+            <button type="submit" class="btn btn-sm btn-primary">Accept Work Order</button>
+          </form>
+          <button type="button"
+                  class="contract-manager-link contractor-pack-reject-toggle"
+                  data-reject-toggle="contractor_reject_panel"
+                  aria-controls="contractor_reject_panel"
+                  aria-expanded="false">
+            Cannot accept this job?
+          </button>
+        </div>
+        <div id="contractor_reject_panel" class="contractor-pack-reject-panel" hidden>
+          <form method="post" action="{{ url_for('contractor.update_work_order', work_order_id=work_order.id, action='reject') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="return_to" value="detail">
+            <textarea name="completion_notes" rows="3" required placeholder="Tell Works Logix why this cannot be accepted."></textarea>
+            <button type="submit" class="btn btn-sm btn-outline-danger">Reject Work Order</button>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Location & Access</h2>
+        <p>Site information visible to the assigned contractor for this job only.</p>
+      </div>
+    </div>
+    <div class="unit-detail-grid contractor-pack-detail-grid">
+      <div><span class="unit-detail-label">Development</span><strong>{{ docket.location.development }}</strong></div>
+      <div><span class="unit-detail-label">Property</span><strong>{{ docket.location.property }}</strong></div>
+      <div><span class="unit-detail-label">Unit</span><strong>{{ docket.location.unit }}</strong></div>
+      <div><span class="unit-detail-label">Block / Core</span><strong>{{ docket.location.block }}{% if docket.location.core != '-' %} / {{ docket.location.core }}{% endif %}</strong></div>
+      <div>
+        <span class="unit-detail-label">Address</span>
+        <strong>
+          {% for line in docket.location.address_lines %}
+            {{ line }}{% if not loop.last %}<br>{% endif %}
+          {% else %}
+            -
+          {% endfor %}
+        </strong>
+      </div>
+      <div><span class="unit-detail-label">Access Notes</span><strong>{{ docket.location.access_notes or '-' }}</strong></div>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Contacts</h2>
+        <p>Operational contacts needed to arrange and complete the works safely.</p>
+      </div>
+    </div>
+    <div class="works-command-grid">
+      {% for contact in docket.contacts %}
+        <article class="works-kpi-card">
+          <span>{{ contact.label }}</span>
+          <strong>{{ contact.name }}</strong>
+          <small>{{ contact.phone }}{% if contact.email != '-' %}<br>{{ contact.email }}{% endif %}{% if contact.note != '-' %}<br>{{ contact.note }}{% endif %}</small>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Request & Evidence</h2>
+        <p>Source details from Members Logix, Works Logix and Contractor Logix.</p>
+      </div>
+    </div>
+    <div class="unit-detail-grid contractor-pack-detail-grid">
+      <div><span class="unit-detail-label">Member Request</span><strong>{{ docket.request_context.member_request_title }}</strong></div>
+      <div><span class="unit-detail-label">Urgency</span><strong>{{ docket.request_context.member_request_urgency }}</strong></div>
+      <div><span class="unit-detail-label">Category</span><strong>{{ docket.request_context.member_request_category }}</strong></div>
+      <div><span class="unit-detail-label">External Ref</span><strong>{{ docket.classification.external_reference }}</strong></div>
+    </div>
+    <div class="contract-manager-table-wrap contractor-pack-table-wrap mt-3">
+      <table class="contract-manager-table">
+        <thead>
+          <tr><th>Source</th><th>Evidence</th><th>Reference</th></tr>
+        </thead>
+        <tbody>
+          {% for item in docket.evidence_items %}
+            <tr>
+              <td>{{ item.source }}</td>
+              <td>
+                {{ item.label }}
+                {% if item.reference_type and item.reference_type != "note" %}
+                  <span class="contract-alert-pill contract-alert-muted">{{ item.reference_type|title }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if item.reference_url %}
+                  <a class="works-evidence-link" href="{{ item.reference_url }}" target="_blank" rel="noopener">
+                    Open Evidence
+                  </a>
+                  {% if item.is_image %}
+                    <a class="contractor-evidence-preview" href="{{ item.reference_url }}" target="_blank" rel="noopener" aria-label="Open image evidence">
+                      <img src="{{ item.reference_url }}" alt="{{ item.label }}">
+                    </a>
+                  {% elif item.is_video %}
+                    <a class="contractor-evidence-preview contractor-evidence-video" href="{{ item.reference_url }}" target="_blank" rel="noopener">
+                      Video Evidence
+                    </a>
+                  {% endif %}
+                {% else %}
+                  {{ item.display_reference or "-" }}
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="3" class="contract-manager-empty">No images, videos or document references are linked yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel" id="updates">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Updates</h2>
+        <p>Progress and completion updates, visibility controlled for Contractor Logix, Works Logix and Members Logix.</p>
+      </div>
+    </div>
+    {% if docket.status_key not in ['closed', 'completed', 'resolved', 'cancelled'] %}
+      <form method="post"
+            action="{{ url_for('contractor.add_progress_update', work_order_id=work_order.id) }}"
+            enctype="multipart/form-data"
+            class="contractor-progress-form"
+            data-app-action="contractor-progress-update"
+            data-app-requires-online="true"
+            data-app-requires-csrf="true"
+            data-app-offline-queue="false"
+            data-app-source-record="work_order">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="return_to" value="detail">
+        <div class="contractor-progress-note">
+          <label class="unit-detail-label" for="progress_note">Update Note</label>
+          <textarea id="progress_note" name="progress_note" rows="6" required placeholder="Add a progress note, delay note, access issue or completion summary."></textarea>
+        </div>
+        <div class="contractor-progress-actions">
+          <div>
+            <label class="unit-detail-label" for="update_type">Update Type</label>
+            <select id="update_type" name="update_type" required data-completion-visibility-target="visibility_scope">
+              <option value="" selected disabled>Select update type</option>
+              <option value="progress">Progress Update</option>
+              <option value="completion">Completion</option>
+            </select>
+          </div>
+          <div>
+            <label class="unit-detail-label" for="visibility_scope">Visibility</label>
+            <select id="visibility_scope" name="visibility_scope" required>
+              <option value="" selected disabled>Select visibility</option>
+              <option value="management">Contractor + Management</option>
+              <option value="contractor_internal">Contractor Only</option>
+              <option value="reporter_visible">All Parties</option>
+            </select>
+          </div>
+          <div>
+            <label class="unit-detail-label" for="progress_files">Photos / Videos / Documents</label>
+            <input id="progress_files"
+                   type="file"
+                   name="progress_files"
+                   multiple
+                   accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx"
+                   data-app-media-context="contractor_progress_update"
+                   data-app-media-source-model="WorkOrderProgressUpdate">
+          </div>
+          <button type="submit" class="btn btn-sm btn-primary" data-update-submit>Add Update</button>
+        </div>
+      </form>
+    {% endif %}
+    <div class="contract-manager-table-wrap contractor-pack-table-wrap mt-3">
+      <table class="contract-manager-table">
+        <thead>
+          <tr><th>Date</th><th>Type</th><th>Visibility</th><th>Update</th><th>Evidence</th></tr>
+        </thead>
+        <tbody>
+          {% for update in progress_updates %}
+            <tr>
+              <td>{{ update.created_at.strftime('%d %b %Y %H:%M') if update.created_at else '-' }}</td>
+              <td><span class="contract-alert-pill contract-alert-muted">{{ update.update_type_label }}</span></td>
+              <td><span class="contract-alert-pill contract-alert-muted">{{ update.visibility_label }}</span></td>
+              <td>{{ update.note }}</td>
+              <td>
+                {% if update.evidence_links %}
+                  {% for evidence_link in update.evidence_links %}
+                    <a class="works-evidence-link" href="{{ evidence_link }}" target="_blank" rel="noopener">Open {{ loop.index }}</a>
+                  {% endfor %}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5" class="contract-manager-empty">No updates have been added yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    {% set timeline_events = docket.lifecycle %}
+    {% set timeline_title = "Work Order Lifecycle" %}
+    {% include "works/_lifecycle_timeline.html" %}
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+  document.addEventListener("change", function (event) {
+    var source = event.target;
+    if (!source || source.name !== "update_type") {
+      return;
+    }
+    var targetId = source.getAttribute("data-completion-visibility-target");
+    var visibility = targetId ? document.getElementById(targetId) : null;
+    if (visibility && source.value === "completion") {
+      visibility.value = "reporter_visible";
+      visibility.dataset.userChanged = "false";
+    }
+    var form = source.closest("form");
+    var submitButton = form ? form.querySelector("[data-update-submit]") : null;
+    if (submitButton) {
+      submitButton.textContent = source.value === "completion" ? "Submit Completion Notes" : "Add Update";
+    }
+  });
+
+  document.addEventListener("change", function (event) {
+    if (event.target && event.target.name === "visibility_scope") {
+      event.target.dataset.userChanged = "true";
+    }
+  });
+
+  document.addEventListener("click", function (event) {
+    var toggle = event.target.closest("[data-reject-toggle]");
+    if (!toggle) {
+      return;
+    }
+    var panel = document.getElementById(toggle.getAttribute("data-reject-toggle"));
+    if (!panel) {
+      return;
+    }
+    panel.hidden = !panel.hidden;
+    toggle.setAttribute("aria-expanded", panel.hidden ? "false" : "true");
+  });
+</script>
+{% endblock %}

@@ -6,13 +6,34 @@ from app.models import CapexRequest, Client, ManualTask, Inspection, Equipment
 from app.helpers.decorators import login_required
 from flask import jsonify
 from sqlalchemy import extract
+from app.services.works.workflow_service import (
+    WorksFilters,
+    assign_contractor_to_work_order,
+    build_command_centre,
+    build_contractor_routing_options,
+    convert_member_request_to_work_order,
+    get_member_request_for_triage,
+    request_quotes_for_work_order,
+    select_quote_response_for_work_order,
+    update_member_request_triage,
+    works_command_centre_payload,
+)
+from app.services.gar import attach_gar_capability_readiness, build_gar_inquiry_response, build_operational_digest
 
 property_manager_bp = Blueprint('property_manager', __name__)
+
+
+def _session_user_full_name() -> str:
+    session_user = session.get('user') or {}
+    return session_user.get('full_name') or session_user.get('name') or 'Property Manager'
+
 
 @property_manager_bp.route('/dashboard')
 @login_required(role='Property Manager')
 def pm_dashboard():
-    full_name = session['user']['full_name']
+    full_name = _session_user_full_name()
+    company_id = session.get('company_id') or (session.get('user') or {}).get('company_id')
+    gar_question = (request.args.get("gar_question") or "").strip()
 
     # ✅ Get all clients assigned to this manager
     assigned_clients = Client.query.filter_by(assigned_pm_id=session.get('user_id')).all()
@@ -34,15 +55,345 @@ def pm_dashboard():
         ManualTask.client_id.in_(client_ids),
         ManualTask.status == 'Missed'
     ).all()
+    works_context = (
+        build_command_centre(
+            company_id=company_id,
+            filters=WorksFilters(allowed_client_ids=tuple(client_ids)),
+        )
+        if company_id else {"stats": {}, "operational_queues": {}}
+    )
+    works_gar_contractor_quality = (
+        works_context.get("gar_works_intelligence", {})
+        .get("pattern_memory", {})
+        .get("patterns", {})
+        .get("contractor_quality", [])
+    )
+    gar_inquiry_response = None
+    if gar_question:
+        gar_inquiry_response = build_gar_inquiry_response(
+            gar_question,
+            role_context="property_manager",
+            company_id=company_id,
+            user_id=session.get('user_id'),
+            allowed_client_ids=tuple(client_ids),
+            execute_source_query=True,
+        )
 
     return render_template('property_manager/property_manager_dashboard.html',
         capex_count=capex_count,
+        full_name=full_name,
+        company_id=company_id,
         inspection_count=inspection_count,
         client_count=len(assigned_clients),
         equipment=equipment,
         missed_tasks=missed_tasks,
-        missed_tasks_count=len(missed_tasks)
+        missed_tasks_count=len(missed_tasks),
+        works_stats=works_context.get("stats", {}),
+        works_operational_queues=works_context.get("operational_queues", {}),
+        works_next_actions=works_context.get("next_actions", []),
+        works_gar_contractor_quality=works_gar_contractor_quality,
+        gar_question=gar_question,
+        gar_inquiry_response=gar_inquiry_response,
     )
+
+
+def _pm_client_ids():
+    return tuple(
+        client.id
+        for client in Client.query.filter_by(assigned_pm_id=session.get('user_id')).all()
+    )
+
+
+def _works_filter_args():
+    return {
+        key: value
+        for key in ("search", "client_id", "status")
+        if (value := (request.form.get(key) or request.args.get(key) or "").strip())
+    }
+
+
+@property_manager_bp.route('/work-orders', methods=['GET'])
+@login_required(role='Property Manager')
+def work_orders():
+    company_id = session.get('company_id')
+    if not company_id:
+        flash("Company context is missing. Please log in again.", "danger")
+        return redirect(url_for('auth.login'))
+
+    filters = WorksFilters(
+        search=request.args.get("search", "").strip(),
+        client_id=request.args.get("client_id", type=int),
+        status=request.args.get("status", "").strip(),
+        allowed_client_ids=_pm_client_ids(),
+    )
+    data = build_command_centre(company_id=company_id, filters=filters, include_gar_history=True)
+    return render_template(
+        'property_manager/work_orders.html',
+        filters=filters,
+        **data,
+    )
+
+
+@property_manager_bp.route('/work-orders/feed.json', methods=['GET'])
+@login_required(role='Property Manager')
+def work_orders_feed():
+    company_id = session.get('company_id')
+    if not company_id:
+        return jsonify({"error": "company_context_missing"}), 403
+
+    filters = WorksFilters(
+        search=request.args.get("search", "").strip(),
+        client_id=request.args.get("client_id", type=int),
+        status=request.args.get("status", "").strip(),
+        allowed_client_ids=_pm_client_ids(),
+    )
+    data = build_command_centre(company_id=company_id, filters=filters, include_gar_history=True)
+    return jsonify(works_command_centre_payload(data, filters, role_context="property_manager"))
+
+
+@property_manager_bp.route('/work-orders/repeated-returns', methods=['GET'])
+@login_required(role='Property Manager')
+def work_orders_repeated_returns():
+    company_id = session.get('company_id')
+    if not company_id:
+        flash("Company context is missing. Please log in again.", "danger")
+        return redirect(url_for('auth.login'))
+
+    filters = WorksFilters(
+        search=request.args.get("search", "").strip(),
+        client_id=request.args.get("client_id", type=int),
+        status=request.args.get("status", "").strip(),
+        allowed_client_ids=_pm_client_ids(),
+    )
+    data = build_command_centre(company_id=company_id, filters=filters, include_gar_history=True)
+    return render_template(
+        "works/repeated_returns.html",
+        layout_template="base.html",
+        dashboard_endpoint="property_manager.pm_dashboard",
+        dashboard_label="Dashboard",
+        command_centre_endpoint="property_manager.work_orders",
+        workspace_title="Repeated Returns",
+        workspace_subtitle="Management review for contractor completions returned more than once.",
+        filters=filters,
+        **data,
+    )
+
+
+@property_manager_bp.route('/gar/feed.json', methods=['GET'])
+@login_required(role='Property Manager')
+def gar_feed():
+    company_id = session.get('company_id')
+    if not company_id:
+        return jsonify({"error": "company_context_missing"}), 403
+
+    payload = build_operational_digest(
+        company_id=company_id,
+        role_context="property_manager",
+        allowed_client_ids=_pm_client_ids(),
+    )
+    return jsonify(attach_gar_capability_readiness(
+        payload,
+        role_context="property_manager",
+        question=(request.args.get("question") or "").strip() or None,
+    ))
+
+
+@property_manager_bp.route('/gar/inquiry.json', methods=['GET'])
+@login_required(role='Property Manager')
+def gar_inquiry():
+    company_id = session.get('company_id')
+    if not company_id:
+        return jsonify({"error": "company_context_missing"}), 403
+
+    return jsonify(build_gar_inquiry_response(
+        (request.args.get("question") or request.args.get("gar_question") or "").strip(),
+        role_context="property_manager",
+        company_id=company_id,
+        user_id=session.get('user_id'),
+        allowed_client_ids=_pm_client_ids(),
+        execute_source_query=True,
+    ))
+
+
+@property_manager_bp.route('/work-orders/member-requests/<int:request_id>/convert', methods=['POST'])
+@login_required(role='Property Manager')
+def convert_member_request(request_id):
+    company_id = session.get('company_id')
+    if not company_id:
+        flash("Company context is missing. Please log in again.", "danger")
+        return redirect(url_for('auth.login'))
+    contractor_id = request.form.get("contractor_id", type=int)
+    if not contractor_id:
+        flash("Select a contractor before converting the request to a work order.", "warning")
+        return redirect(url_for('property_manager.member_request_detail', request_id=request_id, **_works_filter_args()))
+
+    work_order = convert_member_request_to_work_order(
+        request_id=request_id,
+        company_id=company_id,
+        created_by_id=session.get('user_id'),
+        contractor_id=contractor_id,
+        allowed_client_ids=_pm_client_ids(),
+        access_context="assigned_property_manager",
+    )
+    if not work_order:
+        flash("That request could not be converted for your assigned developments.", "danger")
+        return redirect(url_for('property_manager.work_orders', **_works_filter_args()))
+
+    flash("Member request converted and sent to the selected contractor.", "success")
+    return redirect(url_for('property_manager.work_orders', **_works_filter_args()))
+
+
+@property_manager_bp.route('/work-orders/member-requests/<int:request_id>', methods=['GET'])
+@login_required(role='Property Manager')
+def member_request_detail(request_id):
+    company_id = session.get('company_id')
+    if not company_id:
+        flash("Company context is missing. Please log in again.", "danger")
+        return redirect(url_for('auth.login'))
+
+    member_request = get_member_request_for_triage(
+        request_id=request_id,
+        company_id=company_id,
+        allowed_client_ids=_pm_client_ids(),
+    )
+    if not member_request:
+        flash("That request is not available for your assigned developments.", "danger")
+        return redirect(url_for('property_manager.work_orders', **_works_filter_args()))
+
+    return render_template(
+        "works/member_request_detail.html",
+        layout_template="base.html",
+        dashboard_endpoint="property_manager.work_orders",
+        dashboard_label="Works Logix",
+        convert_endpoint="property_manager.convert_member_request",
+        triage_endpoint="property_manager.update_member_request_triage",
+        member_request=member_request,
+        contractor_routing_options=build_contractor_routing_options(
+            member_request=member_request,
+            company_id=company_id,
+        ),
+        filters=_works_filter_args(),
+    )
+
+
+@property_manager_bp.route(
+    '/work-orders/member-requests/<int:request_id>/triage',
+    methods=['POST'],
+    endpoint='update_member_request_triage',
+)
+@login_required(role='Property Manager')
+def update_member_request_triage_route(request_id):
+    company_id = session.get('company_id')
+    if not company_id:
+        flash("Company context is missing. Please log in again.", "danger")
+        return redirect(url_for('auth.login'))
+
+    updated = update_member_request_triage(
+        request_id=request_id,
+        company_id=company_id,
+        reviewed_by_id=session.get('user_id'),
+        action=request.form.get("action", ""),
+        message=request.form.get("message", ""),
+        allowed_client_ids=_pm_client_ids(),
+        access_context="assigned_property_manager",
+    )
+    if not updated:
+        flash("That member request could not be updated.", "danger")
+        return redirect(url_for('property_manager.work_orders', **_works_filter_args()))
+
+    flash("Member request triage response sent.", "success")
+    return redirect(url_for('property_manager.work_orders', **_works_filter_args()))
+
+
+@property_manager_bp.route('/work-orders/<int:work_order_id>/assign-contractor', methods=['POST'])
+@login_required(role='Property Manager')
+def assign_work_order_contractor(work_order_id):
+    company_id = session.get('company_id')
+    contractor_id = request.form.get("contractor_id", type=int)
+    if not company_id or not contractor_id:
+        flash("Choose a contractor before assigning this work order.", "warning")
+        return redirect(url_for('property_manager.work_orders', **_works_filter_args()))
+
+    work_order = assign_contractor_to_work_order(
+        work_order_id=work_order_id,
+        company_id=company_id,
+        contractor_id=contractor_id,
+        allowed_client_ids=_pm_client_ids(),
+        assigned_by_id=session.get('user_id'),
+        access_context="assigned_property_manager",
+    )
+    if not work_order:
+        flash("That work order could not be assigned for your developments.", "danger")
+        return redirect(url_for('property_manager.work_orders', **_works_filter_args()))
+
+    flash("Work order assigned to contractor.", "success")
+    return redirect(url_for('property_manager.work_orders', **_works_filter_args()))
+
+
+@property_manager_bp.route('/work-orders/<int:work_order_id>/request-quotes', methods=['POST'])
+@login_required(role='Property Manager')
+def request_work_order_quotes(work_order_id):
+    company_id = session.get('company_id')
+    if not company_id:
+        flash("Company context is missing. Please log in again.", "danger")
+        return redirect(url_for('auth.login'))
+
+    quote_deadline = None
+    quote_deadline_raw = (request.form.get("quote_deadline") or "").strip()
+    if quote_deadline_raw:
+        try:
+            quote_deadline = datetime.strptime(quote_deadline_raw, "%Y-%m-%d")
+        except ValueError:
+            flash("Enter a valid quote deadline.", "warning")
+            return redirect(url_for('property_manager.work_orders', **_works_filter_args()))
+
+    summary = request_quotes_for_work_order(
+        work_order_id=work_order_id,
+        company_id=company_id,
+        contractor_ids=request.form.getlist("contractor_ids", type=int),
+        requested_by_id=session.get('user_id'),
+        allowed_client_ids=_pm_client_ids(),
+        access_context="assigned_property_manager",
+        quote_deadline=quote_deadline,
+        notes=(request.form.get("quote_notes") or "").strip(),
+        visible_to_directors=bool(request.form.get("visible_to_directors")),
+    )
+    if not summary.get("work_order"):
+        flash("That work order could not be found for your assigned developments.", "danger")
+        return redirect(url_for('property_manager.work_orders', **_works_filter_args()))
+
+    if summary["created"]:
+        flash(f"Quotation request sent to {summary['created']} contractor user(s).", "success")
+    elif summary["skipped_existing"]:
+        flash("Those quotation requests already exist.", "info")
+    else:
+        flash("No connected contractor users could receive that quotation request.", "warning")
+    return redirect(url_for('property_manager.work_orders', queue="quote_requests", **_works_filter_args()))
+
+
+@property_manager_bp.route('/work-orders/<int:work_order_id>/quotes/<int:quote_response_id>/select', methods=['POST'])
+@login_required(role='Property Manager')
+def select_work_order_quote(work_order_id, quote_response_id):
+    company_id = session.get('company_id')
+    if not company_id:
+        flash("Company context is missing. Please log in again.", "danger")
+        return redirect(url_for('auth.login'))
+
+    quote_response = select_quote_response_for_work_order(
+        work_order_id=work_order_id,
+        quote_response_id=quote_response_id,
+        company_id=company_id,
+        selected_by_id=session.get('user_id'),
+        decision_note=(request.form.get("decision_note") or "").strip(),
+        allowed_client_ids=_pm_client_ids(),
+        access_context="assigned_property_manager",
+    )
+    if not quote_response:
+        flash("That quotation could not be selected for your assigned developments.", "danger")
+        return redirect(url_for('property_manager.work_orders', queue="quote_requests", **_works_filter_args()))
+
+    flash("Quotation selected and the contractor has been assigned.", "success")
+    return redirect(url_for('property_manager.work_orders', queue="open", **_works_filter_args()))
 
 @property_manager_bp.route('/add-task', methods=['GET', 'POST'])
 @login_required(role='Property Manager')
@@ -51,7 +402,7 @@ def add_manual_task():
         title = request.form.get('title')
         client = request.form.get('client')
         date = request.form.get('date')
-        created_by = session['user']['full_name']
+        created_by = _session_user_full_name()
 
         new_task = ManualTask(
             title=title,
@@ -67,9 +418,9 @@ def add_manual_task():
         return redirect(url_for('property_manager.pm_dashboard'))
 
     # For the dropdown list
-    full_name = session['user']['full_name']
+    full_name = _session_user_full_name()
     clients = Client.query.filter_by(assigned_pm_id=session.get('user_id')).all()
-    return render_template('add_manual_task.html', clients=clients)
+    return render_template('add_task.html', clients=clients)
 
 @property_manager_bp.route('/complete-task', methods=['POST'])
 @login_required(role='Property Manager')
@@ -106,7 +457,7 @@ def edit_task():
         flash('Task updated successfully!', 'success')
         return redirect(url_for('property_manager.pm_dashboard'))
 
-    full_name = session['user']['full_name']
+    full_name = _session_user_full_name()
     clients = Client.query.filter_by(assigned_pm_id=session.get('user_id')).all()
     return render_template('edit_task.html', task=task, clients=clients)
 
@@ -114,7 +465,7 @@ def edit_task():
 @property_manager_bp.route('/maintenance-calendar')
 @login_required(role='Property Manager')
 def property_manager_maintenance_planner():
-    full_name = session['user']['full_name']
+    full_name = _session_user_full_name()
     assigned_clients = Client.query.filter_by(assigned_pm_id=session.get('user_id')).all()
     client_ids = [c.id for c in assigned_clients]
     client_names = [c.name for c in assigned_clients]

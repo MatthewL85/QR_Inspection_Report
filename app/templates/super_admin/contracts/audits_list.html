@@ -40,8 +40,7 @@
             </div>
             <div class="col-sm-4 d-flex align-items-end">
               <button class="btn btn-primary me-2">Filter</button>
-              {# Keep super_admin_audits.list because your route blueprint is super_admin_audits with endpoint "list" #}
-              <a href="{{ url_for('super_admin_audits.list') }}" class="btn btn-outline-secondary">Reset</a>
+              <a href="{{ url_for('super_admin.contract_audits_list') }}" class="btn btn-outline-secondary">Reset</a>
             </div>
           </form>
 
@@ -150,15 +149,15 @@
           <nav class="mt-3">
             <ul class="pagination mb-0">
               <li class="page-item {% if not audits.has_prev %}disabled{% endif %}">
-                <a class="page-link" href="{{ url_for('super_admin_audits.list', page=audits.prev_num, **filters) }}">Prev</a>
+                <a class="page-link" href="{{ url_for('super_admin.contract_audits_list', page=audits.prev_num, **filters) }}">Prev</a>
               </li>
               {% for p in range(1, audits.pages + 1) %}
                 <li class="page-item {% if p == audits.page %}active{% endif %}">
-                  <a class="page-link" href="{{ url_for('super_admin_audits.list', page=p, **filters) }}">{{ p }}</a>
+                  <a class="page-link" href="{{ url_for('super_admin.contract_audits_list', page=p, **filters) }}">{{ p }}</a>
                 </li>
               {% endfor %}
               <li class="page-item {% if not audits.has_next %}disabled{% endif %}">
-                <a class="page-link" href="{{ url_for('super_admin_audits.list', page=audits.next_num, **filters) }}">Next</a>
+                <a class="page-link" href="{{ url_for('super_admin.contract_audits_list', page=audits.next_num, **filters) }}">Next</a>
               </li>
             </ul>
           </nav>

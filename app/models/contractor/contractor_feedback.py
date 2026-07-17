@@ -26,6 +26,7 @@ class ContractorFeedback(db.Model):
 
     # 💬 Feedback Notes
     comments = db.Column(db.Text, nullable=True)
+    evidence_reference = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_anonymous = db.Column(db.Boolean, default=False)
     visibility_scope = db.Column(db.String(100), default='Admin,PM')

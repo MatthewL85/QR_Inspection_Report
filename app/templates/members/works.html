@@ -1,0 +1,470 @@
+{% extends 'base.html' %}
+{% block title %}Members Works - LogixPM{% endblock %}
+
+{% macro member_evidence_summary(pack) -%}
+  {% if pack and pack.submitted %}
+    <div class="works-member-evidence">
+      <span class="unit-module-note">
+        Evidence: {{ (pack.quality_status or 'submitted')|replace('_', ' ')|title }}
+        {% if pack.evidence_reference_type and pack.evidence_reference_type != 'none' %}
+          - {{ pack.evidence_reference_type|replace('_', ' ')|title }}
+        {% endif %}
+      </span>
+      <small>{{ pack.member_review_hint or 'Completion submitted for review.' }}</small>
+      {% if pack.notes_excerpt %}
+        <small>{{ pack.notes_excerpt }}</small>
+      {% endif %}
+      {% if pack.evidence_reference %}
+        <a class="user-manager-action-link" href="{{ pack.evidence_reference }}" target="_blank" rel="noopener">View evidence</a>
+      {% endif %}
+    </div>
+  {% else %}
+    <span class="unit-module-note">Completion evidence not submitted yet</span>
+  {% endif %}
+{%- endmacro %}
+
+{% block page_content %}
+<div class="contract-manager app-ready-surface app-ready-surface--members"
+     data-app-mobile-ready="true"
+     data-app-safe-area="required"
+     data-app-source-backed="true"
+     data-app-offline="static-shell-only">
+  <section class="contract-manager-hero">
+    <div>
+      <h1>Members Works</h1>
+      <p>Maintenance requests, linked work orders and reopen requests connected to Works Logix.</p>
+    </div>
+    <div class="members-works-actions">
+      <a class="contract-manager-button" href="#submit-request">New Request</a>
+      <a class="contract-manager-link" href="{{ url_for('members.dashboard') }}">Back to My Units</a>
+    </div>
+  </section>
+
+  {% set gar_ask_title = 'Ask GAR' %}
+  {% set gar_ask_subtitle = 'Source-backed answers from your linked units, requests and visible Works Logix records only.' %}
+  {% set gar_ask_placeholder = 'Ask what needs attention, what is closed, or what feedback is needed' %}
+  {% set gar_ask_action = url_for('members.works') %}
+  {% set gar_ask_clear_url = url_for('members.works') %}
+  {% include 'gar/_ask_panel.html' %}
+
+  <nav class="members-works-mobile-nav app-surface-nav" aria-label="Members Works actions" data-app-surface="members-works">
+    <a href="#submit-request">New Request</a>
+    <a href="#my-requests">My Requests</a>
+    <a href="#open-work-orders">Live Works</a>
+    <a href="#closed-work-orders">Closed</a>
+    <a href="#reopen-requests">Reopen</a>
+  </nav>
+
+  <section class="works-command-grid">
+    <article class="works-kpi-card">
+      <span>Linked Units</span>
+      <strong>{{ memberships|length }}</strong>
+    </article>
+    <article class="works-kpi-card">
+      <span>Submitted Requests</span>
+      <strong class="text-primary">{{ member_requests|length }}</strong>
+    </article>
+    <article class="works-kpi-card">
+      <span>Open Work Orders</span>
+      <strong>{{ open_work_orders|length }}</strong>
+    </article>
+    <article class="works-kpi-card">
+      <span>Reopen Requests</span>
+      <strong>{{ reopen_requests|length }}</strong>
+    </article>
+  </section>
+
+  <section class="works-attention-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Needs Attention</h2>
+        <p>Clear actions from Members Logix, Works Logix and GAR lifecycle visibility.</p>
+      </div>
+    </div>
+    <div class="works-attention-grid">
+      {% for queue in member_attention_queues %}
+        <a class="works-attention-card works-attention-{{ queue.tone }}" href="#{{ queue.anchor }}">
+          <span>{{ queue.label }}</span>
+          <strong>{{ queue.count }}</strong>
+          <small>{{ queue.summary }}</small>
+        </a>
+      {% endfor %}
+    </div>
+    {% set works_next_actions_list = member_next_actions %}
+    {% set works_next_actions_subtitle = 'Prioritised for your linked units' %}
+    {% include 'works/_next_actions.html' %}
+  </section>
+
+  <section class="contract-manager-panel" id="submit-request">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Submit Maintenance Request</h2>
+        <p>Requests are sent into Works Logix for PM triage and GAR context.</p>
+      </div>
+    </div>
+    <form method="post"
+          action="{{ url_for('members.create_maintenance_request') }}"
+          enctype="multipart/form-data"
+          class="contract-manager-filters works-request-form"
+          data-app-action="member-maintenance-request"
+          data-app-requires-online="true"
+          data-app-requires-csrf="true"
+          data-app-offline-queue="false"
+          data-app-source-record="unit">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>
+        Unit
+        <select name="unit_id" required>
+          <option value="">Select linked unit</option>
+          {% for link in memberships %}
+            {% if link.unit %}
+              <option value="{{ link.unit.id }}">
+                {{ link.unit.client.name if link.unit.client else 'Development' }} - {{ link.unit.unit_name or link.unit.unit_label }}
+              </option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        Category
+        <select name="category">
+          <option value="">General</option>
+          <option value="Plumbing">Plumbing</option>
+          <option value="Electrical">Electrical</option>
+          <option value="Access">Access</option>
+          <option value="Cleaning">Cleaning</option>
+          <option value="Safety">Safety</option>
+          <option value="Other">Other</option>
+        </select>
+      </label>
+      <label>
+        Urgency
+        <select name="urgency_level">
+          <option value="Normal">Normal</option>
+          <option value="Urgent">Urgent</option>
+          <option value="Emergency">Emergency</option>
+        </select>
+      </label>
+      <label>
+        Title
+        <input type="text" name="title" placeholder="Short issue title" required>
+      </label>
+      <label class="works-form-wide">
+        Details
+        <textarea name="description" rows="3" placeholder="Describe the issue, access notes and any safety concerns." required></textarea>
+      </label>
+      <label>
+        Attach Photos, Videos or Documents
+        <input type="file"
+               name="media_file"
+               multiple
+               accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx"
+               data-app-media-context="member_maintenance_request"
+               data-app-media-source-model="MaintenanceRequest">
+      </label>
+      <label>
+        Or Paste Evidence Link
+        <input type="url"
+               name="media_reference"
+               placeholder="Paste a secure link if you have photos, video or documents"
+               data-app-media-reference="true"
+               data-app-media-context="member_maintenance_request"
+               data-app-media-source-model="MediaFile"
+               data-app-direct-upload="true">
+      </label>
+      <div class="works-form-actions">
+        <button type="submit" class="contract-manager-button">Submit Request</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="contract-manager-panel" id="my-requests">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>My Requests</h2>
+        <p>{{ member_requests|length }} request{{ '' if member_requests|length == 1 else 's' }} submitted through Members Logix.</p>
+      </div>
+    </div>
+    <div class="contract-manager-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr>
+            <th>Request</th>
+            <th>Unit</th>
+            <th>Urgency</th>
+            <th>Status</th>
+            <th>Media</th>
+            <th>Works Link</th>
+            <th>Submitted</th>
+            <th>Review</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in member_requests %}
+            <tr id="member-request-{{ item.id }}">
+              <td>
+                <strong>{{ item.title }}</strong>
+                <span>{{ item.category or 'General' }}</span>
+              </td>
+              <td>{{ (item.unit.unit_name or item.unit.unit_label) if item.unit else '-' }}</td>
+              <td>{{ item.urgency_level or 'Normal' }}</td>
+              <td>
+                <span class="contract-alert-pill">{{ item.status or 'Pending' }}</span>
+              </td>
+              <td>
+                {% if item.attachment_url %}
+                  <a class="user-manager-action-link" href="{{ item.attachment_url }}" target="_blank" rel="noopener">View</a>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>
+                {% if item.work_order %}
+                  Work Order #{{ item.work_order.id }} - {{ item.work_order.status or 'Open' }}
+                {% else %}
+                  Awaiting Works Logix triage
+                {% endif %}
+              </td>
+              <td>{{ item.created_at.strftime('%d %b %Y') if item.created_at else '-' }}</td>
+              <td>
+                <a class="user-manager-action-link" href="{{ url_for('members.maintenance_request_detail', request_id=item.id) }}">
+                  {% if (item.status or '')|lower == 'more info requested' %}Review / Respond{% else %}View{% endif %}
+                </a>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="8" class="contract-manager-empty">No maintenance requests have been submitted yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel" id="open-work-orders">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Open Work Orders</h2>
+        <p>Live Works Logix records connected to your linked units.</p>
+      </div>
+    </div>
+    <div class="contract-manager-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Unit</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Progress</th>
+            <th>Feedback</th>
+            <th>Track</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in open_work_orders %}
+            <tr id="work-order-{{ item.id }}">
+              <td>{{ item.display_reference }}</td>
+              <td>{{ (item.unit.unit_name or item.unit.unit_label) if item.unit else '-' }}</td>
+              <td><strong>{{ item.title or 'Work Order' }}</strong></td>
+              <td><span class="contract-alert-pill">{{ item.status or 'Open' }}</span></td>
+              <td>{{ item.created_at.strftime('%d %b %Y') if item.created_at else '-' }}</td>
+              <td>
+                {% set progress_updates = progress_updates_by_work_order.get(item.id, []) if progress_updates_by_work_order is defined else [] %}
+                {% if progress_updates %}
+                  <details class="works-lifecycle-toggle">
+                    <summary>{{ progress_updates|length }} update{{ '' if progress_updates|length == 1 else 's' }}</summary>
+                    {% for update in progress_updates %}
+                      <div class="unit-module-note mb-2">
+                        <strong>{{ update.created_at.strftime('%d %b %Y') if update.created_at else 'Update' }}</strong><br>
+                        {{ update.note }}
+                        {% if update.evidence_links %}
+                          <br>
+                          {% for evidence_link in update.evidence_links %}
+                            <a class="works-evidence-link" href="{{ evidence_link }}" target="_blank" rel="noopener">Open {{ loop.index }}</a>
+                          {% endfor %}
+                        {% endif %}
+                      </div>
+                    {% endfor %}
+                  </details>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>
+                {{ member_evidence_summary(completion_evidence_by_work_order.get(item.id)) }}
+                {% if (item.status or '')|lower == 'completion submitted' %}
+                  <details class="works-reopen-details">
+                    <summary>Add feedback</summary>
+                    <form method="post"
+                          action="{{ url_for('members.submit_work_order_feedback', work_order_id=item.id) }}"
+                          data-app-action="member-work-order-feedback"
+                          data-app-requires-online="true"
+                          data-app-requires-csrf="true"
+                          data-app-offline-queue="false"
+                          data-app-source-record="work_order">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <select name="rating" required>
+                        <option value="">Rating</option>
+                        <option value="5">5 - Excellent</option>
+                        <option value="4">4 - Good</option>
+                        <option value="3">3 - OK</option>
+                        <option value="2">2 - Poor</option>
+                        <option value="1">1 - Unresolved</option>
+                      </select>
+                      <textarea name="comments" rows="2" placeholder="Was the issue resolved? Add details for the PM/Admin review."></textarea>
+                      <input type="url"
+                             name="evidence_reference"
+                             placeholder="Photo, video or document link"
+                             data-app-media-reference="true"
+                             data-app-media-context="member_work_order_feedback"
+                             data-app-media-source-model="MediaFile"
+                             data-app-direct-upload="false">
+                      <button type="submit" class="contract-manager-button">Send</button>
+                    </form>
+                  </details>
+                {% elif item.feedback %}
+                  <span class="contract-alert-pill contract-alert-success">Feedback Sent</span>
+                  {% if item.feedback.evidence_reference %}
+                    <a class="user-manager-action-link" href="{{ item.feedback.evidence_reference }}" target="_blank" rel="noopener">View evidence</a>
+                  {% endif %}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>
+                <details class="works-lifecycle-toggle">
+                  <summary>Track lifecycle</summary>
+                  {% set timeline_events = lifecycle_by_work_order.get(item.id, []) %}
+                  {% set timeline_title = "Lifecycle" %}
+                  {% set timeline_compact = true %}
+                  {% include "works/_lifecycle_timeline.html" %}
+                </details>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="8" class="contract-manager-empty">No open work orders are linked to your units.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel" id="closed-work-orders">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Closed Work Orders</h2>
+        <p>Review closed work and request a reopen if the issue is not resolved.</p>
+      </div>
+    </div>
+    <div class="contract-manager-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Unit</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Action</th>
+            <th>Track</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in closed_work_orders %}
+            <tr id="closed-work-order-{{ item.id }}">
+              <td>{{ item.display_reference }}</td>
+              <td>{{ (item.unit.unit_name or item.unit.unit_label) if item.unit else '-' }}</td>
+              <td><strong>{{ item.title or 'Work Order' }}</strong></td>
+              <td><span class="contract-alert-pill contract-alert-success">{{ item.status or 'Closed' }}</span></td>
+              <td>
+                {{ member_evidence_summary(completion_evidence_by_work_order.get(item.id)) }}
+                <details class="works-reopen-details">
+                  <summary>Request reopen</summary>
+                  <form method="post"
+                        action="{{ url_for('members.request_reopen', work_order_id=item.id) }}"
+                        data-app-action="member-reopen-request"
+                        data-app-requires-online="true"
+                        data-app-requires-csrf="true"
+                        data-app-offline-queue="false"
+                        data-app-source-record="work_order">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="text" name="reason" placeholder="Reason" required>
+                    <textarea name="additional_details" rows="2" placeholder="More detail for the management team"></textarea>
+                    <input type="url"
+                           name="evidence_reference"
+                           placeholder="Photo, video or document link"
+                           data-app-media-reference="true"
+                           data-app-media-context="member_reopen_request"
+                           data-app-media-source-model="MediaFile"
+                           data-app-direct-upload="false">
+                    <button type="submit" class="contract-manager-button">Send</button>
+                  </form>
+                </details>
+              </td>
+              <td>
+                <details class="works-lifecycle-toggle">
+                  <summary>Track lifecycle</summary>
+                  {% set timeline_events = lifecycle_by_work_order.get(item.id, []) %}
+                  {% set timeline_title = "Lifecycle" %}
+                  {% set timeline_compact = true %}
+                  {% include "works/_lifecycle_timeline.html" %}
+                </details>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6" class="contract-manager-empty">No closed work orders are linked to your units.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel" id="reopen-requests">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Reopen Requests</h2>
+        <p>{{ reopen_requests|length }} reopen request{{ '' if reopen_requests|length == 1 else 's' }} linked to your units.</p>
+      </div>
+    </div>
+    <div class="contract-manager-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Unit</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Submitted</th>
+            <th>Evidence</th>
+            <th>Review</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in reopen_requests %}
+            <tr id="reopen-request-{{ item.id }}">
+              <td>{{ item.work_order.display_reference if item.work_order else 'WO-' ~ item.work_order_id }}</td>
+              <td>{{ (item.unit.unit_name or item.unit.unit_label) if item.unit else '-' }}</td>
+              <td>
+                <strong>{{ item.reason or 'Reopen requested' }}</strong>
+                <span>{{ item.additional_details or '-' }}</span>
+              </td>
+              <td><span class="contract-alert-pill">{{ item.status or 'Pending' }}</span></td>
+              <td>{{ item.created_at.strftime('%d %b %Y') if item.created_at else '-' }}</td>
+              <td>
+                {% if item.evidence_reference %}
+                  <a class="user-manager-action-link" href="{{ item.evidence_reference }}" target="_blank" rel="noopener">View</a>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>{{ item.review_notes or '-' }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="7" class="contract-manager-empty">No reopen requests have been submitted yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

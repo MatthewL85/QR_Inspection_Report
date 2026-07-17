@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Contractor Bank Accounts{% endblock %}
+
+{% block page_content %}
+<div class="contractor-settings-app app-ready-surface app-ready-surface--contractor"
+     data-app-mobile-ready="true"
+     data-app-safe-area="required"
+     data-app-source-backed="true"
+     data-app-surface="contractor-bank-accounts">
+  <section class="settings-app-header">
+    <div>
+      <span>Contractor Logix</span>
+      <h1>Bank Accounts</h1>
+      <p>Contractor-owned payment account details for payment requests and future invoice workflows.</p>
+    </div>
+    <div class="settings-app-actions">
+      <a href="{{ url_for('contractor.contractor_settings') }}">Settings</a>
+    </div>
+  </section>
+
+  <section class="settings-app-panel">
+    <div class="settings-app-panel-heading">
+      <div>
+        <h2>Saved Accounts</h2>
+        <p>Only contractor company users can manage these details.</p>
+      </div>
+      <span>{{ bank_accounts|length }} Accounts</span>
+    </div>
+    <div class="settings-app-table-wrap">
+      <table class="settings-app-table">
+        <thead>
+          <tr>
+            <th>Account</th>
+            <th>Bank</th>
+            <th>IBAN</th>
+            <th>Currency</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for account in bank_accounts %}
+            <tr>
+              <td>
+                <strong>{{ account.nickname or account.account_name or 'Bank account' }}</strong>
+                <small>{{ account.account_name or '-' }}</small>
+              </td>
+              <td>{{ account.bank_name or '-' }}</td>
+              <td>{{ account.masked_iban or '-' }}</td>
+              <td>{{ account.currency or '-' }}</td>
+              <td>
+                {% if account.is_default %}<span class="settings-app-status">Default</span>{% endif %}
+                {% if account.active %}<span class="settings-app-status">Active</span>{% else %}<span class="settings-app-status">Inactive</span>{% endif %}
+              </td>
+              <td>
+                <div class="settings-app-table-actions">
+                  {% if account.active and not account.is_default %}
+                    <form method="post" action="{{ url_for('contractor.contractor_settings_bank_account_default', account_id=account.id) }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit">Make Default</button>
+                    </form>
+                  {% endif %}
+                  <form method="post" action="{{ url_for('contractor.contractor_settings_bank_account_toggle', account_id=account.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="{{ '' if not account.active else 'is-danger' }}">
+                      {{ 'Reactivate' if not account.active else 'Deactivate' }}
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="6" class="settings-app-empty">No contractor bank accounts have been added yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <form method="post" action="{{ url_for('contractor.contractor_settings_bank_accounts') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <section class="settings-app-panel">
+      <div class="settings-app-panel-heading">
+        <div>
+          <h2>Add Bank Account</h2>
+          <p>These details will be used by Contractor Logix documents only when payment requests are issued.</p>
+        </div>
+      </div>
+      <div class="settings-app-form-grid">
+        <label>
+          <span>Nickname</span>
+          <input type="text" name="nickname" placeholder="Operating account">
+        </label>
+        <label>
+          <span>Account Name</span>
+          <input type="text" name="account_name" placeholder="Review Contractor Services Ltd">
+        </label>
+        <label>
+          <span>Bank Name</span>
+          <input type="text" name="bank_name" placeholder="Bank name">
+        </label>
+        <label>
+          <span>Remittance Email</span>
+          <input type="email" name="remittance_email" placeholder="accounts@example.com">
+        </label>
+        <label>
+          <span>IBAN</span>
+          <input type="text" name="iban" placeholder="IE...">
+        </label>
+        <label>
+          <span>BIC / SWIFT</span>
+          <input type="text" name="bic_swift" placeholder="AIBKIE2D">
+        </label>
+        <label>
+          <span>Currency</span>
+          <input type="text" name="currency" value="EUR">
+        </label>
+        <label>
+          <span>Account Type</span>
+          <input type="text" name="account_type" value="Operating">
+        </label>
+      </div>
+      <div class="settings-app-inline-controls">
+        <label><input type="checkbox" name="active" checked> Active</label>
+        <label><input type="checkbox" name="is_default"> Default account</label>
+      </div>
+      <div class="settings-app-submit-row">
+        <button type="submit">Add Bank Account</button>
+      </div>
+    </section>
+  </form>
+</div>
+{% endblock %}

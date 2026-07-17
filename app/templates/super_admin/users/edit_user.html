@@ -1,82 +1,148 @@
 {% extends 'layouts/super_admin_base.html' %}
+{% block title %}Edit User | LogixPM{% endblock %}
 
 {% block page_content %}
-<div class="container-fluid py-4">
-  <div class="card shadow-sm rounded-4 p-4">
-    <h4 class="mb-4 text-center">✏️ Edit User</h4>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
-    <form method="POST">
-      {{ form.hidden_tag() }}
-
-      <!-- Full Name -->
-      <div class="mb-3">
-        {{ form.full_name.label(class="form-label") }}
-        {{ form.full_name(class="form-control", placeholder="e.g. John Doe") }}
-      </div>
-
-      <!-- Email -->
-      <div class="mb-3">
-        {{ form.email.label(class="form-label") }}
-        {{ form.email(class="form-control", placeholder="user@example.com") }}
-      </div>
-
-      <!-- Role -->
-      <div class="mb-3">
-        {{ form.role_id.label(class="form-label") }}
-        {{ form.role_id(class="form-select", id="role_id") }}
-      </div>
-
-      <!-- Company -->
-      <div class="mb-3">
-        {{ form.company_id.label(class="form-label") }}
-        {{ form.company_id(class="form-select") }}
-      </div>
-
-      <!-- Secure PIN -->
-      <div class="mb-3">
-        <label for="pin" class="form-label">Secure PIN</label>
-        <input type="text" name="pin" id="pin" class="form-control"
-          value="{{ user.pin }}"
-          pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}"
-          title="PIN must be at least 8 characters, include uppercase, lowercase, number, and symbol." required>
-      </div>
-
-      <!-- Active Status -->
-      <div class="form-check form-switch mb-4">
-        <input class="form-check-input" type="checkbox" id="is_active" name="is_active"
-               {% if user.is_active %}checked{% endif %}>
-        <label class="form-check-label" for="is_active">Active</label>
-      </div>
-
-      <!-- Optional Password Reset -->
-      <div class="mb-3">
-        {{ form.password.label(class="form-label") }}
-        {{ form.password(class="form-control", placeholder="Leave blank to keep current password") }}
-      </div>
-
-      <!-- Submit -->
-      <div class="text-center">
-        {{ form.submit(class="btn btn-success px-5") }}
-      </div>
-    </form>
-
-    <div class="text-center mt-4">
-      <a href="{{ url_for('super_admin.manage_users') }}" class="btn btn-outline-secondary">
-        ⬅ Back to User List
+<div class="client-manager-workspace">
+  <div class="client-manager-command-bar">
+    <div>
+      <h5>Edit User: {{ user.full_name }}</h5>
+      <span>Keep the team profile clean for access control, Logix HR and GAR AI governance.</span>
+    </div>
+    <div class="client-manager-actions">
+      <a href="{{ url_for('super_admin.manage_users') }}" class="unit-link-action">
+        <i class="material-icons" style="font-size:17px">arrow_back</i>
+        Team Manager
       </a>
     </div>
   </div>
+
+  <div class="user-form-note-strip">
+    <div>
+      <strong>Logix HR</strong>
+      {% if user.hr_profile %}
+        <span>HR profile linked. Status: {{ user.hr_profile.employment_status or 'Pending' }}.</span>
+      {% else %}
+        <span>No HR profile yet. It will be created automatically when HR is enabled for the assigned company.</span>
+      {% endif %}
+    </div>
+    <div>
+      <strong>GAR AI</strong>
+      <span>Identity remains available for future governance, permissions and platform intelligence.</span>
+    </div>
+  </div>
+
+  <form method="POST" class="user-form-panel">
+    {{ form.hidden_tag() }}
+
+    <section class="user-form-section user-form-section--compact">
+      <div class="user-form-section-heading">
+        <div>
+          <h6>User Identity</h6>
+          <span>Core profile details used across the platform.</span>
+        </div>
+      </div>
+
+      <div class="user-form-grid user-form-grid--four">
+        <div class="user-form-field">
+          {{ form.full_name.label }}
+          {{ form.full_name(class="form-control") }}
+          {% for error in form.full_name.errors %}
+            <small class="text-danger">{{ error }}</small>
+          {% endfor %}
+        </div>
+        <div class="user-form-field">
+          {{ form.email.label }}
+          {{ form.email(class="form-control") }}
+          {% for error in form.email.errors %}
+            <small class="text-danger">{{ error }}</small>
+          {% endfor %}
+        </div>
+        <div class="user-form-field">
+          <label for="mobile_phone">Mobile</label>
+          <input type="tel" class="form-control" name="mobile_phone" id="mobile_phone" value="{{ user.mobile_phone or '' }}" autocomplete="tel">
+        </div>
+        <div class="user-form-field">
+          <label for="direct_phone">Direct Line</label>
+          <input type="tel" class="form-control" name="direct_phone" id="direct_phone" value="{{ user.direct_phone or '' }}" autocomplete="tel">
+        </div>
+        <div class="user-form-field user-form-field--small">
+          <label for="phone_extension">Extension</label>
+          <input type="text" class="form-control" name="phone_extension" id="phone_extension" value="{{ user.phone_extension or '' }}">
+        </div>
+        <div class="user-form-field user-form-field--wide">
+          <label>Username</label>
+          <div class="user-form-static-control">{{ user.username or 'Not set' }}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="user-form-section user-form-section--compact">
+      <div class="user-form-section-heading">
+        <div>
+          <h6>Access & Organisation</h6>
+          <span>Role and company assignment for the LogixPM ecosystem.</span>
+        </div>
+      </div>
+
+      <div class="user-form-grid user-form-grid--four">
+        <div class="user-form-field">
+          {{ form.role_id.label }}
+          {{ form.role_id(class="form-control", id="role_id") }}
+          {% for error in form.role_id.errors %}
+            <small class="text-danger">{{ error }}</small>
+          {% endfor %}
+        </div>
+        <div class="user-form-field">
+          {{ form.company_id.label }}
+          {{ form.company_id(class="form-control") }}
+          {% for error in form.company_id.errors %}
+            <small class="text-danger">{{ error }}</small>
+          {% endfor %}
+        </div>
+        <div class="user-form-field">
+          <label>Status</label>
+          <div class="user-form-toggle">
+            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if user.is_active %}checked{% endif %}>
+            <label for="is_active">Active user</label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="user-form-section user-form-section--compact">
+      <div class="user-form-section-heading">
+        <div>
+          <h6>Security</h6>
+          <span>Update access credentials only when required.</span>
+        </div>
+      </div>
+
+      <div class="user-form-grid user-form-grid--four">
+        <div class="user-form-field">
+          <label for="pin">Secure PIN <span>*</span></label>
+          <input type="text"
+                 name="pin"
+                 id="pin"
+                 class="form-control"
+                 value="{{ user.pin }}"
+                 pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}"
+                 title="PIN must be at least 8 characters and include uppercase, lowercase, number and symbol."
+                 required>
+        </div>
+        <div class="user-form-field">
+          {{ form.password.label }}
+          {{ form.password(class="form-control") }}
+          {% for error in form.password.errors %}
+            <small class="text-danger">{{ error }}</small>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <div class="user-form-actions">
+      <a href="{{ url_for('super_admin.manage_users') }}" class="btn btn-sm btn-outline-secondary">Cancel</a>
+      {{ form.submit(class="btn btn-sm btn-primary client-manager-primary-action", value="Save Changes") }}
+    </div>
+  </form>
 </div>
 {% endblock %}
-

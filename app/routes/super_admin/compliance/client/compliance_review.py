@@ -11,4 +11,7 @@ from datetime import datetime
 @super_admin_required
 def review_compliance_document(doc_id):
     document = ClientComplianceDocument.query.get_or_404(doc_id)
-    return render_template('super_admin/review_compliance_document.html', document=document)
+    return render_template(
+        'super_admin/compliance_documents/client/review_compliance_document.html',
+        document=document,
+    )

@@ -1,107 +1,141 @@
-<!-- navbar.html -->
-<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-4 py-2">
-  <div class="container-fluid">
+{% set role = session.get('user', {}).get('role', 'Unknown') %}
+{% set role_label =
+  'Super Admin' if role == 'Super Admin' else
+  'Director Logix' if role == 'Director' else
+  'Contractor Logix' if role in ['Contractor', 'Admin Contractor'] else
+  'Finance Logix' if role in ['Finance', 'Financial Controller'] else
+  'Members Logix' if role in ['Member', 'Resident'] else
+  'Property Manager Logix' if role == 'Property Manager' else
+  'LogixPM'
+%}
 
-    <!-- 🧠 Role-based Branding -->
-    <span class="navbar-brand fw-bold 
-      {% if session.get('user', {}).get('role') == 'Director' %}
-        text-success
-      {% elif session.get('user', {}).get('role') in ['Contractor', 'Admin Contractor'] %}
-        text-warning
-      {% elif session.get('user', {}).get('role') == 'Super Admin' %}
-        text-primary
-      {% else %}
-        text-dark
-      {% endif %}">
-      {% if session.get('user', {}).get('role') == 'Director' %}
-        Director Logix
-      {% elif session.get('user', {}).get('role') in ['Contractor', 'Admin Contractor'] %}
-        Contractor Logix
-      {% elif session.get('user', {}).get('role') == 'Super Admin' %}
-        LogixPM Admin
-      {% else %}
-        LogixPM
-      {% endif %}
-    </span>
+<nav class="navbar navbar-main navbar-expand-lg px-4 shadow-none border-radius-xl bg-white legacy-shell-navbar"
+     id="navbarBlur" navbar-scroll="true">
+  <div class="container-fluid py-1">
+    <div class="d-flex align-items-center min-w-0">
+      <button id="sidebarToggle"
+              class="btn btn-outline-secondary me-3 mb-0 d-inline-flex align-items-center justify-content-center shell-sidebar-toggle"
+              type="button"
+              title="Toggle sidebar"
+              aria-label="Toggle sidebar"
+              data-sidebar-toggle>
+        <i class="material-icons" aria-hidden="true">menu</i>
+      </button>
 
-    <!-- ☰ Mobile Toggle -->
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-      data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
-      aria-label="Toggle navigation">
+      <span class="d-inline-flex align-items-center brand-lockup min-w-0">
+        <img src="{{ BRAND_LOGO_URL or url_for('static', filename='logo.png') }}"
+             alt="LogixPM"
+             class="me-2 navbar-brand-img brand-logo--navbar"
+             loading="eager"
+             decoding="async">
+        <span class="text-muted text-truncate">/ {{ role_label }}</span>
+      </span>
+    </div>
+
+    <button class="navbar-toggler ms-2" type="button" data-bs-toggle="collapse"
+            data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+            aria-expanded="false" aria-label="Toggle user menu">
       <span class="navbar-toggler-icon"></span>
     </button>
 
-    <!-- 👤 Right Menu -->
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
         {% if session.get('user') %}
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button"
-            data-bs-toggle="dropdown" aria-expanded="false">
-
-            <!-- 👤 Avatar or Fallback Icon -->
-            {% if session['user'].get('profile_photo') %}
-              <img src="{{ url_for('static', filename=session['user']['profile_photo']) }}"
-                   class="rounded-circle me-2" alt="Avatar" width="32" height="32">
-            {% else %}
-              <i class="fas fa-user-circle fa-lg me-2"></i>
-            {% endif %}
-
-            <!-- Name -->
-            <span class="me-1">{{ session['user'].get('name', 'Guest') }}</span>
-
-            <!-- 🎨 Role Badge -->
-            {% set role = session['user'].get('role', 'Unknown') %}
-            <span class="badge 
-              {% if role == 'Super Admin' %} bg-primary
-              {% elif role in ['Contractor', 'Admin Contractor'] %} bg-warning text-dark
-              {% elif role == 'Director' %} bg-success
-              {% elif role == 'Finance' %} bg-purple
-              {% elif role in ['Member', 'Resident'] %} bg-info text-dark
-              {% else %} bg-secondary
+          <li class="nav-item dropdown me-lg-3">
+            <a href="#" class="nav-link text-body p-0 notification-trigger" id="legacyNotificationDropdown"
+               data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
+              <i class="material-icons">notifications</i>
+              {% if unread_notification_count|default(0) %}
+                <span class="notification-count">{{ unread_notification_count }}</span>
               {% endif %}
-              text-uppercase">
-              {{ role }}
-            </span>
-          </a>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end notification-menu" aria-labelledby="legacyNotificationDropdown">
+              <li class="notification-menu-heading">Notifications</li>
+              {% for item in unread_notification_views|default([]) %}
+                {% set notification = item.notification %}
+                <li>
+                  <a class="dropdown-item notification-item" href="{{ url_for('notifications.open', notification_id=notification.id) }}">
+                    <span class="notification-item-title">{{ item.module_label }} · {{ item.workflow_stage }}</span>
+                    <span class="notification-item-message">{{ notification.message }}</span>
+                    {% if item.source_label %}
+                      <span class="notification-item-source">{{ item.source_label }}</span>
+                    {% endif %}
+                  </a>
+                </li>
+              {% else %}
+                <li><span class="dropdown-item notification-empty">No new notifications</span></li>
+              {% endfor %}
+              <li><hr class="dropdown-divider"></li>
+              <li class="notification-menu-actions">
+                <a class="dropdown-item notification-menu-link" href="{{ url_for('notifications.index', next=request.full_path) }}">View all notifications</a>
+                {% if unread_notification_count|default(0) %}
+                  <form method="post" action="{{ url_for('notifications.mark_all_read') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="next" value="{{ request.full_path }}">
+                    <button type="submit" class="dropdown-item notification-menu-link">Mark all read</button>
+                  </form>
+                {% endif %}
+              </li>
+            </ul>
+          </li>
 
-          <a class="btn btn-sm btn-outline-danger ms-3" href="{{ url_for('auth.logout') }}">
-            Logout
-          </a>
+          <li class="nav-item dropdown d-flex align-items-lg-center flex-column flex-lg-row">
+            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
+               role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              {% if session['user'].get('profile_photo') %}
+                <img src="{{ url_for('static', filename=session['user']['profile_photo']) }}"
+                     class="rounded-circle me-2" alt="Avatar" width="32" height="32">
+              {% else %}
+                <i class="fas fa-user-circle fa-lg me-2"></i>
+              {% endif %}
 
-          <!-- 🔽 Dropdown Menu -->
-          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-            <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">👤 Profile / Settings</a></li>
+              <span class="me-2">{{ session['user'].get('name', 'Guest') }}</span>
+              <span class="badge
+                {% if role == 'Super Admin' %} bg-primary
+                {% elif role in ['Contractor', 'Admin Contractor'] %} bg-warning text-dark
+                {% elif role == 'Director' %} bg-success
+                {% elif role in ['Finance', 'Financial Controller'] %} bg-purple
+                {% elif role in ['Member', 'Resident'] %} bg-info text-dark
+                {% else %} bg-secondary
+                {% endif %}
+                text-uppercase">
+                {{ role }}
+              </span>
+            </a>
 
-            {% if role == 'Super Admin' %}
-              <li><a class="dropdown-item" href="{{ url_for('super_admin.dashboard') }}">🧭 Admin Dashboard</a></li>
-            {% elif role == 'Property Manager' %}
-              <li><a class="dropdown-item" href="{{ url_for('property_manager.pm_dashboard') }}">🏢 My Clients</a></li>
-            {% elif role in ['Contractor', 'Admin Contractor'] %}
-              <li><a class="dropdown-item" href="{{ url_for('contractor.contractor_dashboard') }}">🛠️ My Work Orders</a></li>
-            {% elif role == 'Director' %}
-              <li><a class="dropdown-item" href="{{ url_for('director.dashboard') }}">🗳️ Director Panel</a></li>
-            {% elif role == 'Finance' %}
-              <li><a class="dropdown-item" href="{{ url_for('finance.dashboard') }}">💰 Finance Portal</a></li>
-            {% elif role in ['Member', 'Resident'] %}
-              <li><a class="dropdown-item" href="{{ url_for('members.dashboard') }}">🏠 My Unit</a></li>
-            {% endif %}
+            <a class="btn btn-sm btn-outline-danger ms-lg-3 mt-2 mt-lg-0" href="{{ url_for('auth.logout') }}">
+              Logout
+            </a>
 
-            {% if session['user'].get('can_switch_company') %}
-              <li><a class="dropdown-item text-muted" href="#">🏢 Switch Company (Coming Soon)</a></li>
-            {% endif %}
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+              <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">Profile / Settings</a></li>
 
-            <li><a class="dropdown-item" href="#" onclick="toggleDarkMode()">🌙 Toggle Dark Mode</a></li>
+              {% if role == 'Super Admin' %}
+                <li><a class="dropdown-item" href="{{ url_for('super_admin.dashboard') }}">Admin Dashboard</a></li>
+              {% elif role == 'Property Manager' %}
+                <li><a class="dropdown-item" href="{{ url_for('property_manager.pm_dashboard') }}">My Clients</a></li>
+              {% elif role in ['Contractor', 'Admin Contractor'] %}
+                <li><a class="dropdown-item" href="{{ url_for('contractor.contractor_dashboard') }}">My Work Orders</a></li>
+              {% elif role == 'Director' %}
+                <li><a class="dropdown-item" href="{{ url_for('director.dashboard') }}">Director Panel</a></li>
+              {% elif role in ['Finance', 'Financial Controller'] and 'finance.dashboard' in current_app.view_functions %}
+                <li><a class="dropdown-item" href="{{ url_for('finance.dashboard') }}">Finance Portal</a></li>
+              {% elif role in ['Member', 'Resident'] and 'members.dashboard' in current_app.view_functions %}
+                <li><a class="dropdown-item" href="{{ url_for('members.dashboard') }}">My Unit</a></li>
+              {% endif %}
 
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">🚪 Logout</a></li>
-          </ul>
-        </li>
+              {% if session['user'].get('can_switch_company') %}
+                <li><a class="dropdown-item text-muted" href="#">Switch Company (Coming Soon)</a></li>
+              {% endif %}
+
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">Logout</a></li>
+            </ul>
+          </li>
         {% else %}
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
-        </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+          </li>
         {% endif %}
       </ul>
     </div>

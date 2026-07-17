@@ -2,44 +2,51 @@
 
     <div class="row g-3">
 
-        <!-- SEARCH -->
-        <div class="col-md-4">
+        <div class="col-md-3">
             <label class="form-label fw-bold">Search</label>
             <input name="search"
                    value="{{ search or '' }}"
                    class="form-control"
-                   placeholder="Search by unit, owner, resident…">
+                   placeholder="Search by unit, owner, email...">
         </div>
 
-        <!-- BLOCK FILTER -->
         <div class="col-md-3">
+            <label class="form-label fw-bold">Development</label>
+            <select name="client_id" class="form-select">
+                <option value="">All Developments</option>
+                {% for client in clients %}
+                    <option value="{{ client.id }}"
+                        {% if selected_client_id and selected_client_id|int == client.id %}selected{% endif %}>
+                        {{ client.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2">
             <label class="form-label fw-bold">Block</label>
             <select name="block" class="form-select">
                 <option value="">All Blocks</option>
                 {% for b in blocks %}
-                    <option value="{{ b.id }}"
-                        {% if selected_block|int == b.id %}selected{% endif %}>
-                        {{ b.name }}
+                    <option value="{{ b }}" {% if selected_block == b %}selected{% endif %}>
+                        {{ b }}
                     </option>
                 {% endfor %}
             </select>
         </div>
 
-        <!-- CORE FILTER -->
-        <div class="col-md-3">
+        <div class="col-md-2">
             <label class="form-label fw-bold">Core</label>
             <select name="core" class="form-select">
                 <option value="">All Cores</option>
                 {% for c in cores %}
-                    <option value="{{ c.id }}"
-                        {% if selected_core|int == c.id %}selected{% endif %}>
-                        {{ c.name }}
+                    <option value="{{ c }}" {% if selected_core == c %}selected{% endif %}>
+                        {{ c }}
                     </option>
                 {% endfor %}
             </select>
         </div>
 
-        <!-- APPLY -->
         <div class="col-md-2 d-flex align-items-end">
             <button class="btn bg-gradient-primary w-100" type="submit">
                 Apply

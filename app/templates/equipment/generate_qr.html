@@ -100,8 +100,8 @@
     </form>
 
     <div class="mt-4">
-      {% if session['role'] == 'Admin' %}
-        <a href="{{ url_for('admin.dashboard')
+      {% if session['role'] == 'Super Admin' %}
+        <a href="{{ url_for('super_admin.dashboard')
 
  }}">⬅ Back to Admin Dashboard</a>
       {% elif session['role'] == 'Property Manager' %}

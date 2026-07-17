@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% block title %}New Job Docket{% endblock %}
+
+{% macro value(name) -%}
+  {{ form.get(name, '') if form else '' }}
+{%- endmacro %}
+
+{% block page_content %}
+<div class="contract-manager app-ready-surface app-ready-surface--contractor contractor-standalone-intake"
+     data-app-mobile-ready="true"
+     data-app-source-backed="true">
+  <section class="contract-manager-hero">
+    <div>
+      <h1>New Job Docket</h1>
+      <p>Create a standalone Contractor Logix job from a phone call, email, WhatsApp, site instruction or external system.</p>
+    </div>
+    <div class="contract-filter-actions">
+      <a class="contract-manager-link" href="{{ url_for('contractor.contractor_dashboard') }}">Dashboard</a>
+      <a class="contract-manager-link" href="{{ url_for('contractor.calendar') }}">Calendar</a>
+      <a class="contract-manager-link" href="{{ url_for('contractor.work_orders') }}">Work Queue</a>
+    </div>
+  </section>
+
+  <form method="post"
+        enctype="multipart/form-data"
+        class="contractor-standalone-docket-form"
+        data-app-action="contractor-standalone-job-docket"
+        data-app-requires-csrf="true">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <section class="contract-manager-panel">
+      <div class="contract-manager-section-heading">
+        <div>
+          <h2>Instruction Summary</h2>
+          <p>Capture the source, priority and reference before the docket enters the calendar workflow.</p>
+        </div>
+        <span class="contract-alert-pill contract-alert-muted">Contractor Logix</span>
+      </div>
+
+      <div class="contract-manager-form-grid contractor-intake-source-grid">
+        <label for="instruction_source">
+          Source
+          <select id="instruction_source" name="instruction_source">
+            {% set selected_source = value('instruction_source') or 'Manual Instruction' %}
+            {% for source in ['Manual Instruction', 'Email Instruction', 'Phone Call', 'WhatsApp / Message', 'Site Visit', 'External System'] %}
+              <option value="{{ source }}" {% if selected_source == source %}selected{% endif %}>{{ source }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <div class="contractor-auto-reference-card">
+          <span>Contractor Job No.</span>
+          <strong>Auto-assigned</strong>
+          <small>Sequential number created when saved.</small>
+        </div>
+        <label for="external_work_order_reference">
+          Source / External WO Ref
+          <input id="external_work_order_reference"
+                 name="external_work_order_reference"
+                 value="{{ value('external_work_order_reference') }}"
+                 placeholder="e.g. WO-BH-000123, Ticket 8842">
+        </label>
+        <label for="priority">
+          Priority
+          <select id="priority" name="priority">
+            {% set selected_priority = value('priority') or 'Normal' %}
+            {% for priority in ['Normal', 'Urgent', 'Emergency', 'Low'] %}
+              <option value="{{ priority }}" {% if selected_priority == priority %}selected{% endif %}>{{ priority }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label for="required_trade">
+          Trade / Category
+          <input id="required_trade"
+                 name="required_trade"
+                 value="{{ value('required_trade') }}"
+                 placeholder="e.g. Plumbing, Electrical, Cleaning">
+        </label>
+      </div>
+    </section>
+
+    <section class="contract-manager-panel">
+      <div class="contract-manager-section-heading">
+        <div>
+          <h2>Client & Site</h2>
+          <p>Location details should be clear enough for the engineer to attend without chasing context.</p>
+        </div>
+      </div>
+
+      <div class="contract-manager-form-grid contractor-intake-site-grid">
+        <label for="client_name">
+          Client / Customer Name *
+          <input id="client_name" name="client_name" value="{{ value('client_name') }}" required>
+        </label>
+        <label for="property_name">
+          Property / Site Name
+          <input id="property_name" name="property_name" value="{{ value('property_name') }}">
+        </label>
+        <label for="address_line_1" class="contractor-intake-span-2">
+          Address Line 1
+          <input id="address_line_1" name="address_line_1" value="{{ value('address_line_1') }}">
+        </label>
+        <label for="address_line_2">
+          Address Line 2
+          <input id="address_line_2" name="address_line_2" value="{{ value('address_line_2') }}">
+        </label>
+        <label for="town_city">
+          Town / City
+          <input id="town_city" name="town_city" value="{{ value('town_city') }}">
+        </label>
+        <label for="region">
+          County / Region
+          <input id="region" name="region" value="{{ value('region') }}">
+        </label>
+        <label for="postal_code">
+          Eircode / Postal Code
+          <input id="postal_code" name="postal_code" value="{{ value('postal_code') }}">
+        </label>
+        <label for="country">
+          Country
+          <input id="country" name="country" value="{{ value('country') }}">
+        </label>
+        <label for="block_name">
+          Block / Building
+          <input id="block_name" name="block_name" value="{{ value('block_name') }}">
+        </label>
+        <label for="core_name">
+          Core / Stairwell
+          <input id="core_name" name="core_name" value="{{ value('core_name') }}">
+        </label>
+        <label for="unit_number">
+          Unit / Area
+          <input id="unit_number" name="unit_number" value="{{ value('unit_number') }}">
+        </label>
+      </div>
+    </section>
+
+    <section class="contract-manager-panel">
+      <div class="contract-manager-section-heading">
+        <div>
+          <h2>Contact & Work Details</h2>
+          <p>Record who to contact, access notes and the scope before the docket is created.</p>
+        </div>
+      </div>
+
+      <div class="contractor-intake-contact-layout">
+        <div class="contractor-intake-contact-row">
+          <label for="contact_name">
+            Contact Name
+            <input id="contact_name" name="contact_name" value="{{ value('contact_name') }}">
+          </label>
+          <label for="contact_phone">
+            Contact Phone
+            <input id="contact_phone" name="contact_phone" value="{{ value('contact_phone') }}">
+          </label>
+          <label for="contact_email">
+            Contact Email
+            <input id="contact_email" type="email" name="contact_email" value="{{ value('contact_email') }}">
+          </label>
+        </div>
+
+        <div class="contractor-intake-notes-row">
+          <label for="access_notes" class="contractor-intake-textarea">
+            Access Notes
+            <textarea id="access_notes"
+                      name="access_notes"
+                      rows="6"
+                      placeholder="Keys, appointment arrangements, site restrictions or safety notes.">{{ value('access_notes') }}</textarea>
+          </label>
+          <label for="scope_of_works" class="contractor-intake-textarea">
+            Work Details *
+            <textarea id="scope_of_works"
+                      name="scope_of_works"
+                      rows="6"
+                      required
+                      placeholder="Describe the instruction, issue, scope of works and any known risks.">{{ value('scope_of_works') }}</textarea>
+          </label>
+        </div>
+
+        <label for="docket_files" class="contractor-intake-files">
+          Photos / Videos / Documents
+          <input id="docket_files"
+                 type="file"
+                 name="docket_files"
+                 multiple
+                 accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx"
+                 data-app-media-context="contractor_standalone_docket"
+                 data-app-media-source-model="JobDocket">
+          <small>Attach instruction emails, photos, videos, PDFs or documents received with the job.</small>
+        </label>
+      </div>
+    </section>
+
+    <section class="contract-manager-panel contractor-intake-footer-panel">
+      <div class="contract-manager-section-heading">
+        <div>
+          <h2>GAR Intake Ready</h2>
+          <p>These structured fields can later let GAR draft a docket from inbound emails and attachments before contractor review.</p>
+        </div>
+        <div class="contractor-form-actions">
+          <a class="contract-manager-link" href="{{ url_for('contractor.contractor_dashboard') }}">Cancel</a>
+          <button type="submit" class="contract-manager-button">Create Job Docket</button>
+        </div>
+      </div>
+    </section>
+  </form>
+</div>
+{% endblock %}

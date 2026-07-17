@@ -9,7 +9,7 @@
 
       <!-- Dashboard -->
       <li class="nav-item">
-        <a class="nav-link {% if request.endpoint == 'director_dashboard' %}active text-primary fw-bold{% else %}text-dark{% endif %}" href="{{ url_for('director_dashboard') }}">
+        <a class="nav-link {% if request.endpoint == 'director.dashboard' %}active text-primary fw-bold{% else %}text-dark{% endif %}" href="{{ url_for('director.dashboard') }}">
           <i class="fas fa-chart-line me-2"></i>
           <span class="nav-link-text">Dashboard</span>
         </a>
@@ -17,7 +17,7 @@
 
       <!-- CAPEX Tracker -->
       <li class="nav-item">
-        <a class="nav-link {% if request.endpoint == 'director_capex_list' %}active text-success fw-bold{% else %}text-dark{% endif %}" href="{{ url_for('director_capex_list') }}">
+        <a class="nav-link {% if request.endpoint == 'director.director_capex_list' %}active text-success fw-bold{% else %}text-dark{% endif %}" href="{{ url_for('director.director_capex_list') }}">
           <i class="fas fa-file-invoice-dollar me-2"></i>
           <span class="nav-link-text">CAPEX Tracker</span>
         </a>
@@ -25,7 +25,7 @@
 
       <!-- View Inspection Reports -->
       <li class="nav-item">
-        <a class="nav-link {% if request.endpoint == 'director_view_inspections' %}active text-info fw-bold{% else %}text-dark{% endif %}" href="{{ url_for('director_view_inspections') }}">
+        <a class="nav-link {% if request.endpoint == 'director.director_view_inspections' %}active text-info fw-bold{% else %}text-dark{% endif %}" href="{{ url_for('director.director_view_inspections') }}">
           <i class="fas fa-clipboard-check me-2"></i>
           <span class="nav-link-text">Inspections</span>
         </a>
@@ -33,7 +33,7 @@
 
       <!-- Company Documents -->
       <li class="nav-item">
-        <a class="nav-link {% if request.endpoint == 'director_documents' %}active text-warning fw-bold{% else %}text-dark{% endif %}" href="{{ url_for('director_documents') }}">
+        <a class="nav-link {% if request.endpoint == 'director.director_documents' %}active text-warning fw-bold{% else %}text-dark{% endif %}" href="{{ url_for('director.director_documents') }}">
           <i class="fas fa-folder-open me-2"></i>
           <span class="nav-link-text">Documents</span>
         </a>
@@ -41,7 +41,7 @@
 
       <!-- Messaging -->
       <li class="nav-item">
-        <a class="nav-link {% if request.endpoint == 'director_messages' %}active text-secondary fw-bold{% else %}text-dark{% endif %}" href="{{ url_for('director_messages') }}">
+        <a class="nav-link {% if request.endpoint == 'director.director_messages' %}active text-secondary fw-bold{% else %}text-dark{% endif %}" href="{{ url_for('director.director_messages') }}">
           <i class="fas fa-comments me-2"></i>
           <span class="nav-link-text">Messages</span>
         </a>
@@ -51,7 +51,7 @@
 
       <!-- Settings -->
       <li class="nav-item mt-auto">
-        <a class="nav-link {% if request.endpoint == 'director_settings' %}active fw-bold{% else %}text-dark{% endif %}" href="{{ url_for('director_settings') }}">
+        <a class="nav-link {% if request.endpoint == 'director.director_settings' %}active fw-bold{% else %}text-dark{% endif %}" href="{{ url_for('director.director_settings') }}">
           <i class="fas fa-cog me-2"></i>
           <span class="nav-link-text">Settings</span>
         </a>

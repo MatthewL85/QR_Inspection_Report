@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#2152ff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="LogixPM" />
   <title>{% block title %}LogixPM{% endblock %}</title>
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='assets/img/apple-icon.png') }}">
 
   <!-- Fonts & Icons -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -11,7 +16,7 @@
 
   <!-- Core CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/material-dashboard.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v=65) }}">
 
   <!-- DataTables + Export Styling (for all dashboards/logs) -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
@@ -66,19 +71,18 @@
         {% include 'sidebar_director.html' %}
       {% elif session['user']['role'] == 'Property Manager' %}
         {% include 'sidebar_property_manager.html' %}
+      {% elif session['user']['role'] in ['Assistant', 'Assistant Property Manager'] %}
+        {% include 'assistant/sidebar_assistant.html' %}
+      {% elif session['user']['role'] == 'Admin' %}
+        {% include 'admin_portal/sidebar_admin_portal.html' %}
       {% else %}
-        {% include 'admin/sidebar_admin.html' %}
+        {% include 'sidebar_default.html' %}
       {% endif %}
     </div>
+    <div id="sidebarOverlay" aria-hidden="true"></div>
 
     <!-- Main Content -->
     <div id="main-content">
-      <div class="d-flex justify-content-between align-items-center px-3 pt-2">
-        <button id="sidebarToggle" class="btn btn-sm btn-outline-secondary d-md-none">
-          <i class="fas fa-bars"></i>
-        </button>
-      </div>
-
       {% include 'navbar.html' %}
 
       <!-- Flash Messages -->
@@ -108,7 +112,40 @@
   <script src="{{ url_for('static', filename='assets/js/core/bootstrap.min.js') }}"></script>
   <script src="{{ url_for('static', filename='assets/js/material-dashboard.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/sidebar_mobile_collapse.js') }}"></script>
+  <script src="{{ url_for('static', filename='sidebar_mobile_collapse.js', v=2) }}"></script>
+  <script src="{{ url_for('static', filename='js/register_app_shell.js') }}"></script>
+  <script>
+    (function () {
+      var body = document.body;
+      var isMobile = function () { return window.matchMedia('(max-width: 767.98px)').matches; };
+
+      function toggleSidebar(event) {
+        if (event) event.preventDefault();
+
+        if (isMobile()) {
+          body.classList.toggle('sidebar-open');
+          body.classList.remove('sidebar-collapsed', 'g-sidenav-hidden');
+          return;
+        }
+
+        body.classList.toggle('sidebar-collapsed');
+        body.classList.remove('sidebar-open', 'g-sidenav-hidden');
+      }
+
+      document.querySelectorAll('[data-sidebar-toggle]').forEach(function (button) {
+        if (button.dataset.sidebarBound === '1') return;
+        button.dataset.sidebarBound = '1';
+        button.addEventListener('click', toggleSidebar);
+      });
+
+      var overlay = document.getElementById('sidebarOverlay');
+      if (overlay) {
+        overlay.addEventListener('click', function () {
+          body.classList.remove('sidebar-open');
+        });
+      }
+    })();
+  </script>
 
   <!-- DataTables + Export Scripts (global use) -->
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>

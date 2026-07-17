@@ -41,7 +41,9 @@ def login():
                 'email': user.email,
                 'role': user.role.name if user.role else 'Unassigned',
                 'company': user.company.name if getattr(user, "company", None) else '—',
-                'name': user.full_name
+                'name': user.full_name,
+                'full_name': user.full_name,
+                'company_id': user.company_id
             }
             session['user_id'] = user.id
             session['role'] = user.role.name if user.role else 'Unassigned'
@@ -52,13 +54,18 @@ def login():
             # 🔁 Redirect based on role
             route_map = {
                 'Super Admin': 'super_admin.dashboard',
-                'Admin': 'admin.dashboard',
-                'Property Manager': 'property_manager.dashboard',
-                'Contractor': 'contractor.dashboard',
+                'Admin': 'admin_portal.dashboard',
+                'Property Manager': 'property_manager.pm_dashboard',
+                'Contractor': 'contractor.contractor_dashboard',
                 'Director': 'director.dashboard',
                 'Financial Controller': 'finance.dashboard',
-                'Member': 'member.dashboard',
-                'Resident': 'resident.dashboard'
+                'Finance': 'finance.dashboard',
+                'Assistant Property Manager': 'assistant.dashboard',
+                'Assistant Manager': 'assistant.dashboard',
+                'Master Assistant': 'assistant.dashboard',
+                'Assistant': 'assistant.dashboard',
+                'Member': 'members.dashboard',
+                'Resident': 'members.dashboard'
             }
             return redirect(url_for(route_map.get(session['role'], 'auth.login')))
 

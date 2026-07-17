@@ -17,7 +17,13 @@ from app.models.core.user import User
 from app.models.core.role import Role
 from app.models.core.role_permissions import RolePermission
 from app.models.core.notification import Notification
+from app.models.core.organisation_connection import (
+    ModuleSubscription,
+    OrganisationConnection,
+    OrganisationConnectionInvite,
+)
 from app.models.core.document import Document
+from app.models.core.document_template import CoreDocumentTemplate
 from app.models.core.media_file import MediaFile
 from app.models.exports.exported_file_log import ExportedFileLog
 
@@ -67,6 +73,7 @@ from app.models.members.resident_request import ResidentRequest
 from app.models.members.access_log import AccessLog
 from app.models.members.tenancy import Tenancy
 from app.models.members.unit_membership import UnitMembership
+from app.models.members.unit_access_invite import UnitAccessInvite
 
 
 # ----------------------------
@@ -77,11 +84,16 @@ from app.models.contractor.contractor_assignment import ContractorAssignment
 from app.models.contractor.contractor_feedback import ContractorFeedback
 from app.models.contractor.contractor_performance import ContractorPerformance
 from app.models.contractor.contractor_compliance_document import ContractorComplianceDocument
+from app.models.contractor.job_docket import JobDocket
+from app.models.contractor.contractor_calendar_entry import ContractorCalendarEntry
 from app.models.works.work_order import WorkOrder
 from app.models.works.work_order_completion import WorkOrderCompletion
 from app.models.works.work_order_settings import WorkOrderSettings
 from app.models.works.work_order_setting_audit_log import WorkOrderSettingAuditLog
 from app.models.works.work_order_policy import WorkOrderPolicy
+from app.models.works.work_order_reopen_request import WorkOrderReopenRequest
+from app.models.works.work_order_lifecycle_event import WorkOrderLifecycleEvent
+from app.models.works.work_order_progress_update import WorkOrderProgressUpdate
 from app.models.works.quote_response import QuoteResponse
 from app.models.works.quote_recipient import QuoteRecipient
 from app.models.works.special_project import ClientSpecialProject

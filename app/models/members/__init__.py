@@ -5,3 +5,4 @@ from .resident import Resident
 from .resident_request import ResidentRequest
 from .unit import Unit
 from .tenancy import Tenancy
+from .unit_access_invite import UnitAccessInvite

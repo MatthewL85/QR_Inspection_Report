@@ -1,0 +1,90 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block page_content %}
+<div class="container-fluid client-manager-workspace">
+
+  <div class="client-manager-command-bar">
+    <div>
+      <h5>Connections & Integrations</h5>
+      <span>Native Logix module links, organisation codes and future external connector readiness.</span>
+    </div>
+    <div class="client-manager-actions">
+      <a class="unit-link-action" href="{{ url_for('settings.module_settings_index', company_id=company.id) }}">
+        <i class="material-icons">apps</i> Module Settings
+      </a>
+      <a class="unit-link-action" href="{{ url_for('settings.profile_index', id=company.id) }}">
+        <i class="material-icons">business</i> Company Profile
+      </a>
+    </div>
+  </div>
+
+  <form method="post" action="{{ url_for('settings.connections_index', company_id=company.id) }}">
+    {% set connection_panel_id = 'settings-centre-connections' %}
+    {% set connection_panel_title = 'Organisation Connections' %}
+    {% set connection_panel_help = 'Generate or accept one-time codes so independently subscribed modules and external organisations can share governed records.' %}
+    {% set allow_connection_actions = true %}
+    {% include 'settings/_module_connections_panel.html' %}
+  </form>
+
+  <section class="client-manager-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Native Logix Modules</h6>
+        <span>Enable modules for this organisation. Each module keeps its own settings, records and document ownership.</span>
+      </div>
+      <span class="user-manager-status-pill is-active">{{ subscriptions|length }} Enabled</span>
+    </div>
+
+    <div class="module-connection-module-grid">
+      {% for module in available_modules %}
+        {% set subscription = subscriptions.get(module.key) %}
+        <article class="module-connection-module-card">
+          <div>
+            <span>{{ module.status|replace('_', ' ')|title }}</span>
+            <strong>{{ module.name }}</strong>
+            <small>
+              Owns {{ module.owned_data[:3]|join(', ') }}{% if module.owned_data|length > 3 %} and more{% endif %}.
+            </small>
+          </div>
+          <div class="module-connection-module-meta">
+            {% if subscription and subscription.is_active %}
+              <em class="is-enabled">Enabled</em>
+            {% else %}
+              <em>Available</em>
+              <form method="post" action="{{ url_for('settings.connections_index', company_id=company.id) }}">
+                <input type="hidden" name="settings_action" value="enable_module_subscription">
+                <input type="hidden" name="module_key" value="{{ module.key }}">
+                <button type="submit">Enable</button>
+              </form>
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="client-manager-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>External Connector Rule</h6>
+        <span>Third-party systems connect through the owning module, not by sharing raw database access.</span>
+      </div>
+      <span class="user-manager-status-pill">Future Ready</span>
+    </div>
+    <div class="module-connection-rule-grid">
+      <div>
+        <strong>Finance systems</strong>
+        <span>Sage, Xero and QuickBooks belong under Finance Logix settings. Finance owns ledgers, invoice sync and payment references.</span>
+      </div>
+      <div>
+        <strong>HR systems</strong>
+        <span>HR Manager or cloud HR links belong under HR Logix settings. HR owns employee records, leave rules and policy documents.</span>
+      </div>
+      <div>
+        <strong>GAR AI</strong>
+        <span>GAR reads permitted source-backed records and connector status. It should not own credentials or replace the source module.</span>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

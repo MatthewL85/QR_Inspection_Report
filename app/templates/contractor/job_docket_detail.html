@@ -1,0 +1,550 @@
+{% extends 'base.html' %}
+{% block title %}{{ job_docket.docket_number or 'Job Docket' }}{% endblock %}
+
+{% macro display(value) -%}
+  {{ value if value not in [none, ''] else '-' }}
+{%- endmacro %}
+
+{% macro time_range(docket) -%}
+  {% if docket.start_time %}{{ docket.start_time.strftime('%H:%M') }}{% else %}Any time{% endif %}
+  {% if docket.end_time %} - {{ docket.end_time.strftime('%H:%M') }}{% endif %}
+{%- endmacro %}
+
+{% block page_content %}
+{% set docket_status = (job_docket.status or '')|lower %}
+{% set work_status = (work_order.status if work_order else '')|lower %}
+{% set is_closed = work_status in ['closed', 'completed', 'resolved', 'cancelled'] or docket_status in ['completed', 'approved', 'invoiced', 'cancelled'] %}
+{% set is_scheduled = job_docket.scheduled_date or docket_status in ['scheduled', 'in progress', 'awaiting parts', 'awaiting access', 'completed', 'completed - awaiting review', 'approved', 'invoiced'] %}
+{% set job_title = work_order.title if work_order else (job_docket.scope_of_works or 'Standalone Contractor Logix job docket') %}
+{% set invoice_status_key = (job_docket.invoice_status or '')|lower %}
+{% set invoice_prepared_or_later = invoice_status_key in ['invoice prepared', 'invoiced', 'paid', 'settled'] %}
+<div class="contract-manager app-ready-surface app-ready-surface--contractor"
+     data-app-mobile-ready="true"
+     data-app-source-backed="true">
+  <section class="contract-manager-hero">
+    <div>
+      <h1>{{ job_docket.docket_number or 'Job Docket' }}</h1>
+      <p>{{ job_title }}</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="contract-manager-link" href="{{ url_for('contractor.calendar') }}">Back to Calendar</a>
+      <a class="contract-manager-link" href="{{ url_for('contractor.job_docket_document', docket_id=job_docket.id) }}">Document Preview</a>
+      {% if work_order %}
+        <a class="contract-manager-link" href="{{ url_for('contractor.work_order_detail', work_order_id=work_order.id) }}">Work Order Pack</a>
+      {% endif %}
+      {% if work_order and work_pack.pdf_ready %}
+        <a class="contract-manager-button" href="{{ url_for('contractor.work_order_pdf', work_order_id=work_order.id) }}">Download PDF</a>
+      {% endif %}
+    </div>
+  </section>
+
+  {% if not is_scheduled and not is_closed %}
+    <section class="contract-manager-panel contractor-docket-next-step" id="schedule-job">
+      <div class="contract-manager-section-heading">
+        <div>
+          <h2>Schedule Job</h2>
+          <p>This job has been accepted. Add the visit to the calendar before field actions open.</p>
+        </div>
+        <span class="contract-alert-pill contract-alert-warning">Awaiting Schedule</span>
+      </div>
+      <form method="post"
+            action="{{ url_for('contractor.schedule_job_docket', docket_id=job_docket.id) }}"
+            class="contract-manager-form-grid contractor-schedule-form"
+            data-app-action="contractor-job-docket-schedule"
+            data-app-requires-csrf="true">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="return_to" value="docket">
+        <label>
+          Engineer
+          <select name="assigned_engineer_id">
+            <option value="">Unassigned engineer</option>
+            {% for engineer in engineers %}
+              <option value="{{ engineer.id }}" {% if job_docket.assigned_engineer_id == engineer.id %}selected{% endif %}>
+                {{ engineer.full_name or engineer.email }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>
+          Team
+          <select name="assigned_team_id">
+            <option value="">No team</option>
+            {% for team in teams %}
+              <option value="{{ team.id }}" {% if job_docket.assigned_team_id == team.id %}selected{% endif %}>{{ team.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>
+          Visit Date
+          <input type="date" name="scheduled_date" required>
+        </label>
+        <label>
+          Start Time
+          <input type="time" name="start_time">
+        </label>
+        <label>
+          End Time
+          <input type="time" name="end_time">
+        </label>
+        <label>
+          Estimated Duration
+          <input type="number" name="estimated_duration_minutes" min="15" step="15" placeholder="Minutes">
+        </label>
+        <label class="contractor-schedule-notes">
+          Appointment Notes
+          <textarea name="notes" rows="3" placeholder="Access arrangements, appointment notes or engineer instructions.">{{ job_docket.scheduling_notes or '' }}</textarea>
+        </label>
+        <div class="contractor-schedule-submit">
+          <button type="submit" class="contract-manager-button">Schedule Job</button>
+        </div>
+      </form>
+    </section>
+  {% endif %}
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Job Docket</h2>
+        <p>Operational record for scheduling, attendance, updates and completion.</p>
+      </div>
+      <span class="contract-alert-pill contract-alert-muted">{{ job_docket.status }}</span>
+    </div>
+    <div class="contractor-docket-summary-grid">
+      <article>
+        <span>{{ 'Work Order' if work_order else 'Instruction Source' }}</span>
+        <strong>{{ work_order.display_reference if work_order else (job_docket.external_work_order_reference or job_docket.instruction_source) }}</strong>
+        <small>{{ work_order.status if work_order else (job_docket.instruction_source or 'Standalone Contractor Logix') }}</small>
+      </article>
+      <article>
+        <span>Schedule</span>
+        <strong>{{ job_docket.scheduled_date.strftime('%d %b %Y') if job_docket.scheduled_date else 'Not Scheduled' }}</strong>
+        <small>{{ time_range(job_docket) if job_docket.scheduled_date else 'Awaiting calendar slot' }}</small>
+      </article>
+      <article>
+        <span>Engineer / Team</span>
+        <strong>{{ job_docket.assigned_engineer.full_name if job_docket.assigned_engineer else 'No Engineer' }}</strong>
+        <small>{{ job_docket.assigned_team.name if job_docket.assigned_team else 'No team assigned' }}</small>
+      </article>
+      <article>
+        <span>Priority / Trade</span>
+        <strong>{{ job_docket.priority or 'Normal' }}</strong>
+        <small>{{ job_docket.required_trade or (work_order.business_type if work_order else none) or 'Trade not set' }}</small>
+      </article>
+      <article>
+        <span>Duration / Notes</span>
+        <strong>{{ (job_docket.estimated_duration_minutes ~ ' mins') if job_docket.estimated_duration_minutes else '-' }}</strong>
+        <small>{{ job_docket.scheduling_notes or 'No appointment notes' }}</small>
+      </article>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Site & Contact</h2>
+        <p>Information needed before attending site.</p>
+      </div>
+    </div>
+    <div class="unit-detail-grid contractor-pack-detail-grid">
+      <div><span class="unit-detail-label">Development</span><strong>{{ work_pack.location.development }}</strong></div>
+      <div><span class="unit-detail-label">Property</span><strong>{{ work_pack.location.property }}</strong></div>
+      <div><span class="unit-detail-label">Unit</span><strong>{{ work_pack.location.unit }}</strong></div>
+      <div><span class="unit-detail-label">Block / Core</span><strong>{{ work_pack.location.block }}{% if work_pack.location.core != '-' %} / {{ work_pack.location.core }}{% endif %}</strong></div>
+      <div><span class="unit-detail-label">Address</span><strong>{{ work_pack.location.address_lines|join(', ') if work_pack.location.address_lines else '-' }}</strong></div>
+      <div><span class="unit-detail-label">Access Notes</span><strong>{{ job_docket.access_notes or work_pack.location.access_notes or '-' }}</strong></div>
+      <div><span class="unit-detail-label">Contact Name</span><strong>{{ job_docket.contact_name or '-' }}</strong></div>
+      <div><span class="unit-detail-label">Contact Phone</span><strong>{{ job_docket.contact_phone or '-' }}</strong></div>
+      <div><span class="unit-detail-label">Contact Email</span><strong>{{ job_docket.contact_email or '-' }}</strong></div>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Work Details</h2>
+        <p>Scope, source request and GAR context for this job.</p>
+      </div>
+    </div>
+    <div class="unit-detail-grid contractor-pack-detail-grid">
+      <div><span class="unit-detail-label">Scope of Works</span><strong>{{ job_docket.scope_of_works or (work_order.description if work_order else none) or '-' }}</strong></div>
+      <div><span class="unit-detail-label">Contractor Job No.</span><strong>{{ job_docket.contractor_job_number or '-' }}</strong></div>
+      <div><span class="unit-detail-label">Source / External WO Ref</span><strong>{{ job_docket.external_work_order_reference or '-' }}</strong></div>
+      <div><span class="unit-detail-label">Request Type</span><strong>{{ work_pack.classification.request_type }}</strong></div>
+      <div><span class="unit-detail-label">Member Request</span><strong>{{ work_pack.request_context.member_request_title }}</strong></div>
+      <div><span class="unit-detail-label">GAR Context</span><strong>{{ work_pack.gar_history.contractor_safe_summary if work_pack.gar_history and work_pack.gar_history.contractor_safe_summary else 'No related history flagged.' }}</strong></div>
+      <div><span class="unit-detail-label">Scheduling Notes</span><strong>{{ job_docket.scheduling_notes or '-' }}</strong></div>
+    </div>
+    {% if selected_quote_response %}
+      <div class="contractor-approved-quote-panel">
+        <div class="contract-manager-section-heading">
+          <div>
+            <h2>Approved Quote Basis</h2>
+            <p>This is the quotation selected by Works Logix before the job became an assigned docket.</p>
+          </div>
+          <span class="contract-alert-pill contract-alert-success">Selected Quote</span>
+        </div>
+        <div class="works-command-grid">
+          <article class="works-kpi-card">
+            <span>Quote Ref</span>
+            <strong>Quote #{{ selected_quote_response.id }}</strong>
+          </article>
+          <article class="works-kpi-card">
+            <span>Total</span>
+            <strong>{% if selected_quote_response.parsed_total is not none %}EUR {{ "{:,.2f}".format(selected_quote_response.parsed_total) }}{% else %}-{% endif %}</strong>
+          </article>
+          <article class="works-kpi-card">
+            <span>Submitted</span>
+            <strong>{{ selected_quote_response.submitted_at.strftime('%d %b %Y') if selected_quote_response.submitted_at else '-' }}</strong>
+          </article>
+          <article class="works-kpi-card">
+            <span>File</span>
+            <strong>
+              <a class="works-evidence-link" href="{{ selected_quote_response.quote_file_path }}" target="_blank" rel="noopener">Open Quote</a>
+            </strong>
+          </article>
+        </div>
+        {% if selected_quote_response.parsed_summary or selected_quote_response.decision_note %}
+          <div class="unit-detail-grid contractor-pack-detail-grid">
+            <div><span class="unit-detail-label">Quote Summary</span><strong>{{ selected_quote_response.parsed_summary or '-' }}</strong></div>
+            <div><span class="unit-detail-label">Decision Note</span><strong>{{ selected_quote_response.decision_note or '-' }}</strong></div>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="contract-manager-panel contractor-invoice-readiness-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Payment Request</h2>
+        <p>Send the completed docket to management for review and future Finance Logix processing.</p>
+      </div>
+      <span class="contract-alert-pill {% if invoice_prepared_or_later %}contract-alert-success{% else %}contract-alert-warning{% endif %}">
+        {{ job_docket.invoice_status or 'Not Ready' }}
+      </span>
+    </div>
+    <div class="works-command-grid">
+      <article class="works-kpi-card">
+        <span>Request State</span>
+        <strong>{{ job_docket.invoice_status or 'Not Ready' }}</strong>
+      </article>
+      <article class="works-kpi-card">
+        <span>Payment State</span>
+        <strong>{{ job_docket.payment_status or 'Not Invoiced' }}</strong>
+      </article>
+      <article class="works-kpi-card">
+        <span>Quote / PO</span>
+        <strong>{{ job_docket.quotation_reference or job_docket.purchase_order_number or '-' }}</strong>
+      </article>
+      <article class="works-kpi-card">
+        <span>Finance Link</span>
+        <strong>Future Finance Logix</strong>
+      </article>
+    </div>
+    <div class="contractor-invoice-readiness-actions">
+      <a class="contract-manager-link" href="{{ url_for('contractor.job_docket_payment_request_document', docket_id=job_docket.id) }}">Preview Payment Request</a>
+      {% if is_closed and not invoice_prepared_or_later %}
+        <form method="post"
+              action="{{ url_for('contractor.mark_job_docket_invoice_prepared', docket_id=job_docket.id) }}"
+              data-app-action="contractor-invoice-prepared"
+              data-app-requires-csrf="true">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="contract-manager-button">Send Payment Request</button>
+        </form>
+      {% elif not is_closed %}
+        <p class="contract-manager-empty">Available after the job has been completed or closed.</p>
+      {% else %}
+        <p class="contract-manager-empty">Payment request sent. Management can review it from Works Logix, and Finance Logix will own invoice and payment processing in a later phase.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  {% if work_order and (is_scheduled or is_closed) %}
+    <section class="contract-manager-panel" id="field-actions">
+      <div class="contract-manager-section-heading">
+        <div>
+          <h2>Field Actions</h2>
+          <p>Start attendance, add site updates or submit completion from the job docket.</p>
+        </div>
+        <span class="contract-alert-pill contract-alert-muted">{{ work_order.status or job_docket.status }}</span>
+      </div>
+
+      {% if work_status in ['accepted', 'scheduled'] %}
+        <div class="contract-manager-actions-row contractor-pack-actions-row">
+          <form method="post" action="{{ url_for('contractor.update_work_order', work_order_id=work_order.id, action='start') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="return_to" value="docket">
+            <input type="hidden" name="docket_id" value="{{ job_docket.id }}">
+            <button type="submit" class="btn btn-sm btn-primary">Start Job</button>
+          </form>
+        </div>
+      {% endif %}
+
+      {% if not is_closed %}
+        <form method="post"
+              action="{{ url_for('contractor.add_progress_update', work_order_id=work_order.id) }}"
+              enctype="multipart/form-data"
+              class="contractor-progress-form"
+              data-app-action="contractor-job-docket-update"
+              data-app-requires-online="true"
+              data-app-requires-csrf="true"
+              data-app-offline-queue="false"
+              data-app-source-record="JobDocket:{{ job_docket.id }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="return_to" value="docket">
+          <input type="hidden" name="docket_id" value="{{ job_docket.id }}">
+          <div class="contractor-progress-note">
+            <label class="unit-detail-label" for="docket_progress_note">Update Note</label>
+            <textarea id="docket_progress_note" name="progress_note" rows="6" required placeholder="Add a site update, access issue, delay note or completion summary."></textarea>
+          </div>
+          <div class="contractor-progress-actions">
+            <div>
+              <label class="unit-detail-label" for="docket_update_type">Update Type</label>
+              <select id="docket_update_type" name="update_type" required data-completion-visibility-target="docket_visibility_scope">
+                <option value="" selected disabled>Select update type</option>
+                <option value="progress">Progress Update</option>
+                <option value="completion">Completion</option>
+              </select>
+            </div>
+            <div>
+              <label class="unit-detail-label" for="docket_visibility_scope">Visibility</label>
+              <select id="docket_visibility_scope" name="visibility_scope" required>
+                <option value="" selected disabled>Select visibility</option>
+                <option value="management">Contractor + Management</option>
+                <option value="contractor_internal">Contractor Only</option>
+                <option value="reporter_visible">All Parties</option>
+              </select>
+            </div>
+            <div>
+              <label class="unit-detail-label" for="docket_progress_files">Photos / Videos / Documents</label>
+              <input id="docket_progress_files"
+                     type="file"
+                     name="progress_files"
+                     multiple
+                     accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx"
+                     data-app-media-context="contractor_job_docket_update"
+                     data-app-media-source-model="JobDocket">
+            </div>
+            <button type="submit" class="btn btn-sm btn-primary" data-update-submit>Add Update</button>
+          </div>
+        </form>
+      {% else %}
+        <p class="contract-manager-empty">This job is closed. Updates are read-only.</p>
+      {% endif %}
+    </section>
+  {% else %}
+    <section class="contract-manager-panel" id="field-actions">
+      <div class="contract-manager-section-heading">
+        <div>
+          <h2>Field Actions</h2>
+          <p>
+            {% if work_order %}
+              Field actions will open once this job has been scheduled.
+            {% else %}
+              Standalone docket updates, completion evidence and invoice-ready actions will use this same docket in the next Contractor Logix build step.
+            {% endif %}
+          </p>
+        </div>
+        {% if work_order %}
+          <a class="contract-manager-link" href="#schedule-job">Schedule First</a>
+        {% else %}
+          <span class="contract-alert-pill contract-alert-muted">Standalone</span>
+        {% endif %}
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="contract-manager-panel contractor-private-log-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Materials Used &amp; Time Log</h2>
+        <p>Contractor-only record of daily hours, materials and internal job notes.</p>
+      </div>
+      <span class="contract-alert-pill contract-alert-muted">Contractor Only</span>
+    </div>
+    <form method="post"
+          action="{{ url_for('contractor.add_private_work_log', docket_id=job_docket.id) }}"
+          class="contractor-private-work-log-form"
+          data-app-action="contractor-private-work-log"
+          data-app-requires-csrf="true">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="contractor-private-log-fields">
+        <label>
+          <span>Date</span>
+          <input type="date" name="work_date" value="{{ today.isoformat() if today else '' }}" required>
+        </label>
+        <label>
+          <span>Hours</span>
+          <input type="number" name="labour_hours" min="0" step="0.25" placeholder="e.g. 3.5">
+        </label>
+        <label>
+          <span>Material Used</span>
+          <input type="text" name="material_description" maxlength="255" placeholder="e.g. Pump, cable, paint">
+        </label>
+        <label>
+          <span>Quantity</span>
+          <input type="number" name="material_quantity" min="0" step="0.01" placeholder="0">
+        </label>
+        <label>
+          <span>Unit</span>
+          <input type="text" name="material_unit" maxlength="40" placeholder="each, m, L">
+        </label>
+        <label>
+          <span>Cost</span>
+          <input type="number" name="material_cost" min="0" step="0.01" placeholder="0.00">
+        </label>
+      </div>
+      <div class="contractor-private-log-notes-row">
+        <label>
+          <span>Internal Notes</span>
+          <textarea name="private_notes" rows="3" placeholder="Supplier reference, stock used, labour detail, delay reason or internal job note."></textarea>
+        </label>
+        <div>
+          <button type="submit" class="contract-manager-button">Save Entry</button>
+        </div>
+      </div>
+    </form>
+
+    <div class="contract-manager-table-wrap contractor-pack-table-wrap">
+      <table class="contract-manager-table contractor-private-log-table">
+        <thead>
+          <tr><th>Date</th><th>Hours</th><th>Material</th><th>Qty</th><th>Cost</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          {% for private_log in private_work_logs %}
+            <tr>
+              <td>{{ private_log.work_date.strftime('%d %b %Y') if private_log.work_date else '-' }}</td>
+              <td>{{ ('%.2f'|format(private_log.labour_hours)) if private_log.labour_hours is not none else '-' }}</td>
+              <td>{{ private_log.material_description or '-' }}</td>
+              <td>
+                {% if private_log.material_quantity is not none %}
+                  {{ '%.2f'|format(private_log.material_quantity) }}{% if private_log.material_unit %} {{ private_log.material_unit }}{% endif %}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>{{ ('%.2f'|format(private_log.material_cost)) if private_log.material_cost is not none else '-' }}</td>
+              <td>{{ private_log.notes or '-' }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6" class="contract-manager-empty">No materials or time entries have been recorded yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Evidence</h2>
+        <p>Member request and contractor evidence connected to this docket.</p>
+      </div>
+    </div>
+    <div class="contract-manager-table-wrap contractor-pack-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr><th>Source</th><th>Evidence</th><th>Open</th></tr>
+        </thead>
+        <tbody>
+          {% for item in work_pack.evidence_items %}
+            <tr>
+              <td>{{ item.source }}</td>
+              <td>
+                {{ item.label }}
+                {% if item.reference_type and item.reference_type != 'note' %}
+                  <span class="contract-alert-pill contract-alert-muted">{{ item.reference_type|title }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if item.reference_url %}
+                  <a class="works-evidence-link" href="{{ item.reference_url }}" target="_blank" rel="noopener">Open Evidence</a>
+                {% else %}
+                  {{ item.display_reference or '-' }}
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="3" class="contract-manager-empty">No evidence is linked to this docket yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Updates</h2>
+        <p>Latest contractor progress and completion notes.</p>
+      </div>
+      <a class="contract-manager-link" href="#field-actions">Add Update</a>
+    </div>
+    <div class="contract-manager-table-wrap contractor-pack-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr><th>Date</th><th>Type</th><th>Visibility</th><th>Update</th><th>Evidence</th></tr>
+        </thead>
+        <tbody>
+          {% for update in progress_updates %}
+            <tr>
+              <td>{{ update.created_at.strftime('%d %b %Y %H:%M') if update.created_at else '-' }}</td>
+              <td><span class="contract-alert-pill contract-alert-muted">{{ update.update_type_label }}</span></td>
+              <td><span class="contract-alert-pill contract-alert-muted">{{ update.visibility_label }}</span></td>
+              <td>{{ update.note }}</td>
+              <td>
+                {% if update.evidence_links %}
+                  {% for evidence_link in update.evidence_links %}
+                    <a class="works-evidence-link" href="{{ evidence_link }}" target="_blank" rel="noopener">Open {{ loop.index }}</a>
+                  {% endfor %}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5" class="contract-manager-empty">No updates have been added yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="contract-manager-panel">
+    {% set timeline_events = work_pack.lifecycle %}
+    {% set timeline_title = "Job Docket Lifecycle" %}
+    {% set timeline_subtitle = "Standalone Contractor Logix history" if not work_order else "Shared Works Logix history" %}
+    {% set timeline_empty = "No standalone lifecycle events have been recorded yet." if not work_order else "No lifecycle events have been recorded yet." %}
+    {% include "works/_lifecycle_timeline.html" %}
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+  document.addEventListener("change", function (event) {
+    var source = event.target;
+    if (!source || source.name !== "update_type") {
+      return;
+    }
+    var targetId = source.getAttribute("data-completion-visibility-target");
+    var visibility = targetId ? document.getElementById(targetId) : null;
+    if (visibility && source.value === "completion") {
+      visibility.value = "reporter_visible";
+      visibility.dataset.userChanged = "false";
+    }
+    var form = source.closest("form");
+    var submitButton = form ? form.querySelector("[data-update-submit]") : null;
+    if (submitButton) {
+      submitButton.textContent = source.value === "completion" ? "Submit Completion Notes" : "Add Update";
+    }
+  });
+
+  document.addEventListener("change", function (event) {
+    if (event.target && event.target.name === "visibility_scope") {
+      event.target.dataset.userChanged = "true";
+    }
+  });
+</script>
+{% endblock %}

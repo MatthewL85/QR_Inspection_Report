@@ -1,0 +1,735 @@
+{% extends 'base.html' %}
+{% block title %}Contractor Work Queue{% endblock %}
+
+{% macro unit_label(unit) -%}
+  {% if unit %}
+    {{ unit.block_name ~ ' / ' if unit.block_name }}{{ unit.unit_number or unit.unit_label }}
+  {% else %}
+    -
+  {% endif %}
+{%- endmacro %}
+
+{% macro status_pill(status) -%}
+  {% set key = (status or 'Assigned')|lower %}
+  {% if key in ['completed', 'closed', 'resolved'] %}
+    <span class="contract-alert-pill contract-alert-success">{{ status }}</span>
+{% elif key in ['accepted', 'in progress'] %}
+    <span class="contract-alert-pill contract-alert-primary">{{ status }}</span>
+  {% elif key in ['returned'] %}
+    <span class="contract-alert-pill contract-alert-danger">{{ status }}</span>
+  {% else %}
+    <span class="contract-alert-pill contract-alert-muted">{{ status or 'Assigned' }}</span>
+  {% endif %}
+{%- endmacro %}
+
+{% macro work_order_link(item) -%}
+  <strong>
+    <a href="{{ url_for('contractor.work_order_detail', work_order_id=item.id) }}">
+      {{ item.title or 'Work Order #' ~ item.id }}
+    </a>
+  </strong>
+{%- endmacro %}
+
+{% macro job_docket_reference(item) -%}
+  {% if item.job_docket %}
+    <a class="contractor-docket-reference"
+       href="{{ url_for('contractor.job_docket_detail', docket_id=item.job_docket.id) }}">
+      {{ item.job_docket.docket_number or 'JD-' ~ item.job_docket.id }}
+    </a>
+  {% else %}
+    <span class="contractor-docket-reference is-muted">No docket</span>
+  {% endif %}
+{%- endmacro %}
+
+{% macro invoice_ready_reference(item) -%}
+  <div class="contract-manager-cell-stack contractor-invoice-reference">
+    {{ job_docket_reference(item) }}
+    <a href="{{ url_for('contractor.work_order_detail', work_order_id=item.id) }}">
+      {{ item.display_reference or item.external_reference or 'WO-' ~ item.id }}
+    </a>
+  </div>
+{%- endmacro %}
+
+{% macro gar_history_panel(history) -%}
+  {% if history and history.summary.related_count %}
+    <details class="works-lifecycle-toggle works-gar-history-toggle">
+      <summary>GAR history ({{ history.summary.related_count }})</summary>
+      <p>{{ history.contractor_safe_summary }}</p>
+      {% for record in history.records[:2] %}
+        <div class="works-gar-history-mini">
+          <strong>{{ record.reference }}{% if record.created_at %} - {{ record.created_at[:10] }}{% endif %}</strong>
+          <span>{{ record.outcome or record.status or 'Previous outcome not recorded' }}</span>
+        </div>
+      {% endfor %}
+    </details>
+  {% else %}
+    <span class="unit-module-note">No GAR history</span>
+  {% endif %}
+{%- endmacro %}
+
+{% macro evidence_status(pack) -%}
+  {% if pack and pack.submitted %}
+    {% set quality = pack.quality_status or 'missing' %}
+    <span class="unit-module-note">
+      Evidence: {{ quality|replace('_', ' ')|title }}
+      {% if pack.evidence_reference_type and pack.evidence_reference_type != 'none' %}
+        - {{ pack.evidence_reference_type|replace('_', ' ')|title }}
+      {% endif %}
+    </span>
+  {% else %}
+    <span class="unit-module-note">Evidence: Not submitted</span>
+  {% endif %}
+{%- endmacro %}
+
+{% macro return_context_panel(context) -%}
+  {% if context and context.returned %}
+    <div class="works-return-context">
+      <span>Returned by Works Logix</span>
+      <strong>{{ context.reason or 'Further action required before closure.' }}</strong>
+      <small>
+        {% if context.returned_at %}{{ context.returned_at[:10] }}{% endif %}
+        {% if context.reviewed_by %}{% if context.returned_at %} - {% endif %}{{ context.reviewed_by }}{% endif %}
+      </small>
+    </div>
+  {% endif %}
+{%- endmacro %}
+
+{% macro review_cycle_note(cycle) -%}
+  {% if cycle and (cycle.completion_returns or cycle.resubmissions) %}
+    <span class="unit-module-note">
+      Review cycle: {{ cycle.completion_returns or 0 }} return{{ '' if (cycle.completion_returns or 0) == 1 else 's' }}, {{ cycle.resubmissions or 0 }} resubmission{{ '' if (cycle.resubmissions or 0) == 1 else 's' }}
+    </span>
+  {% endif %}
+{%- endmacro %}
+
+{% macro queue_tile(queue_key, label, count, tone='') -%}
+  <a class="works-kpi-card contractor-work-queue-tile {% if selected_queue == queue_key %}is-active{% endif %}"
+     href="{{ url_for('contractor.work_orders', queue=queue_key, search=filters.search) }}">
+    <span>{{ label }}</span>
+    <strong class="{{ tone }}">{{ count }}</strong>
+  </a>
+{%- endmacro %}
+
+{% block page_content %}
+<div class="contract-manager app-ready-surface app-ready-surface--contractor"
+     data-app-mobile-ready="true"
+     data-app-safe-area="required"
+     data-app-source-backed="true"
+     data-app-offline="static-shell-only"
+     data-app-surface="contractor-work-queue">
+  {# App/deep-link anchors retained for mobile shells while the desktop queue renders one selected list at a time:
+     #assigned-work #returned-work #submitted-work #active-work #completed-work #}
+  <section class="contract-manager-hero">
+    <div>
+      <h1>Contractor Work Queue</h1>
+      <p>Assigned work orders, status updates and completion evidence connected to Works Logix.</p>
+    </div>
+    <a class="contract-manager-link" href="{{ url_for('contractor.contractor_dashboard') }}">Back to Dashboard</a>
+  </section>
+
+  <section class="works-command-grid contractor-work-summary-grid" aria-label="Contractor queue views">
+    {{ queue_tile('assigned', 'New Assignments', stats.assigned) }}
+    {{ queue_tile('quote_requests', 'Quotation Requests', stats.quote_requests, 'text-warning') }}
+    {{ queue_tile('active', 'Active', stats.active, 'text-primary') }}
+    {{ queue_tile('submitted', 'Submitted', stats.submitted) }}
+    {{ queue_tile('returned', 'Returned', stats.returned, 'text-danger') }}
+    {{ queue_tile('to_be_invoiced', 'To Be Invoiced', stats.to_be_invoiced, 'text-warning') }}
+    {{ queue_tile('closed', 'Closed / Paid', stats.closed, 'text-success') }}
+  </section>
+
+  <section class="contract-manager-panel contractor-work-filter-panel">
+      <div class="contract-manager-section-heading">
+        <div>
+          <h2>Operational Filter</h2>
+          <p>Search your assigned queue without losing the contractor workflow context.</p>
+        </div>
+      </div>
+      <form method="get" class="contractor-work-filter-form" role="search" aria-label="Contractor work filters">
+        <input type="hidden" name="queue" value="{{ selected_queue }}">
+        <div>
+          <label for="search">Search</label>
+          <input class="form-control" id="search" name="search" value="{{ filters.search }}" placeholder="Work order, unit, development or reference">
+        </div>
+        <div>
+          <label for="status">Status</label>
+          <select class="form-select" id="status" name="status">
+            <option value="">All statuses</option>
+            {% for status in status_options %}
+              <option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>{{ status }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="contract-filter-actions">
+          <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+          <a href="{{ url_for('contractor.work_orders', queue=selected_queue) }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+        </div>
+      </form>
+  </section>
+
+  {% if selected_queue == 'returned' %}
+  <section class="contract-manager-panel" id="returned-work">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Returned Work</h2>
+        <p>Works Logix has returned these jobs for further action, clarification or evidence.</p>
+      </div>
+      <span class="contract-alert-pill contract-alert-danger">{{ returned_work_orders|length }} Returned</span>
+    </div>
+    <div class="contract-manager-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr>
+            <th>Work Order / Docket</th>
+            <th>Development</th>
+            <th>Unit</th>
+            <th>Status</th>
+            <th>Updated Completion</th>
+            <th>Track</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in returned_work_orders %}
+            <tr id="returned-work-order-{{ item.id }}">
+              <td>{{ work_order_link(item) }}<span>{{ item.description or '-' }}</span></td>
+              <td>{{ item.client.name if item.client else '-' }}</td>
+              <td>{{ unit_label(item.unit) }}</td>
+              <td>{{ status_pill(item.status) }}</td>
+              <td>
+                {{ return_context_panel(return_context_by_work_order.get(item.id)) }}
+                {{ review_cycle_note(review_cycle_by_work_order.get(item.id)) }}
+                {{ evidence_status(completion_evidence_by_work_order.get(item.id)) }}
+                <details class="works-reopen-details">
+                  <summary>Resubmit completion</summary>
+                  <form method="post"
+                        action="{{ url_for('contractor.update_work_order', work_order_id=item.id, action='complete') }}"
+                        enctype="multipart/form-data"
+                        data-app-action="contractor-submit-completion"
+                        data-app-requires-online="true"
+                        data-app-requires-csrf="true"
+                        data-app-offline-queue="false"
+                        data-app-source-record="work_order">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="search" value="{{ filters.search }}">
+                    <input type="hidden" name="status" value="{{ filters.status }}">
+                    <input type="hidden" name="queue" value="{{ selected_queue }}">
+                    <textarea name="completion_notes" rows="2" placeholder="What changed since it was returned?">{{ item.completion.completion_notes if item.completion else '' }}</textarea>
+                    <input name="evidence_reference"
+                           placeholder="Photo, video or document link"
+                           value="{{ item.completion.external_reference if item.completion and item.completion.external_reference else '' }}"
+                           data-app-media-reference="true"
+                           data-app-media-context="contractor_completion_evidence"
+                           data-app-media-source-model="MediaFile"
+                           data-app-direct-upload="false">
+                    <input type="file"
+                           name="evidence_files"
+                           multiple
+                           accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx"
+                           data-app-media-context="contractor_completion_evidence"
+                           data-app-media-source-model="WorkOrderCompletion">
+                    <button type="submit" class="contract-manager-button">Resubmit</button>
+                  </form>
+                </details>
+              </td>
+              <td>
+                {{ gar_history_panel(gar_history_by_work_order.get(item.id)) }}
+                <details class="works-lifecycle-toggle">
+                  <summary>Track lifecycle</summary>
+                  {% set timeline_events = lifecycle_by_work_order.get(item.id, []) %}
+                  {% set timeline_title = "Lifecycle" %}
+                  {% set timeline_compact = true %}
+                  {% include "works/_lifecycle_timeline.html" %}
+                </details>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6" class="contract-manager-empty">No returned work orders need action.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if selected_queue == 'submitted' %}
+  <section class="contract-manager-panel" id="submitted-work">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Submitted For Review</h2>
+        <p>These jobs are waiting for PM/Admin approval before being formally closed.</p>
+      </div>
+    </div>
+    <div class="contract-manager-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr>
+            <th>Work Order / Docket</th>
+            <th>Development</th>
+            <th>Unit</th>
+            <th>Status</th>
+            <th>Completion Notes</th>
+            <th>Track</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in submitted_work_orders %}
+            <tr id="work-order-{{ item.id }}">
+              <td>
+                {{ work_order_link(item) }}
+                {{ job_docket_reference(item) }}
+              </td>
+              <td>{{ item.client.name if item.client else '-' }}</td>
+              <td>{{ unit_label(item.unit) }}</td>
+              <td>{{ status_pill(item.status) }}</td>
+              <td>
+                {{ evidence_status(completion_evidence_by_work_order.get(item.id)) }}
+                <span>{{ item.completion.completion_notes if item.completion else '-' }}</span>
+              </td>
+              <td>
+                {{ gar_history_panel(gar_history_by_work_order.get(item.id)) }}
+                <details class="works-lifecycle-toggle">
+                  <summary>Track lifecycle</summary>
+                  {% set timeline_events = lifecycle_by_work_order.get(item.id, []) %}
+                  {% set timeline_title = "Lifecycle" %}
+                  {% set timeline_compact = true %}
+                  {% include "works/_lifecycle_timeline.html" %}
+                </details>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6" class="contract-manager-empty">No work orders are awaiting review.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if selected_queue == 'quote_requests' %}
+  <section class="contract-manager-panel" id="quote-requests">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Quotation Requests</h2>
+        <p>Quote invitations from Works Logix, with future support for manual quote intake and Director Logix voting.</p>
+      </div>
+      <span class="contract-alert-pill contract-alert-warning">{{ quote_request_work_orders|length }} Quote Request{{ '' if quote_request_work_orders|length == 1 else 's' }}</span>
+    </div>
+    <div class="contract-manager-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr>
+            <th>Request / Docket</th>
+            <th>Development</th>
+            <th>Unit</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Action</th>
+            <th>Track</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in quote_request_work_orders %}
+            <tr id="quote-request-{{ item.id }}">
+              <td>
+                {{ work_order_link(item) }}
+                {{ job_docket_reference(item) }}
+              </td>
+              <td>{{ item.client.name if item.client else '-' }}</td>
+              <td>{{ unit_label(item.unit) }}</td>
+              <td>{{ item.business_type or item.request_type or '-' }}</td>
+              <td>{{ status_pill(item.status) }}</td>
+              <td>
+                <a class="user-manager-action-link" href="{{ url_for('contractor.work_order_detail', work_order_id=item.id) }}">Review</a>
+              </td>
+              <td>
+                {{ gar_history_panel(gar_history_by_work_order.get(item.id)) }}
+                <details class="works-lifecycle-toggle">
+                  <summary>Track lifecycle</summary>
+                  {% set timeline_events = lifecycle_by_work_order.get(item.id, []) %}
+                  {% set timeline_title = "Lifecycle" %}
+                  {% set timeline_compact = true %}
+                  {% include "works/_lifecycle_timeline.html" %}
+                </details>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="7" class="contract-manager-empty">No quotation requests are waiting for review.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if selected_queue == 'assigned' %}
+  <section class="contract-manager-panel" id="assigned-work">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Assigned Work</h2>
+        <p>Accept work orders and move them into progress when scheduled.</p>
+      </div>
+    </div>
+    <div class="contract-manager-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr>
+            <th>Work Order / Docket</th>
+            <th>Development</th>
+            <th>Unit</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Action</th>
+            <th>Track</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in assigned_work_orders %}
+            <tr id="work-order-{{ item.id }}">
+              <td>{{ work_order_link(item) }}<span>{{ item.description or '-' }}</span></td>
+              <td>{{ item.client.name if item.client else '-' }}</td>
+              <td>{{ unit_label(item.unit) }}</td>
+              <td>{{ item.business_type or item.request_type or '-' }}</td>
+              <td>{{ status_pill(item.status) }}</td>
+              <td>
+                <a class="user-manager-action-link" href="{{ url_for('contractor.work_order_detail', work_order_id=item.id) }}">View pack</a>
+                <form method="post"
+                      action="{{ url_for('contractor.update_work_order', work_order_id=item.id, action='accept') }}"
+                      data-app-action="contractor-accept-work-order"
+                      data-app-requires-online="true"
+                      data-app-requires-csrf="true"
+                      data-app-offline-queue="false"
+                      data-app-source-record="work_order">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="search" value="{{ filters.search }}">
+                  <input type="hidden" name="status" value="{{ filters.status }}">
+                  <input type="hidden" name="queue" value="{{ selected_queue }}">
+                  <button type="submit" class="user-manager-action-link">Accept</button>
+                </form>
+              </td>
+              <td>
+                {{ gar_history_panel(gar_history_by_work_order.get(item.id)) }}
+                <details class="works-lifecycle-toggle">
+                  <summary>Track lifecycle</summary>
+                  {% set timeline_events = lifecycle_by_work_order.get(item.id, []) %}
+                  {% set timeline_title = "Lifecycle" %}
+                  {% set timeline_compact = true %}
+                  {% include "works/_lifecycle_timeline.html" %}
+                </details>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="7" class="contract-manager-empty">No assigned work orders are waiting for response.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if selected_queue == 'active' %}
+  <section class="contract-manager-panel" id="active-work">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Active Work</h2>
+        <p>Move accepted work into progress and submit completion notes when done.</p>
+      </div>
+    </div>
+    <div class="contract-manager-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr>
+            <th>Work Order / Docket</th>
+            <th>Development</th>
+            <th>Unit</th>
+            <th>Status</th>
+            <th>Completion</th>
+            <th>Track</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in active_work_orders %}
+            <tr id="work-order-{{ item.id }}">
+              <td>
+                {{ work_order_link(item) }}
+                {{ job_docket_reference(item) }}
+              </td>
+              <td>{{ item.client.name if item.client else '-' }}</td>
+              <td>{{ unit_label(item.unit) }}</td>
+              <td>{{ status_pill(item.status) }}</td>
+              <td>
+                {% if (item.status or '') != 'In Progress' %}
+                  <form method="post"
+                        action="{{ url_for('contractor.update_work_order', work_order_id=item.id, action='start') }}"
+                        class="mb-2"
+                        data-app-action="contractor-start-work-order"
+                        data-app-requires-online="true"
+                        data-app-requires-csrf="true"
+                        data-app-offline-queue="false"
+                        data-app-source-record="work_order">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="search" value="{{ filters.search }}">
+                    <input type="hidden" name="status" value="{{ filters.status }}">
+                    <input type="hidden" name="queue" value="{{ selected_queue }}">
+                    <button type="submit" class="user-manager-action-link">Start</button>
+                  </form>
+                {% endif %}
+                <details class="works-reopen-details">
+                  <summary>Submit completion</summary>
+                  <form method="post"
+                        action="{{ url_for('contractor.update_work_order', work_order_id=item.id, action='complete') }}"
+                        enctype="multipart/form-data"
+                        data-app-action="contractor-submit-completion"
+                        data-app-requires-online="true"
+                        data-app-requires-csrf="true"
+                        data-app-offline-queue="false"
+                        data-app-source-record="work_order">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="search" value="{{ filters.search }}">
+                    <input type="hidden" name="status" value="{{ filters.status }}">
+                    <input type="hidden" name="queue" value="{{ selected_queue }}">
+                    <textarea name="completion_notes" rows="2" placeholder="Completion notes"></textarea>
+                    <input name="evidence_reference"
+                           placeholder="Photo, video or document link"
+                           data-app-media-reference="true"
+                           data-app-media-context="contractor_completion_evidence"
+                           data-app-media-source-model="MediaFile"
+                           data-app-direct-upload="false">
+                    <input type="file"
+                           name="evidence_files"
+                           multiple
+                           accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx"
+                           data-app-media-context="contractor_completion_evidence"
+                           data-app-media-source-model="WorkOrderCompletion">
+                    <button type="submit" class="contract-manager-button">Submit</button>
+                  </form>
+                </details>
+                <details class="works-reopen-details">
+                  <summary>Add progress update</summary>
+                  <form method="post"
+                        action="{{ url_for('contractor.add_progress_update', work_order_id=item.id) }}"
+                        enctype="multipart/form-data"
+                        data-app-action="contractor-progress-update"
+                        data-app-requires-online="true"
+                        data-app-requires-csrf="true"
+                        data-app-offline-queue="false"
+                        data-app-source-record="work_order">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="search" value="{{ filters.search }}">
+                    <input type="hidden" name="status" value="{{ filters.status }}">
+                    <input type="hidden" name="queue" value="{{ selected_queue }}">
+                    <textarea name="progress_note" rows="2" required placeholder="Progress update"></textarea>
+                    <select name="update_type" required data-completion-visibility-target="visibility_scope_{{ item.id }}">
+                      <option value="" selected disabled>Select update type</option>
+                      <option value="progress">Progress Update</option>
+                      <option value="completion">Completion</option>
+                    </select>
+                    <select id="visibility_scope_{{ item.id }}" name="visibility_scope" required>
+                      <option value="" selected disabled>Select visibility</option>
+                      <option value="management">Contractor + Management</option>
+                      <option value="contractor_internal">Contractor Only</option>
+                      <option value="reporter_visible">All Parties</option>
+                    </select>
+                    <input type="file"
+                           name="progress_files"
+                           multiple
+                           accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx"
+                           data-app-media-context="contractor_progress_update"
+                           data-app-media-source-model="WorkOrderProgressUpdate">
+                    <button type="submit" class="contract-manager-button" data-update-submit>Add Update</button>
+                  </form>
+                </details>
+              </td>
+              <td>
+                {% set progress_updates = progress_updates_by_work_order.get(item.id, []) if progress_updates_by_work_order is defined else [] %}
+                {% if progress_updates %}
+                  {% set latest_progress = progress_updates[-1] %}
+                  <div class="unit-module-note mb-2">
+                    Latest: {{ latest_progress.note|truncate(80) }}
+                  </div>
+                {% endif %}
+                {{ gar_history_panel(gar_history_by_work_order.get(item.id)) }}
+                <details class="works-lifecycle-toggle">
+                  <summary>Track lifecycle</summary>
+                  {% set timeline_events = lifecycle_by_work_order.get(item.id, []) %}
+                  {% set timeline_title = "Lifecycle" %}
+                  {% set timeline_compact = true %}
+                  {% include "works/_lifecycle_timeline.html" %}
+                </details>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6" class="contract-manager-empty">No active work orders yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if selected_queue == 'to_be_invoiced' %}
+  <section class="contract-manager-panel" id="to-be-invoiced">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>To Be Invoiced</h2>
+        <p>Completed works ready to send as payment requests for management and future Finance Logix review.</p>
+      </div>
+      <span class="contract-alert-pill contract-alert-warning">{{ to_be_invoiced_work_orders|length }} Invoice Ready</span>
+    </div>
+    <div class="contract-manager-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr>
+            <th>Work Order / Docket</th>
+            <th>Development</th>
+            <th>Unit</th>
+            <th>Status</th>
+            <th>Finance State</th>
+            <th>Action</th>
+            <th>Track</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in to_be_invoiced_work_orders %}
+            {% set docket = item.job_docket %}
+            {% set invoice_status_key = (docket.invoice_status if docket else '')|lower %}
+            {% set invoice_prepared_or_later = invoice_status_key in ['invoice prepared', 'invoiced', 'paid', 'settled'] %}
+            <tr id="to-be-invoiced-work-order-{{ item.id }}">
+              <td>
+                {{ invoice_ready_reference(item) }}
+              </td>
+              <td>{{ item.client.name if item.client else '-' }}</td>
+              <td>{{ unit_label(item.unit) }}</td>
+              <td>{{ status_pill(item.status) }}</td>
+              <td>
+                <div class="contract-manager-cell-stack">
+                  <strong>{{ docket.invoice_status if docket else 'Invoice not created' }}</strong>
+                  <span>{{ docket.payment_status if docket else 'Payment not recorded' }}</span>
+                  <small>Payment request handoff point</small>
+                </div>
+              </td>
+              <td>
+                {% if docket %}
+                  <div class="contract-manager-cell-stack contractor-queue-action-stack">
+                    <a class="user-manager-action-link" href="{{ url_for('contractor.job_docket_detail', docket_id=docket.id) }}">Open Docket</a>
+                    <a class="user-manager-action-link" href="{{ url_for('contractor.job_docket_payment_request_document', docket_id=docket.id) }}">Preview Request</a>
+                    {% if not invoice_prepared_or_later %}
+                      <form method="post"
+                            action="{{ url_for('contractor.mark_job_docket_invoice_prepared', docket_id=docket.id) }}"
+                            data-app-action="contractor-invoice-prepared"
+                            data-app-requires-csrf="true">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="return_to" value="queue">
+                        <input type="hidden" name="search" value="{{ filters.search }}">
+                        <input type="hidden" name="status" value="{{ filters.status }}">
+                        <button type="submit" class="btn btn-sm btn-primary">Send Request</button>
+                      </form>
+                    {% endif %}
+                  </div>
+                {% else %}
+                  <span class="unit-module-note">Docket needed</span>
+                {% endif %}
+              </td>
+              <td>
+                {{ gar_history_panel(gar_history_by_work_order.get(item.id)) }}
+                <details class="works-lifecycle-toggle">
+                  <summary>Track lifecycle</summary>
+                  {% set timeline_events = lifecycle_by_work_order.get(item.id, []) %}
+                  {% set timeline_title = "Lifecycle" %}
+                  {% set timeline_compact = true %}
+                  {% include "works/_lifecycle_timeline.html" %}
+                </details>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="7" class="contract-manager-empty">No completed work is waiting to be invoiced.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if selected_queue == 'closed' %}
+  <section class="contract-manager-panel" id="completed-work">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Closed / Paid</h2>
+        <p>Paid work records retained for PM review, Members Logix visibility, Finance Logix and GAR governance.</p>
+      </div>
+      <span class="contract-alert-pill contract-alert-success">{{ closed_work_orders|length }} Paid</span>
+    </div>
+    <div class="contract-manager-table-wrap">
+      <table class="contract-manager-table">
+        <thead>
+          <tr>
+            <th>Work Order / Docket</th>
+            <th>Development</th>
+            <th>Unit</th>
+            <th>Status</th>
+            <th>Completion Notes</th>
+            <th>Track</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in closed_work_orders %}
+            <tr id="work-order-{{ item.id }}">
+              <td>
+                {{ work_order_link(item) }}
+                {{ job_docket_reference(item) }}
+              </td>
+              <td>{{ item.client.name if item.client else '-' }}</td>
+              <td>{{ unit_label(item.unit) }}</td>
+              <td>{{ status_pill(item.status) }}</td>
+              <td>
+                {{ evidence_status(completion_evidence_by_work_order.get(item.id)) }}
+                <span>{{ item.completion.completion_notes if item.completion else '-' }}</span>
+              </td>
+              <td>
+                {{ gar_history_panel(gar_history_by_work_order.get(item.id)) }}
+                <details class="works-lifecycle-toggle">
+                  <summary>Track lifecycle</summary>
+                  {% set timeline_events = lifecycle_by_work_order.get(item.id, []) %}
+                  {% set timeline_title = "Lifecycle" %}
+                  {% set timeline_compact = true %}
+                  {% include "works/_lifecycle_timeline.html" %}
+                </details>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6" class="contract-manager-empty">No completed work orders yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+  document.addEventListener("change", function (event) {
+    var source = event.target;
+    if (!source || source.name !== "update_type") {
+      return;
+    }
+    var targetId = source.getAttribute("data-completion-visibility-target");
+    var visibility = targetId ? document.getElementById(targetId) : null;
+    if (visibility && source.value === "completion") {
+      visibility.value = "reporter_visible";
+      visibility.dataset.userChanged = "false";
+    }
+    var form = source.closest("form");
+    var submitButton = form ? form.querySelector("[data-update-submit]") : null;
+    if (submitButton) {
+      submitButton.textContent = source.value === "completion" ? "Submit Completion Notes" : "Add Update";
+    }
+  });
+
+  document.addEventListener("change", function (event) {
+    if (event.target && event.target.name === "visibility_scope") {
+      event.target.dataset.userChanged = "true";
+    }
+  });
+</script>
+{% endblock %}

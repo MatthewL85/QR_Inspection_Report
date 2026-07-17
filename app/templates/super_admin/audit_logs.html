@@ -1,0 +1,43 @@
+{% extends 'layouts/super_admin_base.html' %}
+{% block title %}Audit Logs{% endblock %}
+
+{% block content %}
+<div class="sa-panel">
+  <div class="sa-panel__header">
+    <div>
+      <h1>Audit Logs</h1>
+      <p>Recent profile and platform changes for governance review.</p>
+    </div>
+    <a href="{{ url_for('super_admin.dashboard') }}" class="btn btn-outline-secondary">Dashboard</a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table sa-table align-middle">
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>User</th>
+          <th>Field</th>
+          <th>Previous</th>
+          <th>New</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+          <tr>
+            <td>{{ log.timestamp.strftime('%d %b %Y %H:%M') if log.timestamp else '-' }}</td>
+            <td>{{ log.user.full_name if log.user else '-' }}</td>
+            <td>{{ log.field_name or '-' }}</td>
+            <td>{{ log.old_value or '-' }}</td>
+            <td>{{ log.new_value or '-' }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5" class="text-muted text-center py-4">No audit entries found.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

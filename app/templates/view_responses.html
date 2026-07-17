@@ -17,25 +17,28 @@
           {% for response in responses %}
           <div class="card mb-4">
             <div class="card-header bg-light">
-              Submitted by: <strong>{{ response.submitted_by }}</strong> on {{ response.date_submitted.strftime('%Y-%m-%d') }}
+              Submitted by:
+              <strong>{{ response.submitter.full_name if response.submitter else response.submitted_by }}</strong>
+              on {{ response.submitted_at.strftime('%Y-%m-%d') if response.submitted_at else '-' }}
             </div>
             <div class="card-body">
               <div class="row">
-                {% for i in range(1, 6) %}
-                  {% set contractor_name = attribute(response, 'contractor_' ~ i ~ '_name') %}
-                  {% set contractor_file = attribute(response, 'contractor_' ~ i ~ '_file') %}
-                  {% if contractor_name or contractor_file %}
-                    <div class="col-md-6 mb-3">
-                      <strong>Contractor {{ i }}:</strong><br>
-                      {{ contractor_name or 'Unnamed' }}<br>
-                      {% if contractor_file %}
-                        <a href="{{ url_for('static', filename=contractor_file.replace('static/', '')) }}" target="_blank">View Quote</a>
-                      {% else %}
-                        No file uploaded
-                      {% endif %}
-                    </div>
+                <div class="col-md-4 mb-3">
+                  <strong>Contractor:</strong><br>
+                  {{ response.contractor_name or 'Unnamed' }}
+                </div>
+                <div class="col-md-4 mb-3">
+                  <strong>Quote Amount:</strong><br>
+                  {{ response.quote_amount or '-' }}
+                </div>
+                <div class="col-md-4 mb-3">
+                  <strong>Quote File:</strong><br>
+                  {% if response.file %}
+                    <a href="{{ url_for('static', filename=response.file.replace('static/', '')) }}" target="_blank">View Quote</a>
+                  {% else %}
+                    No file uploaded
                   {% endif %}
-                {% endfor %}
+                </div>
               </div>
               <hr>
               <p><strong>Notes:</strong> {{ response.notes or 'None provided' }}</p>
@@ -46,14 +49,14 @@
           {% if session['user']['role'] in ['Director', 'Chairperson'] %}
           <div class="text-center mt-4">
             <div class="d-flex justify-content-center gap-3 flex-wrap">
-              <form method="POST" action="{{ url_for('capex_decision', capex_id=capex_request.id, action='approve') }}">
+              <form method="POST" action="{{ url_for('capex.capex_decision', capex_id=capex_request.id, action='approve') }}">
                 <button class="btn btn-success">Approve</button>
                 <button class="btn btn-danger" onclick="toggleForm('decline-form')">Decline</button>
                 <button class="btn btn-warning" onclick="toggleForm('hold-form')">Put On Hold</button>
             </div>
 
             <div id="decline-form" style="display:none; margin-top: 1rem;">
-              <form method="POST" action="{{ url_for('capex_decision', capex_id=capex_request.id, action='decline') }}">
+              <form method="POST" action="{{ url_for('capex.capex_decision', capex_id=capex_request.id, action='decline') }}">
                 <div class="mb-2">
                   <textarea name="note" id="decline_note" class="form-control" rows="3" required placeholder="Enter reason for declining..."></textarea>
                 </div>
@@ -62,7 +65,7 @@
             </div>
 
             <div id="hold-form" style="display:none; margin-top: 1rem;">
-              <form method="POST" action="{{ url_for('capex_decision', capex_id=capex_request.id, action='hold') }}">
+              <form method="POST" action="{{ url_for('capex.capex_decision', capex_id=capex_request.id, action='hold') }}">
                 <div class="mb-2">
                   <textarea name="note" id="hold_note" class="form-control" rows="3" required placeholder="Enter reason for putting on hold..."></textarea>
                 </div>

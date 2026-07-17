@@ -1,120 +1,163 @@
 {% extends 'layouts/super_admin_base.html' %}
-{% block page_content %} {# was 'content' #}
+{% block title %}Add User | LogixPM{% endblock %}
 
-<div class="container mt-5">
-  <div class="card shadow-sm rounded-4 p-4">
-    <h2 class="text-center mb-4">➕ Add New User</h2>
-
-    <form method="POST">
-      {{ form.hidden_tag() }} {# if using Flask-WTF CSRFProtect #}
-
-      <!-- Full Name -->
-      <div class="mb-3">
-        <label for="full_name" class="form-label">Full Name</label>
-        <input type="text" class="form-control" name="full_name" id="full_name" required>
-      </div>
-
-      <!-- Email -->
-      <div class="mb-3">
-        <label for="email" class="form-label">Email</label>
-        <input type="email" class="form-control" name="email" id="email" required>
-      </div>
-
-      <!-- Username (optional) -->
-      <div class="mb-3">
-        <label for="username" class="form-label">Username (optional)</label>
-        <input type="text" class="form-control" name="username" id="username"
-               pattern="^[a-z0-9._-]{3,50}$"
-               title="3–50 chars; lowercase letters, numbers, dot, underscore, hyphen.">
-        <small class="text-muted">Used for mentions and profile URL. Leave blank to skip.</small>
-      </div>
-
-      <!-- Password -->
-      <div class="mb-3">
-        <label for="password" class="form-label">Password</label>
-        <input type="password" class="form-control" name="password" id="password" required>
-      </div>
-
-      <!-- Confirm Password -->
-      <div class="mb-3">
-        <label for="confirm_password" class="form-label">Confirm Password</label>
-        <input type="password" class="form-control" name="confirm_password" id="confirm_password" required>
-      </div>
-
-      <!-- Role -->
-      <div class="mb-3">
-        <label for="role_id" class="form-label">Role</label>
-        <select name="role_id" id="role_id" class="form-select" required onchange="toggleCompanyDropdown()">
-          {% for role in roles %}
-            <option value="{{ role.id }}" data-name="{{ role.name }}">{{ role.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <!-- Secure PIN -->
-      <div class="mb-3">
-        <label for="pin" class="form-label">Secure PIN</label>
-        <input type="text" class="form-control" name="pin" id="pin"
-               pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}"
-               title="PIN must be at least 8 characters, include uppercase, lowercase, number, and a symbol." required>
-      </div>
-
-      <!-- Company Selection (Management) -->
-      {#<div class="mb-3" id="management_company_section">
-        <label for="company_id" class="form-label">Assign to Management Company</label>
-        <select name="company_id" id="company_id" class="form-select">
-          {% for mc in management_companies %}
-            <option value="{{ mc.id }}">{{ mc.name }}</option>
-          {% endfor %}
-        </select>
-      </div>#}
-
-      <!-- Company Selection (Contractor) -->
-      <div class="mb-3 d-none" id="contractor_company_section">
-        <label for="contractor_id" class="form-label">Assign to Contractor Company</label>
-        <select name="contractor_id" id="contractor_id" class="form-select">
-          {% for contractor in contractor_companies %}
-            <option value="{{ contractor.id }}">{{ contractor.company_name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <!-- Active Toggle -->
-      <div class="form-check form-switch mb-4">
-        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
-        <label class="form-check-label" for="is_active">Active</label>
-      </div>
-
-      <!-- Submit -->
-      <div class="text-center">
-        <button type="submit" class="btn btn-primary px-5">Add User</button>
-      </div>
-    </form>
-
-    <div class="text-center mt-4">
-      <a href="{{ url_for('super_admin.manage_users') }}" class="btn btn-outline-secondary">
-        ⬅ Back to User List
+{% block page_content %}
+<div class="client-manager-workspace">
+  <div class="client-manager-command-bar">
+    <div>
+      <h5>Add User</h5>
+      <span>Create access once, then connect the profile into Team Manager, Logix HR and GAR AI as modules come online.</span>
+    </div>
+    <div class="client-manager-actions">
+      <a href="{{ url_for('super_admin.manage_users') }}" class="unit-link-action">
+        <i class="material-icons" style="font-size:17px">arrow_back</i>
+        Team Manager
       </a>
     </div>
   </div>
+
+  <div class="user-form-note-strip">
+    <div>
+      <strong>Logix HR ready</strong>
+      <span>If HR is enabled for this company, the linked HR shell profile is created after save.</span>
+    </div>
+    <div>
+      <strong>GAR AI ready</strong>
+      <span>The user identity stays connected for future governance and platform intelligence.</span>
+    </div>
+  </div>
+
+  <form method="POST" class="user-form-panel">
+    {{ form.hidden_tag() }}
+
+    <section class="user-form-section user-form-section--compact">
+      <div class="user-form-section-heading">
+        <div>
+          <h6>User Identity</h6>
+          <span>Core profile details used across the platform.</span>
+        </div>
+      </div>
+
+      <div class="user-form-grid user-form-grid--four">
+        <div class="user-form-field">
+          <label for="full_name">Full Name <span>*</span></label>
+          <input type="text" class="form-control" name="full_name" id="full_name" required>
+        </div>
+        <div class="user-form-field">
+          <label for="email">Email <span>*</span></label>
+          <input type="email" class="form-control" name="email" id="email" required>
+        </div>
+        <div class="user-form-field">
+          <label for="mobile_phone">Mobile</label>
+          <input type="tel" class="form-control" name="mobile_phone" id="mobile_phone" autocomplete="tel">
+        </div>
+        <div class="user-form-field">
+          <label for="direct_phone">Direct Line</label>
+          <input type="tel" class="form-control" name="direct_phone" id="direct_phone" autocomplete="tel">
+        </div>
+        <div class="user-form-field user-form-field--small">
+          <label for="phone_extension">Extension</label>
+          <input type="text" class="form-control" name="phone_extension" id="phone_extension">
+        </div>
+        <div class="user-form-field user-form-field--wide">
+          <label for="username">Username</label>
+          <input type="text"
+                 class="form-control"
+                 name="username"
+                 id="username"
+                 pattern="^[a-z0-9._-]{3,50}$"
+                 title="3-50 characters: lowercase letters, numbers, dot, underscore or hyphen.">
+          <small>Optional. Used later for mentions, profile links and cross-module identity.</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="user-form-section user-form-section--compact">
+      <div class="user-form-section-heading">
+        <div>
+          <h6>Access & Organisation</h6>
+          <span>Role and company assignment for the LogixPM ecosystem.</span>
+        </div>
+      </div>
+
+      <div class="user-form-grid user-form-grid--four">
+        <div class="user-form-field">
+          <label for="role_id">Role <span>*</span></label>
+          <select name="role_id" id="role_id" class="form-control" required onchange="toggleCompanyDropdown()">
+            {% for role in roles %}
+              <option value="{{ role.id }}" data-name="{{ role.name }}">{{ role.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="user-form-field d-none" id="contractor_company_section">
+          <label for="contractor_id">Contractor Company <span>*</span></label>
+          <select name="contractor_id" id="contractor_id" class="form-control">
+            <option value="">Select contractor company</option>
+            {% for contractor in contractor_companies %}
+              <option value="{{ contractor.id }}">{{ contractor.company_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="user-form-field user-form-field--wide">
+          <label>Management Company</label>
+          <div class="user-form-static-control">{{ current_user.company.name if current_user.company else 'Not linked' }}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="user-form-section user-form-section--compact">
+      <div class="user-form-section-heading">
+        <div>
+          <h6>Security</h6>
+          <span>Temporary credentials and account status.</span>
+        </div>
+      </div>
+
+      <div class="user-form-grid user-form-grid--four">
+        <div class="user-form-field">
+          <label for="password">Password <span>*</span></label>
+          <input type="password" class="form-control" name="password" id="password" required>
+        </div>
+        <div class="user-form-field">
+          <label for="confirm_password">Confirm Password <span>*</span></label>
+          <input type="password" class="form-control" name="confirm_password" id="confirm_password" required>
+        </div>
+        <div class="user-form-field">
+          <label for="pin">Secure PIN <span>*</span></label>
+          <input type="text"
+                 class="form-control"
+                 name="pin"
+                 id="pin"
+                 pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}"
+                 title="PIN must be at least 8 characters and include uppercase, lowercase, number and symbol."
+                 required>
+        </div>
+        <div class="user-form-field">
+          <label>Status</label>
+          <div class="user-form-toggle">
+            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+            <label for="is_active">Active user</label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="user-form-actions">
+      <a href="{{ url_for('super_admin.manage_users') }}" class="btn btn-sm btn-outline-secondary">Cancel</a>
+      <button type="submit" class="btn btn-sm btn-primary client-manager-primary-action">Create User</button>
+    </div>
+  </form>
 </div>
 
 <script>
   function toggleCompanyDropdown() {
     const roleSelect = document.getElementById('role_id');
     const roleName = roleSelect.options[roleSelect.selectedIndex]?.dataset?.name || '';
-    const mgmtSection = document.getElementById('management_company_section');
     const contractorSection = document.getElementById('contractor_company_section');
+    if (!contractorSection) return;
 
-    if (roleName.toLowerCase() === 'contractor') {
-      mgmtSection.classList.add('d-none');
-      contractorSection.classList.remove('d-none');
-    } else {
-      mgmtSection.classList.remove('d-none');
-      contractorSection.classList.add('d-none');
-    }
+    contractorSection.classList.toggle('d-none', roleName.toLowerCase() !== 'contractor');
   }
   document.addEventListener('DOMContentLoaded', toggleCompanyDropdown);
 </script>
-
 {% endblock %}

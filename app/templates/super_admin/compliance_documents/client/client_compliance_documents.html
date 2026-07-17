@@ -165,10 +165,10 @@
         </div>
         <div>
           {% if documents.has_prev %}
-            <a href="{{ url_for('super_admin.client_compliance_documents', page=documents.prev_num, **request.args.to_dict()) }}" class="btn btn-outline-secondary btn-sm">Previous</a>
+            <a href="{{ url_for('super_admin.compliance_documents_index', page=documents.prev_num, **request.args.to_dict()) }}" class="btn btn-outline-secondary btn-sm">Previous</a>
           {% endif %}
           {% if documents.has_next %}
-            <a href="{{ url_for('super_admin.client_compliance_documents', page=documents.next_num, **request.args.to_dict()) }}" class="btn btn-outline-secondary btn-sm">Next</a>
+            <a href="{{ url_for('super_admin.compliance_documents_index', page=documents.next_num, **request.args.to_dict()) }}" class="btn btn-outline-secondary btn-sm">Next</a>
           {% endif %}
         </div>
       </div>

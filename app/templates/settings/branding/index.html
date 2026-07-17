@@ -10,8 +10,8 @@
     <div class="d-flex gap-2">
       {% if 'settings.profile_index' in current_app.view_functions %}
         <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('settings.profile_index') }}">Company Profile</a>
-      {% elif 'settings.profile_view' in current_app.view_functions %}
-        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('settings.profile_view') }}">Company Profile</a>
+      {% elif 'settings.profile_index' in current_app.view_functions %}
+        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('settings.profile_index') }}">Company Profile</a>
       {% endif %}
       <a class="btn btn-primary btn-sm" href="{{ url_for('settings.branding_edit', id=company.id) }}">Edit</a>
     </div>

@@ -1,0 +1,218 @@
+{% extends layout_template|default('base.html') %}
+
+{% block title %}Repeated Returns | LogixPM{% endblock %}
+
+{% macro status_pill(status) -%}
+  {% set key = (status or 'Open')|lower %}
+  {% if key in ['completed', 'closed', 'resolved'] %}
+    <span class="contract-alert-pill contract-alert-success">{{ status or 'Closed' }}</span>
+  {% elif key in ['returned', 'rejected', 'cancelled'] %}
+    <span class="contract-alert-pill contract-alert-danger">{{ status or 'Returned' }}</span>
+  {% elif key in ['accepted', 'in progress'] %}
+    <span class="contract-alert-pill contract-alert-primary">{{ status }}</span>
+  {% else %}
+    <span class="contract-alert-pill contract-alert-muted">{{ status or 'Open' }}</span>
+  {% endif %}
+{%- endmacro %}
+
+{% macro unit_label(unit) -%}
+  {% if unit %}
+    {{ unit.block_name ~ ' / ' if unit.block_name }}{{ unit.unit_number or unit.unit_label or unit.unit_name }}
+  {% else %}
+    -
+  {% endif %}
+{%- endmacro %}
+
+{% macro review_cycle_chip(cycle) -%}
+  <span class="works-gar-row-chip {{ 'works-gar-row-chip-danger' if cycle and cycle.needs_management_attention else '' }}">
+    {{ cycle.completion_returns or 0 }} return{{ '' if (cycle.completion_returns or 0) == 1 else 's' }} / {{ cycle.resubmissions or 0 }} resubmission{{ '' if (cycle.resubmissions or 0) == 1 else 's' }}
+  </span>
+{%- endmacro %}
+
+{% block page_content %}
+  {% set command_centre_endpoint = command_centre_endpoint|default('super_admin.work_orders') %}
+  {% set dashboard_endpoint = dashboard_endpoint|default('super_admin.dashboard') %}
+  {% set dashboard_label = dashboard_label|default('Dashboard') %}
+  {% set repeated_count = repeated_return_work_orders|length %}
+  {% set latest_return_count = repeated_return_work_orders|selectattr('status', 'equalto', 'Returned')|list|length %}
+
+  <div class="container-fluid contract-manager-workspace works-manager-workspace">
+    <div class="contract-manager-command-bar">
+      <div>
+        <h5>{{ workspace_title|default('Repeated Returns') }}</h5>
+        <span>{{ workspace_subtitle|default('Management review for contractor completions returned more than once.') }}</span>
+      </div>
+      <div class="contract-manager-actions">
+        <a href="{{ url_for(command_centre_endpoint, search=filters.search, client_id=filters.client_id, status=filters.status) }}" class="contract-manager-link">
+          <i class="material-icons">arrow_back</i> Works Logix
+        </a>
+        <span class="unit-action-divider"></span>
+        <a href="{{ url_for(dashboard_endpoint) }}" class="contract-manager-link">{{ dashboard_label }}</a>
+      </div>
+    </div>
+
+    <section class="contract-alert-grid works-alert-grid" aria-label="Repeated returns snapshot">
+      <article class="contract-alert-card">
+        <span>Repeated Returns</span>
+        <strong class="text-danger">{{ repeated_count }}</strong>
+      </article>
+      <article class="contract-alert-card">
+        <span>Currently Returned</span>
+        <strong class="text-warning">{{ latest_return_count }}</strong>
+      </article>
+      <article class="contract-alert-card">
+        <span>GAR Attention</span>
+        <strong>{{ stats.repeated_returns or 0 }}</strong>
+      </article>
+      <article class="contract-alert-card">
+        <span>Scope</span>
+        <strong>{{ clients|length }}</strong>
+        <small>development{{ '' if clients|length == 1 else 's' }}</small>
+      </article>
+    </section>
+
+    <section class="contract-manager-panel">
+      <div class="contract-manager-heading">
+        <div>
+          <h6>Review Filter</h6>
+          <span>Search repeated-return work without mixing it into the main open queue.</span>
+        </div>
+      </div>
+      <form method="GET" class="contract-filter-bar works-filter-bar" role="search" aria-label="Repeated returns filters">
+        <div>
+          <label for="search">Search</label>
+          <input class="form-control" id="search" name="search" value="{{ filters.search }}" placeholder="Title, unit, client or reference">
+        </div>
+        <div>
+          <label for="client_id">Development</label>
+          <select class="form-select" id="client_id" name="client_id">
+            <option value="">All developments</option>
+            {% for client in clients %}
+              <option value="{{ client.id }}" {% if filters.client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="status">Status</label>
+          <select class="form-select" id="status" name="status">
+            <option value="">All statuses</option>
+            {% for status in status_options %}
+              <option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>{{ status }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="contract-filter-actions">
+          <button type="submit" class="btn btn-primary">Apply</button>
+          <a href="{{ url_for(request.endpoint) }}" class="btn btn-outline-secondary">Reset</a>
+        </div>
+      </form>
+    </section>
+
+    <section class="contract-manager-panel" id="repeated-returns-review">
+      <div class="contract-manager-heading">
+        <div>
+          <h6>Quality Review Queue</h6>
+          <span>{{ repeated_count }} work order{{ '' if repeated_count == 1 else 's' }} with repeated completion returns.</span>
+        </div>
+        <span class="contract-alert-pill contract-alert-danger">Management review</span>
+      </div>
+      <div class="contract-manager-table-wrap">
+        <table class="table contract-manager-table works-manager-table mb-0">
+          <colgroup>
+            <col style="width: 18%;">
+            <col style="width: 16%;">
+            <col style="width: 13%;">
+            <col style="width: 12%;">
+            <col style="width: 18%;">
+            <col style="width: 20%;">
+            <col style="width: 12%;">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Work Order</th>
+              <th>Development / Unit</th>
+              <th>Contractor</th>
+              <th>Review Cycle</th>
+              <th>Evidence & Feedback</th>
+              <th>Latest Return Context</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in repeated_return_work_orders %}
+              {% set cycle = review_cycle_by_work_order.get(item.id) if review_cycle_by_work_order is defined else {} %}
+              {% set return_context = return_context_by_work_order.get(item.id) if return_context_by_work_order is defined else {} %}
+              {% set history = gar_history_by_work_order.get(item.id) if gar_history_by_work_order is defined else {} %}
+              {% set quality = quality_signal_by_work_order.get(item.id) if quality_signal_by_work_order is defined else {} %}
+              {% set contractor_name = quality.contractor_name or (item.contractor_company.company_name if item.contractor_company else '-') %}
+              <tr>
+                <td>
+                  <div class="contract-manager-cell-stack">
+                    <strong>{{ item.title or 'Work Order #' ~ item.id }}</strong>
+                    <span>{{ item.external_reference or item.display_reference }}</span>
+                    {{ status_pill(item.status) }}
+                    {% if history and history.summary.related_count %}
+                      <span class="works-gar-row-chip">GAR history {{ history.summary.related_count }}</span>
+                    {% endif %}
+                  </div>
+                </td>
+                <td>
+                  <div class="contract-manager-cell-stack">
+                    <strong>{{ item.client.name if item.client else '-' }}</strong>
+                  {% if item.unit %}
+                    <a href="{{ url_for('unit_bp.view', unit_id=item.unit.id, tab='works') }}">{{ unit_label(item.unit) }}</a>
+                  {% else %}
+                      <span>-</span>
+                  {% endif %}
+                  </div>
+                </td>
+                <td>
+                  <div class="contract-manager-cell-stack">
+                    <strong>{{ contractor_name }}</strong>
+                    <span>{{ item.business_type or item.request_type or 'Works Logix' }}</span>
+                  </div>
+                </td>
+                <td>{{ review_cycle_chip(cycle) }}</td>
+                <td>
+                  <div class="contract-manager-cell-stack">
+                    <strong>{{ (quality.completion_quality_status or 'missing')|replace('_', ' ')|title }}</strong>
+                    <span>
+                      {% if quality.member_feedback_received %}
+                        Feedback {{ quality.member_feedback_rating or '-' }}/5{% if quality.member_feedback_evidence %} + evidence{% endif %}
+                      {% else %}
+                        No member feedback yet
+                      {% endif %}
+                    </span>
+                    {% if quality.suggested_focus %}
+                      <small>{{ quality.suggested_focus[0] }}</small>
+                    {% endif %}
+                  </div>
+                </td>
+                <td>
+                  <div class="contract-manager-cell-stack">
+                    <strong>{{ return_context.reason or 'No return reason recorded' }}</strong>
+                    <span>
+                      {% if return_context.returned_at %}{{ return_context.returned_at[:10] }}{% else %}-{% endif %}
+                      {% if return_context.reviewed_by %} - {{ return_context.reviewed_by }}{% endif %}
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  {% if item.unit %}
+                    <a class="user-manager-action-link" href="{{ url_for('unit_bp.work_order_review', unit_id=item.unit.id, work_order_id=item.id) }}">Review Pack</a>
+                  {% else %}
+                    <span class="text-muted">Unlinked</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="7" class="contract-manager-empty">No repeated completion returns match this view.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+{% endblock %}

@@ -5,6 +5,7 @@ class Contractor(db.Model):
     __tablename__ = 'contractors'
 
     id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=True, index=True)
 
     # 🎯 Core Company Details
     company_name = db.Column(db.String(255), nullable=False)
@@ -73,6 +74,7 @@ class Contractor(db.Model):
     compliance_documents = db.relationship("ContractorComplianceDocument", back_populates="contractor", lazy=True)
     performance_records = db.relationship("ContractorPerformance", backref="contractor_entity", lazy=True)
     users = db.relationship('User', back_populates='contractor', lazy=True)
+    organisation_company = db.relationship("Company", foreign_keys=[company_id])
 
     def __repr__(self):
         return f"<Contractor {self.company_name} ({self.business_type})>"

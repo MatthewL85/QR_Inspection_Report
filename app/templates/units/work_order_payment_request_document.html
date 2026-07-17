@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Payment Request {{ payload.render.context.payment_request_ref or job_docket.docket_number }} | {{ work_order.display_reference }}
+{% endblock %}
+
+{% block page_content %}
+<div class="contract-manager app-ready-surface app-ready-surface--works"
+     data-app-mobile-ready="true"
+     data-app-source-backed="true">
+  <section class="contract-manager-hero">
+    <div>
+      <h1>Payment Request Review Preview</h1>
+      <p>Source-backed contractor payment request for Works Logix and future Finance Logix review.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="contract-manager-link" href="{{ back_url or url_for('unit_bp.work_order_review', unit_id=unit.id, work_order_id=work_order.id) }}">{{ back_label or "Back to Work Order" }}</a>
+      <a class="contract-manager-link" href="{{ secondary_url or url_for('unit_bp.view', unit_id=unit.id, tab='works') }}">{{ secondary_label or "Unit Works" }}</a>
+    </div>
+  </section>
+
+  <div class="document-template-preview-layout">
+    <section class="contract-manager-panel document-template-preview-sheet">
+      <div class="document-template-preview-header">
+        <div>
+          <span>{{ payload.render.ownership.owner_module or "Contractor Logix" }}</span>
+          <h5>{{ payload.name }}</h5>
+          <small>This preview is not a Finance Logix invoice. It is the contractor's request for payment review.</small>
+        </div>
+        <div class="document-template-preview-brand">
+          {% set logo_path = payload.render.contractor_company.logo_path or payload.render.company.logo_path %}
+          {% if logo_path %}
+            {% set _lp = (logo_path or "")|trim %}
+            {% set _lp = _lp.lstrip("/") %}
+            {% if _lp.startswith("static/") %}{% set _lp = _lp[7:] %}{% endif %}
+            <img src="{{ url_for('static', filename=_lp) }}" alt="Company logo">
+          {% else %}
+            <strong>{{ payload.render.contractor_company.name or payload.render.company.name or "Contractor Logix" }}</strong>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="document-template-preview-meta">
+        <div>
+          <span>Payment Request</span>
+          <strong>{{ payload.render.context.payment_request_ref or ("PR-" ~ job_docket.id) }}</strong>
+        </div>
+        <div>
+          <span>Work Order</span>
+          <strong>{{ work_order.display_reference }}</strong>
+        </div>
+        <div>
+          <span>Job Docket</span>
+          <strong>{{ job_docket.docket_number or "-" }}</strong>
+        </div>
+        <div>
+          <span>Status</span>
+          <strong>{{ payload.render.context.invoice_status or job_docket.invoice_status or "-" }}</strong>
+        </div>
+      </div>
+
+      <div class="document-template-preview-body client-key-site-rich-content">
+        {{ payload.render.body|key_site_content }}
+      </div>
+
+      {% if payload.include_terms and payload.render.terms %}
+        <div class="document-template-preview-terms client-key-site-rich-content">
+          <h6>Terms & Conditions</h6>
+          {{ payload.render.terms|key_site_content }}
+        </div>
+      {% endif %}
+
+      {% if payload.include_signature_block %}
+        <div class="document-template-signature-grid">
+          <div>
+            <span>Contractor</span>
+            <strong>____________________________</strong>
+          </div>
+          <div>
+            <span>Review Date</span>
+            <strong>____________________________</strong>
+          </div>
+        </div>
+      {% endif %}
+
+      {% if payload.render.footer %}
+        <div class="document-template-preview-footer client-key-site-rich-content">
+          {{ payload.render.footer|key_site_content }}
+        </div>
+      {% endif %}
+    </section>
+
+    <aside class="contract-manager-panel document-template-preview-side">
+      <div class="client-manager-heading">
+        <div>
+          <h6>{{ review_surface_label or "Review Context" }}</h6>
+          <span>{{ review_surface_note or "Visible to authorised Works Logix management users only." }}</span>
+        </div>
+      </div>
+      <div class="document-template-context-list">
+        <div>
+          <span>Contractor</span>
+          <strong>{{ payload.render.contractor_company.name or "-" }}</strong>
+        </div>
+        <div>
+          <span>Development</span>
+          <strong>{{ client.name if client else "-" }}</strong>
+        </div>
+        <div>
+          <span>Unit</span>
+          <strong>{{ unit.block_name ~ " / " if unit.block_name else "" }}{{ unit.unit_number or unit.unit_label or "-" }}</strong>
+        </div>
+        <div>
+          <span>Payment Status</span>
+          <strong>{{ payload.render.context.payment_status or job_docket.payment_status or "Not Invoiced" }}</strong>
+        </div>
+      </div>
+
+      <div class="document-template-context-table">
+        <h6>Live Fields</h6>
+        {% for key in ["requested_total", "completion_summary", "site_contact", "site_contact_phone", "schedule", "engineer", "team", "trade"] %}
+          <div>
+            <span>{{ key|replace("_", " ")|title }}</span>
+            <strong>{{ payload.render.context.get(key) or "-" }}</strong>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% set invoice_status_key = (job_docket.invoice_status or "")|lower %}
+      {% set payment_status_key = (job_docket.payment_status or "")|lower %}
+      {% if show_finance_handoff_action is not defined %}
+        {% set show_finance_handoff_action = true %}
+      {% endif %}
+      {% if show_finance_handoff_action and invoice_status_key in ["invoice prepared", "invoiced"] and payment_status_key not in ["paid", "settled", "closed paid"] %}
+        <form method="post"
+              action="{{ url_for('unit_bp.work_order_payment_request_ready_for_finance', unit_id=unit.id, work_order_id=work_order.id) }}"
+              class="document-template-context-table mt-3">
+          <h6>Management Review</h6>
+          <label class="d-block">
+            <span>Review Note</span>
+            <textarea name="review_notes"
+                      class="form-control"
+                      rows="4"
+                      placeholder="Optional note for the Finance Logix handoff."></textarea>
+          </label>
+          <button type="submit" class="contract-manager-button w-100 mt-2">
+            Mark Ready for Finance
+          </button>
+          <small class="d-block mt-2 text-muted">
+            This records readiness only. It does not create, approve or pay a Finance Logix invoice.
+          </small>
+        </form>
+      {% else %}
+        <div class="document-template-context-table mt-3">
+          <h6>Management Review</h6>
+          <div>
+            <span>Finance Handoff</span>
+            <strong>{{ job_docket.invoice_status or "Not ready" }}</strong>
+          </div>
+          <small class="d-block mt-2 text-muted">
+            The active payment request has already moved out of the management review queue or is no longer eligible.
+          </small>
+        </div>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+{% endblock %}

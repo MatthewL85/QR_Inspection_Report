@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 from flask_wtf import FlaskForm
 from wtforms import (
-    StringField, DateField, DecimalField, SelectField, HiddenField, TextAreaField
+    BooleanField, StringField, DateField, DecimalField, SelectField, HiddenField, TextAreaField
 )
 from wtforms.validators import DataRequired, Optional as Opt, Length
 
@@ -15,6 +15,30 @@ PPM_CHOICES = [
     ("Tri-Annual", "Tri-Annual"),
     ("Bi-Annual", "Bi-Annual"),
     ("Annually", "Annually"),
+]
+
+MONTH_CHOICES = [
+    ("", "- Not set -"),
+    ("January", "January"),
+    ("February", "February"),
+    ("March", "March"),
+    ("April", "April"),
+    ("May", "May"),
+    ("June", "June"),
+    ("July", "July"),
+    ("August", "August"),
+    ("September", "September"),
+    ("October", "October"),
+    ("November", "November"),
+    ("December", "December"),
+]
+
+GAR_RISK_CHOICES = [
+    ("", "- Not assessed -"),
+    ("Low", "Low"),
+    ("Medium", "Medium"),
+    ("High", "High"),
+    ("Critical", "Critical"),
 ]
 
 class ContractForm(FlaskForm):
@@ -41,6 +65,18 @@ class ContractForm(FlaskForm):
     contract_value = DecimalField("Base Fee (ex VAT)", places=2, rounding=None, validators=[Opt()])
     ppm_schedule = SelectField("PPM Schedule", choices=PPM_CHOICES, validators=[Opt()])
 
+    # Renewal control
+    target_management_fee = DecimalField("Target Management Fee", places=2, rounding=None, validators=[Opt()])
+    annual_increase_percent = DecimalField("Annual Increase %", places=2, rounding=None, validators=[Opt()])
+    renewal_month = SelectField("Renewal Month", choices=MONTH_CHOICES, validators=[Opt()])
+    next_fee_increase_date = DateField("Next Fee Increase", validators=[Opt()])
+    new_contract_drafted = BooleanField("New Contract Drafted")
+    alert_owner_id = SelectField("Alert Owner", coerce=int, validators=[Opt()])
+    last_reviewed_at = DateField("Last Reviewed", validators=[Opt()])
+    gar_contract_risk_level = SelectField("GAR Risk Level", choices=GAR_RISK_CHOICES, validators=[Opt()])
+    gar_contract_recommendation = TextAreaField("GAR Recommendation", validators=[Opt(), Length(max=4000)])
+    renewal_notes = TextAreaField("Renewal Notes", validators=[Opt(), Length(max=4000)])
+
     # Primary contact (issuer/client-facing contact for this contract)
     primary_contact_name = StringField("Primary Contact Name", validators=[Opt(), Length(max=255)])
     primary_contact_email = StringField("Primary Contact Email", validators=[Opt(), Length(max=255)])
@@ -57,6 +93,13 @@ class ContractForm(FlaskForm):
             self.client_id.choices = [(0, "— Select client —")] + pairs
         else:
             self.client_id.choices = pairs
+
+    def set_alert_owner_choices(self, pairs: list[tuple[int, str]], *, include_blank: bool = True) -> None:
+        """Pass a list of internal users who can own renewal alerts."""
+        if include_blank and (not pairs or pairs[0][0] != 0):
+            self.alert_owner_id.choices = [(0, "- Not assigned -")] + pairs
+        else:
+            self.alert_owner_id.choices = pairs
 
     def apply_prefill_payload(self, payload: Dict[str, Any]) -> None:
         """
@@ -90,6 +133,16 @@ class ContractForm(FlaskForm):
             "contract_title": "contract_title",
             "currency": "currency",
             "contract_value": "contract_value",
+            "target_management_fee": "target_management_fee",
+            "annual_increase_percent": "annual_increase_percent",
+            "renewal_month": "renewal_month",
+            "next_fee_increase_date": "next_fee_increase_date",
+            "new_contract_drafted": "new_contract_drafted",
+            "alert_owner_id": "alert_owner_id",
+            "last_reviewed_at": "last_reviewed_at",
+            "gar_contract_risk_level": "gar_contract_risk_level",
+            "gar_contract_recommendation": "gar_contract_recommendation",
+            "renewal_notes": "renewal_notes",
             "ppm_schedule": "ppm_schedule",
             "primary_contact_name": "primary_contact_name",
             "primary_contact_email": "primary_contact_email",
@@ -118,6 +171,16 @@ class ContractForm(FlaskForm):
             "end_date": self.end_date.data,
             "currency": (self.currency.data or "EUR").strip(),
             "contract_value": self.contract_value.data or 0,
+            "target_management_fee": self.target_management_fee.data,
+            "annual_increase_percent": self.annual_increase_percent.data,
+            "renewal_month": self.renewal_month.data or None,
+            "next_fee_increase_date": self.next_fee_increase_date.data,
+            "new_contract_drafted": bool(self.new_contract_drafted.data),
+            "alert_owner_id": self.alert_owner_id.data or None,
+            "last_reviewed_at": self.last_reviewed_at.data,
+            "gar_contract_risk_level": self.gar_contract_risk_level.data or None,
+            "gar_contract_recommendation": (self.gar_contract_recommendation.data or "").strip(),
+            "renewal_notes": (self.renewal_notes.data or "").strip(),
             "ppm_schedule": self.ppm_schedule.data or None,
             "primary_contact_name": (self.primary_contact_name.data or "").strip(),
             "primary_contact_email": (self.primary_contact_email.data or "").strip(),

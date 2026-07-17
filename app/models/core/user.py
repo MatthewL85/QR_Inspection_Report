@@ -18,6 +18,9 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(50), unique=True, index=True, nullable=True)
     password_hash = db.Column(db.String(200), nullable=False)
     profile_photo = db.Column(db.String(255))
+    mobile_phone = db.Column(db.String(50), nullable=True)
+    direct_phone = db.Column(db.String(50), nullable=True)
+    phone_extension = db.Column(db.String(20), nullable=True)
 
     # 🔐 Role Relationship
     role_id = db.Column(

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Assistant Clients{% endblock %}
+{% block page_content %}
+<div class="container-fluid px-4">
+  <section class="card border-0 shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h1 class="h4 mb-1">Assistant Client Manager</h1>
+          <p class="text-muted mb-0">
+            {% if cover_access %}
+              Company-wide cover view for assistant management and urgent Works routing.
+            {% else %}
+              Assigned developments from the shared client record.
+            {% endif %}
+          </p>
+        </div>
+        {% if cover_access %}
+          <span class="dashboard-status-pill">Cover Access</span>
+        {% endif %}
+        <a class="btn btn-outline-secondary" href="{{ url_for('assistant.dashboard') }}">Dashboard</a>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Client</th>
+              <th>Property</th>
+              <th>Location</th>
+              <th>Units</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for client in clients %}
+              <tr>
+                <td class="fw-bold">{{ client.name }}</td>
+                <td>{{ client.property_name or '-' }}</td>
+                <td>{{ client.city or client.region or '-' }}</td>
+                <td>{{ client.number_of_units or '-' }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="4" class="text-center text-muted py-4">No assigned clients available.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

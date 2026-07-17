@@ -1,0 +1,28 @@
+<aside class="bg-white border-end" style="width: 250px; min-height: 100vh;">
+  <div class="p-3">
+    <h5 class="fw-bold text-primary">Admin Portal</h5>
+    <hr>
+    <ul class="nav flex-column">
+      <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'admin_portal.dashboard' %}active text-primary fw-bold{% endif %}" href="{{ url_for('admin_portal.dashboard') }}">
+          <i class="fas fa-chart-line me-2"></i>Dashboard
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'admin_portal.manage_clients' %}active text-primary fw-bold{% endif %}" href="{{ url_for('admin_portal.manage_clients') }}">
+          <i class="fas fa-building me-2"></i>Clients
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-muted" href="#">
+          <i class="fas fa-folder-open me-2"></i>Documents
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-muted" href="#">
+          <i class="fas fa-brain me-2"></i>GAR AI
+        </a>
+      </li>
+    </ul>
+  </div>
+</aside>

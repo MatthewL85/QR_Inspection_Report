@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ docket.reference }} Contractor Work Order Pack</title>
+  <style>
+    body { color: #061633; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.45; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    h2 { font-size: 15px; margin: 22px 0 8px; }
+    .muted { color: #53657d; }
+    .header { border-bottom: 2px solid #101d3a; padding-bottom: 12px; margin-bottom: 18px; }
+    .status { display: inline-block; background: #e7eef8; border-radius: 12px; padding: 4px 10px; font-weight: 700; }
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 14px; }
+    .box { border: 1px solid #d7e0ec; border-radius: 6px; padding: 9px 10px; }
+    .label { color: #53657d; display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .value { display: block; font-size: 12px; font-weight: 700; margin-top: 2px; }
+    table { border-collapse: collapse; width: 100%; }
+    th { background: #eef3f8; color: #53657d; font-size: 10px; text-align: left; text-transform: uppercase; }
+    th, td { border-bottom: 1px solid #d7e0ec; padding: 8px; vertical-align: top; }
+    .note { background: #f6f9fc; border-left: 3px solid #2458ff; padding: 9px 10px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>{{ docket.reference }} Contractor Work Order Pack</h1>
+    <div class="muted">{{ docket.location.development }}{% if docket.location.unit != '-' %} - {{ docket.location.unit }}{% endif %}</div>
+    <p><span class="status">{{ docket.work_order.status or 'Assigned' }}</span></p>
+  </div>
+
+  <h2>Work Order</h2>
+  <div class="grid">
+    <div class="box"><span class="label">Title</span><span class="value">{{ docket.work_order.title or docket.reference }}</span></div>
+    <div class="box"><span class="label">Created</span><span class="value">{{ docket.dates.created }}</span></div>
+    <div class="box"><span class="label">Type</span><span class="value">{{ docket.classification.business_type }}</span></div>
+    <div class="box"><span class="label">Preferred Visit</span><span class="value">{{ docket.dates.preferred_visit }}</span></div>
+  </div>
+  <p class="note">{{ docket.work_order.description or '-' }}</p>
+
+  <h2>Location</h2>
+  <div class="grid">
+    <div class="box"><span class="label">Development</span><span class="value">{{ docket.location.development }}</span></div>
+    <div class="box"><span class="label">Unit</span><span class="value">{{ docket.location.unit }}</span></div>
+    <div class="box"><span class="label">Block / Core</span><span class="value">{{ docket.location.block }}{% if docket.location.core != '-' %} / {{ docket.location.core }}{% endif %}</span></div>
+    <div class="box"><span class="label">Access Notes</span><span class="value">{{ docket.location.access_notes or '-' }}</span></div>
+  </div>
+  <p>
+    {% for line in docket.location.address_lines %}
+      {{ line }}{% if not loop.last %}<br>{% endif %}
+    {% else %}
+      -
+    {% endfor %}
+  </p>
+
+  <h2>Contacts</h2>
+  <table>
+    <thead><tr><th>Role</th><th>Name</th><th>Phone</th><th>Email</th><th>Note</th></tr></thead>
+    <tbody>
+      {% for contact in docket.contacts %}
+        <tr>
+          <td>{{ contact.label }}</td>
+          <td>{{ contact.name }}</td>
+          <td>{{ contact.phone }}</td>
+          <td>{{ contact.email }}</td>
+          <td>{{ contact.note }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Request & Evidence</h2>
+  <table>
+    <thead><tr><th>Source</th><th>Evidence</th><th>Reference</th></tr></thead>
+    <tbody>
+      {% for item in docket.evidence_items %}
+        <tr>
+          <td>{{ item.source }}</td>
+          <td>{{ item.label }}</td>
+          <td>
+            {% if item.reference_url %}
+              <a href="{{ item.reference_url }}">{{ item.display_reference }}</a>
+            {% else %}
+              {{ item.display_reference or "-" }}
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3">No images, videos or document references are linked yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>GAR Context</h2>
+  <p class="note">{{ docket.gar_history.contractor_safe_summary if docket.gar_history and docket.gar_history.contractor_safe_summary else 'No related history flagged.' }}</p>
+</body>
+</html>

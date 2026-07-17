@@ -10,6 +10,7 @@ class WorkOrder(db.Model):
 
     # 🔧 Core Info
     contractor_id = db.Column(db.Integer, db.ForeignKey('contractors.id'), nullable=True)
+    organisation_connection_id = db.Column(db.Integer, db.ForeignKey('organisation_connections.id'), nullable=True, index=True)
     title = db.Column(db.String(255))
     request_type = db.Column(db.String(50), default='Work Order')  # Work Order, Quote Request, Emergency Callout
     description = db.Column(db.Text, nullable=False)
@@ -83,6 +84,8 @@ class WorkOrder(db.Model):
 
     completion = db.relationship('WorkOrderCompletion', back_populates='work_order', uselist=False)
     feedback = db.relationship('ContractorFeedback', back_populates='work_order', uselist=False)
+    job_docket = db.relationship('JobDocket', back_populates='work_order', uselist=False)
+    organisation_connection = db.relationship('OrganisationConnection')
 
 
     # 📎 External/API Fields
@@ -121,6 +124,33 @@ class WorkOrder(db.Model):
     # 🔁 Relationships to Quotes
     quote_responses = db.relationship('QuoteResponse', backref='work_order', lazy=True)
     quote_recipients = db.relationship('QuoteRecipient', backref='work_order', lazy=True)
+    reopen_requests = db.relationship(
+        'WorkOrderReopenRequest',
+        back_populates='work_order',
+        cascade='all, delete-orphan',
+        lazy=True,
+    )
+    lifecycle_events = db.relationship(
+        'WorkOrderLifecycleEvent',
+        back_populates='work_order',
+        cascade='all, delete-orphan',
+        order_by='WorkOrderLifecycleEvent.occurred_at',
+        lazy=True,
+    )
+    progress_updates = db.relationship(
+        'WorkOrderProgressUpdate',
+        back_populates='work_order',
+        cascade='all, delete-orphan',
+        order_by='WorkOrderProgressUpdate.created_at',
+        lazy=True,
+    )
 
     def __repr__(self):
         return f"<WorkOrder id={self.id} title='{self.title}' status={self.status}>"
+
+    @property
+    def display_reference(self) -> str:
+        company_code = getattr(getattr(self, "company", None), "work_order_code", None)
+        if company_code:
+            return f"WO-{company_code}-{self.id:06d}"
+        return f"WO-{self.id:06d}"

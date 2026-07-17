@@ -4,6 +4,7 @@ from __future__ import annotations
 from flask import render_template, current_app
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta, date
+from sqlalchemy import or_
 
 from app.decorators import super_admin_required
 from app.routes.super_admin import super_admin_bp
@@ -18,6 +19,7 @@ from app.models.contractor.contractor_compliance_document import ContractorCompl
 from app.models.contracts import ClientContract  # for portfolio + expiry
 
 from app.services.contract import signature_status_metrics  # existing util
+from app.services.works.workflow_service import WorksFilters, build_command_centre
 
 
 @super_admin_bp.route('/dashboard', endpoint='dashboard')
@@ -62,7 +64,10 @@ def dashboard():
     expiry_base = db.session.query(ClientContract).join(Client, Client.id == ClientContract.client_id)
     if company_id:
         expiry_base = expiry_base.filter(Client.company_id == company_id)
-    expiry_base = expiry_base.filter(ClientContract.end_date.isnot(None))
+    expiry_base = expiry_base.filter(
+        ClientContract.end_date.isnot(None),
+        or_(ClientContract.sign_status.is_(None), ClientContract.sign_status != "Archived"),
+    )
 
     contracts_expired = expiry_base.filter(ClientContract.end_date < today).count()
     contracts_expiring_30 = expiry_base.filter(
@@ -134,6 +139,16 @@ def dashboard():
 
     # ---------- signature metrics (kept; harmless if not rendered) ----------
     sign_metrics = signature_status_metrics(company_id=company_id)
+    works_context = (
+        build_command_centre(company_id=company_id, filters=WorksFilters())
+        if company_id else {"stats": {}, "operational_queues": {}}
+    )
+    works_gar_contractor_quality = (
+        works_context.get("gar_works_intelligence", {})
+        .get("pattern_memory", {})
+        .get("patterns", {})
+        .get("contractor_quality", [])
+    )
 
     # ---------- render ----------
     return render_template(
@@ -162,5 +177,22 @@ def dashboard():
         gar_flagged_count=0,
         audit_logs=audit_logs,
         sign_metrics=sign_metrics,
+        works_stats=works_context.get("stats", {}),
+        works_operational_queues=works_context.get("operational_queues", {}),
+        works_next_actions=works_context.get("next_actions", []),
+        works_gar_contractor_quality=works_gar_contractor_quality,
         current_app=current_app,
     )
+
+
+@super_admin_bp.route('/audit-logs', endpoint='audit_logs')
+@super_admin_required
+@login_required
+def audit_logs():
+    logs = (
+        ProfileChangeLog.query
+        .order_by(ProfileChangeLog.timestamp.desc())
+        .limit(100)
+        .all()
+    )
+    return render_template("super_admin/audit_logs.html", logs=logs)

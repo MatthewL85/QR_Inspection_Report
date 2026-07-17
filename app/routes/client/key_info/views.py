@@ -23,6 +23,13 @@ from . import bp
 from .utils import require_org_roles, load_client_or_404, safe_int_list
 
 
+def _safe_next_url(default: str) -> str:
+    target = (request.form.get("next") or request.args.get("next") or "").strip()
+    if target.startswith("/") and not target.startswith("//"):
+        return target
+    return default
+
+
 def _role_loose_match(user, allowed: set[str]) -> bool:
     raw = (getattr(user, "role", "") or "").strip().lower()
     normalized = raw.replace("_", " ")
@@ -42,7 +49,19 @@ def _can_propose_relaxed(user) -> bool:
 def _can_approve_relaxed(user) -> bool:
     if can_approve_fn(user):
         return True
-    return _role_loose_match(user, {"Property Manager", "Super Admin", "superadmin", "property_manager"})
+    return _role_loose_match(
+        user,
+        {
+            "Admin",
+            "Financial Controller",
+            "Property Manager",
+            "Super Admin",
+            "admin",
+            "financial_controller",
+            "property_manager",
+            "superadmin",
+        },
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -106,10 +125,10 @@ def propose_change(client_id: int):
         ki = db.session.get(ClientKeyInfo, int(key_info_id))
         if not ki or ki.client_id != client_id:
             flash("Section not found for this client.", "danger")
-            return redirect(url_for("client_key_info.list_sections", client_id=client_id))
+            return redirect(_safe_next_url(url_for("client_key_info.list_sections", client_id=client_id)))
 
     try:
-        create_proposal(
+        change = create_proposal(
             client_id=client_id,
             submitted_by=current_user,
             title=title,
@@ -119,11 +138,15 @@ def propose_change(client_id: int):
             pro_attested_by_contractor=bool(request.form.get("pro_attested_by_contractor")),
             pro_attestation_note=(request.form.get("pro_attestation_note") or "").strip() or None,
         )
-        flash("Change submitted for approval.", "success")
+        if _can_approve_relaxed(current_user):
+            apply_change(change, current_user, reason="Published by authorised user.")
+            flash("Key Site Information updated.", "success")
+        else:
+            flash("Change submitted for approval.", "success")
     except PermissionError as e:
         flash(str(e), "danger")
 
-    return redirect(url_for("client_key_info.list_sections", client_id=client_id))
+    return redirect(_safe_next_url(url_for("client_key_info.list_sections", client_id=client_id)))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -141,7 +164,7 @@ def approve_change_route(client_id: int, change_id: int):
         return redirect(url_for("client_key_info.list_sections", client_id=client_id))
 
     if not _can_approve_relaxed(current_user):
-        flash("Only Property Manager or Super Admin can approve.", "danger")
+        flash("Only Admin, Financial Controller, Property Manager or Super Admin can approve.", "danger")
         return redirect(url_for("client_key_info.list_sections", client_id=client_id))
 
     apply_change(ch, current_user, reason=request.form.get("reason") or None)
@@ -161,7 +184,7 @@ def reject_change_route(client_id: int, change_id: int):
         return redirect(url_for("client_key_info.list_sections", client_id=client_id))
 
     if not _can_approve_relaxed(current_user):
-        flash("Only Property Manager or Super Admin can reject.", "danger")
+        flash("Only Admin, Financial Controller, Property Manager or Super Admin can reject.", "danger")
         return redirect(url_for("client_key_info.list_sections", client_id=client_id))
 
     reject_change(ch, current_user, reason=request.form.get("reason") or None)

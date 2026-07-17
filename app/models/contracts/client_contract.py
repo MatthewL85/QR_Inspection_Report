@@ -26,6 +26,17 @@ class ClientContract(db.Model):
     currency = db.Column(db.String(10), default="EUR")
     next_fee_increase_date = db.Column(db.Date, nullable=True)
 
+    # ---- renewal control / Contract Manager workflow ----
+    renewal_month = db.Column(db.String(20), nullable=True)
+    annual_increase_percent = db.Column(db.Numeric(6, 2), nullable=True)
+    target_management_fee = db.Column(db.Numeric(12, 2), nullable=True)
+    new_contract_drafted = db.Column(db.Boolean, default=False, nullable=False)
+    renewal_notes = db.Column(db.Text, nullable=True)
+    alert_owner_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    last_reviewed_at = db.Column(db.DateTime, nullable=True)
+    gar_contract_risk_level = db.Column(db.String(50), nullable=True)
+    gar_contract_recommendation = db.Column(db.Text, nullable=True)
+
     # ---- extras (legacy JSON map as text) ----
     additional_fees = db.Column(db.Text, nullable=True)  # JSON map
 
@@ -98,6 +109,7 @@ class ClientContract(db.Model):
     # ---- relationships ----
     client = relationship("Client", backref="contracts")
     template_version = relationship("ContractTemplateVersion", backref="client_contracts")
+    alert_owner = relationship("User", foreign_keys=[alert_owner_id])
 
     # ---- indexes (Postgres JSONB GIN for speed on common queries) ----
     __table_args__ = (

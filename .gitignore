@@ -28,12 +28,18 @@ Thumbs.db
 # Build artifacts
 dist/
 build/
+*.zip
 
 # Local data
 *.csv
 *.log
 # Nested copy (ignore)
 QR_Inspection_App/
+
+# Historical/archive material kept out of the active production branch
+Old_QR/
+legacy_archive/
+app/static/data/old_jurisdictions.json
 # Git/VSCode
 *.code-workspace
 

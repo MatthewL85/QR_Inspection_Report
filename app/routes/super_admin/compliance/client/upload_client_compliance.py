@@ -69,6 +69,9 @@ def upload_client_compliance_document():
 
         db.session.commit()
         flash('Client compliance document(s) uploaded successfully.', 'success')
-        return redirect(url_for('super_admin.compliance_documents'))
+        return redirect(url_for('super_admin.compliance_documents_index'))
 
-    return render_template('super_admin/upload_client_compliance_document.html', clients=clients)
+    return render_template(
+        'super_admin/compliance_documents/client/upload_client_compliance_document.html',
+        clients=clients,
+    )

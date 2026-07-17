@@ -28,6 +28,11 @@ class ClientCreateForm(FlaskForm):
     tax_number = StringField('Tax Number')
     year_of_construction = StringField('Year of Construction', validators=[Optional(), Length(max=10)])
     number_of_units = IntegerField('Number of Units', validators=[Optional()])
+    units_apartments = IntegerField('Apartments', validators=[Optional(), NumberRange(min=0)])
+    units_houses = IntegerField('Houses', validators=[Optional(), NumberRange(min=0)])
+    units_duplexes = IntegerField('Duplexes', validators=[Optional(), NumberRange(min=0)])
+    units_commercial = IntegerField('Commercial Units', validators=[Optional(), NumberRange(min=0)])
+    units_other = IntegerField('Other Units', validators=[Optional(), NumberRange(min=0)])
     client_type = SelectField('Client Type', choices=[], validators=[Optional()])
     contract_value = DecimalField('Contract Value', validators=[Optional()])
 

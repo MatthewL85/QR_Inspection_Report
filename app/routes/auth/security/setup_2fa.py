@@ -58,4 +58,9 @@ def setup_2fa():
         else:
             flash("❌ Invalid token. Please try again.", "danger")
 
-    return render_template('auth/two_factor/setup.html', form=form, qr_base64=qr_base64, secret=secret)
+    return render_template(
+        'auth/security/setup_two_factor.html',
+        form=form,
+        qr_code_b64=qr_base64,
+        secret=secret,
+    )

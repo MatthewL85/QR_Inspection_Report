@@ -21,11 +21,12 @@
     <ul class="navbar-nav">
       {% set _items = [
         ('super_admin.dashboard',       'Dashboard',  'dashboard',     'text-primary'),
-        ('super_admin.clients_index',    'Clients',    'business',      'text-dark'),
-        ('super_admin.users_index',      'Users',      'people',        'text-info'),
-        ('super_admin.contracts_index',  'Contracts',  'receipt_long',  'text-secondary'),
-        ('super_admin.compliance_index', 'Compliance', 'verified_user', 'text-success'),
-        ('super_admin.agm_index',        'AGMs',       'event',         'text-warning')
+        ('super_admin.manage_clients',   'Clients',    'business',      'text-dark'),
+        ('super_admin.manage_users',     'Users',      'people',        'text-info'),
+        ('super_admin.organisation_connections', 'Connections', 'hub', 'text-primary'),
+        ('super_admin_contracts.contracts_overview', 'Contracts', 'receipt_long', 'text-secondary'),
+        ('super_admin.compliance_documents_index', 'Compliance', 'verified_user', 'text-success'),
+        ('super_admin.upcoming_agms',    'AGMs',       'event',         'text-warning')
       ] %}
 
       {% for endpoint, label, icon, color in _items if endpoint in current_app.view_functions %}
@@ -73,7 +74,10 @@
      The first existing endpoint will be used (prevents "missing" items). #}
   {% set SETTINGS_ITEMS = [
     ('Company Profile',  'business',        ['settings.profile_index', 'settings.profile_view', 'super_admin.settings_company_profile']),
+    ('Module Settings',  'apps',            ['settings.module_settings_index']),
+    ('Connections',      'hub',             ['settings.connections_index', 'super_admin.organisation_connections']),
     ('Branding & Theme', 'palette',         ['settings.branding_view', 'super_admin.settings_branding_theme']),
+    ('Document Templates', 'description',   ['settings.document_templates_index']),
     ('Bank Accounts',    'account_balance', ['settings.bank_index',    'super_admin.bank_accounts_list']),
     ('Insurance',        'verified_user',   ['settings.insurance_index']),
     ('Licences',         'assignment_turned_in', ['settings.licenses_index']),

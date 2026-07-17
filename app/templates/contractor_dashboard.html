@@ -1,28 +1,97 @@
 {% extends 'base.html' %}
-{% block content %}
-  <div class="dashboard-container">
-    <h2>🔧 Contractor Dashboard</h2>
-    <p>Welcome, {{ company }}</p>
-    <a href="{{ url_for('auth.logout')
- }}">Logout</a>
+{% block title %}Contractor Logix{% endblock %}
 
-    <div class="dashboard-section">
-      <h4>Your Submitted Logs</h4>
-      {% if logs %}
-        <ul>
-          {% for log in logs %}
-            <li>
-              <strong>{{ log['timestamp'] }}</strong> — {{ log['equipment_id'] }} — {{ log['notes'] }}
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p>No logs submitted yet.</p>
-      {% endif %}
+{% block page_content %}
+<div class="contract-manager">
+  <section class="contract-manager-hero">
+    <div>
+      <h1>Contractor Logix</h1>
+      <p>Assigned work orders, completion updates and future performance evidence.</p>
     </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="contract-manager-button" href="{{ url_for('contractor.new_job_docket') }}">
+        <i class="fas fa-plus me-1"></i> New Job Docket
+      </a>
+      <a class="contract-manager-link" href="{{ url_for('contractor.calendar') }}">Open Calendar</a>
+      <a class="contract-manager-button" href="{{ url_for('contractor.work_orders') }}">Open Work Queue</a>
+    </div>
+  </section>
 
-    <div class="text-center mt-4">
-        <a href="{{ url_for('show_dashboard') }}" class="btn btn-secondary">⬅ Return to Dashboard</a>
+  {% set dashboard_notification_title = 'Notification Action Queue' %}
+  {% include 'notifications/_dashboard_action_strip.html' %}
+
+  <section class="contract-manager-panel contractor-dashboard-ops">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Operations</h2>
+        <p>Accept, schedule and complete work from one contractor control point.</p>
       </div>
-  </div>
+      <span class="contract-alert-pill contract-alert-muted">Calendar centred</span>
+    </div>
+    <div class="contractor-dashboard-ops-grid">
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.work_orders', status='Assigned') }}">
+        <span>Awaiting Acceptance</span>
+        <strong>{{ work_data.stats.assigned if work_data else 0 }}</strong>
+        <small>Review and accept or reject new work orders.</small>
+      </a>
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.work_orders', queue='quote_requests') }}">
+        <span>Quotation Requests</span>
+        <strong class="text-warning">{{ work_data.stats.quote_requests if work_data else 0 }}</strong>
+        <small>Respond to quote invitations from Works Logix or future manual quote intake.</small>
+      </a>
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.calendar') }}#unscheduled-jobs">
+        <span>Accepted, Not Scheduled</span>
+        <strong class="text-warning">{{ calendar_data.stats.unscheduled if calendar_data else 0 }}</strong>
+        <small>Assign engineer/team and add jobs to the calendar.</small>
+      </a>
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.today') }}">
+        <span>Scheduled Today</span>
+        <strong class="text-primary">{{ calendar_data.stats.scheduled_today if calendar_data else 0 }}</strong>
+        <small>Jobs due to be attended today.</small>
+      </a>
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.today') }}#overdue-jobs">
+        <span>Overdue Scheduled</span>
+        <strong class="text-danger">{{ calendar_data.stats.overdue if calendar_data else 0 }}</strong>
+        <small>Scheduled jobs past their date and still open.</small>
+      </a>
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.work_orders', status='Completion Submitted') }}">
+        <span>Completion Review</span>
+        <strong>{{ work_data.stats.submitted if work_data else 0 }}</strong>
+        <small>Submitted completion notes waiting for PM/Admin review.</small>
+      </a>
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.work_orders', queue='to_be_invoiced') }}">
+        <span>To Be Invoiced</span>
+        <strong class="text-warning">{{ work_data.stats.to_be_invoiced if work_data else 0 }}</strong>
+        <small>Completed work ready for invoice preparation.</small>
+      </a>
+      <a class="contractor-dashboard-op-card" href="{{ url_for('contractor.work_orders', status='Returned') }}">
+        <span>Returned Work</span>
+        <strong class="text-danger">{{ work_data.stats.returned if work_data else 0 }}</strong>
+        <small>Jobs returned by management for further action.</small>
+      </a>
+    </div>
+  </section>
+  {% set gar_ask_title = 'Ask GAR' %}
+  {% set gar_ask_subtitle = 'Source-backed answers from your assigned Contractor Logix queue only.' %}
+  {% set gar_ask_placeholder = 'Ask about assigned jobs, returned work, completion evidence or previous issue history' %}
+  {% set gar_ask_action = url_for('contractor.contractor_dashboard') %}
+  {% set gar_ask_clear_url = url_for('contractor.contractor_dashboard') %}
+  {% include 'gar/_ask_panel.html' %}
+
+  {% if work_data and work_data.next_actions %}
+    <section class="contract-manager-panel mt-3">
+      <div class="contract-manager-section-heading">
+        <div>
+          <h2>Next Actions</h2>
+          <p>Prioritised from your assigned Contractor Logix queue.</p>
+        </div>
+      </div>
+      {% set works_next_actions_list = work_data.next_actions %}
+      {% set works_next_actions_title = 'Action Focus' %}
+      {% set works_next_actions_subtitle = 'Contractor queue' %}
+      {% set works_next_actions_prefix = url_for('contractor.work_orders') %}
+      {% include 'works/_next_actions.html' %}
+    </section>
+  {% endif %}
+</div>
 {% endblock %}

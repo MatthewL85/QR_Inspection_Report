@@ -27,5 +27,5 @@ def delete_user(user_id):
         flash(f'✅ User {user.full_name} has been deactivated.', 'success')
         return redirect(url_for('super_admin.manage_users'))
 
-    return render_template('super_admin/user/delete_user.html', user=user)
+    return render_template('super_admin/users/delete_user.html', user=user)
 

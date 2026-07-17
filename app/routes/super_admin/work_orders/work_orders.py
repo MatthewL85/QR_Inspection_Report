@@ -1,5 +1,295 @@
-@super_admin_bp.route('/work-orders', endpoint='work_orders')
+from datetime import datetime
+
+from flask import abort, flash, jsonify, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
+
+from app.decorators.role import super_admin_required
+from app.routes.super_admin import super_admin_bp
+from app.services.works.workflow_service import (
+    WorksFilters,
+    assign_contractor_to_work_order,
+    build_command_centre,
+    build_contractor_routing_options,
+    convert_member_request_to_work_order,
+    get_member_request_for_triage,
+    request_quotes_for_work_order,
+    select_quote_response_for_work_order,
+    update_member_request_triage,
+    works_command_centre_payload,
+)
+
+
+def _company_id() -> int | None:
+    return getattr(current_user, "company_id", None) or getattr(current_user, "active_company_id", None)
+
+
+def _works_filter_args():
+    return {
+        key: value
+        for key in ("search", "client_id", "status")
+        if (value := (request.form.get(key) or request.args.get(key) or "").strip())
+    }
+
+
+@super_admin_bp.route("/work-orders", endpoint="work_orders")
 @super_admin_required
 @login_required
 def work_orders():
-    return render_template('super_admin/work_orders_placeholder.html')  # or similar
+    company_id = _company_id()
+    if not company_id:
+        abort(403)
+
+    filters = WorksFilters(
+        search=request.args.get("search", "").strip(),
+        client_id=request.args.get("client_id", type=int),
+        status=request.args.get("status", "").strip(),
+    )
+    data = build_command_centre(company_id=company_id, filters=filters, include_gar_history=True)
+
+    return render_template(
+        "super_admin/work_orders/index.html",
+        filters=filters,
+        **data,
+    )
+
+
+@super_admin_bp.route("/work-orders/feed.json", endpoint="work_orders_feed")
+@super_admin_required
+@login_required
+def work_orders_feed():
+    company_id = _company_id()
+    if not company_id:
+        abort(403)
+
+    filters = WorksFilters(
+        search=request.args.get("search", "").strip(),
+        client_id=request.args.get("client_id", type=int),
+        status=request.args.get("status", "").strip(),
+    )
+    data = build_command_centre(company_id=company_id, filters=filters, include_gar_history=True)
+    return jsonify(works_command_centre_payload(data, filters, role_context="super_admin"))
+
+
+@super_admin_bp.route("/work-orders/repeated-returns", endpoint="work_orders_repeated_returns")
+@super_admin_required
+@login_required
+def work_orders_repeated_returns():
+    company_id = _company_id()
+    if not company_id:
+        abort(403)
+
+    filters = WorksFilters(
+        search=request.args.get("search", "").strip(),
+        client_id=request.args.get("client_id", type=int),
+        status=request.args.get("status", "").strip(),
+    )
+    data = build_command_centre(company_id=company_id, filters=filters, include_gar_history=True)
+    return render_template(
+        "works/repeated_returns.html",
+        layout_template="layouts/super_admin_base.html",
+        dashboard_endpoint="super_admin.dashboard",
+        dashboard_label="Dashboard",
+        command_centre_endpoint="super_admin.work_orders",
+        workspace_title="Repeated Returns",
+        workspace_subtitle="Management review for contractor completions returned more than once.",
+        filters=filters,
+        **data,
+    )
+
+
+@super_admin_bp.route(
+    "/work-orders/member-requests/<int:request_id>/convert",
+    methods=["POST"],
+    endpoint="convert_member_request_to_work_order",
+)
+@super_admin_required
+@login_required
+def convert_member_request(request_id):
+    company_id = _company_id()
+    if not company_id:
+        abort(403)
+    contractor_id = request.form.get("contractor_id", type=int)
+    if not contractor_id:
+        flash("Select a contractor before converting the request to a work order.", "warning")
+        return redirect(url_for("super_admin.member_request_detail", request_id=request_id, **_works_filter_args()))
+
+    work_order = convert_member_request_to_work_order(
+        request_id=request_id,
+        company_id=company_id,
+        created_by_id=current_user.id,
+        contractor_id=contractor_id,
+        access_context="super_admin",
+    )
+    if not work_order:
+        abort(404)
+
+    flash("Member request converted and sent to the selected contractor.", "success")
+    return redirect(url_for("super_admin.work_orders", **_works_filter_args()))
+
+
+@super_admin_bp.route(
+    "/work-orders/member-requests/<int:request_id>",
+    methods=["GET"],
+    endpoint="member_request_detail",
+)
+@super_admin_required
+@login_required
+def member_request_detail(request_id):
+    company_id = _company_id()
+    if not company_id:
+        abort(403)
+
+    member_request = get_member_request_for_triage(request_id=request_id, company_id=company_id)
+    if not member_request:
+        abort(404)
+
+    return render_template(
+        "works/member_request_detail.html",
+        layout_template="layouts/super_admin_base.html",
+        dashboard_endpoint="super_admin.work_orders",
+        dashboard_label="Works Logix",
+        convert_endpoint="super_admin.convert_member_request_to_work_order",
+        triage_endpoint="super_admin.update_member_request_triage",
+        member_request=member_request,
+        contractor_routing_options=build_contractor_routing_options(
+            member_request=member_request,
+            company_id=company_id,
+        ),
+        filters=_works_filter_args(),
+    )
+
+
+@super_admin_bp.route(
+    "/work-orders/member-requests/<int:request_id>/triage",
+    methods=["POST"],
+    endpoint="update_member_request_triage",
+)
+@super_admin_required
+@login_required
+def triage_member_request(request_id):
+    company_id = _company_id()
+    if not company_id:
+        abort(403)
+
+    updated = update_member_request_triage(
+        request_id=request_id,
+        company_id=company_id,
+        reviewed_by_id=current_user.id,
+        action=request.form.get("action", ""),
+        message=request.form.get("message", ""),
+        access_context="super_admin",
+    )
+    if not updated:
+        flash("That member request could not be updated.", "danger")
+        return redirect(url_for("super_admin.work_orders", **_works_filter_args()))
+
+    flash("Member request triage response sent.", "success")
+    return redirect(url_for("super_admin.work_orders", **_works_filter_args()))
+
+
+@super_admin_bp.route(
+    "/work-orders/<int:work_order_id>/assign-contractor",
+    methods=["POST"],
+    endpoint="assign_work_order_contractor",
+)
+@super_admin_required
+@login_required
+def assign_work_order_contractor(work_order_id):
+    company_id = _company_id()
+    contractor_id = request.form.get("contractor_id", type=int)
+    if not company_id or not contractor_id:
+        abort(400)
+
+    work_order = assign_contractor_to_work_order(
+        work_order_id=work_order_id,
+        company_id=company_id,
+        contractor_id=contractor_id,
+        assigned_by_id=current_user.id,
+        access_context="super_admin",
+    )
+    if not work_order:
+        abort(404)
+
+    flash("Work order assigned to contractor.", "success")
+    return redirect(url_for("super_admin.work_orders", **_works_filter_args()))
+
+
+@super_admin_bp.route(
+    "/work-orders/<int:work_order_id>/request-quotes",
+    methods=["POST"],
+    endpoint="request_work_order_quotes",
+)
+@super_admin_required
+@login_required
+def request_work_order_quotes(work_order_id):
+    company_id = _company_id()
+    if not company_id:
+        abort(403)
+
+    contractor_ids = [
+        int(value)
+        for value in request.form.getlist("contractor_ids")
+        if value and value.isdigit()
+    ]
+    if not contractor_ids:
+        flash("Select at least one contractor before requesting quotations.", "warning")
+        return redirect(url_for("super_admin.work_orders", queue="open", **_works_filter_args()))
+
+    deadline = None
+    deadline_value = (request.form.get("quote_deadline") or "").strip()
+    if deadline_value:
+        try:
+            deadline = datetime.strptime(deadline_value, "%Y-%m-%d")
+        except ValueError:
+            flash("Quote deadline was not a valid date, so it was not saved.", "warning")
+
+    summary = request_quotes_for_work_order(
+        work_order_id=work_order_id,
+        company_id=company_id,
+        contractor_ids=contractor_ids,
+        requested_by_id=current_user.id,
+        quote_deadline=deadline,
+        notes=(request.form.get("quote_notes") or "").strip(),
+        visible_to_directors=bool(request.form.get("visible_to_directors")),
+        access_context="super_admin",
+    )
+    if not summary.get("work_order"):
+        abort(404)
+
+    created = summary.get("created", 0)
+    skipped = summary.get("skipped_existing", 0)
+    errors = summary.get("errors") or []
+    if created or skipped:
+        flash(f"Quotation request sent: {created} new invite(s), {skipped} already existed.", "success")
+    if errors:
+        flash(" ".join(errors), "warning")
+
+    return redirect(url_for("super_admin.work_orders", queue="quote_requests", **_works_filter_args()))
+
+
+@super_admin_bp.route(
+    "/work-orders/<int:work_order_id>/quotes/<int:quote_response_id>/select",
+    methods=["POST"],
+    endpoint="select_work_order_quote",
+)
+@super_admin_required
+@login_required
+def select_work_order_quote(work_order_id, quote_response_id):
+    company_id = _company_id()
+    if not company_id:
+        abort(403)
+
+    quote_response = select_quote_response_for_work_order(
+        work_order_id=work_order_id,
+        quote_response_id=quote_response_id,
+        company_id=company_id,
+        selected_by_id=current_user.id,
+        decision_note=(request.form.get("decision_note") or "").strip(),
+        access_context="super_admin",
+    )
+    if not quote_response:
+        flash("That quotation could not be selected.", "danger")
+        return redirect(url_for("super_admin.work_orders", queue="quote_requests", **_works_filter_args()))
+
+    flash("Quotation selected and the contractor has been assigned.", "success")
+    return redirect(url_for("super_admin.work_orders", queue="open", **_works_filter_args()))

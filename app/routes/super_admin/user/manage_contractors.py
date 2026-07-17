@@ -23,7 +23,7 @@ def manage_contractors():
 
     pagination = q.paginate(page=page, per_page=per_page, error_out=False)
     return render_template(
-        "super_admin/user/manage_contractors.html",
+        "super_admin/users/manage_contractors.html",
         users=pagination,
         total=pagination.total,
     )

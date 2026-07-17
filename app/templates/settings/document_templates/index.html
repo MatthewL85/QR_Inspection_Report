@@ -1,0 +1,144 @@
+{% extends "layouts/super_admin_base.html" %}
+{% block page_content %}
+<div class="container-fluid client-manager-workspace">
+
+  <div class="client-manager-command-bar">
+    <div>
+      <h5>Document Templates</h5>
+      <span>Governed setup for document ownership, branding, terms and future PDF output.</span>
+    </div>
+    <div class="client-manager-actions">
+      <a class="unit-link-action" href="{{ url_for('settings.profile_index') }}">
+        <i class="material-icons">business</i> Company Profile
+      </a>
+      <a class="unit-link-action" href="{{ url_for('settings.module_settings_index', company_id=company.id) if company else url_for('settings.module_settings_index') }}">
+        <i class="material-icons">apps</i> Module Settings
+      </a>
+      <a class="unit-link-action" href="{{ url_for('settings.branding_view') }}">
+        <i class="material-icons">palette</i> Branding
+      </a>
+    </div>
+  </div>
+
+  <section class="client-manager-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Document Ownership Map</h6>
+        <span>Each template stays with the module that creates the document. Handoffs are visible without moving ownership.</span>
+      </div>
+      <span class="user-manager-status-pill is-active">{{ templates|length }} TYPES</span>
+    </div>
+
+    <div class="document-template-tabs" role="tablist" aria-label="Document template groups">
+      {% for owner, items in owner_groups.items() %}
+        <button
+          class="document-template-tab{% if loop.first %} active{% endif %}"
+          type="button"
+          data-template-owner="{{ loop.index }}">
+          {{ owner }}
+          <span>{{ items|length }}</span>
+        </button>
+      {% endfor %}
+    </div>
+
+    {% for owner, items in owner_groups.items() %}
+      <div class="document-template-owner-panel{% if loop.first %} active{% endif %}" data-template-panel="{{ loop.index }}">
+        <div class="client-manager-table-wrap">
+          <table class="client-manager-table document-template-table">
+            <thead>
+              <tr>
+                <th>Document</th>
+                <th>Created By</th>
+                <th>Reviewed / Used By</th>
+                <th>Scope</th>
+                <th>Prefix</th>
+                <th>Output</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in items %}
+                <tr>
+                  <td>
+                    <a href="{{ url_for('settings.document_templates_edit', module_key=item.module_key, document_type=item.document_type, company_id=company.id if company else none) }}">
+                      {{ item.name }}
+                    </a>
+                    <span>{{ item.module_key|replace('_', ' ')|title }} / {{ item.document_type|replace('_', ' ')|title }}</span>
+                  </td>
+                  <td>{{ item.created_by }}</td>
+                  <td>{{ item.reviewed_by }}</td>
+                  <td>
+                    {% if item.handoff %}
+                      <span class="user-manager-status-pill">Handoff</span>
+                    {% else %}
+                      <span class="user-manager-status-pill is-active">Owned</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ item.number_prefix or '-' }}</td>
+                  <td>{{ (item.supported_output_formats or ['html'])|join(' / ')|upper }}</td>
+                  <td>
+                    {% if item.has_company_template %}
+                      <span class="user-manager-status-pill is-active">Custom</span>
+                    {% else %}
+                      <span class="user-manager-status-pill">Default</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <a class="unit-link-action" href="{{ url_for('settings.document_templates_edit', module_key=item.module_key, document_type=item.document_type, company_id=company.id if company else none) }}">
+                      Edit
+                    </a>
+                    <a class="unit-link-action" href="{{ url_for('settings.document_templates_preview', module_key=item.module_key, document_type=item.document_type, company_id=company.id if company else none) }}">
+                      Preview
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endfor %}
+  </section>
+
+  <section class="client-manager-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Rule</h6>
+        <span>Document templates are central settings. The source module still owns the document it creates.</span>
+      </div>
+    </div>
+    <div class="document-template-rule-grid">
+      <div>
+        <strong>Work Orders</strong>
+        <span>Created and owned by Property Management / Works Logix.</span>
+      </div>
+      <div>
+        <strong>Job Dockets</strong>
+        <span>Created and owned by Contractor Logix after acceptance or manual instruction.</span>
+      </div>
+      <div>
+        <strong>Payment Requests</strong>
+        <span>Created by Contractor Logix, reviewed through Works Logix and future Finance Logix.</span>
+      </div>
+      <div>
+        <strong>Invoices</strong>
+        <span>Finance Logix-owned once invoice ledgers and payment approval are built.</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  document.querySelectorAll('[data-template-owner]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const target = button.getAttribute('data-template-owner');
+      document.querySelectorAll('[data-template-owner]').forEach((item) => item.classList.remove('active'));
+      document.querySelectorAll('[data-template-panel]').forEach((item) => item.classList.remove('active'));
+      button.classList.add('active');
+      const panel = document.querySelector(`[data-template-panel="${target}"]`);
+      if (panel) panel.classList.add('active');
+    });
+  });
+</script>
+{% endblock %}

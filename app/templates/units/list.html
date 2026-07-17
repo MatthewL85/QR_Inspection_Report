@@ -1,7 +1,7 @@
-{% extends "layouts/base.html" %}
+{% extends "base.html" %}
 {% block title %}Units{% endblock %}
 
-{% block content %}
+{% block page_content %}
 
 <div class="container-fluid py-4">
 
@@ -12,7 +12,8 @@
     <div class="card shadow-sm mt-4">
         <div class="card-header bg-gradient-primary text-white">
             <h5 class="mb-0">
-                <i class="fas fa-building me-2"></i> Unit Directory
+                <i class="fas fa-address-book me-2"></i>
+                {{ (directory_client_name ~ " - Owners Directory") if directory_client_name else "Owners Directory" }}
             </h5>
         </div>
 
@@ -21,10 +22,12 @@
                 <thead class="bg-light">
                     <tr>
                         <th class="text-uppercase text-secondary text-sm font-weight-bolder">Unit</th>
-                        <th class="text-uppercase text-secondary text-sm font-weight-bolder">Client</th>
-                        <th class="text-uppercase text-secondary text-sm font-weight-bolder">Block</th>
-                        <th class="text-uppercase text-secondary text-sm font-weight-bolder">Core</th>
-                        <th style="width: 140px;"></th>
+                        <th class="text-uppercase text-secondary text-sm font-weight-bolder">Block / Core</th>
+                        <th class="text-uppercase text-secondary text-sm font-weight-bolder">Owner Name</th>
+                        <th class="text-uppercase text-secondary text-sm font-weight-bolder">Phone</th>
+                        <th class="text-uppercase text-secondary text-sm font-weight-bolder">Email</th>
+                        <th class="text-uppercase text-secondary text-sm font-weight-bolder">Occupancy</th>
+                        <th class="text-uppercase text-secondary text-sm font-weight-bolder text-end" style="width: 140px;">Action</th>
                     </tr>
                 </thead>
 
@@ -35,7 +38,7 @@
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="5" class="text-center py-4 text-muted">
+                            <td colspan="7" class="text-center py-4 text-muted">
                                 No units found matching your filters.
                             </td>
                         </tr>
@@ -53,9 +56,10 @@
                     {% if pagination.has_prev %}
                         <li class="page-item">
                             <a class="page-link"
-                               href="{{ url_for('unit_bp.list_units',
+                               href="{{ url_for('unit_bp.list',
                                     page=pagination.prev_num,
                                     search=search,
+                                    client_id=selected_client_id,
                                     block=selected_block,
                                     core=selected_core) }}">
                                 Previous
@@ -71,9 +75,10 @@
                         {% if p %}
                             <li class="page-item {% if p == pagination.page %}active{% endif %}">
                                 <a class="page-link"
-                                   href="{{ url_for('unit_bp.list_units',
+                                   href="{{ url_for('unit_bp.list',
                                         page=p,
                                         search=search,
+                                        client_id=selected_client_id,
                                         block=selected_block,
                                         core=selected_core) }}">
                                     {{ p }}
@@ -88,9 +93,10 @@
                     {% if pagination.has_next %}
                         <li class="page-item">
                             <a class="page-link"
-                               href="{{ url_for('unit_bp.list_units',
+                               href="{{ url_for('unit_bp.list',
                                     page=pagination.next_num,
                                     search=search,
+                                    client_id=selected_client_id,
                                     block=selected_block,
                                     core=selected_core) }}">
                                 Next

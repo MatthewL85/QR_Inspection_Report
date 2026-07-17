@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block title %}Today's Contractor Jobs{% endblock %}
+
+{% macro unit_label(unit) -%}
+  {% if unit %}
+    {{ unit.block_name ~ ' / ' if unit.block_name }}{{ unit.core_name ~ ' / ' if unit.core_name }}{{ unit.unit_number or unit.unit_label }}
+  {% else %}
+    -
+  {% endif %}
+{%- endmacro %}
+
+{% macro time_range(entry) -%}
+  {% if entry.start_time %}{{ entry.start_time.strftime('%H:%M') }}{% else %}Any time{% endif %}
+  {% if entry.end_time %} - {{ entry.end_time.strftime('%H:%M') }}{% endif %}
+{%- endmacro %}
+
+{% macro schedule_card(entry, tone='normal') -%}
+  {% set docket = entry.job_docket %}
+  {% set work_order = entry.work_order %}
+  <article class="contractor-today-card {{ 'is-overdue' if tone == 'overdue' else '' }}">
+    <div class="contractor-today-card-head">
+      <div>
+        <span>{{ entry.scheduled_date.strftime('%d %b %Y') if entry.scheduled_date else '-' }}</span>
+        <strong>{{ time_range(entry) }}</strong>
+      </div>
+      <span class="contract-alert-pill {{ 'contract-alert-danger' if tone == 'overdue' else 'contract-alert-muted' }}">
+        {{ entry.calendar_status }}
+      </span>
+    </div>
+    <div class="contractor-today-title">
+      <strong>{{ docket.docket_number if docket else 'Job Docket' }}</strong>
+      <span>{{ work_order.title if work_order else entry.title }}</span>
+    </div>
+    <div class="contractor-today-info-grid">
+      <div><span>Development</span><strong>{{ entry.client.name if entry.client else '-' }}</strong></div>
+      <div><span>Unit</span><strong>{{ unit_label(entry.unit) }}</strong></div>
+      <div><span>Engineer</span><strong>{{ entry.assigned_engineer.full_name if entry.assigned_engineer else 'No engineer' }}</strong></div>
+      <div><span>Team</span><strong>{{ entry.assigned_team.name if entry.assigned_team else 'No team' }}</strong></div>
+      <div class="contractor-today-wide"><span>Location</span><strong>{{ entry.location or '-' }}</strong></div>
+      <div class="contractor-today-wide"><span>Access / Notes</span><strong>{{ entry.notes or (docket.access_notes if docket else '-') or '-' }}</strong></div>
+      <div><span>Contact</span><strong>{{ docket.contact_name if docket else '-' }}</strong></div>
+      <div><span>Phone</span><strong>{{ docket.contact_phone if docket else '-' }}</strong></div>
+    </div>
+    <div class="contractor-today-actions">
+      {% if docket %}
+        <a class="contract-manager-button" href="{{ url_for('contractor.job_docket_detail', docket_id=docket.id) }}">Open Docket</a>
+      {% endif %}
+      {% if work_order %}
+        <a class="contract-manager-link" href="{{ url_for('contractor.work_order_detail', work_order_id=work_order.id) }}#updates">Add Update</a>
+      {% endif %}
+    </div>
+  </article>
+{%- endmacro %}
+
+{% block page_content %}
+<div class="contract-manager app-ready-surface app-ready-surface--contractor"
+     data-app-mobile-ready="true"
+     data-app-safe-area="required"
+     data-app-source-backed="true">
+  <section class="contract-manager-hero">
+    <div>
+      <h1>Today's Jobs</h1>
+      <p>Mobile-ready field schedule for scheduled Contractor Logix job dockets.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="contract-manager-link" href="{{ url_for('contractor.contractor_dashboard') }}">Dashboard</a>
+      <a class="contract-manager-link" href="{{ url_for('contractor.calendar') }}">Calendar</a>
+      <a class="contract-manager-button" href="{{ url_for('contractor.calendar_ics') }}">Calendar Feed</a>
+    </div>
+  </section>
+
+  <section class="works-command-grid">
+    <article class="works-kpi-card"><span>Overdue</span><strong class="text-danger">{{ stats.overdue }}</strong></article>
+    <article class="works-kpi-card"><span>Today</span><strong class="text-primary">{{ stats.today }}</strong></article>
+    <article class="works-kpi-card"><span>Next 7 Days</span><strong>{{ stats.upcoming }}</strong></article>
+    <article class="works-kpi-card"><span>Visible Jobs</span><strong>{{ stats.total_visible }}</strong></article>
+  </section>
+
+  <nav class="app-surface-nav" aria-label="Today's jobs sections" data-app-surface="contractor-today">
+    <a href="#today-jobs">Today</a>
+    <a href="#overdue-jobs">Overdue</a>
+    <a href="#upcoming-jobs">Upcoming</a>
+  </nav>
+
+  <section class="contract-manager-panel" id="today-jobs">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Today</h2>
+        <p>Jobs scheduled for {{ today.strftime('%d %b %Y') }}.</p>
+      </div>
+      <span class="contract-alert-pill contract-alert-muted">{{ today_entries|length }} jobs</span>
+    </div>
+    <div class="contractor-today-card-grid">
+      {% for entry in today_entries %}
+        {{ schedule_card(entry) }}
+      {% else %}
+        <p class="contract-manager-empty">No jobs are scheduled for today.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="contract-manager-panel" id="overdue-jobs">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Overdue</h2>
+        <p>Scheduled jobs before today that are still open.</p>
+      </div>
+      <span class="contract-alert-pill contract-alert-danger">{{ overdue_entries|length }} overdue</span>
+    </div>
+    <div class="contractor-today-card-grid">
+      {% for entry in overdue_entries %}
+        {{ schedule_card(entry, 'overdue') }}
+      {% else %}
+        <p class="contract-manager-empty">No overdue scheduled jobs.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="contract-manager-panel" id="upcoming-jobs">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>Upcoming</h2>
+        <p>Scheduled jobs through {{ horizon.strftime('%d %b %Y') }}.</p>
+      </div>
+      <span class="contract-alert-pill contract-alert-muted">{{ upcoming_entries|length }} upcoming</span>
+    </div>
+    <div class="contractor-today-card-grid">
+      {% for entry in upcoming_entries %}
+        {{ schedule_card(entry) }}
+      {% else %}
+        <p class="contract-manager-empty">No upcoming scheduled jobs in this window.</p>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

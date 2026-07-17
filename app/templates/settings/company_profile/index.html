@@ -1,147 +1,284 @@
 {% extends "layouts/super_admin_base.html" %}
 {% block page_content %}
-<div class="container-fluid py-4">
+<div class="container-fluid client-manager-workspace">
 
-  <div class="d-flex align-items-center justify-content-between mb-3">
+  <div class="client-manager-command-bar">
     <div>
-      <h5 class="mb-1">Company Profile</h5>
-      <div class="text-muted small">View your organisation details.</div>
+      <h5>Company Profile</h5>
+      <span>Organisation identity, company records and cross-module connection readiness.</span>
     </div>
-    <div class="d-flex gap-2">
-      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('settings.branding_view') }}">Branding</a>
-      <a class="btn btn-primary btn-sm" href="{{ url_for('settings.profile_edit', id=company.id) }}">Edit</a>
+    <div class="client-manager-actions">
+      {% if 'settings.connections_index' in current_app.view_functions %}
+        <a class="unit-link-action" href="{{ url_for('settings.connections_index', company_id=company.id) }}">
+          <i class="material-icons">hub</i> Connections
+        </a>
+      {% endif %}
+      <a class="unit-link-action" href="{{ url_for('settings.branding_view') }}">
+        <i class="material-icons">palette</i> Branding
+      </a>
+      <a class="unit-link-action" href="{{ url_for('settings.module_settings_index', company_id=company.id) }}">
+        <i class="material-icons">apps</i> Module Settings
+      </a>
+      <a class="unit-link-action" href="{{ url_for('settings.document_templates_index', company_id=company.id) }}">
+        <i class="material-icons">description</i> Document Templates
+      </a>
+      <a class="btn btn-primary btn-sm" href="{{ url_for('settings.profile_edit', id=company.id) }}">Edit Profile</a>
     </div>
   </div>
 
-  <div class="row g-3">
-    <div class="col-lg-7">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <h6 class="text-uppercase text-muted small mb-3">Organisation</h6>
-
-          <div class="row mb-3">
-            <div class="col-sm-6">
-              <div class="text-muted small">Name</div>
-              <div class="fw-medium">{{ company.name or "—" }}</div>
-            </div>
-            <div class="col-sm-6">
-              <div class="text-muted small">Type</div>
-              <div class="fw-medium text-capitalize">{{ company.company_type or "—" }}</div>
-            </div>
-          </div>
-
-          <div class="row mb-3">
-            <div class="col-sm-4">
-              <div class="text-muted small">Reg. No.</div>
-              <div class="fw-medium">{{ company.registration_number or "—" }}</div>
-            </div>
-            <div class="col-sm-4">
-              <div class="text-muted small">VAT No.</div>
-              <div class="fw-medium">{{ company.vat_number or "—" }}</div>
-            </div>
-            <div class="col-sm-4">
-              <div class="text-muted small">Tax ID</div>
-              <div class="fw-medium">{{ company.tax_identifier or "—" }}</div>
-            </div>
-          </div>
-
-          <h6 class="text-uppercase text-muted small mt-4 mb-3">Contact</h6>
-          <div class="row mb-3">
-            <div class="col-sm-4">
-              <div class="text-muted small">Email</div>
-              <div class="fw-medium">{{ company.email or "—" }}</div>
-            </div>
-            <div class="col-sm-4">
-              <div class="text-muted small">Phone</div>
-              <div class="fw-medium">{{ company.phone or "—" }}</div>
-            </div>
-            <div class="col-sm-4">
-              <div class="text-muted small">Website</div>
-              <div class="fw-medium">{{ company.website or "—" }}</div>
-            </div>
-          </div>
-
-          <h6 class="text-uppercase text-muted small mt-4 mb-3">Address</h6>
-          <div class="mb-1">{{ company.address_line1 or "—" }}</div>
-          <div class="mb-1">{{ company.address_line2 or "" }}</div>
-          <div class="mb-1">
-            {{ company.city or "—" }}{% if company.state %}, {{ company.state }}{% endif %}
-            {% if company.postal_code %} {{ company.postal_code }}{% endif %}
-          </div>
-          <div class="mb-1">{{ company.country or "—" }}</div>
-
-          <h6 class="text-uppercase text-muted small mt-4 mb-3">Locale</h6>
-          <div class="row">
-            <div class="col-sm-4">
-              <div class="text-muted small">Currency</div>
-              <div class="fw-medium">{{ company.currency or "—" }}</div>
-            </div>
-            <div class="col-sm-4">
-              <div class="text-muted small">Timezone</div>
-              <div class="fw-medium">{{ company.timezone or "—" }}</div>
-            </div>
-            <div class="col-sm-4">
-              <div class="text-muted small">Language</div>
-              <div class="fw-medium">{{ company.preferred_language or "—" }}</div>
-            </div>
-          </div>
-
-        </div>
+  <section class="client-manager-panel organisation-identity-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Core Platform Identity</h6>
+        <span>Permanent organisation identity used by LogixPM, Contractor Logix, Members Logix, Finance Logix, HR Logix and GAR.</span>
+      </div>
+      <span class="user-manager-status-pill is-active">Source of Truth</span>
+    </div>
+    <div class="organisation-identity-grid">
+      <div>
+        <span>Organisation UID</span>
+        <strong>{{ readiness.organisation_uid }}</strong>
+      </div>
+      <div>
+        <span>WO Prefix</span>
+        <strong>{{ company.work_order_prefix or company.work_order_code or '-' }}</strong>
+      </div>
+      <div>
+        <span>Organisation Type</span>
+        <strong>{{ company.company_type or '-' }}</strong>
+      </div>
+      <div>
+        <span>Enabled Modules</span>
+        <strong>{{ readiness.enabled_module_count }}</strong>
+      </div>
+      <div>
+        <span>Active Connections</span>
+        <strong>{{ readiness.active_connection_count }}</strong>
       </div>
     </div>
+  </section>
 
-    <div class="col-lg-5">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <h6 class="text-uppercase text-muted small mb-3">Branding</h6>
+  <div class="company-profile-grid">
+    <section class="client-manager-panel">
+      <div class="client-manager-heading">
+        <div>
+          <h6>Organisation Details</h6>
+          <span>Legal, trading and operating information.</span>
+        </div>
+      </div>
+      <div class="company-profile-facts">
+        <div>
+          <span>Name</span>
+          <strong>{{ company.name or '-' }}</strong>
+        </div>
+        <div>
+          <span>Registration Number</span>
+          <strong>{{ company.registration_number or '-' }}</strong>
+        </div>
+        <div>
+          <span>VAT Number</span>
+          <strong>{{ company.vat_number or '-' }}</strong>
+        </div>
+        <div>
+          <span>Tax ID</span>
+          <strong>{{ company.tax_identifier or '-' }}</strong>
+        </div>
+      </div>
+    </section>
 
-          <div class="d-flex align-items-center gap-3 mb-3">
-            <div class="rounded border" style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;background:#fff;">
-              {% if company.logo_path %}
-                {# ✅ Safe static resolver: works for 'uploads/...', 'static/uploads/...', etc. #}
-                {% set _lp = (company.logo_path or '')|trim %}
-                {% set _lp = _lp.lstrip('/') %}
-                {% if _lp.startswith('static/') %}{% set _lp = _lp[7:] %}{% endif %}
-                <img src="{{ url_for('static', filename=_lp) }}" alt="Logo" style="max-width:56px;max-height:56px;">
+    <section class="client-manager-panel">
+      <div class="client-manager-heading">
+        <div>
+          <h6>Contact</h6>
+          <span>Public contact and operating locale.</span>
+        </div>
+      </div>
+      <div class="company-profile-facts">
+        <div>
+          <span>Email</span>
+          <strong>{{ company.email or '-' }}</strong>
+        </div>
+        <div>
+          <span>Phone</span>
+          <strong>{{ company.phone or '-' }}</strong>
+        </div>
+        <div>
+          <span>Website</span>
+          <strong>{{ company.website or '-' }}</strong>
+        </div>
+        <div>
+          <span>Locale</span>
+          <strong>{{ company.currency or '-' }} / {{ company.preferred_language or '-' }}</strong>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="company-profile-grid">
+    <section class="client-manager-panel">
+      <div class="client-manager-heading">
+        <div>
+          <h6>Address</h6>
+          <span>Used for contracts, invoices, compliance records and reports.</span>
+        </div>
+      </div>
+      <div class="company-profile-address">
+        <strong>{{ company.address_line1 or '-' }}</strong>
+        {% if company.address_line2 %}<span>{{ company.address_line2 }}</span>{% endif %}
+        <span>{{ company.city or '-' }}{% if company.state %}, {{ company.state }}{% endif %}{% if company.postal_code %} {{ company.postal_code }}{% endif %}</span>
+        <span>{{ company.country or '-' }}</span>
+      </div>
+    </section>
+
+    <section class="client-manager-panel">
+      <div class="client-manager-heading">
+        <div>
+          <h6>Branding</h6>
+          <span>Company identity used across module surfaces.</span>
+        </div>
+      </div>
+      <div class="company-profile-branding">
+        <div class="company-profile-logo">
+          {% if company.logo_path %}
+            {% set _lp = (company.logo_path or '')|trim %}
+            {% set _lp = _lp.lstrip('/') %}
+            {% if _lp.startswith('static/') %}{% set _lp = _lp[7:] %}{% endif %}
+            <img src="{{ url_for('static', filename=_lp) }}" alt="Company logo">
+          {% else %}
+            <span>No logo</span>
+          {% endif %}
+        </div>
+        <div class="company-profile-swatches">
+          <span style="background: {{ company.brand_primary_color or '#e8edf5' }}"></span>
+          <span style="background: {{ company.brand_secondary_color or '#e8edf5' }}"></span>
+          <span style="background: {{ company.brand_color or '#e8edf5' }}"></span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section class="client-manager-panel company-document-setup-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Document & Template Setup</h6>
+        <span>Module-owned document rules for branding, numbering, terms and future PDF output.</span>
+      </div>
+      <a class="unit-link-action" href="{{ url_for('settings.document_templates_index', company_id=company.id) }}">
+        <i class="material-icons">description</i> Open Document Templates
+      </a>
+    </div>
+    <div class="company-document-setup-grid">
+      {% for template in document_templates %}
+        {% if template.module_key and template.document_type %}
+          <a class="company-document-setup-tile"
+             href="{{ url_for('settings.document_templates_edit', module_key=template.module_key, document_type=template.document_type, company_id=company.id) }}">
+            <span>{{ template.owner_module }}</span>
+            <strong>{{ template.name }}</strong>
+            <small>{{ template.description or template.created_by }}</small>
+            <em>{{ 'Company template' if template.has_company_template else 'System default' }}</em>
+          </a>
+        {% endif %}
+      {% else %}
+        <div class="company-document-setup-empty">
+          Document templates are available once setup context is ready.
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="client-manager-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Module & Connection Readiness</h6>
+        <span>Shows whether this organisation can operate independently and connect to other Logix modules.</span>
+      </div>
+      {% if 'settings.connections_index' in current_app.view_functions %}
+        <a class="unit-link-action" href="{{ url_for('settings.connections_index', company_id=company.id) }}">
+          <i class="material-icons">hub</i> Manage Connections
+        </a>
+      {% endif %}
+    </div>
+    <div class="client-manager-table-wrap">
+      <table class="client-manager-table organisation-connections-table">
+        <thead>
+          <tr>
+            <th>Area</th>
+            <th>Status</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Organisation Identity</strong></td>
+            <td><span class="user-manager-status-pill is-active">Ready</span></td>
+            <td>{{ readiness.organisation_uid }}</td>
+          </tr>
+          <tr>
+            <td><strong>Enabled Modules</strong></td>
+            <td><span class="user-manager-status-pill {% if readiness.enabled_module_count %}is-active{% endif %}">{{ readiness.enabled_module_count }}</span></td>
+            <td>
+              {% if readiness.enabled_module_names %}
+                {% for module_name in readiness.enabled_module_names %}
+                  {{ module_name }}{% if not loop.last %}, {% endif %}
+                {% endfor %}
               {% else %}
-                <span class="text-muted small">No logo</span>
+                No modules enabled yet.
               {% endif %}
-            </div>
-            <div>
-              <div class="text-muted small">Logo</div>
-              <div class="small">{{ company.logo_path or "—" }}</div>
-            </div>
-          </div>
-
-          <div class="d-flex align-items-center gap-3 mb-2">
-            <div class="rounded shadow-sm border" style="width:36px;height:36px;background: {{ company.brand_primary_color or '#eee' }}"></div>
-            <div>
-              <div class="text-muted small">Primary</div>
-              <div class="fw-medium">{{ company.brand_primary_color or "—" }}</div>
-            </div>
-          </div>
-
-          <div class="d-flex align-items-center gap-3 mb-2">
-            <div class="rounded shadow-sm border" style="width:36px;height:36px;background: {{ company.brand_secondary_color or '#eee' }}"></div>
-            <div>
-              <div class="text-muted small">Secondary</div>
-              <div class="fw-medium">{{ company.brand_secondary_color or "—" }}</div>
-            </div>
-          </div>
-
-          <div class="d-flex align-items-center gap-3 mb-3">
-            <div class="rounded shadow-sm border" style="width:36px;height:36px;background: {{ company.brand_color or '#eee' }}"></div>
-            <div>
-              <div class="text-muted small">Legacy</div>
-              <div class="fw-medium">{{ company.brand_color or "—" }}</div>
-            </div>
-          </div>
-
-          <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('settings.branding_view') }}">Manage Branding</a>
-        </div>
-      </div>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Organisation Connections</strong></td>
+            <td><span class="user-manager-status-pill {% if readiness.has_connections %}is-active{% endif %}">{{ readiness.active_connection_count }}</span></td>
+            <td>
+              {% if readiness.has_connections %}
+                Governed cross-organisation links are active.
+              {% else %}
+                No connected organisations yet.
+              {% endif %}
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-  </div>
+  </section>
+
+  <section class="client-manager-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Module Setup Map</h6>
+        <span>Structured readiness view used by setup screens, module onboarding and future GAR context.</span>
+      </div>
+      <a class="unit-link-action" href="{{ url_for('settings.module_settings_index', company_id=company.id) }}">
+        <i class="material-icons">apps</i> Open Module Settings Registry
+      </a>
+    </div>
+    <div class="client-manager-table-wrap">
+      <table class="client-manager-table organisation-connections-table">
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>Subscription</th>
+            <th>Contract</th>
+            <th>Connection</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for module in readiness.modules %}
+            <tr>
+              <td><strong>{{ module.name }}</strong></td>
+              <td>
+                <span class="user-manager-status-pill {% if module.is_enabled %}is-active{% endif %}">
+                  {{ 'Enabled' if module.is_enabled else 'Not Enabled' }}
+                </span>
+              </td>
+              <td>{{ module.contract_status|replace('_', ' ')|title }}</td>
+              <td>{{ 'Required for sharing' if module.requires_connection else 'Independent' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
 
 </div>
 {% endblock %}

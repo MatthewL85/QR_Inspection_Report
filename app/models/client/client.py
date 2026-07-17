@@ -39,6 +39,7 @@ class Client(db.Model):
     units_houses = db.Column(db.Integer, default=0)
     units_duplexes = db.Column(db.Integer, default=0)
     units_commercial = db.Column(db.Integer, default=0)
+    units_other = db.Column(db.Integer, default=0)
 
     # 📅 Governance Dates
     financial_year_end = db.Column(db.String(5), nullable=True)

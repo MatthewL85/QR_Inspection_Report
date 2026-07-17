@@ -1,0 +1,394 @@
+{% extends 'layouts/super_admin_base.html' %}
+{% block title %}Organisation Connections | LogixPM{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid client-manager-workspace organisation-connections-workspace">
+
+  <div class="client-manager-command-bar">
+    <div>
+      <h5>Organisation Connections</h5>
+      <span>Module access, connection codes and governed cross-organisation visibility.</span>
+    </div>
+    <div class="client-manager-actions">
+      <a href="{{ url_for('super_admin.dashboard') }}" class="unit-link-action">
+        <i class="material-icons">arrow_back</i> Dashboard
+      </a>
+    </div>
+  </div>
+
+  {% if company %}
+    <section class="client-manager-panel organisation-identity-panel">
+      <div class="client-manager-heading">
+        <div>
+          <h6>{{ company.name }}</h6>
+          <span>Core organisation identity used across enabled Logix modules.</span>
+        </div>
+        <span class="user-manager-status-pill is-active">Core Identity</span>
+      </div>
+      <div class="organisation-identity-grid">
+        <div>
+          <span>Organisation UID</span>
+          <strong>{{ company.organisation_uid }}</strong>
+        </div>
+        <div>
+          <span>Company Type</span>
+          <strong>{{ company.company_type or '-' }}</strong>
+        </div>
+        <div>
+          <span>Enabled Modules</span>
+          <strong>{{ subscriptions|selectattr('is_active')|list|length }}</strong>
+        </div>
+        <div>
+          <span>Active Connections</span>
+          <strong>{{ active_connections|length }}</strong>
+        </div>
+      </div>
+    </section>
+
+    {% if setup_payload %}
+      <section class="client-manager-panel organisation-governance-panel">
+        <div class="client-manager-heading">
+          <div>
+            <h6>Setup Governance</h6>
+            <span>Controlled setup actions for module access, company links and GAR-safe visibility.</span>
+          </div>
+          <span class="user-manager-status-pill">Super Admin Only</span>
+        </div>
+        <div class="organisation-governance-summary">
+          <div>
+            <span>Feed Mode</span>
+            <strong>{{ 'Read only' if setup_payload.mutation_policy.feed_allows_mutation == false else 'Mutation enabled' }}</strong>
+          </div>
+          <div>
+            <span>Setup Changes</span>
+            <strong>{{ 'POST routes + CSRF' if setup_payload.mutation_policy.requires_csrf else 'Review required' }}</strong>
+          </div>
+          <div>
+            <span>GAR Action Rights</span>
+            <strong>{{ 'Read-only context' if setup_payload.mutation_policy.gar_may_execute_actions == false else 'Can execute' }}</strong>
+          </div>
+        </div>
+        <div class="client-manager-table-wrap">
+          <table class="client-manager-table organisation-connections-table organisation-governance-table">
+            <thead>
+              <tr>
+                <th>Action</th>
+                <th>Purpose</th>
+                <th>Route</th>
+                <th>Protection</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for action in setup_payload.governed_actions %}
+                <tr>
+                  <td><strong>{{ action.label }}</strong></td>
+                  <td>{{ action.description }}</td>
+                  <td>{{ action.method }} {{ action.url }}</td>
+                  <td>
+                    <span class="user-manager-status-pill is-active">CSRF</span>
+                    <span class="user-manager-status-pill">Super Admin</span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {% endif %}
+  {% endif %}
+
+  <div class="organisation-setup-grid">
+    <section class="client-manager-panel">
+      <div class="client-manager-heading">
+        <div>
+          <h6>Enable Module</h6>
+          <span>Switch on a Logix module for an organisation.</span>
+        </div>
+      </div>
+      <form method="POST" action="{{ url_for('super_admin.enable_organisation_module') }}" class="organisation-connection-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="module_company_id">Organisation</label>
+        <select id="module_company_id" name="company_id" class="form-control" required>
+          {% for item in companies %}
+            <option value="{{ item.id }}" {% if company and item.id == company.id %}selected{% endif %}>{{ item.name }}</option>
+          {% endfor %}
+        </select>
+
+        <label for="module_key">Module</label>
+        <select id="module_key" name="module_key" class="form-control" required>
+          <option value="">Select module</option>
+          {% for module in available_modules %}
+            <option value="{{ module.key }}">{{ module.name }}</option>
+          {% endfor %}
+        </select>
+
+        <label for="plan">Plan</label>
+        <input id="plan" name="plan" class="form-control" placeholder="Optional plan or package">
+
+        <button class="btn btn-primary btn-sm" type="submit">Enable Module</button>
+      </form>
+    </section>
+
+    <section class="client-manager-panel">
+      <div class="client-manager-heading">
+        <div>
+          <h6>Link Contractor Profile</h6>
+          <span>Attach a contractor record to its organisation identity.</span>
+        </div>
+      </div>
+      <form method="POST" action="{{ url_for('super_admin.link_contractor_organisation') }}" class="organisation-connection-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="contractor_id">Contractor Profile</label>
+        <select id="contractor_id" name="contractor_id" class="form-control" required>
+          <option value="">Select contractor</option>
+          {% for contractor in contractors %}
+            <option value="{{ contractor.id }}">
+              {{ contractor.company_name }}
+              {% if contractor.organisation_company %} - {{ contractor.organisation_company.name }}{% endif %}
+            </option>
+          {% endfor %}
+        </select>
+
+        <label for="contractor_company_id">Organisation</label>
+        <select id="contractor_company_id" name="company_id" class="form-control" required>
+          <option value="">Select organisation</option>
+          {% for item in companies %}
+            <option value="{{ item.id }}">{{ item.name }}</option>
+          {% endfor %}
+        </select>
+
+        <button class="btn btn-outline-primary btn-sm" type="submit">Link Contractor</button>
+      </form>
+    </section>
+
+    <section class="client-manager-panel">
+      <div class="client-manager-heading">
+        <div>
+          <h6>Create Connection Invite</h6>
+          <span>Create a controlled code for another organisation to connect.</span>
+        </div>
+      </div>
+      <form method="POST" action="{{ url_for('super_admin.create_organisation_connection_invite') }}" class="organisation-connection-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="source_company_id">Source Organisation</label>
+        <select id="source_company_id" name="source_company_id" class="form-control" required>
+          {% for item in companies %}
+            <option value="{{ item.id }}" {% if company and item.id == company.id %}selected{% endif %}>{{ item.name }}</option>
+          {% endfor %}
+        </select>
+
+        <label for="target_company_id">Target Organisation</label>
+        <select id="target_company_id" name="target_company_id" class="form-control">
+          <option value="">Open invite code</option>
+          {% for item in companies %}
+            {% if not company or item.id != company.id %}
+              <option value="{{ item.id }}">{{ item.name }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+
+        <label for="target_email">Notification Email</label>
+        <input id="target_email" name="target_email" type="email" class="form-control" placeholder="Optional delivery email">
+
+        <label for="connection_type">Connection Type</label>
+        <select id="connection_type" name="connection_type" class="form-control">
+          <option value="management_contractor">Management Company + Contractor</option>
+          <option value="management_client">Management Company + Client</option>
+          <option value="management_hr">Management Company + HR Provider</option>
+        </select>
+
+        <div class="organisation-module-checks">
+          <span>Allowed Modules</span>
+          <label><input type="checkbox" name="allowed_modules" value="works" checked> Works Logix</label>
+          <label><input type="checkbox" name="allowed_modules" value="contractor" checked> Contractor Logix</label>
+          <label><input type="checkbox" name="allowed_modules" value="gar_ai" checked> GAR AI</label>
+        </div>
+
+        <button class="btn btn-primary btn-sm" type="submit">Create Invite</button>
+      </form>
+    </section>
+
+    <section class="client-manager-panel">
+      <div class="client-manager-heading">
+        <div>
+          <h6>Accept Invite</h6>
+          <span>Connect this organisation using a received code.</span>
+        </div>
+      </div>
+      <form method="POST" action="{{ url_for('super_admin.accept_organisation_connection_invite') }}" class="organisation-connection-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="invite_code">Invite Code</label>
+        <input id="invite_code" name="invite_code" class="form-control" placeholder="Paste connection code" required>
+
+        <label for="accepting_company_id">Accepting Organisation</label>
+        <select id="accepting_company_id" name="accepting_company_id" class="form-control" required>
+          {% for item in companies %}
+            <option value="{{ item.id }}" {% if company and item.id == company.id %}selected{% endif %}>{{ item.name }}</option>
+          {% endfor %}
+        </select>
+
+        <button class="btn btn-outline-primary btn-sm" type="submit">Accept Connection</button>
+      </form>
+    </section>
+  </div>
+
+  <section class="client-manager-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Contractor Organisation Links</h6>
+        <span>Contractor profiles mapped to real organisation identities.</span>
+      </div>
+    </div>
+    <div class="client-manager-table-wrap">
+      <table class="client-manager-table organisation-connections-table">
+        <thead>
+          <tr>
+            <th>Contractor</th>
+            <th>Organisation</th>
+            <th>Trade</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for contractor in contractors %}
+            <tr>
+              <td><strong>{{ contractor.company_name }}</strong></td>
+              <td>
+                {% if contractor.organisation_company %}
+                  {{ contractor.organisation_company.name }}
+                  <span class="client-manager-subtext">{{ contractor.organisation_company.organisation_uid }}</span>
+                {% else %}
+                  <span class="text-muted">Not linked</span>
+                {% endif %}
+              </td>
+              <td>{{ contractor.business_type or '-' }}</td>
+              <td>
+                <span class="user-manager-status-pill {% if contractor.company_id %}is-active{% endif %}">
+                  {{ 'Linked' if contractor.company_id else 'Pending' }}
+                </span>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="client-manager-empty">No contractor profiles found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="client-manager-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Module Subscriptions</h6>
+        <span>Enabled modules for the current organisation.</span>
+      </div>
+    </div>
+    <div class="client-manager-table-wrap">
+      <table class="client-manager-table organisation-connections-table">
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>Status</th>
+            <th>Plan</th>
+            <th>Enabled</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for subscription in subscriptions %}
+            <tr>
+              <td><strong>{{ subscription.module_key|replace('_', ' ')|title }}</strong></td>
+              <td><span class="user-manager-status-pill {% if subscription.is_active %}is-active{% endif %}">{{ subscription.status|title }}</span></td>
+              <td>{{ subscription.plan or '-' }}</td>
+              <td>{{ subscription.enabled_at.strftime('%d %b %Y') if subscription.enabled_at else '-' }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="client-manager-empty">No module subscriptions enabled yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="client-manager-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Active Organisation Connections</h6>
+        <span>Accepted links that can support governed cross-module workflows.</span>
+      </div>
+    </div>
+    <div class="client-manager-table-wrap">
+      <table class="client-manager-table organisation-connections-table">
+        <thead>
+          <tr>
+            <th>Connected Organisation</th>
+            <th>Type</th>
+            <th>GAR Scope</th>
+            <th>Accepted</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for connection in active_connections %}
+            {% set other_company = connection.target_company if company and connection.source_company_id == company.id else connection.source_company %}
+            <tr>
+              <td>
+                <strong>{{ other_company.name if other_company else '-' }}</strong>
+                <span class="client-manager-subtext">{{ other_company.company_type if other_company else '' }}</span>
+              </td>
+              <td>{{ connection.connection_type|replace('_', ' ')|title }}</td>
+              <td><span class="user-manager-role-pill">{{ connection.gar_visibility_scope|replace('_', ' ')|title }}</span></td>
+              <td>{{ connection.accepted_at.strftime('%d %b %Y') if connection.accepted_at else '-' }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="client-manager-empty">No active organisation connections yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="client-manager-panel">
+    <div class="client-manager-heading">
+      <div>
+        <h6>Pending Invites</h6>
+        <span>Open codes created by or assigned to this organisation.</span>
+      </div>
+    </div>
+    <div class="client-manager-table-wrap">
+      <table class="client-manager-table organisation-connections-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Direction</th>
+            <th>Target</th>
+            <th>Modules</th>
+            <th>Expires</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for invite in pending_invites %}
+            <tr>
+              <td><strong>{{ invite.invite_code }}</strong></td>
+              <td>Sent</td>
+              <td>{{ invite.target_company.name if invite.target_company else (invite.target_email or 'Open invite') }}</td>
+              <td>{{ (invite.allowed_modules_json or [])|join(', ') }}</td>
+              <td>{{ invite.expires_at.strftime('%d %b %Y') if invite.expires_at else '-' }}</td>
+            </tr>
+          {% endfor %}
+          {% for invite in received_invites %}
+            <tr>
+              <td><strong>{{ invite.invite_code }}</strong></td>
+              <td>Received</td>
+              <td>{{ invite.source_company.name if invite.source_company else '-' }}</td>
+              <td>{{ (invite.allowed_modules_json or [])|join(', ') }}</td>
+              <td>{{ invite.expires_at.strftime('%d %b %Y') if invite.expires_at else '-' }}</td>
+            </tr>
+          {% endfor %}
+          {% if not pending_invites and not received_invites %}
+            <tr><td colspan="5" class="client-manager-empty">No pending connection invites.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

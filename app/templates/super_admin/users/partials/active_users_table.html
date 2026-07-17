@@ -1,50 +1,84 @@
-{# templates/super_admin/users/partials/active_users_table.html #}
-<div class="table-responsive mb-4">
-  <form method="POST" action="{{ url_for('super_admin.bulk_deactivate_users') }}">
-    <table class="table align-items-center">
+<form method="POST" action="{{ url_for('super_admin.bulk_deactivate_users') }}" class="user-manager-table-form">
+  <div class="client-manager-table-wrap">
+    <table class="table user-manager-table align-items-center mb-0">
+      <colgroup>
+        <col style="width: 4%;">
+        <col style="width: 18%;">
+        <col style="width: 14%;">
+        <col style="width: 17%;">
+        <col style="width: 14%;">
+        <col style="width: 20%;">
+        <col style="width: 6%;">
+        <col style="width: 7%;">
+      </colgroup>
       <thead>
         <tr>
-          <th><input type="checkbox" id="select-all-active"></th>
-          <th>Email</th>
-          <th>Role</th>
+          <th><input type="checkbox" id="select-all-active" aria-label="Select all active users"></th>
           <th>Full Name</th>
+          <th>Role</th>
+          <th>Email</th>
+          <th>Contact</th>
           <th>Company</th>
           <th>Status</th>
-          <th class="text-center">Actions</th>
+          <th class="text-end">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for user in active_users.items %}
         <tr>
-          <td><input type="checkbox" name="user_ids" value="{{ user.id }}"></td>
+          <td><input type="checkbox" name="user_ids" value="{{ user.id }}" aria-label="Select {{ user.email }}"></td>
+          <td class="user-manager-primary-cell">{{ user.full_name or '-' }}</td>
+          <td><span class="user-manager-role-pill">{{ user.role.name if user.role else '-' }}</span></td>
           <td>{{ user.email }}</td>
-          <td><span class="badge bg-gradient-info text-white">{{ user.role.name if user.role else '—' }}</span></td>
-          <td>{{ user.full_name or '—' }}</td>
-          <td>{{ user.company.name if user.company else '—' }}</td>
-          <td><span class="badge bg-success">Active</span></td>
-          <td class="text-center">
-            <a href="{{ url_for('super_admin.edit_user', user_id=user.id) }}" class="btn btn-sm btn-outline-primary">
-              <i class="fas fa-edit"></i> Edit
-            </a>
-            <a href="{{ url_for('super_admin.delete_user', user_id=user.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to deactivate this user?');">
-              <i class="fas fa-trash-alt"></i> Deactivate
-            </a>
+          <td>
+            <div class="user-manager-contact-stack">
+              {% if user.mobile_phone %}
+                <span><strong>M:</strong> {{ user.mobile_phone }}</span>
+              {% endif %}
+              {% if user.direct_phone %}
+                <span><strong>D:</strong> {{ user.direct_phone }}</span>
+              {% endif %}
+              {% if user.phone_extension %}
+                <span><strong>Ext:</strong> {{ user.phone_extension }}</span>
+              {% endif %}
+              {% if not user.mobile_phone and not user.direct_phone and not user.phone_extension %}
+                <span>-</span>
+              {% endif %}
+            </div>
           </td>
+          <td>{{ user.company.name if user.company else '-' }}</td>
+          <td><span class="user-manager-status-pill is-active">Active</span></td>
+          <td class="text-end">
+            <div class="user-manager-row-actions">
+              <a href="{{ url_for('super_admin.edit_user', user_id=user.id) }}" class="user-manager-action-link">Edit</a>
+              <span class="unit-action-divider"></span>
+              <a href="{{ url_for('super_admin.delete_user', user_id=user.id) }}" class="user-manager-action-link is-danger" onclick="return confirm('Are you sure you want to deactivate this user?');">Deactivate</a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="client-manager-empty">No active users found.</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-    <div class="mt-2 text-end">
-      <button type="submit" class="btn btn-danger btn-sm">
-        <i class="fas fa-user-slash"></i> Deactivate Selected
-      </button>
+  </div>
+
+  {% if active_users.items %}
+    <div class="user-manager-bulk-actions">
+      <button type="submit" class="btn btn-sm btn-outline-danger">Deactivate Selected</button>
     </div>
-  </form>
-</div>
+  {% endif %}
+</form>
 
 <script>
-  document.getElementById('select-all-active').addEventListener('change', function () {
-    const checkboxes = document.querySelectorAll('input[name="user_ids"]');
-    checkboxes.forEach(cb => cb.checked = this.checked);
-  });
+  (function () {
+    const selectAll = document.getElementById('select-all-active');
+    if (!selectAll) return;
+    selectAll.addEventListener('change', function () {
+      const checkboxes = document.querySelectorAll('input[name="user_ids"]');
+      checkboxes.forEach(cb => cb.checked = this.checked);
+    });
+  })();
 </script>

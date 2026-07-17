@@ -5,6 +5,7 @@ import json
 import re
 from datetime import date, timedelta, datetime as _dt
 from typing import Any, Dict, List
+from sqlalchemy import or_
 from sqlalchemy.orm import selectinload
 from flask import current_app
 
@@ -15,6 +16,7 @@ from app.decorators import super_admin_required
 from app.extensions import db
 from app.models.client.client import Client
 from app.models.contracts import ContractTemplate, ContractTemplateVersion, ClientContract
+from app.services.contract.renewal_alerts import sync_contract_renewal_notifications
 from app.services.contract.contracts import generate_contract_artifacts, contract_snapshot, log_contract_audit
 from app.services.contract.contract_upgrades import build_upgrade_preview, apply_upgrade
 from app.services.contract.contract_audits import create_contract_audit  # ✅ unified audit helper (kept)
@@ -649,6 +651,23 @@ def contracts_archive_bulk():
     flash(f"Archived {len(contracts)} contract(s).", "success")
     return redirect(url_for(".contracts_overview", **request.args.to_dict()))
 
+
+@super_admin_contracts_bp.post("/alerts/sync", endpoint="sync_renewal_alerts")
+@login_required
+@super_admin_required
+def sync_renewal_alerts():
+    """Create idempotent renewal notifications for contracts in the current tenant scope."""
+    result = sync_contract_renewal_notifications(
+        company_id=getattr(current_user, "company_id", None),
+        fallback_user_id=getattr(current_user, "id", None),
+    )
+    flash(
+        f"Contract renewal alerts refreshed: {result['created']} created, "
+        f"{result['skipped_existing']} already active.",
+        "success",
+    )
+    return redirect(url_for(".contracts_overview", **request.args.to_dict()))
+
 # -------------------- wizard routes --------------------
 
 @super_admin_contracts_bp.route("/renew/<int:client_id>", methods=["GET", "POST"])
@@ -1028,24 +1047,6 @@ except NameError:
                 return {}
         return {}
 
-@super_admin_contracts_bp.route("/super-admin/contracts/renew/<int:client_id>", methods=["GET", "POST"])
-@login_required
-@super_admin_required
-def renew_legacy_route(client_id: int):
-    """
-    Legacy/shim route: keep the original symbol and body intact but delegate to the canonical
-    /super-admin/contracts/renew/<client_id>?step=...
-    """
-    # Early delegate — keeps EVERYTHING below intact but unreachable (do not remove anything).
-    return redirect(url_for(".renew", client_id=client_id, **request.args))
-
-    # =========================
-    # (Unreachable legacy body retained verbatim per "do not remove anything")
-    # =========================
-    # ... original Step-2 body as previously pasted remains here ...
-    # NOTE: It will never execute because of the early return above.
-    # (We intentionally keep it to satisfy "do not remove anything" while avoiding duplicate handlers.)
-
 # -------------------- inline edit (Step 3 quick edits) --------------------
 
 @super_admin_contracts_bp.post("/contracts/<int:contract_id>/inline-update")
@@ -1338,6 +1339,8 @@ def contracts_overview():
     base = _scoped_contracts_query()
 
     eager_opts = [selectinload(ClientContract.client)]
+    if hasattr(ClientContract, "alert_owner"):
+        eager_opts.append(selectinload(ClientContract.alert_owner))
     # Add optional relations only if they exist on the model
     if hasattr(ClientContract, "preferred_contractor"):
         eager_opts.append(selectinload(ClientContract.preferred_contractor))
@@ -1391,9 +1394,11 @@ def contracts_overview():
                 pass
             return []
 
-    # ----- Expiry lists (deduped) -----
+    live_base = base.filter(or_(ClientContract.sign_status.is_(None), ClientContract.sign_status != "Archived"))
+
+    # ----- Expiry lists (deduped; archived contracts are lifecycle-closed) -----
     expired = _dedupe(_safe_all(
-        base.filter(
+        live_base.filter(
             ClientContract.end_date.isnot(None),
             ClientContract.end_date < today
         ).order_by(ClientContract.end_date.asc()),
@@ -1401,7 +1406,7 @@ def contracts_overview():
     ))
 
     expiring_30 = _dedupe(_safe_all(
-        base.filter(
+        live_base.filter(
             ClientContract.end_date.isnot(None),
             ClientContract.end_date >= today,
             ClientContract.end_date <= in_30
@@ -1410,7 +1415,7 @@ def contracts_overview():
     ))
 
     expiring_60 = _dedupe(_safe_all(
-        base.filter(
+        live_base.filter(
             ClientContract.end_date.isnot(None),
             ClientContract.end_date > in_30,
             ClientContract.end_date <= in_60
@@ -1419,13 +1424,25 @@ def contracts_overview():
     ))
 
     expiring_90 = _dedupe(_safe_all(
-        base.filter(
+        live_base.filter(
             ClientContract.end_date.isnot(None),
             ClientContract.end_date > in_60,
             ClientContract.end_date <= in_90
         ).order_by(ClientContract.end_date.asc()),
         "expiring_90",
     ))
+
+    active_contracts = _safe_all(
+        live_base.filter(
+            ClientContract.end_date.isnot(None),
+            ClientContract.end_date > in_90,
+        ),
+        "active_contracts",
+    )
+    missing_date_contracts = _safe_all(
+        live_base.filter(ClientContract.end_date.is_(None)),
+        "missing_date_contracts",
+    )
 
     # ----- Choose safe timestamp cols (fallbacks if attrs not present) -----
     updated_col = getattr(ClientContract, "updated_at", None) or ClientContract.created_at
@@ -1477,20 +1494,32 @@ def contracts_overview():
     ))
 
     # ----- Archived list (explicit; not shown by default) -----
-    archived = _dedupe(_safe_all(
+    archived = _safe_all(
         base.filter(ClientContract.sign_status == "Archived").order_by(created_col.desc()),
         "archived",
-    ))
+    )
 
-    # -------- Server-side filters for the unified table (kept) --------
+    # -------- Server-side filters for the Contract Manager register --------
     q_status = (request.args.get("status") or "").strip()
     q_client = request.args.get("client_id", type=int)
     q_text   = (request.args.get("q") or "").strip()
+    q_bucket = (request.args.get("bucket") or "").strip()
     include_archived = request.args.get("include_archived") in ("1", "true", "True")
+    bucket_includes_archived = q_bucket == "archived"
+    include_archived_effective = include_archived or bucket_includes_archived
 
-    all_q = _scoped_contracts_query().options(selectinload(ClientContract.client)).order_by(ClientContract.created_at.desc())
+    client_options_q = Client.query
+    if getattr(current_user, "company_id", None):
+        client_options_q = client_options_q.filter(Client.company_id == current_user.company_id)
+    client_options = client_options_q.order_by(Client.name.asc()).all()
 
-    if not include_archived:
+    all_q = (
+        _scoped_contracts_query()
+        .options(selectinload(ClientContract.client))
+        .order_by(ClientContract.end_date.asc(), ClientContract.created_at.desc())
+    )
+
+    if not include_archived_effective:
         # Hide archived rows by default
         all_q = all_q.filter(ClientContract.sign_status != "Archived")
 
@@ -1498,57 +1527,47 @@ def contracts_overview():
         all_q = all_q.filter(ClientContract.sign_status == q_status)
     if q_client:
         all_q = all_q.filter(ClientContract.client_id == q_client)
+    if q_bucket:
+        if q_bucket == "expired":
+            all_q = all_q.filter(ClientContract.end_date.isnot(None), ClientContract.end_date < today)
+        elif q_bucket == "30":
+            all_q = all_q.filter(ClientContract.end_date.isnot(None), ClientContract.end_date >= today, ClientContract.end_date <= in_30)
+        elif q_bucket == "60":
+            all_q = all_q.filter(ClientContract.end_date.isnot(None), ClientContract.end_date > in_30, ClientContract.end_date <= in_60)
+        elif q_bucket == "90":
+            all_q = all_q.filter(ClientContract.end_date.isnot(None), ClientContract.end_date > in_60, ClientContract.end_date <= in_90)
+        elif q_bucket == "active":
+            all_q = all_q.filter(ClientContract.end_date.isnot(None), ClientContract.end_date > in_90)
+        elif q_bucket == "archived":
+            all_q = all_q.filter(ClientContract.sign_status == "Archived")
+        elif q_bucket == "missing":
+            all_q = all_q.filter(ClientContract.end_date.is_(None))
     if q_text:
         # light search over title and client name if available
         like = f"%{q_text}%"
         try:
+            title_col = getattr(ClientContract, "contract_title", None)
             all_q = (all_q.join(Client, Client.id == ClientContract.client_id)
                         .filter(
-                            (getattr(ClientContract, "contract_title", ClientContract.id.cast(db.String)).ilike(like)) |
-                            (Client.name.ilike(like))
+                            ((title_col.ilike(like)) if title_col is not None else ClientContract.id.cast(db.String).ilike(like)) |
+                            (Client.name.ilike(like)) |
+                            (Client.property_name.ilike(like))
                         ))
         except Exception:
             # fallback if contract_title column doesn't exist in your model
             all_q = (all_q.join(Client, Client.id == ClientContract.client_id)
                         .filter(Client.name.ilike(like)))
 
-    # Default dataset behaviour: Signed + Expired within last 30 days (grace), excluding Terminated/Archived
-    user_provided_filters = any([q_status, q_client, q_text, include_archived])
-    if not user_provided_filters:
-        grace_cutoff = today - timedelta(days=30)
-
-        signed_q = base.filter(ClientContract.sign_status == "Signed")
-
-        grace_q = base.filter(
-            ClientContract.end_date.isnot(None),
-            ClientContract.end_date >= grace_cutoff,
-            ClientContract.end_date < today,
-        )
-        # Explicitly exclude Terminated/Archived from the default grace view if present
+    try:
+        all_contracts_raw = all_q.limit(500).all()
+        all_contracts = _dedupe(all_contracts_raw) if q_bucket in {"expired", "30", "60", "90"} else all_contracts_raw
+    except Exception:
+        current_app.logger.exception("contracts_overview: all_contracts query failed")
         try:
-            grace_q = grace_q.filter(ClientContract.sign_status != "Terminated")
+            db.session.rollback()
         except Exception:
             pass
-        try:
-            grace_q = grace_q.filter(ClientContract.sign_status != "Archived")
-        except Exception:
-            pass
-
-        signed_rows = _safe_all(signed_q, "all_signed_default")
-        grace_rows  = _safe_all(grace_q, "all_grace_default")
-
-        merged = _dedupe(signed_rows + grace_rows)
-        all_contracts = sorted(merged, key=lambda r: (r.client.name if r.client else "", getattr(r, "created_at", date.min)))
-    else:
-        try:
-            all_contracts = _dedupe(all_q.limit(500).all())
-        except Exception:
-            current_app.logger.exception("contracts_overview: all_contracts query failed")
-            try:
-                db.session.rollback()
-            except Exception:
-                pass
-            all_contracts = []
+        all_contracts = []
 
     return render_template(
         "super_admin/contracts/contracts_overview.html",
@@ -1563,6 +1582,8 @@ def contracts_overview():
             "drafts": len(drafts),
             "expired_sig": len(expired_sig),
             "archived": len(archived),  # NEW
+            "active": len(active_contracts),
+            "missing_date": len(missing_date_contracts),
         },
         expired=expired,
         expiring_30=expiring_30,
@@ -1577,4 +1598,7 @@ def contracts_overview():
         today=today,  # handy for the template
         # ✅ NEW: unified table dataset
         all_contracts=all_contracts,
+        client_options=client_options,
+        selected_bucket=q_bucket,
+        include_archived_effective=include_archived_effective,
     )

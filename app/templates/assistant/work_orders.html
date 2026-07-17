@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Assistant Works Logix | LogixPM{% endblock %}
+
+{% block page_content %}
+  {% set dashboard_endpoint = 'assistant.dashboard' %}
+  {% set dashboard_label = 'Dashboard' %}
+  {% set convert_endpoint = 'assistant.convert_member_request' %}
+  {% set request_detail_endpoint = 'assistant.member_request_detail' %}
+  {% set assign_endpoint = 'assistant.assign_work_order_contractor' %}
+  {% set request_quotes_endpoint = 'assistant.request_work_order_quotes' %}
+  {% set select_quote_endpoint = 'assistant.select_work_order_quote' %}
+  {% set reset_endpoint = 'assistant.work_orders' %}
+  {% set repeated_returns_endpoint = 'assistant.work_orders_repeated_returns' %}
+  {% set workspace_title = 'Works Logix' %}
+  {% if cover_access %}
+    {% set workspace_subtitle = 'Assistant Manager cover queue across company developments, member requests and contractor handoff.' %}
+  {% else %}
+    {% set workspace_subtitle = 'Assistant routing workspace for assigned developments, member requests and contractor handoff.' %}
+  {% endif %}
+  {% include 'works/_command_centre.html' %}
+{% endblock %}

@@ -289,6 +289,15 @@ def add_client():
         except Exception:
             ai_key_clauses = None
 
+        units_total = (
+            (form.units_apartments.data or 0)
+            + (form.units_houses.data or 0)
+            + (form.units_duplexes.data or 0)
+            + (form.units_commercial.data or 0)
+            + (form.units_other.data or 0)
+        )
+        number_of_units = form.number_of_units.data or units_total or 0
+
         # Build Client (safe for evolving models)
         client = Client(
             company_id=company_id,
@@ -300,7 +309,12 @@ def add_client():
             vat_reg_number=form.vat_reg_number.data,
             tax_number=form.tax_number.data,
             year_of_construction=form.year_of_construction.data,
-            number_of_units=form.number_of_units.data,
+            number_of_units=number_of_units,
+            units_apartments=form.units_apartments.data or 0,
+            units_houses=form.units_houses.data or 0,
+            units_duplexes=form.units_duplexes.data or 0,
+            units_commercial=form.units_commercial.data or 0,
+            units_other=form.units_other.data or 0,
             client_type=normalize_client_type(form.client_type.data or ''),  # ✅ normalised
             contract_value=contract_value,
             # Governance

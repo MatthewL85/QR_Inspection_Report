@@ -1,0 +1,79 @@
+{% set inquiry = gar_inquiry_response or {} %}
+{% set inquiry_readiness = inquiry.readiness if inquiry else {} %}
+{% set gar_ask_title = gar_ask_title|default('Ask GAR', true) %}
+{% set gar_ask_subtitle = gar_ask_subtitle|default('Source-backed answers only, with role permissions and source references preserved.', true) %}
+{% set gar_ask_placeholder = gar_ask_placeholder|default('Ask about works, contracts, clients, documents, governance or team records', true) %}
+
+<section class="gar-centre-panel gar-centre-ask app-ready-gar-panel"
+         data-app-mobile-ready="true"
+         data-app-source-backed="true"
+         data-app-offline="static-shell-only">
+  <div class="contract-manager-heading">
+    <div>
+      <h6>{{ gar_ask_title }}</h6>
+      <span>{{ gar_ask_subtitle }}</span>
+    </div>
+    {% if gar_capabilities_url is defined and gar_capabilities_url %}
+      <a href="{{ gar_capabilities_url }}" class="contract-manager-link">
+        <i class="material-icons">verified</i> Capabilities
+      </a>
+    {% endif %}
+  </div>
+  <form method="get" action="{{ gar_ask_action or request.path }}" class="gar-centre-ask-form">
+    <label>
+      Question
+      <input
+        type="search"
+        name="gar_question"
+        value="{{ gar_question or '' }}"
+        placeholder="{{ gar_ask_placeholder }}"
+      >
+    </label>
+    <button type="submit" class="btn btn-sm btn-primary">Ask GAR</button>
+    {% if gar_question and gar_ask_clear_url is defined and gar_ask_clear_url %}
+      <a href="{{ gar_ask_clear_url }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+    {% endif %}
+  </form>
+  {% if inquiry %}
+    <div class="gar-centre-inquiry-result">
+      <div class="gar-centre-inquiry-status">
+        <span class="contract-alert-pill contract-alert-info">{{ inquiry.response_status|replace('_', ' ')|title }}</span>
+        <strong>{{ inquiry_readiness.domain_name or inquiry.source_query.domain or 'GAR Inquiry' }}</strong>
+        <small>{{ inquiry.safe_message }}</small>
+      </div>
+      {% if inquiry.answer %}
+        <article class="gar-centre-inquiry-answer">
+          <span>Source-backed summary</span>
+          <strong>{{ inquiry.answer }}</strong>
+        </article>
+      {% endif %}
+      <div class="gar-centre-inquiry-grid">
+        <article>
+          <span>Domain</span>
+          <strong>{{ inquiry.source_query.domain or 'general' }}</strong>
+          <small>{{ inquiry.source_query.adapter or 'No source adapter selected' }}</small>
+        </article>
+        <article>
+          <span>Source Policy</span>
+          <strong>{{ 'Source records required' if inquiry.source_policy.must_use_source_records else 'Not source gated' }}</strong>
+          <small>{{ 'Model-only answers blocked' if not inquiry.source_policy.allow_model_only_answer else 'Model-only answers allowed' }}</small>
+        </article>
+        <article>
+          <span>References</span>
+          <strong>{{ inquiry.source_references|length }}</strong>
+          <small>Returned by the owning source service</small>
+        </article>
+      </div>
+      {% if inquiry.source_references %}
+        <div class="gar-centre-source-list gar-centre-inquiry-sources">
+          {% for source in inquiry.source_references[:6] %}
+            <article>
+              <strong>{{ source.model }}</strong>
+              <small>{{ source.fields|join(', ') }}</small>
+            </article>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+</section>

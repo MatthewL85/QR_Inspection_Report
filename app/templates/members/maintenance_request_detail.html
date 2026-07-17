@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block title %}Maintenance Request | Members Logix{% endblock %}
+
+{% macro status_pill(value) -%}
+  {% set key = (value or 'Pending')|lower %}
+  {% if key == 'more info requested' %}
+    <span class="contract-alert-pill contract-alert-info">More Info Requested</span>
+  {% elif key in ['rejected'] %}
+    <span class="contract-alert-pill contract-alert-danger">{{ value }}</span>
+  {% elif key in ['converted', 'in progress'] %}
+    <span class="contract-alert-pill contract-alert-primary">{{ value }}</span>
+  {% else %}
+    <span class="contract-alert-pill">{{ value or 'Pending' }}</span>
+  {% endif %}
+{%- endmacro %}
+
+{% block page_content %}
+{% set unit = maintenance_request.unit %}
+{% set client = unit.client if unit else none %}
+{% set unit_label = (unit.block_name ~ ' / ' if unit and unit.block_name else '') ~ ((unit.unit_number or unit.unit_label or unit.unit_name) if unit else '-') %}
+<div class="contract-manager app-ready-surface app-ready-surface--members"
+     data-app-mobile-ready="true"
+     data-app-source-backed="true">
+  <section class="contract-manager-hero">
+    <div>
+      <h1>Maintenance Request</h1>
+      <p>Review the Works Logix reply and respond with the requested information if needed.</p>
+    </div>
+    <a class="contract-manager-link" href="{{ url_for('members.works', _anchor='member-request-' ~ maintenance_request.id) }}">Back to My Requests</a>
+  </section>
+
+  <section class="contract-manager-panel">
+    <div class="contract-manager-section-heading">
+      <div>
+        <h2>{{ maintenance_request.title }}</h2>
+        <p>{{ client.name if client else 'Development' }}{% if unit %} - {{ unit_label }}{% endif %}</p>
+      </div>
+      {{ status_pill(maintenance_request.status) }}
+    </div>
+
+    <div class="works-command-grid">
+      <article class="works-kpi-card"><span>Category</span><strong>{{ maintenance_request.category or 'General' }}</strong></article>
+      <article class="works-kpi-card"><span>Urgency</span><strong>{{ maintenance_request.urgency_level or 'Normal' }}</strong></article>
+      <article class="works-kpi-card"><span>Submitted</span><strong>{{ maintenance_request.created_at.strftime('%d %b %Y') if maintenance_request.created_at else '-' }}</strong></article>
+      <article class="works-kpi-card">
+        <span>Works Status</span>
+        <strong>
+          {% if maintenance_request.work_order %}
+            {{ maintenance_request.work_order.display_reference }} - {{ maintenance_request.work_order.status or 'Open' }}
+          {% else %}
+            Awaiting triage
+          {% endif %}
+        </strong>
+      </article>
+    </div>
+
+    <div class="unit-detail-grid works-review-detail-grid mt-3">
+      <div class="unit-detail-wide">
+        <span class="unit-detail-label">Your Original Request</span>
+        <strong>{{ maintenance_request.description or '-' }}</strong>
+      </div>
+      <div class="unit-detail-wide">
+        <span class="unit-detail-label">Works Logix Reply</span>
+        <strong>{{ works_reply or 'No reply has been issued yet.' }}</strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Development</span>
+        <strong>{{ client.name if client else '-' }}</strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Unit</span>
+        <strong>{{ unit_label }}</strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Block</span>
+        <strong>{{ unit.block_name if unit and unit.block_name else '-' }}</strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Core</span>
+        <strong>{{ unit.core_name if unit and unit.core_name else '-' }}</strong>
+      </div>
+      <div class="unit-detail-wide">
+        <span class="unit-detail-label">Evidence</span>
+        <strong>
+          {% set evidence_links = maintenance_request.doc_links or maintenance_request.photo_links or ([maintenance_request.attachment_url] if maintenance_request.attachment_url else []) %}
+          {% if evidence_links %}
+            <span class="works-evidence-link-list">
+              {% for evidence_link in evidence_links %}
+                <a class="works-evidence-link" href="{{ evidence_link }}" target="_blank" rel="noopener">
+                  Open evidence {{ loop.index }}
+                </a>
+              {% endfor %}
+            </span>
+          {% else %}
+            No evidence attached
+          {% endif %}
+        </strong>
+      </div>
+      <div>
+        <span class="unit-detail-label">Last Updated</span>
+        <strong>{{ maintenance_request.updated_at.strftime('%d %b %Y %H:%M') if maintenance_request.updated_at else '-' }}</strong>
+      </div>
+    </div>
+  </section>
+
+  {% if (maintenance_request.status or '')|lower == 'more info requested' %}
+    <section class="contract-manager-panel">
+      <div class="contract-manager-section-heading">
+        <div>
+          <h2>Send More Information</h2>
+          <p>Add the clarification, access notes, photo, video or document requested by Works Logix.</p>
+        </div>
+      </div>
+      <form method="post"
+            action="{{ url_for('members.respond_to_maintenance_request', request_id=maintenance_request.id) }}"
+            enctype="multipart/form-data"
+            class="contract-manager-filters works-request-form"
+            data-app-action="member-maintenance-request-response"
+            data-app-requires-online="true"
+            data-app-requires-csrf="true"
+            data-app-source-record="maintenance_request">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="works-form-wide">
+          Response
+          <textarea name="response" rows="4" placeholder="Add the requested information, access notes or clarification."></textarea>
+        </label>
+        <label>
+          Attach Photos, Videos or Documents
+          <input type="file"
+                 name="media_file"
+                 multiple
+                 accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.mp4,.mov,.webm,.avi,.m4v,.pdf,.doc,.docx">
+        </label>
+        <label>
+          Or Paste Evidence Link
+          <input type="url" name="media_reference" placeholder="Paste a secure evidence link">
+        </label>
+        <div class="works-form-actions">
+          <button type="submit" class="contract-manager-button">Send Response</button>
+        </div>
+      </form>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

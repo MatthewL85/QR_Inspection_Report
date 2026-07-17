@@ -88,8 +88,8 @@
               {% else %}
                 <button type="submit" class="btn btn-primary">Save</button>
               {% endif %}
-              {% if 'settings.profile_view' in current_app.view_functions %}
-                <a href="{{ url_for('settings.profile_view') }}" class="btn btn-outline-secondary">Company Profile</a>
+              {% if 'settings.profile_index' in current_app.view_functions %}
+                <a href="{{ url_for('settings.profile_index') }}" class="btn btn-outline-secondary">Company Profile</a>
               {% endif %}
             </div>
           </form>

@@ -1,4 +1,42 @@
 {% extends "layouts/super_admin_base.html" %}
+{% block styles %}
+{{ super() }}
+<style>
+  .key-info-proposal-modal .modal-dialog {
+    max-height: calc(100vh - 2rem);
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .key-info-proposal-modal .modal-content {
+    max-height: calc(100vh - 2rem);
+    overflow: hidden;
+  }
+
+  .key-info-proposal-modal .modal-header,
+  .key-info-proposal-modal .modal-footer {
+    flex: 0 0 auto;
+  }
+
+  .key-info-proposal-modal .modal-body {
+    max-height: calc(100vh - 11rem);
+    overflow-y: auto;
+    padding-right: 1.15rem;
+  }
+
+  .key-info-proposal-modal .tox-tinymce {
+    max-height: 360px;
+  }
+
+  .key-info-proposal-modal .form-select[multiple] {
+    min-height: 92px;
+  }
+
+  .key-info-proposal-modal .modal-header .modal-title:not(:first-child) {
+    display: none;
+  }
+</style>
+{% endblock %}
 {% block page_content %}
 <div class="container-fluid py-4">
 
@@ -30,8 +68,8 @@
       </a>
 
       <a
-        href="{% if 'super_admin.view_client' in current_app.view_functions %}{{ url_for('super_admin.view_client', client_id=client.id) }}{% else %}/super-admin/clients/{{ client.id }}{% endif %}"
-        class="btn btn-sm btn-outline-secondary">← Dashboard</a>
+        href="{% if 'super_admin.view_client' in current_app.view_functions %}{{ url_for('super_admin.view_client', client_id=client.id, tab='site') }}{% else %}/super-admin/clients/{{ client.id }}?tab=site{% endif %}"
+        class="btn btn-sm btn-outline-secondary">Back to Key Site Info</a>
     </div>
   </div>
 
@@ -59,21 +97,18 @@
 
                   <div id="col-{{ s.id }}" class="accordion-collapse collapse" aria-labelledby="hdr-{{ s.id }}" data-bs-parent="#ki-accordion">
                     <div class="accordion-body">
-                      {% set _c = s.content or '' %}
-                      {% if '<' in _c %}
-                        <div class="ki-content prose">{{ _c | safe }}</div>
-                      {% else %}
-                        <div class="ki-content prose" style="white-space: pre-wrap;">{{ _c }}</div>
-                      {% endif %}
+                      <div class="ki-content prose client-key-site-rich-content">
+                        {{ s.content|key_site_content }}
+                      </div>
 
                       {% if s.ai_parsed_summary %}
-                        <div class="small text-muted mt-2"><strong>AI Summary:</strong> {{ s.ai_parsed_summary }}</div>
+                        <div class="small text-muted mt-2"><strong>AI Summary:</strong> {{ s.ai_parsed_summary|striptags|truncate(180) }}</div>
                       {% endif %}
 
                       <div class="d-flex gap-2 mt-3">
                         {% if can_propose %}
                           <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editModal-{{ s.id }}">
-                            Propose Update
+                            {% if can_approve %}Update Section{% else %}Propose Update{% endif %}
                           </button>
                         {% endif %}
                       </div>
@@ -82,15 +117,15 @@
                 </div>
 
                 {% if can_propose %}
-                <!-- Propose update modal -->
-                <div class="modal fade" id="editModal-{{ s.id }}" tabindex="-1" aria-hidden="true">
+                <!-- Update/propose section modal -->
+                <div class="modal fade key-info-proposal-modal" id="editModal-{{ s.id }}" tabindex="-1" aria-hidden="true">
                   <div class="modal-dialog modal-lg modal-dialog-scrollable">
                     <div class="modal-content">
                       <form method="post" action="{% if 'client_key_info.propose_change' in current_app.view_functions %}{{ url_for('client_key_info.propose_change', client_id=client.id) }}{% else %}/clients/{{ client.id }}/key-info/propose{% endif %}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="key_info_id" value="{{ s.id }}">
                         <div class="modal-header">
-                          <h6 class="modal-title">Propose Update — {{ s.title }}</h6>
+                          <h6 class="modal-title">{% if can_approve %}Update Section{% else %}Propose Update{% endif %} - {{ s.title }}</h6>
                           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
@@ -122,7 +157,7 @@
                         </div>
                         <div class="modal-footer">
                           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                          <button type="submit" class="btn btn-primary">Submit for Approval</button>
+                          <button type="submit" class="btn btn-primary">{% if can_approve %}Save Update{% else %}Submit for Approval{% endif %}</button>
                         </div>
                       </form>
                     </div>
@@ -175,11 +210,11 @@
                       <option value="{{ c.id }}">{{ c.company_name or c.name or ('Contractor #' ~ c.id) }}</option>
                     {% endfor %}
                   </select>
-                  <div class="form-text">Empty = keep internal. Selected contractors will see after approval.</div>
+                  <div class="form-text">Empty = keep internal. Selected contractors will see published information when approved or saved.</div>
                 </div>
 
                 <div class="col-12">
-                  <button type="submit" class="btn btn-primary">Submit New Section for Approval</button>
+                  <button type="submit" class="btn btn-primary">{% if can_approve %}Create Section{% else %}Submit New Section for Approval{% endif %}</button>
                 </div>
               </div>
             </form>
@@ -235,7 +270,9 @@
                         <div class="p-3 bg-light rounded">
                           <div class="mb-2"><strong>Proposed Title:</strong> {{ ch.proposed_title }}</div>
                           <div class="mb-2"><strong>Proposed Content:</strong></div>
-                          <div class="border rounded bg-white p-3">{% if ch.proposed_content %}{{ ch.proposed_content|safe }}{% else %}<span class="text-muted">—</span>{% endif %}</div>
+                          <div class="border rounded bg-white p-3 client-key-site-rich-content">
+                            {% if ch.proposed_content %}{{ ch.proposed_content|key_site_content }}{% else %}<span class="text-muted">—</span>{% endif %}
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -290,7 +327,7 @@
       selector: sel,
       menubar: false,
       branding: false,
-      height: 420,
+      height: 320,
       plugins: 'lists advlist link table code autoresize image media paste quickbars fullscreen autosave',
       toolbar:
         'undo redo | styles | bold italic underline | forecolor backcolor | ' +
@@ -361,6 +398,14 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     initTiny(selector);
+
+    document.querySelectorAll('form').forEach(function (form) {
+      form.addEventListener('submit', function () {
+        if (window.tinymce) {
+          tinymce.triggerSave();
+        }
+      });
+    });
   });
 
   // Re-init inside modals

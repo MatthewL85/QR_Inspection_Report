@@ -1,0 +1,146 @@
+{% import 'macros/jurisdiction.html' as J %}
+
+<div class="client-manager-table-wrap">
+  <table class="table client-manager-table align-items-center mb-0">
+    <colgroup>
+      <col style="width: 13%;">
+      <col style="width: 13%;">
+      <col style="width: 19%;">
+      <col style="width: 7%;">
+      <col style="width: 15%;">
+      <col style="width: 12%;">
+      <col style="width: 13%;">
+      <col style="width: 8%;">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Client</th>
+        <th>Property Name</th>
+        <th>Address / Location</th>
+        <th>Structure</th>
+        <th>Team</th>
+        <th class="client-manager-money-heading">Contract Value</th>
+        <th>Contract Dates</th>
+        <th>Next Fee</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for client in clients %}
+      {% set latest_contract = latest_contracts.get(client.id) if latest_contracts else none %}
+      <tr>
+        <td class="client-manager-primary-cell">
+          <a href="{{ url_for('super_admin.view_client', client_id=client.id) }}">
+            {{ client.name }}
+          </a>
+        </td>
+
+        <td class="client-manager-property-cell">
+          {{ client.property_name or '-' }}
+        </td>
+
+        <td class="client-manager-address-cell">
+          <div class="client-manager-cell-stack">
+            {% if client.address_line1 %}
+              <strong>{{ client.address_line1 }}</strong>
+              {% if client.address_line2 %}
+                <span>{{ client.address_line2 }}</span>
+              {% endif %}
+              {% if client.city %}
+                <span>{{ client.city }}</span>
+              {% endif %}
+            {% elif client.address %}
+              <strong>{{ client.address }}</strong>
+            {% else %}
+              <span class="text-muted">-</span>
+            {% endif %}
+            <span>
+              {% set country = client.country or '' %}
+              {% set region = client.region or '' %}
+              {{ country }}{% if region %} - {{ J.region_label(country) }}: {{ region }}{% endif %}
+            </span>
+          </div>
+        </td>
+
+        <td>
+          <div class="client-manager-cell-stack">
+            <strong>{{ client.client_type or '-' }}</strong>
+            {% set total_units = client.number_of_units %}
+            {% if total_units %}
+              <span>{{ total_units }} units</span>
+            {% else %}
+              <span>-</span>
+            {% endif %}
+          </div>
+        </td>
+
+        <td>
+          <div class="client-manager-cell-stack">
+            <span>
+              <strong>PM:</strong>
+              {% if client.assigned_pm %}
+                {{ client.assigned_pm.full_name or ((client.assigned_pm.first_name or '') ~ ' ' ~ (client.assigned_pm.last_name or '')) | trim }}
+              {% elif client.assigned_pm_id %}
+                #{{ client.assigned_pm_id }}
+              {% else %}
+                -
+              {% endif %}
+            </span>
+            <span>
+              <strong>FC:</strong>
+              {% if client.assigned_fc %}
+                {{ client.assigned_fc.full_name or ((client.assigned_fc.first_name or '') ~ ' ' ~ (client.assigned_fc.last_name or '')) | trim }}
+              {% elif client.assigned_fc_id %}
+                #{{ client.assigned_fc_id }}
+              {% else %}
+                -
+              {% endif %}
+            </span>
+            <span>
+              <strong>Assistant:</strong>
+              {% if client.assigned_assistant %}
+                {{ client.assigned_assistant.full_name or ((client.assigned_assistant.first_name or '') ~ ' ' ~ (client.assigned_assistant.last_name or '')) | trim }}
+              {% elif client.assigned_assistant_id %}
+                #{{ client.assigned_assistant_id }}
+              {% else %}
+                -
+              {% endif %}
+            </span>
+          </div>
+        </td>
+
+        <td class="client-manager-money-cell">
+          {% if client.contract_value %}
+            {% set cur = client.currency or 'EUR' %}
+            <strong>{{ cur }} {{ "{:,.2f}".format(client.contract_value) }}</strong>
+          {% else %}
+            <span class="text-muted">-</span>
+          {% endif %}
+        </td>
+
+        <td>
+          {% if latest_contract and (latest_contract.start_date or latest_contract.end_date) %}
+            <div class="client-manager-cell-stack">
+              <span><strong>Start:</strong> {{ latest_contract.start_date or '-' }}</span>
+              <span><strong>End:</strong> {{ latest_contract.end_date or '-' }}</span>
+            </div>
+          {% else %}
+            <span class="text-muted">-</span>
+          {% endif %}
+        </td>
+
+        <td>
+          {% if latest_contract and latest_contract.next_fee_increase_date %}
+            {{ latest_contract.next_fee_increase_date }}
+          {% else %}
+            <span class="text-muted">-</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="8" class="client-manager-empty">No clients found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
