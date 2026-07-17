@@ -6,6 +6,8 @@ Purpose: give LogixPM a clear control point before the platform moves from Phase
 
 This document does not replace the module completion register. It is the short sign-off layer for security, settings ownership, module independence and future build readiness.
 
+The role-by-module access contract is `docs/module_access_matrix.md`. Use it when adding dashboards, settings links, GAR feeds or cross-module navigation.
+
 ## Current Close-Out Position
 
 The current stabilisation pass has guarded the platform-level boundaries that keep the ecosystem modular:
@@ -31,6 +33,7 @@ Before any larger feature expansion or deployment-style review:
 5. Confirm no role can move into another organisation or module workspace through navigation, direct URL, settings links or document-template links.
 6. Confirm GAR answers and feeds remain source-backed and role-aware.
 7. Confirm new media or evidence behaviour attaches files to the record they prove.
+8. Confirm any new role/module surface matches `docs/module_access_matrix.md`.
 
 ## Module Expansion Checklist
 
