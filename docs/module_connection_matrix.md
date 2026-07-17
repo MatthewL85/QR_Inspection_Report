@@ -49,6 +49,8 @@ When a standalone module is later connected, existing records should link throug
 
 External systems should be treated as module-owned integrations:
 
+Credential ownership, sync scope, revocation and external intake approval are controlled by `docs/external_integration_security_matrix.md`.
+
 | External System Type | Owning Module | Examples | Rule |
 | --- | --- | --- | --- |
 | Accounting packages | Finance Logix | Sage, Xero, QuickBooks | Finance owns credentials, mapping, sync logs and posting controls. |

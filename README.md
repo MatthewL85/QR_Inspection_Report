@@ -15,6 +15,7 @@ The active build principle is simple: each module should work independently, whi
 | `docs/module_connection_matrix.md` | Organisation, module and external integration connection boundaries |
 | `docs/document_template_ownership_matrix.md` | Document template ownership boundaries by module and workflow |
 | `docs/source_record_identity_matrix.md` | Source IDs, UIDs and safe human-readable numbering rules |
+| `docs/external_integration_security_matrix.md` | External connector credentials, scopes, sync and revocation boundaries |
 | `docs/gar_visibility_matrix.md` | GAR source-backed answer and role visibility boundaries |
 | `docs/auditability_matrix.md` | Audit ownership and human-approval boundaries for cross-module actions |
 | `docs/data_retention_deletion_matrix.md` | Archive, deletion, retention and restoration rules by module |
