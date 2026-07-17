@@ -142,6 +142,8 @@ The full Phase 3 suite streams each child check, records elapsed time and applie
 
 The formal unfinished-module register is `docs/module_completion_register.md` and is protected by `scripts/module_completion_register_check.py`. The documentation entry points are protected by `scripts/platform_documentation_contract_check.py`. The runner mode split is protected by `scripts/phase3_runner_contract_check.py`. The access and settings ownership boundary is protected by `scripts/module_access_security_boundary_check.py`. The module settings registry ownership rule is protected by `scripts/module_settings_registry_check.py`. Service-led integration and source-backed feeds are protected by `scripts/module_service_contract_check.py`. Legacy/archive isolation is protected by `scripts/legacy_archive_isolation_check.py`. The media/evidence spine is protected by `scripts/media_evidence_spine_check.py`. Contractor-owned document templates are protected by `scripts/contractor_document_template_boundary_check.py`. Organisation connection boundaries are protected by `scripts/organisation_connection_boundary_check.py`.
 
+The close-out sign-off checklist is `docs/stabilisation_security_closeout.md`. Treat it as the short release-readiness control before moving from stabilisation into wider feature expansion.
+
 ## Next Stabilisation Steps
 
 1. Keep `legacy_archive` and `Old_QR` out of active feature work.

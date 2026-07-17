@@ -10,6 +10,7 @@ The active build principle is simple: each module should work independently, whi
 | --- | --- |
 | `docs/platform_architecture.md` | Core architecture, shared IDs and source-of-truth rules |
 | `docs/platform_stabilisation_register.md` | Active stabilisation rules, verification gates and cleanup priorities |
+| `docs/stabilisation_security_closeout.md` | Security/stabilisation sign-off checklist before wider feature expansion |
 | `docs/module_completion_register.md` | Formal register of unfinished module work, priorities and ownership boundaries |
 | `docs/role_dashboard_surface_standard.md` | Shared dashboard UX pattern for every role surface |
 | `docs/module_contracts.md` | Module ownership, integration points and GAR visibility boundaries |
