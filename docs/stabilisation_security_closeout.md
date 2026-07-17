@@ -32,6 +32,8 @@ The support and escalation ownership contract is `docs/support_escalation_owners
 
 The onboarding and data import contract is `docs/onboarding_data_import_matrix.md`. Use it before importing, seeding, migrating, bulk-inviting or syncing real organisations, clients, users, units, owners, residents, contractors, documents, media or external system records.
 
+The pilot and live activation contract is `docs/pilot_live_activation_runbook.md`. Use it before switching on a module, workflow, dashboard, integration, document output or GAR surface for real users.
+
 The GAR visibility contract is `docs/gar_visibility_matrix.md`. Use it before adding AI answers, summaries, recommendations, source adapters or role dashboards.
 
 The auditability contract is `docs/auditability_matrix.md`. Use it before adding approvals, state changes, cross-module handoffs, external integrations, document finalisation or GAR-assisted actions.
@@ -57,6 +59,7 @@ The current stabilisation pass has guarded the platform-level boundaries that ke
 - production readiness must be explicit: prototype, review, pilot, production or deferred;
 - support ownership and escalation must follow the module that owns the workflow;
 - onboarding and imports must be batch-aware, duplicate-checked, source-mapped and rollback-aware;
+- pilot and live activation must be scoped, role-tested, support-owned and rollback-ready;
 - GAR must read source-backed records with role and visibility controls rather than becoming the source of truth;
 - cross-module actions must record module ownership, source records, acting users and human approvals where required;
 - deletion must default to archive, deactivation, superseding or controlled amendment for business records;
@@ -88,9 +91,10 @@ Before any larger feature expansion or deployment-style review:
 18. Confirm any live customer use, pilot, module activation or production sign-off matches `docs/production_readiness_gate.md`.
 19. Confirm any operational support, escalation, customer response or degraded-state support path matches `docs/support_escalation_ownership_matrix.md`.
 20. Confirm any onboarding, import, migration, seed, bulk invite or external data intake matches `docs/onboarding_data_import_matrix.md`.
-21. Confirm any GAR answer, feed or recommendation matches `docs/gar_visibility_matrix.md`.
-22. Confirm any state change, approval, cross-module handoff or finalised document matches `docs/auditability_matrix.md`.
-23. Confirm any delete, archive, restore, deactivate or retention behaviour matches `docs/data_retention_deletion_matrix.md`.
+21. Confirm any pilot, live activation, module add-on or external connector activation matches `docs/pilot_live_activation_runbook.md`.
+22. Confirm any GAR answer, feed or recommendation matches `docs/gar_visibility_matrix.md`.
+23. Confirm any state change, approval, cross-module handoff or finalised document matches `docs/auditability_matrix.md`.
+24. Confirm any delete, archive, restore, deactivate or retention behaviour matches `docs/data_retention_deletion_matrix.md`.
 
 ## Module Expansion Checklist
 
@@ -109,6 +113,7 @@ When starting or extending a module, record:
 - production readiness level, blockers and sign-off owner;
 - support owner, escalation route and customer-response rule;
 - onboarding, import and data-quality rules;
+- pilot/live activation and module add-on rules;
 - allowed cross-module service/feed dependencies;
 - GAR visibility rules;
 - manual coverage;
@@ -145,6 +150,7 @@ Stop and route the work back through stabilisation if any of these appear:
 - a pilot or production module has no named support owner or escalation path;
 - a live import creates operational records without source mapping, duplicate checks, data classification or rollback path;
 - bulk portal invites are sent before memberships and unit links are validated;
+- a module is switched on for real users without a named activation scope, support owner or rollback owner;
 - a standalone module cannot operate unless another Logix module is present;
 - a GAR response depends on free text without a source record reference;
 - GAR reveals records the user could not open directly in the relevant module;

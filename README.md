@@ -24,6 +24,7 @@ The active build principle is simple: each module should work independently, whi
 | `docs/production_readiness_gate.md` | Production readiness levels, blockers and module sign-off rules |
 | `docs/support_escalation_ownership_matrix.md` | Support ownership, escalation and customer-response boundaries |
 | `docs/onboarding_data_import_matrix.md` | Onboarding, import, duplicate-check and rollback boundaries |
+| `docs/pilot_live_activation_runbook.md` | Pilot, live activation and module add-on sign-off rules |
 | `docs/gar_visibility_matrix.md` | GAR source-backed answer and role visibility boundaries |
 | `docs/auditability_matrix.md` | Audit ownership and human-approval boundaries for cross-module actions |
 | `docs/data_retention_deletion_matrix.md` | Archive, deletion, retention and restoration rules by module |
