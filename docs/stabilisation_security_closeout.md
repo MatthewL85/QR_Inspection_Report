@@ -42,6 +42,8 @@ The auditability contract is `docs/auditability_matrix.md`. Use it before adding
 
 The data retention contract is `docs/data_retention_deletion_matrix.md`. Use it before adding delete, archive, restore, deactivate, supersede or test-cleanup behaviour.
 
+The audit and retention contracts are guarded together by `scripts\audit_retention_contract_check.py` because state changes, archive/delete behaviour, finalised documents and GAR recommendations must remain source-backed and human-accountable.
+
 ## Current Close-Out Position
 
 The current stabilisation pass has guarded the platform-level boundaries that keep the ecosystem modular:
@@ -176,6 +178,7 @@ Primary checks:
 .\venv\Scripts\python.exe scripts\platform_documentation_contract_check.py
 .\venv\Scripts\python.exe scripts\pilot_live_activation_contract_check.py
 .\venv\Scripts\python.exe scripts\schema_migration_contract_check.py
+.\venv\Scripts\python.exe scripts\audit_retention_contract_check.py
 .\venv\Scripts\python.exe scripts\stabilisation_register_gate_check.py
 .\venv\Scripts\python.exe scripts\module_completion_register_check.py
 .\venv\Scripts\python.exe scripts\module_access_security_boundary_check.py

@@ -574,6 +574,7 @@ REQUIRED_REFERENCES = {
         "Completed or signed business records should not be edited in place",
         "a notification is treated as the audit trail",
         "platform_documentation_contract_check.py",
+        "audit_retention_contract_check.py",
         "works_evidence_audit_contract_check.py",
         "gar_source_adapter_contract_check.py",
     ),
@@ -594,6 +595,7 @@ REQUIRED_REFERENCES = {
         "a delete action removes a record with source links",
         "active dashboard counts include archived records by default",
         "archive_inventory_check.py --strict",
+        "audit_retention_contract_check.py",
         "legacy_archive_isolation_check.py",
     ),
     "docs/module_access_matrix.md": (

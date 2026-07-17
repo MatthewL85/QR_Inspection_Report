@@ -112,6 +112,7 @@ Primary checks:
 
 ```powershell
 .\venv\Scripts\python.exe scripts\platform_documentation_contract_check.py
+.\venv\Scripts\python.exe scripts\audit_retention_contract_check.py
 .\venv\Scripts\python.exe scripts\archive_inventory_check.py --strict
 .\venv\Scripts\python.exe scripts\legacy_archive_isolation_check.py
 .\venv\Scripts\python.exe scripts\module_access_security_boundary_check.py
