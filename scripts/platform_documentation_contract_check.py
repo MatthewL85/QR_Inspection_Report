@@ -169,6 +169,8 @@ REQUIRED_REFERENCES = {
         "docs/gar_visibility_matrix.md",
         "docs/auditability_matrix.md",
         "docs/data_retention_deletion_matrix.md",
+        "support and production readiness contracts",
+        "support_readiness_contract_check.py",
         "Current Close-Out Position",
         "Release Readiness Rules",
         "Module Expansion Checklist",
@@ -462,6 +464,7 @@ REQUIRED_REFERENCES = {
         "queue_surface_contract_check.py",
         "gar_source_adapter_contract_check.py",
         "archive_inventory_check.py --strict",
+        "support_readiness_contract_check.py",
     ),
     "docs/support_escalation_ownership_matrix.md": (
         "Support and Escalation Ownership Matrix",
@@ -488,6 +491,7 @@ REQUIRED_REFERENCES = {
         "works_evidence_audit_contract_check.py",
         "gar_source_adapter_contract_check.py",
         "app_health_feed_contract_check.py",
+        "support_readiness_contract_check.py",
     ),
     "docs/onboarding_data_import_matrix.md": (
         "Onboarding and Data Import Matrix",

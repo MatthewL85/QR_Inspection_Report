@@ -105,5 +105,6 @@ Stop and route through stabilisation if:
 .\venv\Scripts\python.exe scripts\gar_source_adapter_contract_check.py
 .\venv\Scripts\python.exe scripts\gar_role_visibility_contract_check.py
 .\venv\Scripts\python.exe scripts\app_health_feed_contract_check.py
+.\venv\Scripts\python.exe scripts\support_readiness_contract_check.py
 .\venv\Scripts\python.exe scripts\phase3_runner_contract_check.py
 ```

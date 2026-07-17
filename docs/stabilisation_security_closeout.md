@@ -44,6 +44,8 @@ The data retention contract is `docs/data_retention_deletion_matrix.md`. Use it 
 
 The audit and retention contracts are guarded together by `scripts\audit_retention_contract_check.py` because state changes, archive/delete behaviour, finalised documents and GAR recommendations must remain source-backed and human-accountable.
 
+The support and production readiness contracts are guarded together by `scripts\support_readiness_contract_check.py` because pilot/live use, customer support, escalation and production sign-off must stay module-owned and source-record backed.
+
 ## Current Close-Out Position
 
 The current stabilisation pass has guarded the platform-level boundaries that keep the ecosystem modular:

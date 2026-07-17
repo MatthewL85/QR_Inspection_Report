@@ -110,6 +110,7 @@ The record can live in the module documentation until a dedicated release-manage
 .\venv\Scripts\python.exe scripts\module_completion_register_check.py
 .\venv\Scripts\python.exe scripts\module_service_contract_check.py
 .\venv\Scripts\python.exe scripts\app_module_settings_feed_contract_check.py
+.\venv\Scripts\python.exe scripts\support_readiness_contract_check.py
 .\venv\Scripts\python.exe scripts\role_dashboard_surface_check.py
 .\venv\Scripts\python.exe scripts\queue_surface_contract_check.py
 .\venv\Scripts\python.exe scripts\gar_source_adapter_contract_check.py
