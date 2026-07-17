@@ -20,6 +20,8 @@ The deployment environment security contract is `docs/deployment_environment_sec
 
 The incident response and backup contract is `docs/incident_response_backup_matrix.md`. Use it before changing backup scope, restore behaviour, incident response, recovery testing, media recovery, external sync recovery or GAR rebuild behaviour.
 
+The privacy and data classification contract is `docs/privacy_data_classification_matrix.md`. Use it before exposing personal, financial, HR, contractor-private, security/access or GAR-derived data through screens, exports, notifications, documents, integrations or AI answers.
+
 The GAR visibility contract is `docs/gar_visibility_matrix.md`. Use it before adding AI answers, summaries, recommendations, source adapters or role dashboards.
 
 The auditability contract is `docs/auditability_matrix.md`. Use it before adding approvals, state changes, cross-module handoffs, external integrations, document finalisation or GAR-assisted actions.
@@ -39,6 +41,7 @@ The current stabilisation pass has guarded the platform-level boundaries that ke
 - external integrations must be owned by the module that uses them, with scoped credentials, sync logs and revocation controls;
 - deployment configuration must keep secrets, debug behaviour, seed data, migrations and module feature flags environment-owned;
 - backup, restore and incident response must preserve source records, media, audit history, visibility rules and external sync state;
+- personal, financial, HR, contractor-private and security/access data must be classified before it is displayed, exported, notified or used by GAR;
 - GAR must read source-backed records with role and visibility controls rather than becoming the source of truth;
 - cross-module actions must record module ownership, source records, acting users and human approvals where required;
 - deletion must default to archive, deactivation, superseding or controlled amendment for business records;
@@ -64,9 +67,10 @@ Before any larger feature expansion or deployment-style review:
 12. Confirm any external credential, connector, mailbox, calendar, cloud storage or sync behaviour matches `docs/external_integration_security_matrix.md`.
 13. Confirm any environment variable, secret, seed script, migration, feature flag or deployment behaviour matches `docs/deployment_environment_security_matrix.md`.
 14. Confirm any backup, restore, incident response, recovery test or external sync recovery matches `docs/incident_response_backup_matrix.md`.
-15. Confirm any GAR answer, feed or recommendation matches `docs/gar_visibility_matrix.md`.
-16. Confirm any state change, approval, cross-module handoff or finalised document matches `docs/auditability_matrix.md`.
-17. Confirm any delete, archive, restore, deactivate or retention behaviour matches `docs/data_retention_deletion_matrix.md`.
+15. Confirm any personal, financial, HR, contractor-private, security/access or GAR-derived data use matches `docs/privacy_data_classification_matrix.md`.
+16. Confirm any GAR answer, feed or recommendation matches `docs/gar_visibility_matrix.md`.
+17. Confirm any state change, approval, cross-module handoff or finalised document matches `docs/auditability_matrix.md`.
+18. Confirm any delete, archive, restore, deactivate or retention behaviour matches `docs/data_retention_deletion_matrix.md`.
 
 ## Module Expansion Checklist
 
@@ -79,6 +83,7 @@ When starting or extending a module, record:
 - external integration credential, sync and revocation rules;
 - deployment environment, feature flag, seed data and migration rules;
 - incident response, backup, restore and recovery ownership rules;
+- privacy and data classification rules;
 - allowed cross-module service/feed dependencies;
 - GAR visibility rules;
 - manual coverage;
@@ -103,6 +108,8 @@ Stop and route the work back through stabilisation if any of these appear:
 - a backup excludes media, evidence, audit history or external sync state needed to recover a module workflow;
 - a restore overwrites signed, approved, completed, paid or closed source records;
 - an incident is resolved by deleting audit logs or source history;
+- personal, financial, HR, contractor-private or security/access data is displayed without a role, organisation and purpose check;
+- GAR reveals personal, financial, HR or contractor-private data the user cannot open in the source module;
 - a standalone module cannot operate unless another Logix module is present;
 - a GAR response depends on free text without a source record reference;
 - GAR reveals records the user could not open directly in the relevant module;
