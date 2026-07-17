@@ -12,6 +12,8 @@ The module connection contract is `docs/module_connection_matrix.md`. Use it bef
 
 The document ownership contract is `docs/document_template_ownership_matrix.md`. Use it before adding or moving any document template, PDF, export, quotation, payment request, work order or job docket output.
 
+The GAR visibility contract is `docs/gar_visibility_matrix.md`. Use it before adding AI answers, summaries, recommendations, source adapters or role dashboards.
+
 ## Current Close-Out Position
 
 The current stabilisation pass has guarded the platform-level boundaries that keep the ecosystem modular:
@@ -40,6 +42,7 @@ Before any larger feature expansion or deployment-style review:
 8. Confirm any new role/module surface matches `docs/module_access_matrix.md`.
 9. Confirm any new module or external integration link matches `docs/module_connection_matrix.md`.
 10. Confirm any new document output matches `docs/document_template_ownership_matrix.md`.
+11. Confirm any GAR answer, feed or recommendation matches `docs/gar_visibility_matrix.md`.
 
 ## Module Expansion Checklist
 
@@ -66,6 +69,7 @@ Stop and route the work back through stabilisation if any of these appear:
 - an integration uses email address matching instead of governed organisation, user, company, client, unit or work-order identifiers;
 - a standalone module cannot operate unless another Logix module is present;
 - a GAR response depends on free text without a source record reference;
+- GAR reveals records the user could not open directly in the relevant module;
 - a new feature reads from `legacy_archive` or `Old_QR` directly.
 
 ## Guarded By
